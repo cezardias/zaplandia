@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Frontend Service (Next.js)
+  frontend:
+    container_name: zaplandia-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend-core
+    networks:
+      - zaplandia-network
+
+  # Backend Core Service (Node.js/NestJS)
+  backend-core:
+    container_name: zaplandia-backend-core
+    build:
+      context: ./backend-core
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend-core:/app
+      - /app/node_modules
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=zaplandia
+      - DB_PASS=zaplandia_secret
+      - DB_NAME=zaplandia_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - zaplandia-network
+
+  # Backend AI Service (Python/FastAPI)
+  backend-ai:
+    container_name: zaplandia-backend-ai
+    build:
+      context: ./backend-ai
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend-ai:/app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+    networks:
+      - zaplandia-network
+
+  # Database Service (PostgreSQL)
+  postgres:
+    image: postgres:15-alpine
+    container_name: zaplandia-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: zaplandia
+      POSTGRES_PASSWORD: zaplandia_secret
+      POSTGRES_DB: zaplandia_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - zaplandia-network
+
+  # Redis Service (Caching/Queues)
+  redis:
+    image: redis:alpine
+    container_name: zaplandia-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - zaplandia-network
+
+networks:
+  zaplandia-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
