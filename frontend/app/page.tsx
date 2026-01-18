@@ -17,6 +17,7 @@ import {
   ArrowRight,
   CheckCircle2
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LandingPage() {
   const fadeIn = {
@@ -69,9 +70,9 @@ export default function LandingPage() {
             <div className="hidden md:flex space-x-8 items-center">
               <a href="#features" className="text-gray-300 hover:text-white transition">Funcionalidades</a>
               <a href="#integrations" className="text-gray-300 hover:text-white transition">Integrações</a>
-              <button className="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-full font-medium transition">
+              <Link href="/auth/login" className="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-full font-medium transition">
                 Entrar
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -96,9 +97,9 @@ export default function LandingPage() {
                   Integre todas as suas redes sociais em um CRM único com agentes de IA prontos para escalar sua operação. Task scheduling, automação de posts e gestão completa.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <button className="bg-primary hover:bg-primary-dark text-white text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center">
+                  <Link href="/auth/signup" className="bg-primary hover:bg-primary-dark text-white text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center">
                     Começar 15 dias grátis <ArrowRight className="ml-2 w-5 h-5" />
-                  </button>
+                  </Link>
                   <button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-lg px-8 py-4 rounded-xl font-bold transition">
                     Ver demonstração
                   </button>
