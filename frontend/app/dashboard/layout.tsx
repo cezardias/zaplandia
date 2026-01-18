@@ -24,11 +24,11 @@ export default function DashboardLayout({
     const pathname = usePathname();
 
     const menuItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard />, path: '/dashboard' },
-        { name: 'Omni Inbox', icon: <MessageSquare />, path: '/dashboard/inbox' },
-        { name: 'CRM Contatos', icon: <Users />, path: '/dashboard/crm' },
-        { name: 'Integrações', icon: <Zap />, path: '/dashboard/integrations' },
-        { name: 'Configurações API', icon: <Settings />, path: '/dashboard/settings/api' },
+        { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+        { name: 'Omni Inbox', icon: <MessageSquare size={20} />, path: '/dashboard/inbox' },
+        { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm' },
+        { name: 'Integrações', icon: <Zap size={20} />, path: '/dashboard/integrations' },
+        { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api' },
     ];
 
     return (
@@ -48,11 +48,11 @@ export default function DashboardLayout({
                             key={item.path}
                             href={item.path}
                             className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition font-medium ${pathname === item.path
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
-                            {React.cloneElement(item.icon as React.ReactElement, { className: 'w-5 h-5' })}
+                            {item.icon}
                             <span>{item.name}</span>
                         </Link>
                     ))}
