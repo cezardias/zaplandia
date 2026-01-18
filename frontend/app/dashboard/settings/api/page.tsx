@@ -13,6 +13,7 @@ export default function ApiSettingsPage() {
         fb_app_id: '',
         fb_app_secret: '',
         whatsapp_token: '',
+        gemini_key: '',
     });
 
     const handleSave = async (name: string, value: string) => {
@@ -125,6 +126,34 @@ export default function ApiSettingsPage() {
                         >
                             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             <span>Salvar Token WhatsApp</span>
+                        </button>
+                    </div>
+                </section>
+
+                {/* AI Section */}
+                <section className="bg-surface border border-white/10 rounded-2xl p-6">
+                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-2">
+                        <Zap className="w-5 h-5 text-purple-500" />
+                        <span>Google Gemini AI (Cérebro do Sistema)</span>
+                    </h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Gemini API Key</label>
+                            <input
+                                type="password"
+                                value={keys.gemini_key}
+                                onChange={(e) => setKeys({ ...keys, gemini_key: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-white"
+                                placeholder="Sua chave do Google AI Studio..."
+                            />
+                        </div>
+                        <button
+                            onClick={() => handleSave('GEMINI_API_KEY', keys.gemini_key)}
+                            disabled={isLoading}
+                            className="bg-primary hover:bg-primary-dark px-6 py-2 rounded-lg font-bold transition flex items-center justify-center space-x-2 w-fit ml-auto"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            <span>Salvar Chave AI</span>
                         </button>
                     </div>
                 </section>

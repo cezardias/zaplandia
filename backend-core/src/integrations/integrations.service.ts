@@ -69,4 +69,18 @@ export class IntegrationsService {
         }
         return this.apiCredentialRepository.save(cred);
     }
+
+    async getCredential(tenantId: string, keyName: string): Promise<string | null> {
+        // Try tenant specific key
+        const tenantCred = await this.apiCredentialRepository.findOne({
+            where: { tenantId, key_name: keyName }
+        });
+        if (tenantCred?.key_value) return tenantCred.key_value;
+
+        // Fallback to global key (where tenantId is strictly null)
+        const globalCred = await this.apiCredentialRepository.findOne({
+            where: { tenantId: null as any, key_name: keyName }
+        });
+        return globalCred?.key_value || null;
+    }
 }

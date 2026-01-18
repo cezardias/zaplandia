@@ -44,10 +44,10 @@ export class WebhooksController {
                 this.logger.log(`Message from ${contactInfo?.wa_id}: ${msg.text?.body}`);
 
                 // 2. IA Auto-Reply (If enabled)
-                const aiReply = await this.aiService.getAiResponse(msg.text?.body);
+                const aiReply = await this.aiService.getAiResponse(tenantId, msg.text?.body);
                 this.logger.log(`AI want to reply: ${aiReply}`);
 
-                // 3. TODO: Actually send message back using Meta API
+                // 3. TODO: Actually send message
             }
         } catch (e) {
             this.logger.error('Error processing webhook', e.stack);
