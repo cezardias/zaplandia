@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Save, Key, Shield, Info, AlertCircle } from 'lucide-react';
+import { Save, Key, Shield, Info, AlertCircle, Zap } from 'lucide-react';
 
 export default function ApiSettingsPage() {
     const [keys, setKeys] = useState({
