@@ -45,13 +45,30 @@ export default function OmniInboxPage() {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
                 .then(res => res.json())
-                .then(data => setContacts(data))
+                .then(data => {
+                    if (data.length === 0) {
+                        // Dummy data for demo
+                        setContacts([
+                            { id: 'mock-1', name: 'Suporte Zaplandia', provider: 'whatsapp', lastMessage: 'Olá! Como podemos ajudar?', updatedAt: new Date().toISOString() },
+                            { id: 'mock-2', name: 'Cliente de Teste', provider: 'instagram', lastMessage: 'Gostaria de saber os preços', updatedAt: new Date().toISOString() }
+                        ]);
+                    } else {
+                        setContacts(data);
+                    }
+                })
                 .catch(err => console.error('Erro ao carregar chats:', err));
         }
     }, [token]);
 
     useEffect(() => {
         if (selectedContact && token) {
+            if (selectedContact.id.startsWith('mock-')) {
+                setMessages([
+                    { id: 'm1', content: 'Olá, sou o suporte do Zaplandia.', direction: 'inbound', createdAt: new Date().toISOString() },
+                    { id: 'm2', content: selectedContact.lastMessage || '', direction: 'inbound', createdAt: new Date().toISOString() },
+                ]);
+                return;
+            }
             fetch(`/api/crm/chats/${selectedContact.id}/messages`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
@@ -179,8 +196,8 @@ export default function OmniInboxPage() {
                                     className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
                                 >
                                     <div className={`max-w-[70%] p-4 rounded-2xl text-sm ${msg.direction === 'outbound'
-                                            ? 'bg-primary text-white rounded-br-none'
-                                            : 'bg-surface border border-white/5 text-gray-200 rounded-bl-none'
+                                        ? 'bg-primary text-white rounded-br-none'
+                                        : 'bg-surface border border-white/5 text-gray-200 rounded-bl-none'
                                         }`}>
                                         {msg.content}
                                         <div className={`text-[10px] mt-2 opacity-50 ${msg.direction === 'outbound' ? 'text-right' : 'text-left'}`}>

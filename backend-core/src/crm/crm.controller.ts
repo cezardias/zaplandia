@@ -9,7 +9,7 @@ export class CrmController {
 
     @Get('chats')
     getChats(@Request() req) {
-        return this.crmService.getRecentChats(req.user.tenantId);
+        return this.crmService.getRecentChats(req.user.tenantId, req.user.role);
     }
 
     @Get('chats/:contactId/messages')

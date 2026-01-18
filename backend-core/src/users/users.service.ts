@@ -15,7 +15,11 @@ export class UsersService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        await this.seedSuperAdmin();
+        try {
+            await this.seedSuperAdmin();
+        } catch (e) {
+            console.error('Erro ao inicializar banco de dados/seed:', e);
+        }
     }
 
     async seedSuperAdmin() {

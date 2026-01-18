@@ -10,7 +10,7 @@ export class IntegrationsController {
 
     @Get()
     findAll(@Request() req) {
-        return this.integrationsService.findAllByTenant(req.user.tenantId);
+        return this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
     }
 
     @Post('connect/:provider')

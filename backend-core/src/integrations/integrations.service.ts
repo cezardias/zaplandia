@@ -15,7 +15,10 @@ export class IntegrationsService {
         private apiCredentialRepository: Repository<ApiCredential>,
     ) { }
 
-    async findAllByTenant(tenantId: string) {
+    async findAllByTenant(tenantId: string, role?: string) {
+        if (role === 'superadmin') {
+            return this.integrationRepository.find();
+        }
         return this.integrationRepository.find({ where: { tenantId } });
     }
 

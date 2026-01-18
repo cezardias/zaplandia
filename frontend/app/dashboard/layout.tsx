@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
     BarChart3,
@@ -13,15 +13,22 @@ import {
     ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const { user, logout } = useAuth();
+    const { user, logout, isLoading } = useAuth();
     const pathname = usePathname();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!isLoading && !user) {
+            router.push('/auth/login');
+        }
+    }, [user, isLoading, router]);
 
     const menuItems = [
         { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
@@ -31,8 +38,18 @@ export default function DashboardLayout({
         { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api' },
     ];
 
+    if (isLoading) {
+        return (
+            <div className="h-screen w-screen flex items-center justify-center bg-background">
+                <Zap className="w-12 h-12 text-primary animate-pulse" />
+            </div>
+        );
+    }
+
+    if (!user) return null;
+
     return (
-        <div className="flex h-screen bg-background overflow-hidden">
+        <div className="flex h-screen bg-background overflow-hidden text-white">
             {/* Sidebar */}
             <aside className="w-64 bg-surface border-r border-white/5 flex flex-col">
                 <div className="p-6">
@@ -48,8 +65,8 @@ export default function DashboardLayout({
                             key={item.path}
                             href={item.path}
                             className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition font-medium ${pathname === item.path
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             {item.icon}

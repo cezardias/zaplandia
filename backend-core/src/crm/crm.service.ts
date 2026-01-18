@@ -12,9 +12,10 @@ export class CrmService {
         private messageRepository: Repository<Message>,
     ) { }
 
-    async getRecentChats(tenantId: string) {
+    async getRecentChats(tenantId: string, role?: string) {
+        const where = role === 'superadmin' ? {} : { tenantId };
         return this.contactRepository.find({
-            where: { tenantId },
+            where,
             relations: ['messages'],
             order: { updatedAt: 'DESC' },
             take: 20
