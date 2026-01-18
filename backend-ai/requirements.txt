@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-redis
 pydantic
-openai
+google-generativeai
 python-dotenv
+redis
