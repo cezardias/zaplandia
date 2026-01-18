@@ -35,20 +35,20 @@ export class UsersService implements OnModuleInit {
         }
     }
 
-    async findOneByEmail(email: string): Promise<User | undefined> {
+    async findOneByEmail(email: string): Promise<User | null> {
         return this.usersRepository.findOne({
             where: { email },
-            select: ['id', 'email', 'password', 'name', 'role', 'tenantId']
+            select: ['id', 'email', 'password', 'name', 'role', 'tenantId'] as any
         });
     }
 
     async create(userData: any): Promise<User> {
-        const user = this.usersRepository.create(userData);
+        const user = this.usersRepository.create(userData as object);
         return this.usersRepository.save(user);
     }
 
     async createTenant(tenantData: any): Promise<Tenant> {
-        const tenant = this.tenantsRepository.create(tenantData);
+        const tenant = this.tenantsRepository.create(tenantData as object);
         return this.tenantsRepository.save(tenant);
     }
 }
