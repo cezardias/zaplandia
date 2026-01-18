@@ -1,0 +1,71 @@
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Tenant } from '../../users/entities/tenant.entity';
+
+@Entity('contacts')
+export class Contact {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+
+    @Column({ nullable: true })
+    name: string;
+
+    @Column({ nullable: true })
+    phoneNumber: string;
+
+    @Column({ nullable: true })
+    email: string;
+
+    @Column({ nullable: true })
+    externalId: string; // ID from FB, WhatsApp, etc.
+
+    @Column({ type: 'jsonb', nullable: true })
+    metadata: any; // Stores avatar, social profile links, etc.
+
+    @ManyToOne(() => Tenant)
+    tenant: Tenant;
+
+    @Column()
+    tenantId: string;
+
+    @OneToMany(() => Message, (message) => message.contact)
+    messages: Message[];
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
+}
+
+@Entity('messages')
+export class Message {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+
+    @Column({ type: 'text' })
+    content: string;
+
+    @Column()
+    direction: 'inbound' | 'outbound';
+
+    @Column({ nullable: true })
+    provider: string; // which network it came from
+
+    @Column({ type: 'jsonb', nullable: true })
+    rawPayload: any; // Original API response
+
+    @ManyToOne(() => Contact, (contact) => contact.messages)
+    contact: Contact;
+
+    @Column()
+    contactId: string;
+
+    @ManyToOne(() => Tenant)
+    tenant: Tenant;
+
+    @Column()
+    tenantId: string;
+
+    @CreateDateColumn()
+    createdAt: Date;
+}

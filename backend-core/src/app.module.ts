@@ -2,9 +2,17 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { IntegrationsModule } from './integrations/integrations.module';
+import { CrmModule } from './crm/crm.module';
 
 @Module({
   imports: [
+    AuthModule,
+    UsersModule,
+    IntegrationsModule,
+    CrmModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
