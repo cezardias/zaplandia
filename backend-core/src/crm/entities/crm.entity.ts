@@ -18,6 +18,12 @@ export class Contact {
     @Column({ nullable: true })
     externalId: string; // ID from FB, WhatsApp, etc.
 
+    @Column({ nullable: true })
+    provider: string;
+
+    @Column({ nullable: true })
+    lastMessage: string;
+
     @Column({ type: 'jsonb', nullable: true })
     metadata: any; // Stores avatar, social profile links, etc.
 
