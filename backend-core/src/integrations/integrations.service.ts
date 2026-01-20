@@ -54,10 +54,11 @@ export class IntegrationsService {
 
     // Global and Tenant specific API Credentials
     async saveApiCredential(tenantId: string | null, keyName: string, keyValue: string) {
-        this.logger.log(`Salvando credencial ${keyName} para tenant: ${tenantId || 'GLOBAL'}`);
+        const finalTenantId = tenantId || null;
+        this.logger.log(`Salvando credencial ${keyName} para tenant: ${finalTenantId || 'GLOBAL'}`);
 
         let cred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: tenantId ?? IsNull(), key_name: keyName }
+            where: { tenantId: finalTenantId === null ? IsNull() : finalTenantId, key_name: keyName }
         });
 
         if (cred) {
@@ -65,7 +66,7 @@ export class IntegrationsService {
             this.logger.log(`Atualizando credencial existente ID: ${cred.id}`);
         } else {
             cred = this.apiCredentialRepository.create({
-                tenantId: tenantId ?? (null as any),
+                tenantId: finalTenantId as any,
                 key_name: keyName,
                 key_value: keyValue,
             });

@@ -44,4 +44,40 @@ export class CrmService {
         // 2. TODO: Call target Social API (WhatsApp, Meta, etc)
         return message;
     }
+
+    async seedDemoData(tenantId: string) {
+        // 1. Create 3 contacts
+        const contactsData = [
+            { name: 'Ana Silva', provider: 'whatsapp', externalId: '5511999998888' },
+            { name: 'Bernardo Souza', provider: 'instagram', externalId: 'inst_user_123' },
+            { name: 'Clara Mendes', provider: 'facebook', externalId: 'fb_user_456' },
+        ];
+
+        for (const data of contactsData) {
+            let contact = await this.contactRepository.findOne({ where: { externalId: data.externalId, tenantId } });
+            if (!contact) {
+                contact = this.contactRepository.create({ ...data, tenantId });
+                await this.contactRepository.save(contact);
+            }
+
+            // 2. Add 2 messages per contact
+            const messages = [
+                { content: 'Olá, gostaria de saber mais sobre o Zaplandia!', direction: 'inbound' as const },
+                { content: 'Com certeza, Ana! O Zaplandia é o melhor CRM Omnichannel.', direction: 'outbound' as const },
+            ];
+
+            for (const msgData of messages) {
+                const msg = this.messageRepository.create({
+                    ...msgData,
+                    contactId: contact.id,
+                    tenantId,
+                    provider: contact.provider
+                });
+                await this.messageRepository.save(msg);
+            }
+
+            contact.lastMessage = messages[1].content;
+            await this.contactRepository.save(contact);
+        }
+    }
 }
