@@ -34,6 +34,7 @@ const PROVIDERS = [
     { id: 'tiktok', name: 'TikTok Business', icon: <Smartphone className="w-8 h-8 text-black" />, desc: 'Responda comentários e mensagens do TikTok.' },
     { id: 'linkedin', name: 'LinkedIn', icon: <Linkedin className="w-8 h-8 text-blue-800" />, desc: 'Automação e CRM para vendas B2B.' },
     { id: 'google_sheets', name: 'Google Sheets', icon: <Globe className="w-8 h-8 text-yellow-600" />, desc: 'Sincronize seus leads com planilhas.' },
+    { id: 'n8n', name: 'n8n Automation', icon: <Zap className="w-8 h-8 text-orange-500" />, desc: 'Conecte webhooks para automações com IA.' },
 ];
 
 export default function IntegrationsPage() {

@@ -11,6 +11,7 @@ export enum IntegrationProvider {
     LINKEDIN = 'linkedin',
     GOOGLE_DRIVE = 'google_drive',
     GOOGLE_SHEETS = 'google_sheets',
+    N8N = 'n8n',
 }
 
 export enum IntegrationStatus {
