@@ -23,9 +23,44 @@ export default function ApiSettingsPage() {
     // Fetch existing keys on load
     useEffect(() => {
         if (token) {
-            // TODO: Implement fetch current keys from backend to populate inputs
+            fetchExistingKeys();
         }
     }, [token]);
+
+    const fetchExistingKeys = async () => {
+        try {
+            const res = await fetch('/api/integrations/credentials', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const newKeys = { ...keys };
+                data.forEach((item: any) => {
+                    if (item.key_name === 'META_APP_CONFIG') {
+                        try {
+                            const parsed = JSON.parse(item.key_value);
+                            newKeys.fb_app_id = parsed.appId || '';
+                            newKeys.fb_app_secret = parsed.secret || '';
+                        } catch (e) { }
+                    }
+                    if (item.key_name === 'WHATSAPP_TOKEN') newKeys.whatsapp_token = item.key_value;
+                    if (item.key_name === 'GEMINI_API_KEY') newKeys.gemini_key = item.key_value;
+                    if (item.key_name === 'TELEGRAM_TOKEN') newKeys.telegram_token = item.key_value;
+                    if (item.key_name === 'YOUTUBE_API_KEY') newKeys.youtube_api_key = item.key_value;
+                    if (item.key_name === 'LINKEDIN_CONFIG') {
+                        try {
+                            const parsed = JSON.parse(item.key_value);
+                            newKeys.linkedin_client_id = parsed.clientId || '';
+                            newKeys.linkedin_client_secret = parsed.secret || '';
+                        } catch (e) { }
+                    }
+                });
+                setKeys(newKeys);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar chaves:', err);
+        }
+    };
 
     const handleSave = async (name: string, value: string) => {
         if (!value.trim()) {
@@ -51,6 +86,9 @@ export default function ApiSettingsPage() {
             }
 
             setStatus({ type: 'success', msg: `Configuração ${name} salva com sucesso!` });
+
+            // Re-fetch to confirm
+            fetchExistingKeys();
         } catch (err: any) {
             setStatus({ type: 'error', msg: err.message });
         } finally {
@@ -78,7 +116,7 @@ export default function ApiSettingsPage() {
                 </div>
             )}
 
-            <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex items-start space-x-3 mb-8">
+            <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex items-start space-x-3 mb-8 shadow-inner">
                 <Info className="w-6 h-6 text-primary shrink-0" />
                 <p className="text-sm">
                     <strong>Dica:</strong> Como Super Admin, as chaves que você salvar sem selecionar um tenant serão usadas como <strong>Globais</strong> (Fallback) para todo o sistema.
@@ -100,7 +138,7 @@ export default function ApiSettingsPage() {
                                     type="text"
                                     value={keys.fb_app_id}
                                     onChange={(e) => setKeys({ ...keys, fb_app_id: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="Ex: 1234567890"
                                 />
                             </div>
@@ -110,7 +148,7 @@ export default function ApiSettingsPage() {
                                     type="password"
                                     value={keys.fb_app_secret}
                                     onChange={(e) => setKeys({ ...keys, fb_app_secret: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="••••••••••••"
                                 />
                             </div>
@@ -129,7 +167,7 @@ export default function ApiSettingsPage() {
                             <textarea
                                 value={keys.whatsapp_token}
                                 onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition h-20 text-sm"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition h-20 text-sm text-white"
                                 placeholder="EAAW..."
                             />
                             <button
@@ -157,7 +195,7 @@ export default function ApiSettingsPage() {
                                 type="password"
                                 value={keys.gemini_key}
                                 onChange={(e) => setKeys({ ...keys, gemini_key: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="AIza..."
                             />
                         </div>
@@ -185,7 +223,7 @@ export default function ApiSettingsPage() {
                                 type="text"
                                 value={keys.telegram_token}
                                 onChange={(e) => setKeys({ ...keys, telegram_token: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="123456:ABC-DEF..."
                             />
                         </div>
@@ -213,7 +251,7 @@ export default function ApiSettingsPage() {
                                 type="password"
                                 value={keys.youtube_api_key}
                                 onChange={(e) => setKeys({ ...keys, youtube_api_key: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="AIza..."
                             />
                         </div>
@@ -242,7 +280,7 @@ export default function ApiSettingsPage() {
                                     type="text"
                                     value={keys.linkedin_client_id}
                                     onChange={(e) => setKeys({ ...keys, linkedin_client_id: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 />
                             </div>
                             <div>
@@ -251,7 +289,7 @@ export default function ApiSettingsPage() {
                                     type="password"
                                     value={keys.linkedin_client_secret}
                                     onChange={(e) => setKeys({ ...keys, linkedin_client_secret: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 />
                             </div>
                         </div>

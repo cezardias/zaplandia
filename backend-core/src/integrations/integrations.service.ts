@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Integration, IntegrationProvider, IntegrationStatus } from './entities/integration.entity';
 import { ApiCredential } from './entities/api-credential.entity';
 
@@ -54,20 +54,26 @@ export class IntegrationsService {
 
     // Global and Tenant specific API Credentials
     async saveApiCredential(tenantId: string | null, keyName: string, keyValue: string) {
+        this.logger.log(`Salvando credencial ${keyName} para tenant: ${tenantId || 'GLOBAL'}`);
+
         let cred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: tenantId ?? undefined, key_name: keyName }
+            where: { tenantId: tenantId ?? IsNull(), key_name: keyName }
         });
 
         if (cred) {
             cred.key_value = keyValue;
+            this.logger.log(`Atualizando credencial existente ID: ${cred.id}`);
         } else {
             cred = this.apiCredentialRepository.create({
-                tenantId: tenantId ?? undefined,
+                tenantId: tenantId ?? (null as any),
                 key_name: keyName,
                 key_value: keyValue,
             });
+            this.logger.log(`Criando nova credencial`);
         }
-        return this.apiCredentialRepository.save(cred);
+        const saved = await this.apiCredentialRepository.save(cred);
+        this.logger.log(`Credencial salva com sucesso! ID: ${saved.id}`);
+        return saved;
     }
 
     async getCredential(tenantId: string, keyName: string): Promise<string | null> {
@@ -77,10 +83,16 @@ export class IntegrationsService {
         });
         if (tenantCred?.key_value) return tenantCred.key_value;
 
-        // Fallback to global key (where tenantId is strictly null)
+        // Fallback to global key (where tenantId is strictly IsNull)
         const globalCred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: null as any, key_name: keyName }
+            where: { tenantId: IsNull(), key_name: keyName }
         });
         return globalCred?.key_value || null;
+    }
+
+    async findAllCredentials(tenantId: string | null) {
+        return this.apiCredentialRepository.find({
+            where: { tenantId: tenantId ?? IsNull() }
+        });
     }
 }

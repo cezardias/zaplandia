@@ -28,6 +28,11 @@ export class IntegrationsController {
         return this.integrationsService.saveApiCredential(req.user.tenantId, body.name, body.value);
     }
 
+    @Get('credentials')
+    getCredentials(@Request() req) {
+        return this.integrationsService.findAllCredentials(req.user.tenantId);
+    }
+
     @Delete(':id')
     remove(@Request() req, @Param('id') id: string) {
         return this.integrationsService.remove(id, req.user.tenantId);
