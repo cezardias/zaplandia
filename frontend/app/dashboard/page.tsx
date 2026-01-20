@@ -41,12 +41,17 @@ export default function DashboardPage() {
             const res = await fetch('/api/dashboard/stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            console.log('Stats Response Status:', res.status);
+            if (res.status === 401) router.push('/auth/login');
             if (res.ok) {
                 const data = await res.json();
                 setRealStats(data);
+            } else {
+                const errorText = await res.text();
+                console.error('Erro ao buscar stats:', errorText);
             }
         } catch (err) {
-            console.error('Erro ao buscar stats do dashboard:', err);
+            console.error('Erro de conexão ao buscar stats:', err);
         } finally {
             setIsLoading(false);
         }
@@ -57,6 +62,7 @@ export default function DashboardPage() {
             const res = await fetch('/api/dashboard/activity', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            console.log('Activity Response Status:', res.status);
             if (res.ok) {
                 const data = await res.json();
                 setActivity(data);

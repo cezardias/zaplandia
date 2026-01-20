@@ -51,11 +51,15 @@ export default function IntegrationsPage() {
 
     const fetchIntegrations = async () => {
         try {
+            console.log('Buscando integrações...');
             const res = await fetch('/api/integrations', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            console.log('Integrations Status:', res.status);
+            if (res.status === 401) router.push('/auth/login');
             if (res.ok) {
                 const data = await res.json();
+                console.log('Integrações recebidas:', data);
                 setIntegrations(data);
             }
         } catch (err) {
