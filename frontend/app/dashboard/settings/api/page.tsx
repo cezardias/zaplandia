@@ -18,6 +18,7 @@ export default function ApiSettingsPage() {
         youtube_api_key: '',
         linkedin_client_id: '',
         linkedin_client_secret: '',
+        n8n_webhook_url: '',
     });
 
     // Fetch existing keys on load
@@ -54,6 +55,7 @@ export default function ApiSettingsPage() {
                             newKeys.linkedin_client_secret = parsed.secret || '';
                         } catch (e) { }
                     }
+                    if (item.key_name === 'N8N_WEBHOOK_URL') newKeys.n8n_webhook_url = item.key_value;
                 });
                 setKeys(newKeys);
             }
@@ -300,6 +302,37 @@ export default function ApiSettingsPage() {
                         >
                             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             <span>Salvar Configuração LinkedIn</span>
+                        </button>
+                    </div>
+                </section>
+
+                {/* n8n Automation Section */}
+                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                        <Zap className="w-6 h-6 text-orange-500" />
+                        <span>Automação n8n (Webhook)</span>
+                    </h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">n8n Webhook URL</label>
+                            <input
+                                type="text"
+                                value={keys.n8n_webhook_url}
+                                onChange={(e) => setKeys({ ...keys, n8n_webhook_url: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="https://n8n.seudominio.com/webhook/..."
+                            />
+                            <p className="mt-2 text-xs text-gray-400">
+                                Novas mensagens recebidas serão enviadas para este webhook para processamento com IA.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => handleSave('N8N_WEBHOOK_URL', keys.n8n_webhook_url)}
+                            disabled={isLoading}
+                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            <span>Salvar Webhook n8n</span>
                         </button>
                     </div>
                 </section>

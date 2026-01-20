@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact, Message } from './entities/crm.entity';
+import { N8nService } from '../integrations/n8n.service';
 
 @Injectable()
 export class CrmService {
@@ -10,6 +11,7 @@ export class CrmService {
         private contactRepository: Repository<Contact>,
         @InjectRepository(Message)
         private messageRepository: Repository<Message>,
+        private readonly n8nService: N8nService,
     ) { }
 
     async getRecentChats(tenantId: string, role?: string) {
@@ -41,7 +43,19 @@ export class CrmService {
 
         await this.messageRepository.save(message);
 
-        // 2. TODO: Call target Social API (WhatsApp, Meta, etc)
+        // 2. Trigger n8n Webhook for automation
+        await this.n8nService.triggerWebhook(tenantId, {
+            type: 'message.new',
+            message: {
+                id: message.id,
+                content: message.content,
+                direction: message.direction,
+                provider: message.provider,
+                contactId: message.contactId
+            }
+        });
+
+        // 3. TODO: Call target Social API (WhatsApp, Meta, etc)
         return message;
     }
 

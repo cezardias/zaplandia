@@ -12,8 +12,11 @@ import {
     Facebook,
     Zap,
     MessageCircle,
-    Clock
+    Clock,
+    Database,
+    Loader2
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface Contact {
     id: string;
@@ -37,43 +40,65 @@ export default function OmniInboxPage() {
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
-    const { token } = useAuth();
+    const [isLoading, setIsLoading] = useState(true);
+    const { user, token } = useAuth();
+    const router = useRouter();
+
+    const fetchChats = async () => {
+        if (!token) return;
+        try {
+            console.log('Buscando chats...');
+            const res = await fetch('/api/crm/chats', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            console.log('Chats Status:', res.status);
+            if (res.status === 401) router.push('/auth/login');
+            if (res.ok) {
+                const data = await res.json();
+                console.log('Chats recebidos:', data);
+                setContacts(data);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar chats:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        if (token) {
-            fetch('/api/crm/chats', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.length === 0) {
-                        // Dummy data for demo
-                        setContacts([
-                            { id: 'mock-1', name: 'Suporte Zaplandia', provider: 'whatsapp', lastMessage: 'Olá! Como podemos ajudar?', updatedAt: new Date().toISOString() },
-                            { id: 'mock-2', name: 'Cliente de Teste', provider: 'instagram', lastMessage: 'Gostaria de saber os preços', updatedAt: new Date().toISOString() }
-                        ]);
-                    } else {
-                        setContacts(data);
-                    }
-                })
-                .catch(err => console.error('Erro ao carregar chats:', err));
-        }
+        fetchChats();
     }, [token]);
+
+    const handleSeed = async () => {
+        if (!confirm('Gerar dados de demonstração para o Inbox?')) return;
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/admin/seed', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                alert('Dados gerados! Recarregando...');
+                fetchChats();
+            }
+        } catch (err) {
+            alert('Erro ao gerar dados.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (selectedContact && token) {
-            if (selectedContact.id.startsWith('mock-')) {
-                setMessages([
-                    { id: 'm1', content: 'Olá, sou o suporte do Zaplandia.', direction: 'inbound', createdAt: new Date().toISOString() },
-                    { id: 'm2', content: selectedContact.lastMessage || '', direction: 'inbound', createdAt: new Date().toISOString() },
-                ]);
-                return;
-            }
+            console.log(`Buscando mensagens do contato: ${selectedContact.id}`);
             fetch(`/api/crm/chats/${selectedContact.id}/messages`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
                 .then(res => res.json())
-                .then(data => setMessages(data))
+                .then(data => {
+                    console.log('Mensagens recebidas:', data);
+                    setMessages(data);
+                })
                 .catch(err => console.error('Erro ao carregar mensagens:', err));
         }
     }, [selectedContact, token]);
@@ -130,10 +155,24 @@ export default function OmniInboxPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                    {contacts.length === 0 ? (
-                        <div className="p-8 text-center text-gray-500 text-sm">
-                            <Clock className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                            Nenhuma conversa encontrada.
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-40">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary opacity-20" />
+                        </div>
+                    ) : contacts.length === 0 ? (
+                        <div className="p-8 text-center">
+                            <Clock className="w-12 h-12 mx-auto mb-4 opacity-10 text-gray-500" />
+                            <p className="text-gray-500 text-sm mb-6">Nenhuma conversa encontrada na conta atual.</p>
+
+                            {user?.role === 'superadmin' && (
+                                <button
+                                    onClick={handleSeed}
+                                    className="w-full flex items-center justify-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 py-3 rounded-xl transition font-bold text-xs uppercase tracking-widest"
+                                >
+                                    <Database className="w-4 h-4" />
+                                    <span>Gerar Dados de Teste</span>
+                                </button>
+                            )}
                         </div>
                     ) : (
                         contacts.map((contact) => (
