@@ -129,7 +129,13 @@ export default function IntegrationsPage() {
                                 <div className="flex space-x-2">
                                     {isConnected ? (
                                         <>
-                                            <button className="flex-1 bg-white/5 hover:bg-white/10 text-sm py-2 rounded-lg transition font-medium">Configurar</button>
+                                            <button
+                                                onClick={() => window.location.href = '/dashboard/settings/api'}
+                                                className="flex-1 bg-white/5 hover:bg-white/10 text-sm py-2 rounded-lg transition font-medium flex items-center justify-center space-x-2"
+                                            >
+                                                <Settings className="w-4 h-4" />
+                                                <span>Configurar</span>
+                                            </button>
                                             <button
                                                 onClick={() => handleDisconnect(integration.id)}
                                                 className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-sm py-2 rounded-lg transition font-medium"

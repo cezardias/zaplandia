@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { CrmModule } from './crm/crm.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     IntegrationsModule,
     CrmModule,
     WebhooksModule,
+    DashboardModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'postgres',
