@@ -3,9 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Contact, Message } from './entities/crm.entity';
 import { CrmService } from './crm.service';
 import { CrmController } from './crm.controller';
+import { IntegrationsModule } from '../integrations/integrations.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Contact, Message])],
+    imports: [
+        TypeOrmModule.forFeature([Contact, Message]),
+        IntegrationsModule
+    ],
     controllers: [CrmController],
     providers: [CrmService],
     exports: [CrmService],
