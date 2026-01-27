@@ -19,6 +19,11 @@ export default function ApiSettingsPage() {
         linkedin_client_id: '',
         linkedin_client_secret: '',
         n8n_webhook_url: '',
+        meta_page_access_token: '',
+        meta_instagram_business_id: '',
+        meta_verify_token: 'zaplandia_verify_token',
+        whatsapp_phone_number_id: '',
+        whatsapp_business_account_id: '',
     });
 
     // Fetch existing keys on load
@@ -42,6 +47,11 @@ export default function ApiSettingsPage() {
                             const parsed = JSON.parse(item.key_value);
                             newKeys.fb_app_id = parsed.appId || '';
                             newKeys.fb_app_secret = parsed.secret || '';
+                            newKeys.meta_page_access_token = parsed.pageAccessToken || '';
+                            newKeys.meta_instagram_business_id = parsed.instagramBusinessId || '';
+                            newKeys.meta_verify_token = parsed.verifyToken || 'zaplandia_verify_token';
+                            newKeys.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
+                            newKeys.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
                         } catch (e) { }
                     }
                     if (item.key_name === 'WHATSAPP_TOKEN') newKeys.whatsapp_token = item.key_value;
@@ -155,32 +165,102 @@ export default function ApiSettingsPage() {
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Page Access Token</label>
+                            <textarea
+                                value={keys.meta_page_access_token}
+                                onChange={(e) => setKeys({ ...keys, meta_page_access_token: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white h-24"
+                                placeholder="EAAB..."
+                            />
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Instagram Business ID</label>
+                                <input
+                                    type="text"
+                                    value={keys.meta_instagram_business_id}
+                                    onChange={(e) => setKeys({ ...keys, meta_instagram_business_id: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                    placeholder="Ex: 17841400..."
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Webhook Verify Token</label>
+                                <input
+                                    type="text"
+                                    value={keys.meta_verify_token}
+                                    onChange={(e) => setKeys({ ...keys, meta_verify_token: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white font-mono"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Phone Number ID</label>
+                            <input
+                                type="text"
+                                value={keys.whatsapp_phone_number_id}
+                                onChange={(e) => setKeys({ ...keys, whatsapp_phone_number_id: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="Ex: 106545123456789"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Business Account ID</label>
+                            <input
+                                type="text"
+                                value={keys.whatsapp_business_account_id}
+                                onChange={(e) => setKeys({ ...keys, whatsapp_business_account_id: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="Ex: 104545123456789"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="mt-8 flex items-center justify-between">
+                        <div className="text-xs text-gray-500 max-w-sm">
+                            Estas configurações são fundamentais para o funcionamento da API oficial do WhatsApp Cloud e Instagram.
+                        </div>
                         <button
-                            onClick={() => handleSave('META_APP_CONFIG', JSON.stringify({ appId: keys.fb_app_id, secret: keys.fb_app_secret }))}
+                            onClick={() => handleSave('META_APP_CONFIG', JSON.stringify({
+                                appId: keys.fb_app_id,
+                                secret: keys.fb_app_secret,
+                                pageAccessToken: keys.meta_page_access_token,
+                                instagramBusinessId: keys.meta_instagram_business_id,
+                                verifyToken: keys.meta_verify_token,
+                                whatsappPhoneNumberId: keys.whatsapp_phone_number_id,
+                                whatsappBusinessAccountId: keys.whatsapp_business_account_id
+                            }))}
                             disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit shadow-lg shadow-primary/20"
                         >
                             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Configuração Meta</span>
+                            <span>Salvar Configuração Meta/Instagram</span>
                         </button>
+                    </div>
 
-                        <div className="pt-4 border-t border-white/5">
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Permanent Token</label>
-                            <textarea
-                                value={keys.whatsapp_token}
-                                onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition h-20 text-sm text-white"
-                                placeholder="EAAW..."
-                            />
-                            <button
-                                onClick={() => handleSave('WHATSAPP_TOKEN', keys.whatsapp_token)}
-                                disabled={isLoading}
-                                className="mt-4 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto"
-                            >
-                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                <span>Salvar Token WhatsApp</span>
-                            </button>
-                        </div>
+                    <div className="pt-8 mt-8 border-t border-white/5">
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Permanent Token (System User)</label>
+                        <textarea
+                            value={keys.whatsapp_token}
+                            onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition h-20 text-sm text-white"
+                            placeholder="EAAW..."
+                        />
+                        <button
+                            onClick={() => handleSave('WHATSAPP_TOKEN', keys.whatsapp_token)}
+                            disabled={isLoading}
+                            className="mt-4 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            <span>Salvar Token WhatsApp</span>
+                        </button>
                     </div>
                 </section>
 
@@ -336,7 +416,7 @@ export default function ApiSettingsPage() {
                         </button>
                     </div>
                 </section>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

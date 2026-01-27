@@ -97,12 +97,17 @@ export default function LandingPage() {
                   Integre todas as suas redes sociais em um CRM único com agentes de IA prontos para escalar sua operação. Task scheduling, automação de posts e gestão completa.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <Link href="/auth/signup" className="bg-primary hover:bg-primary-dark text-white text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center">
+                  <Link href="/auth/signup" className="bg-primary hover:bg-primary-dark text-white text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center shadow-lg shadow-primary/25">
                     Começar 15 dias grátis <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
-                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-lg px-8 py-4 rounded-xl font-bold transition">
-                    Ver demonstração
-                  </button>
+                  <a
+                    href="https://wa.me/5561999594493?text=Olá! Vim pelo site e gostaria de contratar o Zaplandia."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-[#25D366] hover:bg-[#20ba59] text-white text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center shadow-lg shadow-green-500/20"
+                  >
+                    Falar com Consultor <MessageSquare className="ml-2 w-5 h-5" />
+                  </a>
                 </div>
               </motion.div>
             </div>
@@ -158,6 +163,29 @@ export default function LandingPage() {
                   </ul>
                 </motion.div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA Section */}
+        <section className="py-20 bg-gradient-to-b from-transparent to-primary/10">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-4xl font-bold mb-6">Pronto para escalar sua operação?</h2>
+            <p className="text-xl text-gray-400 mb-10">
+              Junte-se a centenas de empresas que já automatizaram seus resultados com o Zaplandia.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-6">
+              <Link href="/auth/signup" className="bg-primary hover:bg-primary-dark text-white text-xl px-12 py-5 rounded-2xl font-bold transition shadow-xl shadow-primary/30">
+                Contratar Agora
+              </Link>
+              <a
+                href="https://wa.me/5561999594493?text=Olá! Quero tirar algumas dúvidas sobre os planos do Zaplandia."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xl px-12 py-5 rounded-2xl font-bold transition"
+              >
+                Falar no WhatsApp
+              </a>
             </div>
           </div>
         </section>
