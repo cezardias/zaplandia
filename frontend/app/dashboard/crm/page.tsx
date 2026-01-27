@@ -17,7 +17,9 @@ import {
     Instagram,
     Facebook,
     ShoppingBag,
-    Store
+    Store,
+    BarChart2,
+    HelpCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -110,6 +112,20 @@ export default function CrmPage() {
                             <span>Gerar Dados</span>
                         </button>
                     )}
+                    <button
+                        onClick={() => router.push('/dashboard/crm/campaigns')}
+                        className="flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2.5 rounded-xl transition font-bold border border-primary/20"
+                    >
+                        <BarChart2 className="w-4 h-4" />
+                        <span>Campanhas</span>
+                    </button>
+                    <button
+                        onClick={() => router.push('/dashboard/support')}
+                        className="flex items-center space-x-2 bg-surface hover:bg-white/5 text-gray-400 px-4 py-2.5 rounded-xl transition font-bold border border-white/5"
+                    >
+                        <HelpCircle className="w-4 h-4" />
+                        <span>Suporte</span>
+                    </button>
                     <button className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center space-x-2 shadow-lg shadow-primary/20">
                         <UserPlus className="w-4 h-4" />
                         <span>Novo Contato</span>

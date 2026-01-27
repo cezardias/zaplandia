@@ -10,7 +10,8 @@ import {
     Settings,
     LogOut,
     LayoutDashboard,
-    ShieldCheck
+    ShieldCheck,
+    HelpCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -36,6 +37,7 @@ export default function DashboardLayout({
         { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm' },
         { name: 'Integrações', icon: <Zap size={20} />, path: '/dashboard/integrations' },
         { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api' },
+        { name: 'Central de Ajuda', icon: <HelpCircle size={20} />, path: '/dashboard/support' },
     ];
 
     if (isLoading) {
@@ -65,8 +67,8 @@ export default function DashboardLayout({
                             key={item.path}
                             href={item.path}
                             className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition font-medium ${pathname === item.path
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             {item.icon}
