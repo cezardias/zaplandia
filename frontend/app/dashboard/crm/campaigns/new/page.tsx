@@ -85,10 +85,15 @@ export default function NewCampaignPage() {
             });
 
             if (res.ok) {
+                alert('Campanha criada com sucesso!');
                 router.push('/dashboard/crm/campaigns');
+            } else {
+                const errorData = await res.json();
+                alert(`Erro ao criar campanha: ${errorData.message || 'Erro desconhecido'}`);
             }
         } catch (err) {
             console.error('Erro ao criar campanha:', err);
+            alert('Falha na conexão com o servidor.');
         } finally {
             setIsLoading(false);
         }
