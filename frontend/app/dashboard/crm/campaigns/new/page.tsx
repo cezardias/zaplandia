@@ -130,7 +130,11 @@ export default function NewCampaignPage() {
                         <input
                             type="text"
                             value={formData.name}
-                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            onChange={e => {
+                                const val = e.target.value;
+                                setFormData(prev => ({ ...prev, name: val }));
+                                console.log('Name updated:', val);
+                            }}
                             placeholder="Ex: Lançamento de Inverno 2026"
                             className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-lg focus:border-primary outline-none transition mt-4"
                         />
