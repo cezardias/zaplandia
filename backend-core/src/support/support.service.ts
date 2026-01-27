@@ -1,14 +1,20 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { SupportArticle } from './entities/support-article.entity';
 
 @Injectable()
-export class SupportService {
+export class SupportService implements OnModuleInit {
+    private readonly logger = new Logger(SupportService.name);
+
     constructor(
         @InjectRepository(SupportArticle)
         private articleRepository: Repository<SupportArticle>,
     ) { }
+
+    async onModuleInit() {
+        await this.seedInitialArticles();
+    }
 
     async findAll(query?: string, category?: string) {
         const where: any = {};
@@ -43,60 +49,92 @@ export class SupportService {
     }
 
     async seedInitialArticles() {
+        this.logger.log('Seeding initial support articles...');
         const articles = [
             {
-                title: 'WhatsApp Oficial: Configuração e Chaves API',
+                title: 'WhatsApp Oficial: Configuração Completa e Disparos',
                 category: 'WhatsApp',
-                content: `Para configurar o WhatsApp Cloud API oficial:
-- Acesse o portal Meta for Developers e crie um App 'Business'.
-- Obtenha o Phone Number ID e o WhatsApp Business Account ID.
-- Gere um Token de Acesso Permanente.
-- No Zaplandia, insira as chaves em Configurações > WhatsApp para liberar o disparo de campanhas.`,
+                content: `Guia definitivo para WhatsApp Cloud API (Oficial):
+
+1. **Meta for Developers**:
+   - Crie um App do tipo "Business".
+   - Adicione o produto "WhatsApp".
+   - Vá em "Configuração" e pegue o **WhatsApp Business Account ID** e o **Phone Number ID**.
+
+2. **Segurança e Tokens**:
+   - No Gerenciador de Negócios (Business Manager), crie um "Usuário do Sistema".
+   - Atribua as permissões \`whatsapp_business_messaging\` e \`whatsapp_business_management\`.
+   - Gere um **Token Permanente**.
+
+3. **Configuração no Zaplandia**:
+   - Acesse **Configurações API > WhatsApp**.
+   - Insira os IDs e o Token gerado.
+   - Sua conta está pronta para disparar campanhas no CRM.`,
             },
             {
-                title: 'Facebook e Instagram: Como conectar e responder no Omni Inbox',
+                title: 'FAQ: Como responder Facebook e Instagram no Omni Inbox',
                 category: 'Meta',
-                content: `Para gerenciar Facebook e Instagram no Omni Inbox:
-- Verifique se o Instagram é conta empresarial vinculada a uma página.
-- Ative as permissões de mensagens na Meta.
-- No Zaplandia, conecte o canal para centralizar as conversas.
-- Agora você pode responder chats e comentários de ambas as redes em uma única tela.`,
+                content: `Atendimento centralizado para redes sociais:
+
+- **Configuração**: Garante que sua conta do Instagram seja do tipo Empresarial e esteja vinculada a uma Página do Facebook que você administra.
+- **Permissões**: Ao conectar no Zaplandia, conceda permissão para acessar mensagens da página e directs do Instagram.
+- **Uso no Omni Inbox**: 
+  - Todas as conversas aparecem em uma fila única.
+  - O ícone ao lado do nome do contato indica se a mensagem veio do Instagram ou Facebook.
+  - Você pode enviar textos, emojis e imagens diretamente pelo painel.
+- **Agente de IA**: A IA pode responder automaticamente comentários em posts e mensagens privadas, conforme configurado na aba de Canais.`,
             },
             {
-                title: 'Mercado Livre: Gerenciando Vendas e Perguntas',
+                title: 'Integração Mercado Livre: Perguntas e Vendas',
                 category: 'Mercado Livre',
-                content: `Integração completa com Mercado Livre:
-- Use o seu Client ID e Client Secret para vincular sua conta.
-- Receba notificações de novas vendas e perguntas em tempo real.
-- Responda compradores diretamente pelo Zaplandia para agilizar seu atendimento.`,
+                content: `Gerencie seu e-commerce sem sair do Zaplandia:
+
+- **App ID e Client Secret**: Obtenha essas chaves no portal de desenvolvedores do Mercado Livre (Dev Center).
+- **Callback URL**: Use a URL fornecida na tela de configuração do Zaplandia para o Redirect URI.
+- **Vantagens**:
+  - Responda perguntas de anúncios em segundos.
+  - Receba notificações de vendas concluídas.
+  - Centralize o suporte pós-venda no Omni Inbox.
+- **IA**: Configure a IA para sugerir respostas baseadas nas características dos seus produtos.`,
             },
             {
-                title: 'OLX: Chat e Integração de Anúncios',
+                title: 'OLX: Chat e Propostas Automatizadas',
                 category: 'OLX',
-                content: `Gerencie seus leads da OLX:
-- Conecte sua conta OLX usando as credenciais de desenvolvedor.
-- Receba mensagens de interessados nos seus anúncios diretamente no nosso painel.
-- Use a IA para responder dúvidas frequentes sobre preços e disponibilidade.`,
+                content: `Integre seus anúncios da OLX:
+
+- **Credenciais**: Insira seu Client ID e Client Secret de desenvolvedor OLX.
+- **Atendimento**: Os chats dos seus anúncios aparecem no Omni Inbox do Zaplandia.
+- **IA**: Deixe o Agente de IA tratar as primeiras perguntas sobre disponibilidade ("Ainda está disponível?") e propostas de valor, filtrando apenas os leads realmente interessados para o seu time humano.`,
             },
             {
-                title: 'YouTube: API Key e Captação de Leads',
+                title: 'YouTube: Captação de Leads via Comentários',
                 category: 'YouTube',
-                content: `Transforme comentários do YouTube em vendas:
-- Configure sua API Key do Google Cloud Console.
-- O Zaplandia monitora comentários em seus vídeos.
-- Leads interessados são automaticamente adicionados ao seu CRM para follow-up.`,
+                content: `Venda mais através dos seus vídeos:
+
+- **Google Cloud Console**: Ative a YouTube Data API v3 e gere sua API Key.
+- **Monitoramento**: O Zaplandia escaneia os comentários dos seus vídeos em busca de palavras-chave de interesse ou dúvidas.
+- **CRM**: Contatos que comentam em seus vídeos são capturados e adicionados automaticamente ao CRM para que você possa iniciar uma conversa via WhatsApp ou Direct.`,
+            },
+            {
+                title: 'Manual Geral: IA e Automação de Conversas',
+                category: 'IA',
+                content: `Como a IA do Zaplandia funciona:
+
+- **Personalidade**: Defina como a IA deve falar (formal, amigável, técnico).
+- **Base de Conhecimento**: A IA lê seus manuais e informações da empresa para responder dúvidas dos clientes.
+- **Transferência**: Se a IA não souber responder ou o cliente pedir falar com humano, a conversa é marcada como prioritária no Omni Inbox.`,
             }
         ];
 
         for (const article of articles) {
             const existing = await this.articleRepository.findOne({ where: { title: article.title } });
             if (existing) {
-                // Update content if it exists to ensure the user gets latest version
                 Object.assign(existing, article);
                 await this.articleRepository.save(existing);
             } else {
                 await this.create(article);
             }
         }
+        this.logger.log('Seeding completed.');
     }
 }
