@@ -13,7 +13,11 @@ export class SupportService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        await this.seedInitialArticles();
+        try {
+            await this.seedInitialArticles();
+        } catch (error) {
+            this.logger.error('Failed to auto-seed support articles:', error.message);
+        }
     }
 
     async findAll(query?: string, category?: string) {

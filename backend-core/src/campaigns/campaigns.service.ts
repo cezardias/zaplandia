@@ -36,7 +36,7 @@ export class CampaignsService {
             };
 
             const campaign = this.campaignRepository.create(campaignData);
-            const saved = await this.campaignRepository.save(campaign);
+            const saved = await this.campaignRepository.save(campaign) as unknown as Campaign;
             const campaignId = saved.id;
 
             // If leads are provided (from JSON upload), save them
