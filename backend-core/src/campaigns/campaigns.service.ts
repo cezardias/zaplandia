@@ -25,35 +25,26 @@ export class CampaignsService {
     }
 
     async create(tenantId: string, data: any) {
-        const campaign = this.campaignRepository.create({
-            ...data,
-            tenantId,
-        });
-        const saved = await this.campaignRepository.save(campaign) as unknown as Campaign;
+        try {
+            // Sanitize data to only include valid entity fields
+            const campaignData = {
+                name: data.name,
+                channels: data.channels,
+                messageTemplate: data.messageTemplate,
+                status: CampaignStatus.PENDING,
+                tenantId,
+            };
 
-        // If leads are provided (from JSON upload), save them
-        if (data.leads && Array.isArray(data.leads)) {
-            const leads = data.leads.map(l => this.leadRepository.create({
-                name: l.name || 'Contato',
-                externalId: String(l.externalId || l.phoneNumber || ''),
-                campaignId: saved.id,
-                status: LeadStatus.PENDING
-            }));
+            const campaign = this.campaignRepository.create(campaignData);
+            const saved = await this.campaignRepository.save(campaign);
+            const campaignId = saved.id;
 
-            // Bulk save in chunks
-            const chunkSize = 500;
-            for (let i = 0; i < leads.length; i += chunkSize) {
-                await this.leadRepository.save(leads.slice(i, i + chunkSize));
-            }
-            this.logger.log(`Created ${leads.length} leads for campaign ${saved.id}`);
-        } else if (data.useExistingContacts) {
-            // Logic to pull contacts from CRM and create leads
-            const contacts = await this.crmService.findAllByTenant(tenantId);
-            if (contacts.length > 0) {
-                const leads = contacts.map(c => this.leadRepository.create({
-                    name: c.name || 'Contato',
-                    externalId: c.externalId || c.phoneNumber || '',
-                    campaignId: saved.id,
+            // If leads are provided (from JSON upload), save them
+            if (data.leads && Array.isArray(data.leads)) {
+                const leads = data.leads.map(l => this.leadRepository.create({
+                    name: l.name || 'Contato',
+                    externalId: String(l.externalId || l.phoneNumber || ''),
+                    campaignId: campaignId,
                     status: LeadStatus.PENDING
                 }));
 
@@ -61,11 +52,38 @@ export class CampaignsService {
                 for (let i = 0; i < leads.length; i += chunkSize) {
                     await this.leadRepository.save(leads.slice(i, i + chunkSize));
                 }
-                this.logger.log(`Created ${leads.length} leads from contacts for campaign ${saved.id}`);
-            }
-        }
+                this.logger.log(`Created ${leads.length} leads for campaign ${campaignId}`);
+            } else if (data.useExistingContacts) {
+                // Logic to pull contacts from CRM and create leads
+                const contacts = await this.crmService.findAllByTenant(tenantId);
+                if (contacts.length > 0) {
+                    const leads = contacts.map(c => this.leadRepository.create({
+                        name: c.name || 'Contato',
+                        externalId: c.externalId || c.phoneNumber || '',
+                        campaignId: campaignId,
+                        status: LeadStatus.PENDING
+                    }));
 
-        return saved;
+                    const chunkSize = 500;
+                    for (let i = 0; i < leads.length; i += chunkSize) {
+                        await this.leadRepository.save(leads.slice(i, i + chunkSize));
+                    }
+                    this.logger.log(`Created ${leads.length} leads from contacts for campaign ${campaignId}`);
+                }
+            }
+
+            return {
+                id: saved.id,
+                name: saved.name,
+                status: saved.status,
+                channels: saved.channels,
+                messageTemplate: saved.messageTemplate,
+                createdAt: saved.createdAt
+            };
+        } catch (error) {
+            this.logger.error(`Error creating campaign: ${error.message}`, error.stack);
+            throw error;
+        }
     }
 
     async findOne(id: string, tenantId: string) {
