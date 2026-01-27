@@ -33,20 +33,31 @@ export class CampaignsService {
 
         // If leads are provided (from JSON upload), save them
         if (data.leads && Array.isArray(data.leads)) {
-            const leads = data.leads.map(l => this.leadRepository.create({
+            const leads = data.leads.map(l => ({
                 ...l,
                 campaignId: saved.id,
+                status: LeadStatus.PENDING
             }));
-            await this.leadRepository.save(leads);
+            await this.leadRepository.insert(leads);
+            this.logger.log(`Created ${leads.length} leads for campaign ${saved.id}`);
         } else if (data.useExistingContacts) {
             // Logic to pull contacts from CRM and create leads
             const contacts = await this.crmService.findAllByTenant(tenantId);
-            const leads = contacts.map(c => this.leadRepository.create({
-                name: c.name || 'Contato',
-                externalId: c.externalId || c.phoneNumber || '',
-                campaignId: saved.id,
-            }));
-            await this.leadRepository.save(leads);
+            if (contacts.length > 0) {
+                const leads = contacts.map(c => ({
+                    name: c.name || 'Contato',
+                    externalId: c.externalId || c.phoneNumber || '',
+                    campaignId: saved.id,
+                    status: LeadStatus.PENDING
+                }));
+                // Chunk the insertion to avoid DB limits
+                const chunkSize = 500;
+                for (let i = 0; i < leads.length; i += chunkSize) {
+                    const chunk = leads.slice(i, i + chunkSize);
+                    await this.leadRepository.insert(chunk);
+                }
+                this.logger.log(`Created ${leads.length} leads from contacts for campaign ${saved.id}`);
+            }
         }
 
         return saved;
