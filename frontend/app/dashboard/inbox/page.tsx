@@ -14,7 +14,9 @@ import {
     MessageCircle,
     Clock,
     Database,
-    Loader2
+    Loader2,
+    ShoppingBag,
+    Store
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -134,6 +136,8 @@ export default function OmniInboxPage() {
             case 'whatsapp': return <Zap className="w-4 h-4 text-green-500" />;
             case 'instagram': return <Instagram className="w-4 h-4 text-pink-500" />;
             case 'facebook': return <Facebook className="w-4 h-4 text-blue-600" />;
+            case 'mercadolivre': return <ShoppingBag className="w-4 h-4 text-yellow-500" />;
+            case 'olx': return <Store className="w-4 h-4 text-orange-600" />;
             default: return <MessageCircle className="w-4 h-4 text-gray-400" />;
         }
     };

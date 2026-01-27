@@ -15,7 +15,9 @@ import {
   Twitter,
   Linkedin,
   ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  ShoppingBag,
+  Store
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,6 +37,8 @@ export default function LandingPage() {
     { icon: <Bot className="w-6 h-6" />, name: 'TikTok' },
     { icon: <Linkedin className="w-6 h-6" />, name: 'LinkedIn' },
     { icon: <Globe className="w-6 h-6" />, name: 'Google' },
+    { icon: <ShoppingBag className="w-6 h-6" />, name: 'Mercado Livre' },
+    { icon: <Store className="w-6 h-6" />, name: 'OLX' },
   ];
 
   const features = [

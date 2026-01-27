@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Save, Key, Shield, Info, AlertCircle, Zap, Loader2, Send, Youtube, Linkedin } from 'lucide-react';
+import { Save, Key, Shield, Info, AlertCircle, Zap, Loader2, Send, Youtube, Linkedin, ShoppingBag, Store } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ApiSettingsPage() {
@@ -24,6 +24,10 @@ export default function ApiSettingsPage() {
         meta_verify_token: 'zaplandia_verify_token',
         whatsapp_phone_number_id: '',
         whatsapp_business_account_id: '',
+        ml_client_id: '',
+        ml_client_secret: '',
+        olx_app_id: '',
+        olx_app_secret: '',
     });
 
     // Fetch existing keys on load
@@ -63,6 +67,20 @@ export default function ApiSettingsPage() {
                             const parsed = JSON.parse(item.key_value);
                             newKeys.linkedin_client_id = parsed.clientId || '';
                             newKeys.linkedin_client_secret = parsed.secret || '';
+                        } catch (e) { }
+                    }
+                    if (item.key_name === 'MERCADO_LIVRE_CONFIG') {
+                        try {
+                            const parsed = JSON.parse(item.key_value);
+                            newKeys.ml_client_id = parsed.clientId || '';
+                            newKeys.ml_client_secret = parsed.secret || '';
+                        } catch (e) { }
+                    }
+                    if (item.key_name === 'OLX_CONFIG') {
+                        try {
+                            const parsed = JSON.parse(item.key_value);
+                            newKeys.olx_app_id = parsed.appId || '';
+                            newKeys.olx_app_secret = parsed.secret || '';
                         } catch (e) { }
                     }
                     if (item.key_name === 'N8N_WEBHOOK_URL') newKeys.n8n_webhook_url = item.key_value;
@@ -382,6 +400,86 @@ export default function ApiSettingsPage() {
                         >
                             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             <span>Salvar Configuração LinkedIn</span>
+                        </button>
+                    </div>
+                </section>
+
+                {/* Mercado Livre Section */}
+                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                        <ShoppingBag className="w-6 h-6 text-yellow-500" />
+                        <span>Mercado Livre API</span>
+                    </h2>
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Application ID (Client ID)</label>
+                                <input
+                                    type="text"
+                                    value={keys.ml_client_id}
+                                    onChange={(e) => setKeys({ ...keys, ml_client_id: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                    placeholder="Ex: 81234567890"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Client Secret</label>
+                                <input
+                                    type="password"
+                                    value={keys.ml_client_secret}
+                                    onChange={(e) => setKeys({ ...keys, ml_client_secret: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                    placeholder="••••••••••••"
+                                />
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => handleSave('MERCADO_LIVRE_CONFIG', JSON.stringify({ clientId: keys.ml_client_id, secret: keys.ml_client_secret }))}
+                            disabled={isLoading}
+                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            <span>Salvar Configuração Mercado Livre</span>
+                        </button>
+                    </div>
+                </section>
+
+                {/* OLX Section */}
+                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                        <Store className="w-6 h-6 text-orange-600" />
+                        <span>OLX API</span>
+                    </h2>
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">App ID</label>
+                                <input
+                                    type="text"
+                                    value={keys.olx_app_id}
+                                    onChange={(e) => setKeys({ ...keys, olx_app_id: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                    placeholder="Ex: olx_app_123"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">App Secret</label>
+                                <input
+                                    type="password"
+                                    value={keys.olx_app_secret}
+                                    onChange={(e) => setKeys({ ...keys, olx_app_secret: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                    placeholder="••••••••••••"
+                                />
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => handleSave('OLX_CONFIG', JSON.stringify({ appId: keys.olx_app_id, secret: keys.olx_app_secret }))}
+                            disabled={isLoading}
+                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            <span>Salvar Configuração OLX</span>
                         </button>
                     </div>
                 </section>

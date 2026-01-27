@@ -17,7 +17,11 @@ import {
     Plus,
     Loader2,
     Settings,
-    ArrowRight
+    ArrowRight,
+    ShoppingBag,
+    Store,
+    Bot,
+    Save
 } from 'lucide-react';
 
 interface Integration {
@@ -34,6 +38,8 @@ const PROVIDERS = [
     { id: 'tiktok', name: 'TikTok Business', icon: <Smartphone className="w-8 h-8 text-black" />, desc: 'Responda comentários e mensagens do TikTok.' },
     { id: 'linkedin', name: 'LinkedIn', icon: <Linkedin className="w-8 h-8 text-blue-800" />, desc: 'Automação e CRM para vendas B2B.' },
     { id: 'google_sheets', name: 'Google Sheets', icon: <Globe className="w-8 h-8 text-yellow-600" />, desc: 'Sincronize seus leads com planilhas.' },
+    { id: 'mercadolivre', name: 'Mercado Livre', icon: <ShoppingBag className="w-8 h-8 text-yellow-500" />, desc: 'Gerencie perguntas e vendas do Mercado Livre.' },
+    { id: 'olx', name: 'OLX', icon: <Store className="w-8 h-8 text-orange-600" />, desc: 'Responda chats e gerencie anúncios da OLX.' },
     { id: 'n8n', name: 'n8n Automation', icon: <Zap className="w-8 h-8 text-orange-500" />, desc: 'Conecte webhooks para automações com IA.' },
 ];
 
@@ -43,6 +49,9 @@ export default function IntegrationsPage() {
     const [integrations, setIntegrations] = useState<Integration[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [connectingId, setConnectingId] = useState<string | null>(null);
+    const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
+    const [aiConfig, setAiConfig] = useState({ enabled: false, prompt: '' });
+    const [isSavingAI, setIsSavingAI] = useState(false);
 
     useEffect(() => {
         if (token) {
@@ -98,6 +107,43 @@ export default function IntegrationsPage() {
             if (res.ok) fetchIntegrations();
         } catch (err) {
             console.error('Erro ao desconectar:', err);
+        }
+    };
+
+    const openAIModal = (integration: any) => {
+        setSelectedIntegration(integration);
+        setAiConfig({
+            enabled: integration.settings?.aiEnabled || false,
+            prompt: integration.settings?.aiPrompt || ''
+        });
+    };
+
+    const handleSaveAI = async () => {
+        if (!selectedIntegration) return;
+        setIsSavingAI(true);
+        try {
+            const res = await fetch(`/api/integrations/${selectedIntegration.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    settings: {
+                        ...selectedIntegration.settings,
+                        aiEnabled: aiConfig.enabled,
+                        aiPrompt: aiConfig.prompt
+                    }
+                })
+            });
+            if (res.ok) {
+                fetchIntegrations();
+                setSelectedIntegration(null);
+            }
+        } catch (err) {
+            console.error('Erro ao salvar config IA:', err);
+        } finally {
+            setIsSavingAI(false);
         }
     };
 
@@ -161,8 +207,15 @@ export default function IntegrationsPage() {
                                                 <span>Configurar</span>
                                             </button>
                                             <button
+                                                onClick={() => openAIModal(integration)}
+                                                className="w-full bg-primary/10 hover:bg-primary/20 text-primary text-xs py-2 rounded-xl transition font-bold flex items-center justify-center space-x-2 border border-primary/20"
+                                            >
+                                                <Bot className="w-3.5 h-3.5" />
+                                                <span>Configurar IA</span>
+                                            </button>
+                                            <button
                                                 onClick={() => handleDisconnect(integration.id)}
-                                                className="w-full bg-red-500/5 hover:bg-red-500/10 text-red-500 text-xs py-2 rounded-xl transition font-bold"
+                                                className="w-full bg-red-500/5 hover:bg-red-500/10 text-red-500 text-[10px] py-1.5 rounded-lg transition font-medium"
                                             >
                                                 Interromper Conexão
                                             </button>
@@ -181,6 +234,68 @@ export default function IntegrationsPage() {
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {/* AI Configuration Modal */}
+            {selectedIntegration && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-surface border border-white/10 w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b border-white/5 bg-primary/5">
+                            <div className="flex items-center space-x-4 mb-2">
+                                <div className="p-3 bg-white/5 rounded-2xl">
+                                    <Bot className="w-8 h-8 text-primary" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black">Agente de IA</h2>
+                                    <p className="text-gray-400 text-sm">{selectedIntegration.provider.toUpperCase()}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-8 space-y-6">
+                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <div>
+                                    <p className="font-bold">Ativar Automação</p>
+                                    <p className="text-xs text-gray-400">O robô responderá automaticamente</p>
+                                </div>
+                                <button
+                                    onClick={() => setAiConfig({ ...aiConfig, enabled: !aiConfig.enabled })}
+                                    className={`w-14 h-8 rounded-full transition-all relative ${aiConfig.enabled ? 'bg-primary' : 'bg-gray-600'}`}
+                                >
+                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${aiConfig.enabled ? 'left-7' : 'left-1'}`} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Instruções do Agente (Prompt)</label>
+                                <textarea
+                                    value={aiConfig.prompt}
+                                    onChange={(e) => setAiConfig({ ...aiConfig, prompt: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm h-48 focus:border-primary outline-none transition-all resize-none"
+                                    placeholder="Ex: Você é um vendedor simpático do Mercado Livre. Sempre tente fechar a venda e tire dúvidas técnicas sobre os produtos..."
+                                />
+                                <p className="text-[10px] text-gray-500">Defina a personalidade e as regras de abordagem para este canal específico.</p>
+                            </div>
+                        </div>
+
+                        <div className="p-8 bg-white/5 flex space-x-4">
+                            <button
+                                onClick={() => setSelectedIntegration(null)}
+                                className="flex-1 px-6 py-4 rounded-2xl border border-white/10 font-bold hover:bg-white/5 transition"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSaveAI}
+                                disabled={isSavingAI}
+                                className="flex-[2] bg-primary hover:bg-primary-dark text-white px-6 py-4 rounded-2xl font-black shadow-lg shadow-primary/20 flex items-center justify-center space-x-2 transition"
+                            >
+                                {isSavingAI ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                                <span>Salvar Configuração</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
