@@ -43,6 +43,15 @@ export class IntegrationsService {
         }
     }
 
+    async updateSettings(id: string, tenantId: string, settings: any) {
+        const integration = await this.findOne(id, tenantId);
+        if (integration) {
+            integration.settings = settings;
+            return this.integrationRepository.save(integration);
+        }
+        return null;
+    }
+
     // Logic to handle Meta OAuth code exchange would go here
     async connectMeta(tenantId: string, code: string) {
         this.logger.log(`Connecting Meta for tenant ${tenantId} with code ${code}`);

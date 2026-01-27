@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Patch } from '@nestjs/common';
 import { IntegrationsService } from './integrations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { IntegrationProvider } from './entities/integration.entity';
@@ -36,5 +36,10 @@ export class IntegrationsController {
     @Delete(':id')
     remove(@Request() req, @Param('id') id: string) {
         return this.integrationsService.remove(id, req.user.tenantId);
+    }
+
+    @Patch(':id')
+    updateSettings(@Request() req, @Param('id') id: string, @Body() body: { settings: any }) {
+        return this.integrationsService.updateSettings(id, req.user.tenantId, body.settings);
     }
 }

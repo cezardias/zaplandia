@@ -11,6 +11,8 @@ export enum IntegrationProvider {
     LINKEDIN = 'linkedin',
     GOOGLE_DRIVE = 'google_drive',
     GOOGLE_SHEETS = 'google_sheets',
+    MERCADO_LIVRE = 'mercadolivre',
+    OLX = 'olx',
     N8N = 'n8n',
 }
 

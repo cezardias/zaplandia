@@ -1,17 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact, Message } from './entities/crm.entity';
 import { N8nService } from '../integrations/n8n.service';
+import { IntegrationsService } from '../integrations/integrations.service';
 
 @Injectable()
 export class CrmService {
+    private readonly logger = new Logger(CrmService.name);
     constructor(
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
         @InjectRepository(Message)
         private messageRepository: Repository<Message>,
         private readonly n8nService: N8nService,
+        private readonly integrationsService: IntegrationsService, // Need this to fetch tokens
     ) { }
 
     async getRecentChats(tenantId: string, role?: string) {
@@ -21,6 +25,12 @@ export class CrmService {
             relations: ['messages'],
             order: { updatedAt: 'DESC' },
             take: 20
+        });
+    }
+
+    async findAllByTenant(tenantId: string) {
+        return this.contactRepository.find({
+            where: { tenantId }
         });
     }
 
@@ -55,7 +65,27 @@ export class CrmService {
             }
         });
 
-        // 3. TODO: Call target Social API (WhatsApp, Meta, etc)
+        // 3. Call target Social API (Instagram focus)
+        if (provider === 'instagram') {
+            try {
+                const metaConfig = await this.integrationsService.getCredential(tenantId, 'META_APP_CONFIG');
+                if (metaConfig) {
+                    const { pageAccessToken, pageId } = JSON.parse(metaConfig);
+                    const contact = await this.contactRepository.findOne({ where: { id: contactId } });
+
+                    if (pageAccessToken && contact?.externalId) {
+                        this.logger.log(`Sending Instagram message to ${contact.externalId}`);
+                        await axios.post(`https://graph.facebook.com/v19.0/me/messages?access_token=${pageAccessToken}`, {
+                            recipient: { id: contact.externalId },
+                            message: { text: content }
+                        });
+                    }
+                }
+            } catch (err: any) {
+                this.logger.error(`Failed to send Instagram message: ${err.response?.data?.error?.message || err.message}`);
+            }
+        }
+
         return message;
     }
 
