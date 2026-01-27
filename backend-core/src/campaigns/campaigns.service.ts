@@ -29,7 +29,7 @@ export class CampaignsService {
             ...data,
             tenantId,
         });
-        const saved = await this.campaignRepository.save(campaign);
+        const saved = await this.campaignRepository.save(campaign) as Campaign;
 
         // If leads are provided (from JSON upload), save them
         if (data.leads && Array.isArray(data.leads)) {
