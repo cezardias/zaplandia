@@ -29,7 +29,7 @@ export class CampaignsService {
             ...data,
             tenantId,
         });
-        const saved = await this.campaignRepository.save(campaign) as Campaign;
+        const saved = await this.campaignRepository.save(campaign) as unknown as Campaign;
 
         // If leads are provided (from JSON upload), save them
         if (data.leads && Array.isArray(data.leads)) {
@@ -63,7 +63,7 @@ export class CampaignsService {
         const campaign = await this.findOne(id, tenantId);
         if (campaign) {
             campaign.status = status;
-            return this.campaignRepository.save(campaign);
+            return this.campaignRepository.save(campaign) as unknown as Campaign;
         }
         return null;
     }
