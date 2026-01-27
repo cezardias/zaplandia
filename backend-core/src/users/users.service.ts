@@ -24,6 +24,19 @@ export class UsersService implements OnModuleInit {
 
     async seedSuperAdmin() {
         const adminEmail = 'cezar.dias@gmail.com';
+
+        // 1. Ensure a default HQ tenant exists
+        let hqTenant = await this.tenantsRepository.findOne({ where: { slug: 'zaplandia-hq' } });
+        if (!hqTenant) {
+            hqTenant = this.tenantsRepository.create({
+                name: 'Zaplandia HQ',
+                slug: 'zaplandia-hq',
+                trialEndsAt: new Date('2099-12-31'), // Forever for HQ
+            });
+            await this.tenantsRepository.save(hqTenant);
+            console.log('HQ Tenant created');
+        }
+
         const adminExists = await this.usersRepository.findOne({ where: { email: adminEmail } });
 
         if (!adminExists) {
@@ -33,9 +46,15 @@ export class UsersService implements OnModuleInit {
                 password: hashedPassword,
                 name: 'Cezar Dias',
                 role: UserRole.SUPERADMIN,
+                tenantId: hqTenant.id,
             });
             await this.usersRepository.save(superAdmin);
             console.log('Super Admin cezar.dias@gmail.com criado com sucesso!');
+        } else if (!adminExists.tenantId) {
+            // Fix existing admin missing tenantId
+            adminExists.tenantId = hqTenant.id;
+            await this.usersRepository.save(adminExists);
+            console.log('Existing Super Admin updated with HQ TenantId');
         }
     }
 
