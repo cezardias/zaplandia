@@ -25,7 +25,7 @@ import {
     QrCode,
     Terminal
 } from 'lucide-react';
-import EvolutionApiConfig from '@/components/integrations/EvolutionApiConfig';
+import WhatsAppInstanceManager from '@/components/integrations/WhatsAppInstanceManager';
 
 interface Integration {
     id: string;
@@ -278,9 +278,9 @@ export default function IntegrationsPage() {
                 </div>
             )}
 
-            {/* Evolution API Connection Modal */}
+            {/* WhatsApp Instance Manager Modal */}
             {showEvolutionModal && (
-                <EvolutionApiConfig
+                <WhatsAppInstanceManager
                     token={token || ''}
                     onClose={() => setShowEvolutionModal(false)}
                     onSuccess={() => {
@@ -289,6 +289,7 @@ export default function IntegrationsPage() {
                     }}
                 />
             )}
+
 
             {/* AI Configuration Modal */}
             {selectedIntegration && (

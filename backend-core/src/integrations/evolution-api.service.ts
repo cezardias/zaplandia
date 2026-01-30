@@ -16,6 +16,48 @@ export class EvolutionApiService {
         return await this.integrationsService.getCredential(tenantId, 'EVOLUTION_API_KEY');
     }
 
+    async listInstances(tenantId: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) {
+            throw new Error('EvolutionAPI não configurada.');
+        }
+
+        try {
+            const response = await axios.get(`${baseUrl}/instance/fetchInstances`, {
+                headers: { 'apikey': apiKey }
+            });
+            // Filter instances that belong to this tenant (prefix: tenant_<tenantId>_)
+            const allInstances = response.data || [];
+            const tenantInstances = allInstances.filter((inst: any) =>
+                inst.instance?.instanceName?.startsWith(`tenant_${tenantId}_`) ||
+                inst.instanceName?.startsWith(`tenant_${tenantId}_`)
+            );
+            return tenantInstances;
+        } catch (error) {
+            this.logger.error(`Erro ao listar instâncias: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async getInstanceStatus(tenantId: string, instanceName: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
+
+        try {
+            const response = await axios.get(`${baseUrl}/instance/connectionState/${instanceName}`, {
+                headers: { 'apikey': apiKey }
+            });
+            return response.data;
+        } catch (error) {
+            this.logger.error(`Erro ao verificar status da instância: ${error.message}`);
+            throw error;
+        }
+    }
+
     async createInstance(tenantId: string, instanceName: string, userId: string) {
         const baseUrl = await this.getBaseUrl(tenantId);
         const apiKey = await this.getApiKey(tenantId);
@@ -27,7 +69,7 @@ export class EvolutionApiService {
         try {
             const response = await axios.post(`${baseUrl}/instance/create`, {
                 instanceName,
-                token: userId, // Using userId as a token for this instance
+                token: userId,
                 qrcode: true,
             }, {
                 headers: { 'apikey': apiKey }
@@ -127,3 +169,4 @@ export class EvolutionApiService {
         }
     }
 }
+

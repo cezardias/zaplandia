@@ -18,14 +18,31 @@ export class IntegrationsController {
         return this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
     }
 
-    // EvolutionAPI Management
+    // EvolutionAPI Management - List all instances for tenant
     @UseGuards(JwtAuthGuard)
-    @Post('evolution/instance')
-    async createEvolutionInstance(@Request() req) {
-        const instanceName = `tenant_${req.user.tenantId}`;
-        return this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.id);
+    @Get('evolution/instances')
+    async listEvolutionInstances(@Request() req) {
+        return this.evolutionApiService.listInstances(req.user.tenantId);
     }
 
+    // Create instance with custom name
+    @UseGuards(JwtAuthGuard)
+    @Post('evolution/instance')
+    async createEvolutionInstance(@Request() req, @Body() body: { instanceName?: string }) {
+        // Generate a unique instance name: tenant_<tenantId>_<customName or timestamp>
+        const customName = body.instanceName || Date.now().toString();
+        const instanceName = `tenant_${req.user.tenantId}_${customName}`;
+        return this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.userId);
+    }
+
+    // Get QR Code for specific instance
+    @UseGuards(JwtAuthGuard)
+    @Get('evolution/qrcode/:instanceName')
+    async getEvolutionQrCodeByName(@Request() req, @Param('instanceName') instanceName: string) {
+        return this.evolutionApiService.getQrCode(req.user.tenantId, instanceName);
+    }
+
+    // Legacy: Get QR Code for default instance
     @UseGuards(JwtAuthGuard)
     @Get('evolution/qrcode')
     async getEvolutionQrCode(@Request() req) {
@@ -33,6 +50,21 @@ export class IntegrationsController {
         return this.evolutionApiService.getQrCode(req.user.tenantId, instanceName);
     }
 
+    // Get instance connection status
+    @UseGuards(JwtAuthGuard)
+    @Get('evolution/status/:instanceName')
+    async getEvolutionInstanceStatus(@Request() req, @Param('instanceName') instanceName: string) {
+        return this.evolutionApiService.getInstanceStatus(req.user.tenantId, instanceName);
+    }
+
+    // Delete specific instance
+    @UseGuards(JwtAuthGuard)
+    @Delete('evolution/instance/:instanceName')
+    async deleteEvolutionInstanceByName(@Request() req, @Param('instanceName') instanceName: string) {
+        return this.evolutionApiService.deleteInstance(req.user.tenantId, instanceName);
+    }
+
+    // Legacy: Delete default instance
     @UseGuards(JwtAuthGuard)
     @Delete('evolution/instance')
     async deleteEvolutionInstance(@Request() req) {
