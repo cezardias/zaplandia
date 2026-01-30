@@ -85,9 +85,13 @@ export class EvolutionApiService {
                 headers: { 'apikey': apiKey }
             });
 
+            this.logger.log(`Instance created successfully: ${JSON.stringify(response.data)}`);
             return response.data;
         } catch (error) {
             this.logger.error(`Erro ao criar instância no EvolutionAPI: ${error.message}`);
+            if (error.response) {
+                this.logger.error(`Create Error details: ${JSON.stringify(error.response.data)}`);
+            }
             throw error;
         }
     }
