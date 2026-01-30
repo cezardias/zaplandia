@@ -209,31 +209,30 @@ export default function IntegrationsPage() {
                                 <p className="text-sm text-gray-400 leading-relaxed mb-8 min-h-[48px]">{app.desc}</p>
 
                                 <div className="flex flex-col space-y-3">
-                                    {/* Special handling for EvolutionAPI - Redirect to dedicated page */}
-                                    {(console.log('Rendering provider:', app.id, 'Connected:', isConnected), app.id === 'evolution') ? (
-                                        <>
+                                    {/* FORCE WHATSAPP BEHAVIOR */}
+                                    {app.id === 'evolution' ? (
+                                        <div className="flex flex-col space-y-2">
                                             <button
                                                 onClick={() => {
-                                                    console.log('Redirecting to WhatsApp manager...');
-                                                    router.push('/dashboard/integrations/whatsapp');
+                                                    console.log('Force redirecting to WhatsApp manager...');
+                                                    window.location.href = '/dashboard/integrations/whatsapp';
                                                 }}
-                                                className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm py-4 rounded-2xl transition font-black shadow-lg shadow-purple-600/20 flex items-center justify-center space-x-2 border-2 border-purple-400"
+                                                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-sm py-4 rounded-xl transition font-black shadow-lg shadow-green-500/20 flex items-center justify-center space-x-2 border border-white/10"
                                             >
                                                 <QrCode className="w-5 h-5" />
-                                                <span>GERENCIAR INSTÂNCIAS (NOVO)</span>
+                                                <span>GERENCIAR WHATSAPP (NOVO)</span>
                                             </button>
+
                                             {isConnected && (
-                                                <>
-                                                    <button
-                                                        onClick={() => openAIModal(integration)}
-                                                        className="w-full bg-primary/10 hover:bg-primary/20 text-primary text-xs py-2 rounded-xl transition font-bold flex items-center justify-center space-x-2 border border-primary/20"
-                                                    >
-                                                        <Bot className="w-3.5 h-3.5" />
-                                                        <span>Configurar IA</span>
-                                                    </button>
-                                                </>
+                                                <button
+                                                    onClick={() => openAIModal(integration)}
+                                                    className="w-full bg-primary/10 hover:bg-primary/20 text-primary text-xs py-2 rounded-xl transition font-bold flex items-center justify-center space-x-2 border border-primary/20"
+                                                >
+                                                    <Bot className="w-3.5 h-3.5" />
+                                                    <span>Configurar IA</span>
+                                                </button>
                                             )}
-                                        </>
+                                        </div>
                                     ) : isConnected ? (
                                         <>
                                             <button

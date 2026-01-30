@@ -11,7 +11,8 @@ import {
     LogOut,
     LayoutDashboard,
     ShieldCheck,
-    HelpCircle
+    HelpCircle,
+    Smartphone
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -34,6 +35,7 @@ export default function DashboardLayout({
     const menuItems = [
         { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
         { name: 'Omni Inbox', icon: <MessageSquare size={20} />, path: '/dashboard/inbox' },
+        { name: 'WhatsApp Manager', icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp' },
         { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm' },
         { name: 'Integrações', icon: <Zap size={20} />, path: '/dashboard/integrations' },
         { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api' },
