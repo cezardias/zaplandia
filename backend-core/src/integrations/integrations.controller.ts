@@ -67,25 +67,35 @@ export class IntegrationsController {
     @UseGuards(JwtAuthGuard)
     @Post('credentials')
     async saveCredentials(@Request() req, @Body() body: { name: string, value: string }) {
+        console.log('[SAVE_CRED] req.user:', JSON.stringify(req.user));
         // Fallback: if tenantId is missing from token (legacy users), fetch from DB
         let tenantId = req.user.tenantId;
+        console.log('[SAVE_CRED] Initial tenantId from token:', tenantId);
         if (!tenantId) {
-            const freshUser = await this.integrationsService.fetchUserTenantId(req.user.userId);
-            tenantId = freshUser;
+            console.log('[SAVE_CRED] Fetching tenantId from DB for userId:', req.user.userId);
+            tenantId = await this.integrationsService.fetchUserTenantId(req.user.userId);
+            console.log('[SAVE_CRED] Fetched tenantId from DB:', tenantId);
         }
         if (!tenantId) {
+            console.error('[SAVE_CRED] FATAL: No tenantId found!');
             throw new Error('Cannot save credentials: user has no associated tenant.');
         }
+        console.log('[SAVE_CRED] Final tenantId:', tenantId, 'Key:', body.name);
         return this.integrationsService.saveApiCredential(tenantId, body.name, body.value);
     }
 
     @UseGuards(JwtAuthGuard)
     @Get('credentials')
     async getCredentials(@Request() req) {
+        console.log('[GET_CRED] req.user:', JSON.stringify(req.user));
         let tenantId = req.user.tenantId;
+        console.log('[GET_CRED] Initial tenantId from token:', tenantId);
         if (!tenantId) {
+            console.log('[GET_CRED] Fetching tenantId from DB for userId:', req.user.userId);
             tenantId = await this.integrationsService.fetchUserTenantId(req.user.userId);
+            console.log('[GET_CRED] Fetched tenantId from DB:', tenantId);
         }
+        console.log('[GET_CRED] Final tenantId:', tenantId);
         return this.integrationsService.findAllCredentials(tenantId);
     }
 

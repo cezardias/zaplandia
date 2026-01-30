@@ -110,10 +110,11 @@ export class IntegrationsService {
         return tenantCred?.key_value || null;
     }
 
-    async findAllCredentials(tenantId: string) {
+    async findAllCredentials(tenantId: string | null) {
         this.logger.log(`[FIND_ALL] Tenant: ${tenantId}`);
-        return this.apiCredentialRepository.find({
-            where: { tenantId }
-        });
+        const whereClause = tenantId ? { tenantId } : { tenantId: IsNull() };
+        const results = await this.apiCredentialRepository.find({ where: whereClause });
+        this.logger.log(`[FIND_ALL] Found ${results.length} credentials for tenant ${tenantId}`);
+        return results;
     }
 }
