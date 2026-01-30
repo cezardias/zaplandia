@@ -64,7 +64,7 @@ export class IntegrationsService {
     // Global and Tenant specific API Credentials
     async saveApiCredential(tenantId: string | null, keyName: string, keyValue: string) {
         const finalTenantId = tenantId || null;
-        this.logger.log(`Salvando credencial ${keyName} para tenant: ${finalTenantId || 'GLOBAL'}`);
+        this.logger.log(`[SAVE] Key: ${keyName}, Value Length: ${keyValue?.length}, Tenant: ${finalTenantId || 'GLOBAL'}`);
 
         let cred = await this.apiCredentialRepository.findOne({
             where: { tenantId: finalTenantId === null ? IsNull() : finalTenantId, key_name: keyName }
@@ -72,18 +72,23 @@ export class IntegrationsService {
 
         if (cred) {
             cred.key_value = keyValue;
-            this.logger.log(`Atualizando credencial existente ID: ${cred.id}`);
+            this.logger.log(`[UPDATE] Found existing ID: ${cred.id}`);
         } else {
             cred = this.apiCredentialRepository.create({
                 tenantId: finalTenantId as any,
                 key_name: keyName,
                 key_value: keyValue,
             });
-            this.logger.log(`Criando nova credencial`);
+            this.logger.log(`[CREATE] Creating new entry`);
         }
-        const saved = await this.apiCredentialRepository.save(cred);
-        this.logger.log(`Credencial salva com sucesso! ID: ${saved.id}`);
-        return saved;
+        try {
+            const saved = await this.apiCredentialRepository.save(cred);
+            this.logger.log(`[SUCCESS] Saved ID: ${saved.id}`);
+            return saved;
+        } catch (error) {
+            this.logger.error(`[ERROR] Failed to save ${keyName}: ${error.message}`);
+            throw error;
+        }
     }
 
     async getCredential(tenantId: string | null, keyName: string): Promise<string | null> {

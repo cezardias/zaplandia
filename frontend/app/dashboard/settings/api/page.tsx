@@ -49,50 +49,55 @@ export default function ApiSettingsPage() {
             });
             if (res.ok) {
                 const data = await res.json();
-                const newKeys = { ...keys };
-                data.forEach((item: any) => {
-                    if (item.key_name === 'META_APP_CONFIG') {
-                        try {
-                            const parsed = JSON.parse(item.key_value);
-                            newKeys.fb_app_id = parsed.appId || '';
-                            newKeys.fb_app_secret = parsed.secret || '';
-                            newKeys.meta_page_access_token = parsed.pageAccessToken || '';
-                            newKeys.meta_instagram_business_id = parsed.instagramBusinessId || '';
-                            newKeys.meta_verify_token = parsed.verifyToken || 'zaplandia_verify_token';
-                            newKeys.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
-                            newKeys.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
-                        } catch (e) { }
-                    }
-                    if (item.key_name === 'WHATSAPP_TOKEN') newKeys.whatsapp_token = item.key_value;
-                    if (item.key_name === 'GEMINI_API_KEY') newKeys.gemini_key = item.key_value;
-                    if (item.key_name === 'TELEGRAM_TOKEN') newKeys.telegram_token = item.key_value;
-                    if (item.key_name === 'YOUTUBE_API_KEY') newKeys.youtube_api_key = item.key_value;
-                    if (item.key_name === 'LINKEDIN_CONFIG') {
-                        try {
-                            const parsed = JSON.parse(item.key_value);
-                            newKeys.linkedin_client_id = parsed.clientId || '';
-                            newKeys.linkedin_client_secret = parsed.secret || '';
-                        } catch (e) { }
-                    }
-                    if (item.key_name === 'MERCADO_LIVRE_CONFIG') {
-                        try {
-                            const parsed = JSON.parse(item.key_value);
-                            newKeys.ml_client_id = parsed.clientId || '';
-                            newKeys.ml_client_secret = parsed.secret || '';
-                        } catch (e) { }
-                    }
-                    if (item.key_name === 'OLX_CONFIG') {
-                        try {
-                            const parsed = JSON.parse(item.key_value);
-                            newKeys.olx_app_id = parsed.appId || '';
-                            newKeys.olx_app_secret = parsed.secret || '';
-                        } catch (e) { }
-                    }
-                    if (item.key_name === 'N8N_WEBHOOK_URL') newKeys.n8n_webhook_url = item.key_value;
-                    if (item.key_name === 'EVOLUTION_API_URL') newKeys.evolution_api_url = item.key_value;
-                    if (item.key_name === 'EVOLUTION_API_KEY') newKeys.evolution_api_key = item.key_value;
+                console.log('Credentials fetched successfully:', data);
+                setKeys(prev => {
+                    const next = { ...prev };
+                    data.forEach((item: any) => {
+                        if (item.key_name === 'META_APP_CONFIG') {
+                            try {
+                                const parsed = JSON.parse(item.key_value);
+                                next.fb_app_id = parsed.appId || '';
+                                next.fb_app_secret = parsed.secret || '';
+                                next.meta_page_access_token = parsed.pageAccessToken || '';
+                                next.meta_instagram_business_id = parsed.instagramBusinessId || '';
+                                next.meta_verify_token = parsed.verifyToken || 'zaplandia_verify_token';
+                                next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
+                                next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
+                            } catch (e) { }
+                        }
+                        if (item.key_name === 'WHATSAPP_TOKEN') next.whatsapp_token = item.key_value;
+                        if (item.key_name === 'GEMINI_API_KEY') next.gemini_key = item.key_value;
+                        if (item.key_name === 'TELEGRAM_TOKEN') next.telegram_token = item.key_value;
+                        if (item.key_name === 'YOUTUBE_API_KEY') next.youtube_api_key = item.key_value;
+                        if (item.key_name === 'LINKEDIN_CONFIG') {
+                            try {
+                                const parsed = JSON.parse(item.key_value);
+                                next.linkedin_client_id = parsed.clientId || '';
+                                next.linkedin_client_secret = parsed.secret || '';
+                            } catch (e) { }
+                        }
+                        if (item.key_name === 'MERCADO_LIVRE_CONFIG') {
+                            try {
+                                const parsed = JSON.parse(item.key_value);
+                                next.ml_client_id = parsed.clientId || '';
+                                next.ml_client_secret = parsed.secret || '';
+                            } catch (e) { }
+                        }
+                        if (item.key_name === 'OLX_CONFIG') {
+                            try {
+                                const parsed = JSON.parse(item.key_value);
+                                next.olx_app_id = parsed.appId || '';
+                                next.olx_app_secret = parsed.secret || '';
+                            } catch (e) { }
+                        }
+                        if (item.key_name === 'N8N_WEBHOOK_URL') next.n8n_webhook_url = item.key_value;
+                        if (item.key_name === 'EVOLUTION_API_URL') next.evolution_api_url = item.key_value;
+                        if (item.key_name === 'EVOLUTION_API_KEY') next.evolution_api_key = item.key_value;
+                    });
+                    return next;
                 });
-                setKeys(newKeys);
+            } else {
+                console.error('Failed to fetch credentials:', res.status);
             }
         } catch (err) {
             console.error('Erro ao carregar chaves:', err);
@@ -152,9 +157,12 @@ export default function ApiSettingsPage() {
                 { name: 'N8N_WEBHOOK_URL', value: keys.n8n_webhook_url },
             ];
 
+            console.log('Starting handleSaveAll with configs:', configs);
+
             for (const config of configs) {
                 if (config.value) {
-                    await fetch('/api/integrations/credentials', {
+                    console.log(`Saving config: ${config.name}`);
+                    const res = await fetch('/api/integrations/credentials', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -162,12 +170,18 @@ export default function ApiSettingsPage() {
                         },
                         body: JSON.stringify({ ...config, isGlobal: true })
                     });
+                    if (!res.ok) {
+                        console.error(`Failed to save config: ${config.name}`, res.status);
+                    } else {
+                        console.log(`Successfully saved config: ${config.name}`);
+                    }
                 }
             }
 
             setStatus({ type: 'success', msg: 'Todas as configurações foram salvas com sucesso!' });
             fetchExistingKeys();
         } catch (err: any) {
+            console.error('Error in handleSaveAll:', err);
             setStatus({ type: 'error', msg: 'Erro ao salvar algumas configurações.' });
         } finally {
             setIsSavingAll(false);
