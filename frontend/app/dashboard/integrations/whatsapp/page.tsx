@@ -20,6 +20,7 @@ import {
 
 interface WhatsAppInstance {
     instanceName: string;
+    name?: string;
     status?: string;
     connectionStatus?: string;
     profileName?: string;
