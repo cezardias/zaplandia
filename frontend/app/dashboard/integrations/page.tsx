@@ -210,14 +210,17 @@ export default function IntegrationsPage() {
 
                                 <div className="flex flex-col space-y-3">
                                     {/* Special handling for EvolutionAPI - Redirect to dedicated page */}
-                                    {app.id === 'evolution' ? (
+                                    {(console.log('Rendering provider:', app.id, 'Connected:', isConnected), app.id === 'evolution') ? (
                                         <>
                                             <button
-                                                onClick={() => router.push('/dashboard/integrations/whatsapp')}
-                                                className="w-full bg-primary hover:bg-primary-dark text-white text-sm py-4 rounded-2xl transition font-black shadow-lg shadow-primary/20 flex items-center justify-center space-x-2"
+                                                onClick={() => {
+                                                    console.log('Redirecting to WhatsApp manager...');
+                                                    router.push('/dashboard/integrations/whatsapp');
+                                                }}
+                                                className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm py-4 rounded-2xl transition font-black shadow-lg shadow-purple-600/20 flex items-center justify-center space-x-2 border-2 border-purple-400"
                                             >
                                                 <QrCode className="w-5 h-5" />
-                                                <span>Gerenciar Instâncias WhatsApp</span>
+                                                <span>GERENCIAR INSTÂNCIAS (NOVO)</span>
                                             </button>
                                             {isConnected && (
                                                 <>
