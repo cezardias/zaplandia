@@ -209,7 +209,35 @@ export default function IntegrationsPage() {
                                 <p className="text-sm text-gray-400 leading-relaxed mb-8 min-h-[48px]">{app.desc}</p>
 
                                 <div className="flex flex-col space-y-3">
-                                    {isConnected ? (
+                                    {/* Special handling for EvolutionAPI */}
+                                    {app.id === 'evolution' ? (
+                                        <>
+                                            <button
+                                                onClick={() => setShowEvolutionModal(true)}
+                                                className="w-full bg-primary hover:bg-primary-dark text-white text-sm py-4 rounded-2xl transition font-black shadow-lg shadow-primary/20 flex items-center justify-center space-x-2"
+                                            >
+                                                <QrCode className="w-5 h-5" />
+                                                <span>{isConnected ? 'Gerenciar Instância / QR Code' : 'Conectar via QR Code'}</span>
+                                            </button>
+                                            {isConnected && (
+                                                <>
+                                                    <button
+                                                        onClick={() => openAIModal(integration)}
+                                                        className="w-full bg-primary/10 hover:bg-primary/20 text-primary text-xs py-2 rounded-xl transition font-bold flex items-center justify-center space-x-2 border border-primary/20"
+                                                    >
+                                                        <Bot className="w-3.5 h-3.5" />
+                                                        <span>Configurar IA</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDisconnect(integration.id)}
+                                                        className="w-full bg-red-500/5 hover:bg-red-500/10 text-red-500 text-[10px] py-1.5 rounded-lg transition font-medium"
+                                                    >
+                                                        Interromper Conexão
+                                                    </button>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : isConnected ? (
                                         <>
                                             <button
                                                 onClick={() => router.push('/dashboard/settings/api')}
@@ -243,6 +271,7 @@ export default function IntegrationsPage() {
                                         </button>
                                     )}
                                 </div>
+
                             </div>
                         );
                     })}
