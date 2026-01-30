@@ -71,6 +71,7 @@ export class EvolutionApiService {
                 instanceName,
                 token: userId,
                 qrcode: true,
+                integration: "WHATSAPP-BAILEYS"
             }, {
                 headers: { 'apikey': apiKey }
             });
