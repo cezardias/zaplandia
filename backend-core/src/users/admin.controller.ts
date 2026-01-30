@@ -21,7 +21,7 @@ export class AdminController {
         if (req.user.role !== UserRole.SUPERADMIN) {
             throw new ForbiddenException('Acesso negado.');
         }
-        return this.integrationsService.findAllCredentials(tenantId, false);
+        return this.integrationsService.findAllCredentials(tenantId);
     }
 
     @Post('tenants/:tenantId/credentials')

@@ -8,7 +8,6 @@ export default function ApiSettingsPage() {
     const { token, user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
-    const [editMode, setEditMode] = useState<'global' | 'personal'>('personal');
 
     const [keys, setKeys] = useState({
         fb_app_id: '',
@@ -33,10 +32,7 @@ export default function ApiSettingsPage() {
         n8n_webhook_url: '',
     });
 
-    const [globalKeys, setGlobalKeys] = useState<any>({});
-    const [personalKeys, setPersonalKeys] = useState<any>({});
-
-    // Fetch existing keys on load or mode change
+    // Fetch existing keys on load
     useEffect(() => {
         if (token) {
             fetchExistingKeys();
@@ -52,29 +48,17 @@ export default function ApiSettingsPage() {
                 const data = await res.json();
                 console.log('Credentials fetched successfully:', data);
 
-                const gKeys: any = {};
                 const pKeys: any = {};
-
                 data.forEach((item: any) => {
-                    if (item.tenantId === null) {
-                        gKeys[item.key_name] = item.key_value;
-                    } else {
-                        pKeys[item.key_name] = item.key_value;
-                    }
+                    pKeys[item.key_name] = item.key_value;
                 });
 
-                setGlobalKeys(gKeys);
-                setPersonalKeys(pKeys);
-                mapToState(editMode === 'global' ? gKeys : { ...gKeys, ...pKeys });
+                mapToState(pKeys);
             }
         } catch (err) {
             console.error('Erro ao carregar chaves:', err);
         }
     };
-
-    useEffect(() => {
-        mapToState(editMode === 'global' ? globalKeys : { ...globalKeys, ...personalKeys });
-    }, [editMode, globalKeys, personalKeys]);
 
     const mapToState = (dataMap: any) => {
         setKeys(prev => {
@@ -151,8 +135,6 @@ export default function ApiSettingsPage() {
     const handleSave = async (name: string, value: string) => {
         setIsLoading(true);
         setStatus(null);
-        const isGlobal = editMode === 'global';
-        console.log(`[SAVE] Attempting to save ${name}, Mode: ${editMode}`);
         try {
             const res = await fetch('/api/integrations/credentials', {
                 method: 'POST',
@@ -160,7 +142,7 @@ export default function ApiSettingsPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, value, isGlobal })
+                body: JSON.stringify({ name, value })
             });
 
             if (!res.ok) throw new Error('Falha ao salvar');
@@ -182,28 +164,9 @@ export default function ApiSettingsPage() {
                         <span>Configurações de API</span>
                     </h1>
                     <p className="text-gray-400 mt-2 text-sm">
-                        {editMode === 'global'
-                            ? 'Editando valores padrão para todo o sistema (Global Fallback).'
-                            : 'Editando valores específicos para sua conta pessoal.'}
+                        Gerencie suas chaves e integrações para automação e mensagens.
                     </p>
                 </div>
-
-                {user?.role === 'superadmin' && (
-                    <div className="bg-surface border border-white/10 p-1 rounded-xl flex">
-                        <button
-                            onClick={() => setEditMode('personal')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${editMode === 'personal' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            Minha Conta
-                        </button>
-                        <button
-                            onClick={() => setEditMode('global')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${editMode === 'global' ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            Global (Fallback)
-                        </button>
-                    </div>
-                )}
             </div>
 
             {status && (
@@ -213,13 +176,6 @@ export default function ApiSettingsPage() {
                     <span>{status.msg}</span>
                 </div>
             )}
-
-            <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex items-start space-x-3 mb-8 shadow-inner">
-                <Info className="w-6 h-6 text-primary shrink-0" />
-                <p className="text-sm">
-                    <strong>Dica:</strong> Como Super Admin, as chaves que você salvar sem selecionar um tenant serão usadas como <strong>Globais</strong> (Fallback) para todo o sistema.
-                </p>
-            </div>
 
             <div className="space-y-8">
                 {/* Meta Section */}
@@ -640,7 +596,7 @@ export default function ApiSettingsPage() {
                         </div>
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <p className="text-xs text-gray-500 max-w-sm">
-                                Estas credenciais são usadas para conectar e gerenciar instâncias do WhatsApp via EvolutionAPI globalmente.
+                                Estas credenciais são usadas para conectar e gerenciar instâncias do WhatsApp via EvolutionAPI.
                             </p>
                             <div className="flex flex-col md:flex-row gap-2">
                                 <button

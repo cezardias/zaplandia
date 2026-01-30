@@ -66,15 +66,14 @@ export class IntegrationsController {
 
     @UseGuards(JwtAuthGuard)
     @Post('credentials')
-    saveCredentials(@Request() req, @Body() body: { name: string, value: string, isGlobal?: boolean }) {
-        const tenantId = (req.user.role === 'superadmin' && body.isGlobal) ? null : req.user.tenantId;
-        return this.integrationsService.saveApiCredential(tenantId, body.name, body.value);
+    saveCredentials(@Request() req, @Body() body: { name: string, value: string }) {
+        return this.integrationsService.saveApiCredential(req.user.tenantId, body.name, body.value);
     }
 
     @UseGuards(JwtAuthGuard)
     @Get('credentials')
     getCredentials(@Request() req) {
-        return this.integrationsService.findAllCredentials(req.user.tenantId, req.user.role === 'superadmin');
+        return this.integrationsService.findAllCredentials(req.user.tenantId);
     }
 
     @UseGuards(JwtAuthGuard)

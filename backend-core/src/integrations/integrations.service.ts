@@ -62,12 +62,11 @@ export class IntegrationsService {
     }
 
     // Global and Tenant specific API Credentials
-    async saveApiCredential(tenantId: string | null, keyName: string, keyValue: string) {
-        const finalTenantId = tenantId || null;
-        this.logger.log(`[SAVE] Key: ${keyName}, Value Length: ${keyValue?.length}, Tenant: ${finalTenantId || 'GLOBAL'}`);
+    async saveApiCredential(tenantId: string, keyName: string, keyValue: string) {
+        this.logger.log(`[SAVE] Key: ${keyName}, Value Length: ${keyValue?.length}, Tenant: ${tenantId}`);
 
         let cred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: finalTenantId === null ? IsNull() : finalTenantId, key_name: keyName }
+            where: { tenantId, key_name: keyName }
         });
 
         if (cred) {
@@ -75,7 +74,7 @@ export class IntegrationsService {
             this.logger.log(`[UPDATE] Found existing ID: ${cred.id}`);
         } else {
             cred = this.apiCredentialRepository.create({
-                tenantId: finalTenantId as any,
+                tenantId,
                 key_name: keyName,
                 key_value: keyValue,
             });
@@ -91,49 +90,17 @@ export class IntegrationsService {
         }
     }
 
-    async getCredential(tenantId: string | null, keyName: string): Promise<string | null> {
-        // Try tenant specific key
+    async getCredential(tenantId: string, keyName: string): Promise<string | null> {
         const tenantCred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: tenantId ?? IsNull(), key_name: keyName }
+            where: { tenantId, key_name: keyName }
         });
-        if (tenantCred?.key_value) return tenantCred.key_value;
-
-        // Fallback to global key (where tenantId is strictly IsNull)
-        const globalCred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: IsNull(), key_name: keyName }
-        });
-        return globalCred?.key_value || null;
+        return tenantCred?.key_value || null;
     }
 
-    async findAllCredentials(tenantId: string | null, includeGlobal = true) {
-        this.logger.log(`[FIND_ALL] Tenant: ${tenantId || 'GLOBAL'}, includeGlobal: ${includeGlobal}`);
-
-        let all: ApiCredential[] = [];
-        if (!includeGlobal || tenantId === null) {
-            all = await this.apiCredentialRepository.find({
-                where: { tenantId: tenantId ?? IsNull() }
-            });
-        } else {
-            // Fetch both tenant and global
-            all = await this.apiCredentialRepository.find({
-                where: [
-                    { tenantId },
-                    { tenantId: IsNull() }
-                ]
-            });
-        }
-
-        // De-duplicate in favor of tenantId if both exist for same key_name
-        const map = new Map<string, ApiCredential>();
-        all.forEach(c => {
-            // If we don't have the key yet, or the new one is more specific (not null)
-            if (!map.has(c.key_name) || c.tenantId !== null) {
-                map.set(c.key_name, c);
-            }
+    async findAllCredentials(tenantId: string) {
+        this.logger.log(`[FIND_ALL] Tenant: ${tenantId}`);
+        return this.apiCredentialRepository.find({
+            where: { tenantId }
         });
-
-        const result = Array.from(map.values());
-        this.logger.log(`[FIND_ALL] Found ${all.length} total, returning ${result.length} unique`);
-        return result;
     }
 }
