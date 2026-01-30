@@ -417,7 +417,7 @@ export default function WhatsAppInstancesPage() {
                                         Instância: {selectedInstance && getDisplayName(selectedInstance)}
                                     </p>
                                 </div>
-                            ) : selectedInstance ? (
+                            ) : selectedInstance && instances.find(i => (i.instance?.instanceName || i.instanceName || i.name) === selectedInstance && (getStatus(i) === 'open' || getStatus(i) === 'connected')) ? (
                                 <div className="text-center space-y-4">
                                     <div className="p-4 bg-green-500/20 rounded-full inline-block">
                                         <CheckCircle2 className="w-16 h-16 text-green-500" />
@@ -425,6 +425,21 @@ export default function WhatsAppInstancesPage() {
                                     <div className="space-y-1">
                                         <p className="text-green-500 font-bold text-lg">Conectado!</p>
                                         <p className="text-gray-400 text-sm">Esta instância já está ativa</p>
+                                    </div>
+                                </div>
+                            ) : selectedInstance ? (
+                                <div className="text-center space-y-4 text-gray-500">
+                                    <XCircle className="w-12 h-12 mx-auto opacity-30 text-red-400" />
+                                    <div className="space-y-1">
+                                        <p className="font-bold text-red-400">Não foi possível carregar o QR Code</p>
+                                        <p className="text-xs">A API não retornou um código válido.</p>
+                                        <button
+                                            onClick={() => selectedInstance && fetchQrCode(selectedInstance)}
+                                            className="text-primary text-sm flex items-center space-x-1 mx-auto hover:underline mt-2"
+                                        >
+                                            <RefreshCw className="w-3 h-3" />
+                                            <span>Tentar Novamente</span>
+                                        </button>
                                     </div>
                                 </div>
                             ) : (

@@ -103,6 +103,14 @@ export class EvolutionApiService {
                 headers: { 'apikey': apiKey }
             });
             this.logger.log(`QR Code response for ${instanceName}: ${JSON.stringify(response.data)}`);
+
+            // Check if response contains valid QR code data
+            const data = response.data;
+            if (!data || (!data.code && !data.pairingCode && !data.base64 && (data.status !== 'open' && data.status !== 'connected'))) {
+                this.logger.warn(`Invalid QR Code response: ${JSON.stringify(data)}`);
+                throw new Error('Falha ao obter QR Code da EvolutionAPI. Tente recriar a instância.');
+            }
+
             return response.data;
         } catch (error) {
             this.logger.error(`Erro ao buscar QR Code no EvolutionAPI: ${error.message}`);
