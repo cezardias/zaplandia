@@ -102,9 +102,13 @@ export class EvolutionApiService {
             const response = await axios.get(`${baseUrl}/instance/connect/${instanceName}`, {
                 headers: { 'apikey': apiKey }
             });
+            this.logger.log(`QR Code response for ${instanceName}: ${JSON.stringify(response.data)}`);
             return response.data;
         } catch (error) {
             this.logger.error(`Erro ao buscar QR Code no EvolutionAPI: ${error.message}`);
+            if (error.response) {
+                this.logger.error(`Error details: ${JSON.stringify(error.response.data)}`);
+            }
             throw error;
         }
     }
