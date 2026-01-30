@@ -28,12 +28,21 @@ export class EvolutionApiService {
             const response = await axios.get(`${baseUrl}/instance/fetchInstances`, {
                 headers: { 'apikey': apiKey }
             });
+
+            this.logger.log(`Raw instances from EvolutionAPI: ${JSON.stringify(response.data)}`);
+
             // Filter instances that belong to this tenant (prefix: tenant_<tenantId>_)
-            const allInstances = response.data || [];
-            const tenantInstances = allInstances.filter((inst: any) =>
-                inst.instance?.instanceName?.startsWith(`tenant_${tenantId}_`) ||
-                inst.instanceName?.startsWith(`tenant_${tenantId}_`)
-            );
+            const allInstances = Array.isArray(response.data) ? response.data : [];
+
+            this.logger.log(`Filtering for tenantId: ${tenantId}`);
+
+            const tenantInstances = allInstances.filter((inst: any) => {
+                const name = inst.instance?.instanceName || inst.instanceName || '';
+                const match = name.startsWith(`tenant_${tenantId}_`);
+                this.logger.log(`Checking instance: ${name}, Match: ${match}`);
+                return match;
+            });
+
             return tenantInstances;
         } catch (error) {
             this.logger.error(`Erro ao listar instâncias: ${error.message}`);
