@@ -82,7 +82,7 @@ export class UsersService implements OnModuleInit {
         });
     }
 
-    async update(id: string, updateData: any): Promise<User> {
+    async update(id: string, updateData: any): Promise<User | null> {
         if (updateData.password) {
             updateData.password = await bcrypt.hash(updateData.password, 10);
         }
