@@ -28,6 +28,8 @@ export default function ApiSettingsPage() {
         ml_client_secret: '',
         olx_app_id: '',
         olx_app_secret: '',
+        evolution_api_url: '',
+        evolution_api_key: '',
     });
 
     // Fetch existing keys on load
@@ -84,6 +86,8 @@ export default function ApiSettingsPage() {
                         } catch (e) { }
                     }
                     if (item.key_name === 'N8N_WEBHOOK_URL') newKeys.n8n_webhook_url = item.key_value;
+                    if (item.key_name === 'EVOLUTION_API_URL') newKeys.evolution_api_url = item.key_value;
+                    if (item.key_name === 'EVOLUTION_API_KEY') newKeys.evolution_api_key = item.key_value;
                 });
                 setKeys(newKeys);
             }
@@ -481,6 +485,61 @@ export default function ApiSettingsPage() {
                             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             <span>Salvar Configuração OLX</span>
                         </button>
+                    </div>
+                </section>
+
+                {/* EvolutionAPI Section */}
+                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                        <Zap className="w-6 h-6 text-green-500" />
+                        <span>WhatsApp Unofficial (EvolutionAPI)</span>
+                    </h2>
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Evolution Instance URL</label>
+                                <input
+                                    type="text"
+                                    value={keys.evolution_api_url}
+                                    onChange={(e) => setKeys({ ...keys, evolution_api_url: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                    placeholder="https://evo.seudominio.com"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Global API Key</label>
+                                <input
+                                    type="password"
+                                    value={keys.evolution_api_key}
+                                    onChange={(e) => setKeys({ ...keys, evolution_api_key: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                    placeholder="••••••••••••"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <p className="text-xs text-gray-500 max-w-sm">
+                                Estas credenciais são usadas para conectar e gerenciar instâncias do WhatsApp via EvolutionAPI globalmente.
+                            </p>
+                            <div className="flex flex-col md:flex-row gap-2">
+                                <button
+                                    onClick={() => handleSave('EVOLUTION_API_URL', keys.evolution_api_url)}
+                                    disabled={isLoading}
+                                    className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-auto"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    <span>Salvar URL</span>
+                                </button>
+                                <button
+                                    onClick={() => handleSave('EVOLUTION_API_KEY', keys.evolution_api_key)}
+                                    disabled={isLoading}
+                                    className="bg-primary hover:bg-primary-dark px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-auto shadow-lg shadow-primary/20"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    <span>Salvar API Key</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
