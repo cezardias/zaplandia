@@ -100,9 +100,19 @@ export class IntegrationsService {
         return globalCred?.key_value || null;
     }
 
-    async findAllCredentials(tenantId: string | null) {
+    async findAllCredentials(tenantId: string | null, includeGlobal = true) {
+        if (!includeGlobal || tenantId === null) {
+            return this.apiCredentialRepository.find({
+                where: { tenantId: tenantId ?? IsNull() }
+            });
+        }
+
+        // Fetch both tenant and global
         return this.apiCredentialRepository.find({
-            where: { tenantId: tenantId ?? IsNull() }
+            where: [
+                { tenantId },
+                { tenantId: IsNull() }
+            ]
         });
     }
 }

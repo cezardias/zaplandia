@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Save, Key, Shield, Info, AlertCircle, Zap, Loader2, Send, Youtube, Linkedin, ShoppingBag, Store } from 'lucide-react';
+import { Save, Key, Shield, Info, AlertCircle, Zap, Loader2, Send, Youtube, Linkedin, ShoppingBag, Store, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function ApiSettingsPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+    const [isSavingAll, setIsSavingAll] = useState(false);
 
     const [keys, setKeys] = useState({
         fb_app_id: '',
@@ -96,11 +99,8 @@ export default function ApiSettingsPage() {
         }
     };
 
-    const handleSave = async (name: string, value: string) => {
-        if (!value.trim()) {
-            setStatus({ type: 'error', msg: 'O valor não pode estar vazio.' });
-            return;
-        }
+    const handleSave = async (name: string, value: string, isGlobal = true) => {
+        if (!value) return;
 
         setIsLoading(true);
         setStatus(null);
@@ -111,17 +111,11 @@ export default function ApiSettingsPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, value })
+                body: JSON.stringify({ name, value, isGlobal })
             });
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Falha ao salvar credencial');
-            }
-
-            setStatus({ type: 'success', msg: `Configuração ${name} salva com sucesso!` });
-
-            // Re-fetch to confirm
+            if (!res.ok) throw new Error('Falha ao salvar');
+            setStatus({ type: 'success', msg: `${name} salvo!` });
             fetchExistingKeys();
         } catch (err: any) {
             setStatus({ type: 'error', msg: err.message });
@@ -130,16 +124,75 @@ export default function ApiSettingsPage() {
         }
     };
 
+    const handleSaveAll = async () => {
+        setIsSavingAll(true);
+        setStatus(null);
+        try {
+            const configs = [
+                {
+                    name: 'META_APP_CONFIG', value: JSON.stringify({
+                        appId: keys.fb_app_id,
+                        secret: keys.fb_app_secret,
+                        pageAccessToken: keys.meta_page_access_token,
+                        instagramBusinessId: keys.meta_instagram_business_id,
+                        verifyToken: keys.meta_verify_token,
+                        whatsappPhoneNumberId: keys.whatsapp_phone_number_id,
+                        whatsappBusinessAccountId: keys.whatsapp_business_account_id
+                    })
+                },
+                { name: 'WHATSAPP_TOKEN', value: keys.whatsapp_token },
+                { name: 'GEMINI_API_KEY', value: keys.gemini_key },
+                { name: 'TELEGRAM_TOKEN', value: keys.telegram_token },
+                { name: 'YOUTUBE_API_KEY', value: keys.youtube_api_key },
+                { name: 'LINKEDIN_CONFIG', value: JSON.stringify({ clientId: keys.linkedin_client_id, secret: keys.linkedin_client_secret }) },
+                { name: 'MERCADO_LIVRE_CONFIG', value: JSON.stringify({ clientId: keys.ml_client_id, secret: keys.ml_client_secret }) },
+                { name: 'OLX_CONFIG', value: JSON.stringify({ appId: keys.olx_app_id, secret: keys.olx_app_secret }) },
+                { name: 'EVOLUTION_API_URL', value: keys.evolution_api_url },
+                { name: 'EVOLUTION_API_KEY', value: keys.evolution_api_key },
+                { name: 'N8N_WEBHOOK_URL', value: keys.n8n_webhook_url },
+            ];
+
+            for (const config of configs) {
+                if (config.value) {
+                    await fetch('/api/integrations/credentials', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ ...config, isGlobal: true })
+                    });
+                }
+            }
+
+            setStatus({ type: 'success', msg: 'Todas as configurações foram salvas com sucesso!' });
+            fetchExistingKeys();
+        } catch (err: any) {
+            setStatus({ type: 'error', msg: 'Erro ao salvar algumas configurações.' });
+        } finally {
+            setIsSavingAll(false);
+        }
+    };
+
     return (
         <div className="p-8 max-w-4xl mx-auto text-white pb-20">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold flex items-center space-x-3">
-                    <Key className="w-8 h-8 text-primary" />
-                    <span>Configurações de API</span>
-                </h1>
-                <p className="text-gray-400 mt-2 text-sm lg:text-base">
-                    Centralize suas chaves de API. Seus clientes usarão estas chaves para as integrações deles, ou poderão cadastrar as próprias chaves.
-                </p>
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold flex items-center space-x-3">
+                        <Key className="w-8 h-8 text-primary" />
+                        <span>Configurações de API</span>
+                    </h1>
+                    <p className="text-gray-400 mt-2 text-sm lg:text-base">
+                        Centralize suas chaves de API globais do sistema.
+                    </p>
+                </div>
+                <button
+                    onClick={() => router.push('/dashboard')}
+                    className="flex items-center space-x-2 text-gray-500 hover:text-white transition group"
+                >
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    <span>Voltar ao Dashboard</span>
+                </button>
             </div>
 
             {status && (
@@ -574,6 +627,25 @@ export default function ApiSettingsPage() {
                     </div>
                 </section>
             </div >
+
+            {/* Bottom Actions */}
+            <div className="fixed bottom-0 left-0 right-0 p-6 bg-surface/80 backdrop-blur-xl border-t border-white/10 flex items-center justify-center space-x-4 z-50">
+                <button
+                    onClick={handleSaveAll}
+                    disabled={isSavingAll}
+                    className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-8 py-4 rounded-2xl font-black transition flex items-center space-x-3 shadow-xl"
+                >
+                    {isSavingAll ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    <span>SALVAR TUDO</span>
+                </button>
+                <button
+                    onClick={() => router.push('/dashboard')}
+                    className="bg-primary hover:bg-primary-dark text-white px-10 py-4 rounded-2xl font-black transition flex items-center space-x-3 shadow-xl shadow-primary/20"
+                >
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>CONCLUIR E SAIR</span>
+                </button>
+            </div>
         </div >
     );
 }
