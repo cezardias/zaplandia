@@ -65,14 +65,26 @@ export class UsersService implements OnModuleInit {
         });
     }
 
-    async create(userData: any): Promise<User> {
-        const user = this.usersRepository.create(userData as object);
-        return this.usersRepository.save(user);
+    async findAllTenants(): Promise<Tenant[]> {
+        return this.tenantsRepository.find({ order: { name: 'ASC' } });
     }
 
-    async createTenant(tenantData: any): Promise<Tenant> {
-        const tenant = this.tenantsRepository.create(tenantData as object);
-        return this.tenantsRepository.save(tenant);
+    async create(userData: any): Promise<User> {
+        // Ensure every user has a tenant. If none provided, try to find HQ or first available.
+        if (!userData.tenantId) {
+            const hq = await this.tenantsRepository.findOne({ where: { name: 'Zaplandia HQ' } })
+                || await this.tenantsRepository.findOne({ where: {} });
+            if (hq) {
+                userData.tenantId = hq.id;
+            }
+        }
+
+        if (userData.password) {
+            userData.password = await bcrypt.hash(userData.password, 10);
+        }
+
+        const user = this.usersRepository.create(userData as object);
+        return this.usersRepository.save(user);
     }
 
     async findAll(): Promise<User[]> {

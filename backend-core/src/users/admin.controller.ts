@@ -35,6 +35,14 @@ export class AdminController {
         return this.integrationsService.saveApiCredential(tenantId, name, value);
     }
 
+    @Get('tenants')
+    async findAllTenants(@Request() req) {
+        if (req.user.role !== UserRole.SUPERADMIN) {
+            throw new ForbiddenException('Acesso negado.');
+        }
+        return this.usersService.findAllTenants();
+    }
+
     @Get('users')
     async findAll(@Request() req) {
         if (req.user.role !== UserRole.SUPERADMIN) {

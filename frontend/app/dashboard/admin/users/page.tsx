@@ -1,39 +1,31 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import {
-    Users,
-    UserPlus,
-    Search,
-    Edit,
-    Trash2,
-    Shield,
-    Building2,
-    Mail,
-    Calendar,
-    X,
-    Zap,
-    Save,
-    AlertCircle
+    Users, UserPlus, Search, Mail, Shield, Calendar,
+    MoreHorizontal, Edit, Trash2, X, Save, AlertCircle,
+    Zap, Building2
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
 import ApiSettingsFields from '@/components/ApiSettingsFields';
 
 interface UserData {
     id: string;
-    email: string;
     name: string;
+    email: string;
     role: string;
-    createdAt: string;
-    tenantId: string;
+    tenantId: string | null;
     tenant?: {
+        id: string;
         name: string;
     };
+    createdAt: string;
 }
 
 export default function UserManagementPage() {
     const { token, user: currentUser } = useAuth();
     const [users, setUsers] = useState<UserData[]>([]);
+    const [tenants, setTenants] = useState<{ id: string, name: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,13 +34,17 @@ export default function UserManagementPage() {
         name: '',
         email: '',
         password: '',
-        role: 'user'
+        role: 'user',
+        tenantId: ''
     });
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'profile' | 'apis'>('profile');
 
     useEffect(() => {
-        if (token) fetchUsers();
+        if (token) {
+            fetchUsers();
+            fetchTenants();
+        }
     }, [token]);
 
     const fetchUsers = async () => {
@@ -65,6 +61,20 @@ export default function UserManagementPage() {
             console.error('Error fetching users:', err);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchTenants = async () => {
+        try {
+            const res = await fetch('/api/admin/tenants', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setTenants(data);
+            }
+        } catch (err) {
+            console.error('Error fetching tenants:', err);
         }
     };
 
@@ -119,14 +129,14 @@ export default function UserManagementPage() {
                 name: user.name,
                 email: user.email,
                 password: '',
-                role: user.role
+                role: user.role,
+                tenantId: user.tenantId || ''
             });
         } else {
             setEditingUser(null);
-            setFormData({ name: '', email: '', password: '', role: 'user' });
+            setFormData({ name: '', email: '', password: '', role: 'user', tenantId: '' });
         }
         setIsModalOpen(true);
-        // Default to profile tab, but if we opened via the zap icon, the caller sets it to 'apis'
         if (activeTab !== 'apis') setActiveTab('profile');
     };
 
@@ -236,7 +246,7 @@ export default function UserManagementPage() {
                                     <td className="px-6 py-5">
                                         <div className="text-sm text-gray-300 flex items-center">
                                             <Building2 className="w-4 h-4 mr-2 text-gray-500" />
-                                            {u.tenant?.name || 'Sistema'}
+                                            {u.tenant?.name || 'Sistema (Pendente)'}
                                         </div>
                                     </td>
                                     <td className="px-6 py-5 text-sm text-gray-500">
@@ -367,6 +377,19 @@ export default function UserManagementPage() {
                                                 <option value="superadmin" className="bg-[#121214]">Super Admin</option>
                                             </select>
                                         </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Tenant / Organização</label>
+                                            <select
+                                                value={formData.tenantId}
+                                                onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition appearance-none cursor-pointer"
+                                            >
+                                                <option value="" className="bg-[#121214]">Selecionar Tenant...</option>
+                                                {tenants.map(t => (
+                                                    <option key={t.id} value={t.id} className="bg-[#121214]">{t.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div className="flex space-x-4 pt-4">
@@ -388,11 +411,19 @@ export default function UserManagementPage() {
                                 </form>
                             ) : (
                                 <div className="p-8">
-                                    <ApiSettingsFields
-                                        token={token!}
-                                        tenantId={editingUser?.tenantId}
-                                        isAdminMode={true}
-                                    />
+                                    {formData.tenantId ? (
+                                        <ApiSettingsFields
+                                            token={token!}
+                                            tenantId={formData.tenantId}
+                                            isAdminMode={true}
+                                        />
+                                    ) : (
+                                        <div className="py-12 text-center">
+                                            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                                            <h4 className="text-white font-bold mb-2">Atenção</h4>
+                                            <p className="text-gray-400 text-sm">Selecione um Tenant na aba Perfil para gerenciar as APIs deste usuário.</p>
+                                        </div>
+                                    )}
                                     <div className="mt-8 pt-4 border-t border-white/10">
                                         <button
                                             onClick={() => setIsModalOpen(false)}
@@ -406,8 +437,7 @@ export default function UserManagementPage() {
                         </div>
                     </div>
                 </div>
-            )
-            }
-        </div >
+            )}
+        </div>
     );
 }
