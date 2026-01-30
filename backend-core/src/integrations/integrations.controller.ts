@@ -66,14 +66,27 @@ export class IntegrationsController {
 
     @UseGuards(JwtAuthGuard)
     @Post('credentials')
-    saveCredentials(@Request() req, @Body() body: { name: string, value: string }) {
-        return this.integrationsService.saveApiCredential(req.user.tenantId, body.name, body.value);
+    async saveCredentials(@Request() req, @Body() body: { name: string, value: string }) {
+        // Fallback: if tenantId is missing from token (legacy users), fetch from DB
+        let tenantId = req.user.tenantId;
+        if (!tenantId) {
+            const freshUser = await this.integrationsService.fetchUserTenantId(req.user.userId);
+            tenantId = freshUser;
+        }
+        if (!tenantId) {
+            throw new Error('Cannot save credentials: user has no associated tenant.');
+        }
+        return this.integrationsService.saveApiCredential(tenantId, body.name, body.value);
     }
 
     @UseGuards(JwtAuthGuard)
     @Get('credentials')
-    getCredentials(@Request() req) {
-        return this.integrationsService.findAllCredentials(req.user.tenantId);
+    async getCredentials(@Request() req) {
+        let tenantId = req.user.tenantId;
+        if (!tenantId) {
+            tenantId = await this.integrationsService.fetchUserTenantId(req.user.userId);
+        }
+        return this.integrationsService.findAllCredentials(tenantId);
     }
 
     @UseGuards(JwtAuthGuard)

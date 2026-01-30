@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Integration, IntegrationProvider, IntegrationStatus } from './entities/integration.entity';
 import { ApiCredential } from './entities/api-credential.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class IntegrationsService {
@@ -13,7 +14,14 @@ export class IntegrationsService {
         private integrationRepository: Repository<Integration>,
         @InjectRepository(ApiCredential)
         private apiCredentialRepository: Repository<ApiCredential>,
+        @InjectRepository(User)
+        private usersRepository: Repository<User>,
     ) { }
+
+    async fetchUserTenantId(userId: string): Promise<string | null> {
+        const user = await this.usersRepository.findOne({ where: { id: userId } });
+        return user?.tenantId || null;
+    }
 
     async findAllByTenant(tenantId: string, role?: string) {
         if (role === 'superadmin') {

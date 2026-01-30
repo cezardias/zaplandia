@@ -6,9 +6,10 @@ import { IntegrationsService } from './integrations.service';
 import { IntegrationsController } from './integrations.controller';
 import { N8nService } from './n8n.service';
 import { EvolutionApiService } from './evolution-api.service';
+import { User } from '../users/entities/user.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Integration, ApiCredential])],
+    imports: [TypeOrmModule.forFeature([Integration, ApiCredential, User])],
     controllers: [IntegrationsController],
     providers: [IntegrationsService, N8nService, EvolutionApiService],
     exports: [IntegrationsService, N8nService, EvolutionApiService],
