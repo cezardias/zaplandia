@@ -89,7 +89,7 @@ export class IntegrationsService {
     async getCredential(tenantId: string | null, keyName: string): Promise<string | null> {
         // Try tenant specific key
         const tenantCred = await this.apiCredentialRepository.findOne({
-            where: { tenantId, key_name: keyName }
+            where: { tenantId: tenantId ?? IsNull(), key_name: keyName }
         });
         if (tenantCred?.key_value) return tenantCred.key_value;
 
