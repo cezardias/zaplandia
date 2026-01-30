@@ -86,7 +86,7 @@ export class IntegrationsService {
             this.logger.log(`[SAVE_CREDENTIAL] Updating existing credential ID: ${cred.id}`);
         } else {
             cred = this.apiCredentialRepository.create({
-                tenantId: tenantId || null,
+                tenantId: tenantId || undefined,
                 key_name: keyName,
                 key_value: keyValue,
             });
