@@ -290,31 +290,26 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                         value={keys.evolution_api_url}
                         onChange={(e) => setKeys({ ...keys, evolution_api_url: e.target.value })}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                        placeholder="Instance URL"
+                        placeholder="Instance URL (ex: https://evolution.seudominio.com)"
                     />
                     <input
                         type="password"
                         value={keys.evolution_api_key}
                         onChange={(e) => setKeys({ ...keys, evolution_api_key: e.target.value })}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                        placeholder="API Key"
+                        placeholder="API Key / Global Token"
                     />
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            onClick={() => handleSave('EVOLUTION_API_URL', keys.evolution_api_url)}
-                            disabled={isLoading}
-                            className="bg-primary/20 hover:bg-primary/30 text-primary py-2 rounded-xl text-sm font-bold transition"
-                        >
-                            Salvar URL
-                        </button>
-                        <button
-                            onClick={() => handleSave('EVOLUTION_API_KEY', keys.evolution_api_key)}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition"
-                        >
-                            Salvar Key
-                        </button>
-                    </div>
+                    <button
+                        onClick={async () => {
+                            await handleSave('EVOLUTION_API_URL', keys.evolution_api_url);
+                            await handleSave('EVOLUTION_API_KEY', keys.evolution_api_key);
+                        }}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar EvolutionAPI</span>
+                    </button>
                 </div>
             </section>
 
