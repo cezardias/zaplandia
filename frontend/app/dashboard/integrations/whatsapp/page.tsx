@@ -103,11 +103,14 @@ export default function WhatsAppInstancesPage() {
                 setNewInstanceName('');
                 setSuccessMessage('Instância criada com sucesso!');
                 await fetchInstances();
+                await fetchInstances();
                 // If QR code was returned, show it
-                if (data.qrcode?.base64) {
-                    const instanceName = data.instance?.instanceName || `tenant_${user?.tenantId}_${sanitizedName}`;
+                if (data.qrcode?.base64 || data.base64 || data.qrcode) {
+                    const instanceName = data.instance?.instanceName || data.instanceName || `tenant_${user?.tenantId}_${sanitizedName}`;
                     setSelectedInstance(instanceName);
-                    setQrCode(data.qrcode.base64);
+                    // Check if qrcode is object or string
+                    const qr = data.qrcode?.base64 || data.base64 || (typeof data.qrcode === 'string' ? data.qrcode : null);
+                    if (qr) setQrCode(qr);
                 }
             } else {
                 const errData = await res.json();
