@@ -14,6 +14,7 @@ export enum IntegrationProvider {
     MERCADO_LIVRE = 'mercadolivre',
     OLX = 'olx',
     N8N = 'n8n',
+    EVOLUTION = 'evolution',
 }
 
 export enum IntegrationStatus {

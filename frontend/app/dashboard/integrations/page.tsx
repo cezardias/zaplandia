@@ -21,8 +21,11 @@ import {
     ShoppingBag,
     Store,
     Bot,
-    Save
+    Save,
+    QrCode,
+    Terminal
 } from 'lucide-react';
+import EvolutionApiConfig from '@/components/integrations/EvolutionApiConfig';
 
 interface Integration {
     id: string;
@@ -33,14 +36,15 @@ interface Integration {
 const PROVIDERS = [
     { id: 'facebook', name: 'Meta / Facebook', icon: <Facebook className="w-8 h-8 text-blue-600" />, desc: 'Sincronize mensagens da sua página e automações.' },
     { id: 'instagram', name: 'Instagram', icon: <Instagram className="w-8 h-8 text-pink-500" />, desc: 'Gerencie DMs e comentários em um só lugar.' },
-    { id: 'whatsapp', name: 'WhatsApp API', icon: <Zap className="w-8 h-8 text-green-500" />, desc: 'Conecte o WhatsApp Business para atendimentos.' },
+    { id: 'whatsapp', name: 'WhatsApp API Oficial', icon: <Zap className="w-8 h-8 text-green-500" />, desc: 'Conecte o WhatsApp Business Oficial (Meta).' },
+    { id: 'evolution', name: 'WhatsApp Não Oficial', icon: <QrCode className="w-8 h-8 text-primary" />, desc: 'Aparelho Conectado via QR Code (EvolutionAPI).' },
     { id: 'telegram', name: 'Telegram Bot', icon: <Send className="w-8 h-8 text-blue-400" />, desc: 'Gerencie bots de atendimento e vendas.' },
     { id: 'tiktok', name: 'TikTok Business', icon: <Smartphone className="w-8 h-8 text-black" />, desc: 'Responda comentários e mensagens do TikTok.' },
     { id: 'linkedin', name: 'LinkedIn', icon: <Linkedin className="w-8 h-8 text-blue-800" />, desc: 'Automação e CRM para vendas B2B.' },
     { id: 'google_sheets', name: 'Google Sheets', icon: <Globe className="w-8 h-8 text-yellow-600" />, desc: 'Sincronize seus leads com planilhas.' },
     { id: 'mercadolivre', name: 'Mercado Livre', icon: <ShoppingBag className="w-8 h-8 text-yellow-500" />, desc: 'Gerencie perguntas e vendas do Mercado Livre.' },
     { id: 'olx', name: 'OLX', icon: <Store className="w-8 h-8 text-orange-600" />, desc: 'Responda chats e gerencie anúncios da OLX.' },
-    { id: 'n8n', name: 'n8n Automation', icon: <Zap className="w-8 h-8 text-orange-500" />, desc: 'Conecte webhooks para automações com IA.' },
+    { id: 'n8n', name: 'n8n Automation', icon: <Terminal className="w-8 h-8 text-orange-500" />, desc: 'Conecte Webhooks para automações de fluxos.' },
 ];
 
 export default function IntegrationsPage() {
@@ -52,6 +56,7 @@ export default function IntegrationsPage() {
     const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
     const [aiConfig, setAiConfig] = useState({ enabled: false, prompt: '' });
     const [isSavingAI, setIsSavingAI] = useState(false);
+    const [showEvolutionModal, setShowEvolutionModal] = useState(false);
 
     useEffect(() => {
         if (token) {
@@ -80,6 +85,10 @@ export default function IntegrationsPage() {
     };
 
     const handleConnect = async (provider: string) => {
+        if (provider === 'evolution') {
+            setShowEvolutionModal(true);
+            return;
+        }
         setConnectingId(provider);
         try {
             const res = await fetch(`/api/integrations/connect/${provider}`, {
@@ -235,6 +244,18 @@ export default function IntegrationsPage() {
                         );
                     })}
                 </div>
+            )}
+
+            {/* Evolution API Connection Modal */}
+            {showEvolutionModal && (
+                <EvolutionApiConfig
+                    token={token || ''}
+                    onClose={() => setShowEvolutionModal(false)}
+                    onSuccess={() => {
+                        setShowEvolutionModal(false);
+                        fetchIntegrations();
+                    }}
+                />
             )}
 
             {/* AI Configuration Modal */}

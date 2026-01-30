@@ -5,11 +5,12 @@ import { ApiCredential } from './entities/api-credential.entity';
 import { IntegrationsService } from './integrations.service';
 import { IntegrationsController } from './integrations.controller';
 import { N8nService } from './n8n.service';
+import { EvolutionApiService } from './evolution-api.service';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Integration, ApiCredential])],
     controllers: [IntegrationsController],
-    providers: [IntegrationsService, N8nService],
-    exports: [IntegrationsService, N8nService],
+    providers: [IntegrationsService, N8nService, EvolutionApiService],
+    exports: [IntegrationsService, N8nService, EvolutionApiService],
 })
 export class IntegrationsModule { }

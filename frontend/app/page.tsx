@@ -89,10 +89,10 @@ export default function LandingPage() {
             <div className="text-center">
               <motion.div {...fadeIn}>
                 <span className="px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-medium mb-6 inline-block">
-                  A evolução do GoHighLevel chegou
+                  A evolução do chegou!
                 </span>
                 <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6">
-                  Automatize seu nicho com <br />
+                  Automatize sua empresa com <br />
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary animate-gradient">
                     Inteligência Artificial Real
                   </span>

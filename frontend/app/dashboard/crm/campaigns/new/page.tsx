@@ -1,6 +1,4 @@
-'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
     ArrowLeft,
@@ -15,7 +13,8 @@ import {
     Users,
     FileJson,
     Save,
-    Loader2
+    Loader2,
+    QrCode
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -24,13 +23,35 @@ export default function NewCampaignPage() {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [availableIntegrations, setAvailableIntegrations] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         name: '',
         channels: [] as string[],
+        integrationId: '',
         audience: 'existing' as 'existing' | 'json',
         jsonLeads: null as any,
         message: ''
     });
+
+    useEffect(() => {
+        if (token) {
+            fetchIntegrations();
+        }
+    }, [token]);
+
+    const fetchIntegrations = async () => {
+        try {
+            const res = await fetch('/api/integrations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAvailableIntegrations(data);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar integrações:', err);
+        }
+    };
 
     const channels_list = [
         { id: 'whatsapp', name: 'WhatsApp', icon: <Zap className="w-5 h-5 text-green-500" /> },
@@ -78,6 +99,7 @@ export default function NewCampaignPage() {
                 body: JSON.stringify({
                     name: formData.name,
                     channels: formData.channels,
+                    integrationId: formData.integrationId,
                     messageTemplate: formData.message,
                     useExistingContacts: formData.audience === 'existing',
                     leads: formData.audience === 'json' ? formData.jsonLeads : undefined
@@ -98,6 +120,8 @@ export default function NewCampaignPage() {
             setIsLoading(false);
         }
     };
+
+    const waIntegrations = availableIntegrations.filter(i => i.provider === 'whatsapp' || i.provider === 'evolution');
 
     return (
         <div className="p-8 max-w-3xl mx-auto pb-20">
@@ -133,7 +157,6 @@ export default function NewCampaignPage() {
                             onChange={e => {
                                 const val = e.target.value;
                                 setFormData(prev => ({ ...prev, name: val }));
-                                console.log('Name updated:', val);
                             }}
                             placeholder="Ex: Lançamento de Inverno 2026"
                             className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-lg focus:border-primary outline-none transition mt-4"
@@ -167,6 +190,43 @@ export default function NewCampaignPage() {
                             </button>
                         ))}
                     </div>
+
+                    {formData.channels.includes('whatsapp') && (
+                        <div className="mt-10 space-y-4 pt-10 border-t border-white/10">
+                            <h3 className="text-lg font-bold flex items-center space-x-2">
+                                <Zap className="w-5 h-5 text-green-500" />
+                                <span>Canal WhatsApp: Selecione a Instância</span>
+                            </h3>
+                            <div className="grid grid-cols-1 gap-3">
+                                {waIntegrations.length > 0 ? (
+                                    waIntegrations.map((integration: any) => (
+                                        <button
+                                            key={integration.id}
+                                            onClick={() => setFormData({ ...formData, integrationId: integration.id })}
+                                            className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${formData.integrationId === integration.id ? 'bg-primary/10 border-primary' : 'bg-white/5 border-white/5'}`}
+                                        >
+                                            <div className="flex items-center space-x-3">
+                                                {integration.provider === 'evolution' ? <QrCode className="w-4 h-4 text-primary" /> : <Zap className="w-4 h-4 text-green-500" />}
+                                                <div>
+                                                    <p className="font-bold text-sm">
+                                                        {integration.provider === 'evolution' ? 'Unofficial (EvolutionAPI)' : 'Official (Meta)'}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-500 uppercase tracking-tighter">
+                                                        ID: {integration.id.substring(0, 8)}...
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {formData.integrationId === integration.id && <CheckCircle2 className="w-5 h-5 text-primary" />}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="p-6 bg-red-500/5 border border-red-500/10 rounded-2xl text-center">
+                                        <p className="text-sm text-red-500">Nenhuma instância de WhatsApp conectada. Conecte uma primeiro em Integrações.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -187,7 +247,7 @@ export default function NewCampaignPage() {
                             <Users className={`w-8 h-8 ${formData.audience === 'existing' ? 'text-primary' : 'text-gray-500'}`} />
                             <div>
                                 <h3 className="font-bold text-lg">Contatos Existentes</h3>
-                                <p className="text-xs text-gray-500 mt-1 leading-relaxed">Envie para todos os contatos já cadastrados no seu CRM Omnichannel.</p>
+                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">Envie para todos os contatos já cadastrados no seu CRM Omnichannel.</p>
                             </div>
                         </button>
 
@@ -261,7 +321,7 @@ export default function NewCampaignPage() {
                     <button
                         disabled={
                             (step === 1 && !formData.name) ||
-                            (step === 2 && formData.channels.length === 0) ||
+                            (step === 2 && (formData.channels.length === 0 || (formData.channels.includes('whatsapp') && !formData.integrationId))) ||
                             (step === 3 && formData.audience === 'json' && !formData.jsonLeads)
                         }
                         onClick={() => setStep(step + 1)}

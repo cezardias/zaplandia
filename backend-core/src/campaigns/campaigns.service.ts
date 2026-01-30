@@ -31,6 +31,7 @@ export class CampaignsService {
                 name: data.name,
                 channels: data.channels,
                 messageTemplate: data.messageTemplate,
+                integrationId: data.integrationId,
                 status: CampaignStatus.PENDING,
                 tenantId,
             };

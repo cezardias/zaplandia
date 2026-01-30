@@ -31,6 +31,9 @@ export class Campaign {
     @Column({ type: 'text', nullable: true })
     messageTemplate: string;
 
+    @Column({ type: 'uuid', nullable: true })
+    integrationId: string;
+
     @ManyToOne(() => Tenant)
     tenant: Tenant;
 
