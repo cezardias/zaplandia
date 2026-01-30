@@ -102,10 +102,9 @@ export default function ApiSettingsPage() {
     };
 
     const handleSave = async (name: string, value: string, isGlobal = true) => {
-        if (!value) return;
-
         setIsLoading(true);
         setStatus(null);
+        console.log(`[SAVE] Attempting to save ${name}, Global: ${isGlobal}`);
         try {
             const res = await fetch('/api/integrations/credentials', {
                 method: 'POST',

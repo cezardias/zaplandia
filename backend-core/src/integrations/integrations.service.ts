@@ -106,18 +106,34 @@ export class IntegrationsService {
     }
 
     async findAllCredentials(tenantId: string | null, includeGlobal = true) {
+        this.logger.log(`[FIND_ALL] Tenant: ${tenantId || 'GLOBAL'}, includeGlobal: ${includeGlobal}`);
+
+        let all: ApiCredential[] = [];
         if (!includeGlobal || tenantId === null) {
-            return this.apiCredentialRepository.find({
+            all = await this.apiCredentialRepository.find({
                 where: { tenantId: tenantId ?? IsNull() }
+            });
+        } else {
+            // Fetch both tenant and global
+            all = await this.apiCredentialRepository.find({
+                where: [
+                    { tenantId },
+                    { tenantId: IsNull() }
+                ]
             });
         }
 
-        // Fetch both tenant and global
-        return this.apiCredentialRepository.find({
-            where: [
-                { tenantId },
-                { tenantId: IsNull() }
-            ]
+        // De-duplicate in favor of tenantId if both exist for same key_name
+        const map = new Map<string, ApiCredential>();
+        all.forEach(c => {
+            // If we don't have the key yet, or the new one is more specific (not null)
+            if (!map.has(c.key_name) || c.tenantId !== null) {
+                map.set(c.key_name, c);
+            }
         });
+
+        const result = Array.from(map.values());
+        this.logger.log(`[FIND_ALL] Found ${all.length} total, returning ${result.length} unique`);
+        return result;
     }
 }

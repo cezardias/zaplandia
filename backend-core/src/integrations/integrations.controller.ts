@@ -74,7 +74,7 @@ export class IntegrationsController {
     @UseGuards(JwtAuthGuard)
     @Get('credentials')
     getCredentials(@Request() req) {
-        return this.integrationsService.findAllCredentials(req.user.tenantId);
+        return this.integrationsService.findAllCredentials(req.user.tenantId, req.user.role === 'superadmin');
     }
 
     @UseGuards(JwtAuthGuard)
