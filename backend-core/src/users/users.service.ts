@@ -74,4 +74,23 @@ export class UsersService implements OnModuleInit {
         const tenant = this.tenantsRepository.create(tenantData as object);
         return this.tenantsRepository.save(tenant);
     }
+
+    async findAll(): Promise<User[]> {
+        return this.usersRepository.find({
+            relations: ['tenant'],
+            order: { createdAt: 'DESC' }
+        });
+    }
+
+    async update(id: string, updateData: any): Promise<User> {
+        if (updateData.password) {
+            updateData.password = await bcrypt.hash(updateData.password, 10);
+        }
+        await this.usersRepository.update(id, updateData);
+        return this.usersRepository.findOneBy({ id });
+    }
+
+    async remove(id: string): Promise<void> {
+        await this.usersRepository.delete(id);
+    }
 }

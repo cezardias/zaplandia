@@ -78,11 +78,14 @@ export default function DashboardLayout({
 
                     {user?.role === 'superadmin' && (
                         <Link
-                            href="/dashboard/admin"
-                            className="flex items-center space-x-3 px-4 py-3 rounded-xl text-yellow-500 hover:bg-yellow-500/10 transition font-medium"
+                            href="/dashboard/admin/users"
+                            className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition font-medium ${pathname === '/dashboard/admin/users'
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                : 'text-yellow-500 hover:bg-yellow-500/10'
+                                }`}
                         >
                             <ShieldCheck className="w-5 h-5" />
-                            <span>Painel Super Admin</span>
+                            <span>Gestão de Usuários</span>
                         </Link>
                     )}
                 </nav>

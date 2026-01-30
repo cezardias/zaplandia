@@ -5,9 +5,10 @@ import { Save, Key, Shield, Info, AlertCircle, Zap, Loader2, Send, Youtube, Link
 import { useAuth } from '@/context/AuthContext';
 
 export default function ApiSettingsPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+    const [editMode, setEditMode] = useState<'global' | 'personal'>('personal');
 
     const [keys, setKeys] = useState({
         fb_app_id: '',
@@ -32,7 +33,10 @@ export default function ApiSettingsPage() {
         n8n_webhook_url: '',
     });
 
-    // Fetch existing keys on load
+    const [globalKeys, setGlobalKeys] = useState<any>({});
+    const [personalKeys, setPersonalKeys] = useState<any>({});
+
+    // Fetch existing keys on load or mode change
     useEffect(() => {
         if (token) {
             fetchExistingKeys();
@@ -47,67 +51,108 @@ export default function ApiSettingsPage() {
             if (res.ok) {
                 const data = await res.json();
                 console.log('Credentials fetched successfully:', data);
-                setKeys(prev => {
-                    const next = { ...prev };
-                    data.forEach((item: any) => {
-                        if (item.key_name === 'META_APP_CONFIG') {
-                            console.log('Mapping META_APP_CONFIG');
-                            try {
-                                const parsed = JSON.parse(item.key_value);
-                                next.fb_app_id = parsed.appId || '';
-                                next.fb_app_secret = parsed.secret || '';
-                                next.meta_page_access_token = parsed.pageAccessToken || '';
-                                next.meta_instagram_business_id = parsed.instagramBusinessId || '';
-                                next.meta_verify_token = parsed.verifyToken || 'zaplandia_verify_token';
-                                next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
-                                next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
-                            } catch (e) {
-                                console.error('Error parsing META_APP_CONFIG:', e);
-                            }
-                        }
-                        if (item.key_name === 'WHATSAPP_TOKEN') next.whatsapp_token = item.key_value;
-                        if (item.key_name === 'GEMINI_API_KEY') next.gemini_key = item.key_value;
-                        if (item.key_name === 'TELEGRAM_TOKEN') next.telegram_token = item.key_value;
-                        if (item.key_name === 'YOUTUBE_API_KEY') next.youtube_api_key = item.key_value;
-                        if (item.key_name === 'LINKEDIN_CONFIG') {
-                            try {
-                                const parsed = JSON.parse(item.key_value);
-                                next.linkedin_client_id = parsed.clientId || '';
-                                next.linkedin_client_secret = parsed.secret || '';
-                            } catch (e) { }
-                        }
-                        if (item.key_name === 'MERCADO_LIVRE_CONFIG') {
-                            try {
-                                const parsed = JSON.parse(item.key_value);
-                                next.ml_client_id = parsed.clientId || '';
-                                next.ml_client_secret = parsed.secret || '';
-                            } catch (e) { }
-                        }
-                        if (item.key_name === 'OLX_CONFIG') {
-                            try {
-                                const parsed = JSON.parse(item.key_value);
-                                next.olx_app_id = parsed.appId || '';
-                                next.olx_app_secret = parsed.secret || '';
-                            } catch (e) { }
-                        }
-                        if (item.key_name === 'N8N_WEBHOOK_URL') next.n8n_webhook_url = item.key_value;
-                        if (item.key_name === 'EVOLUTION_API_URL') next.evolution_api_url = item.key_value;
-                        if (item.key_name === 'EVOLUTION_API_KEY') next.evolution_api_key = item.key_value;
-                    });
-                    return next;
+
+                const gKeys: any = {};
+                const pKeys: any = {};
+
+                data.forEach((item: any) => {
+                    if (item.tenantId === null) {
+                        gKeys[item.key_name] = item.key_value;
+                    } else {
+                        pKeys[item.key_name] = item.key_value;
+                    }
                 });
-            } else {
-                console.error('Failed to fetch credentials:', res.status);
+
+                setGlobalKeys(gKeys);
+                setPersonalKeys(pKeys);
+                mapToState(editMode === 'global' ? gKeys : { ...gKeys, ...pKeys });
             }
         } catch (err) {
             console.error('Erro ao carregar chaves:', err);
         }
     };
 
-    const handleSave = async (name: string, value: string, isGlobal = true) => {
+    useEffect(() => {
+        mapToState(editMode === 'global' ? globalKeys : { ...globalKeys, ...personalKeys });
+    }, [editMode, globalKeys, personalKeys]);
+
+    const mapToState = (dataMap: any) => {
+        setKeys(prev => {
+            const next = { ...prev };
+
+            // Meta Config
+            if (dataMap['META_APP_CONFIG']) {
+                try {
+                    const parsed = JSON.parse(dataMap['META_APP_CONFIG']);
+                    next.fb_app_id = parsed.appId || '';
+                    next.fb_app_secret = parsed.secret || '';
+                    next.meta_page_access_token = parsed.pageAccessToken || '';
+                    next.meta_instagram_business_id = parsed.instagramBusinessId || '';
+                    next.meta_verify_token = parsed.verifyToken || 'zaplandia_verify_token';
+                    next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
+                    next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
+                } catch (e) { }
+            } else {
+                next.fb_app_id = '';
+                next.fb_app_secret = '';
+                next.meta_page_access_token = '';
+                next.meta_instagram_business_id = '';
+                next.meta_verify_token = 'zaplandia_verify_token';
+                next.whatsapp_phone_number_id = '';
+                next.whatsapp_business_account_id = '';
+            }
+
+            next.whatsapp_token = dataMap['WHATSAPP_TOKEN'] || '';
+            next.gemini_key = dataMap['GEMINI_API_KEY'] || '';
+            next.telegram_token = dataMap['TELEGRAM_TOKEN'] || '';
+            next.youtube_api_key = dataMap['YOUTUBE_API_KEY'] || '';
+
+            if (dataMap['LINKEDIN_CONFIG']) {
+                try {
+                    const parsed = JSON.parse(dataMap['LINKEDIN_CONFIG']);
+                    next.linkedin_client_id = parsed.clientId || '';
+                    next.linkedin_client_secret = parsed.secret || '';
+                } catch (e) { }
+            } else {
+                next.linkedin_client_id = '';
+                next.linkedin_client_secret = '';
+            }
+
+            if (dataMap['MERCADO_LIVRE_CONFIG']) {
+                try {
+                    const parsed = JSON.parse(dataMap['MERCADO_LIVRE_CONFIG']);
+                    next.ml_client_id = parsed.clientId || '';
+                    next.ml_client_secret = parsed.secret || '';
+                } catch (e) { }
+            } else {
+                next.ml_client_id = '';
+                next.ml_client_secret = '';
+            }
+
+            if (dataMap['OLX_CONFIG']) {
+                try {
+                    const parsed = JSON.parse(dataMap['OLX_CONFIG']);
+                    next.olx_app_id = parsed.appId || '';
+                    next.olx_app_secret = parsed.secret || '';
+                } catch (e) { }
+            } else {
+                next.olx_app_id = '';
+                next.olx_app_secret = '';
+            }
+
+            next.n8n_webhook_url = dataMap['N8N_WEBHOOK_URL'] || '';
+            next.evolution_api_url = dataMap['EVOLUTION_API_URL'] || '';
+            next.evolution_api_key = dataMap['EVOLUTION_API_KEY'] || '';
+
+            return next;
+        });
+    };
+
+    const handleSave = async (name: string, value: string) => {
         setIsLoading(true);
         setStatus(null);
-        console.log(`[SAVE] Attempting to save ${name}, Global: ${isGlobal}`);
+        const isGlobal = editMode === 'global';
+        console.log(`[SAVE] Attempting to save ${name}, Mode: ${editMode}`);
         try {
             const res = await fetch('/api/integrations/credentials', {
                 method: 'POST',
@@ -117,8 +162,6 @@ export default function ApiSettingsPage() {
                 },
                 body: JSON.stringify({ name, value, isGlobal })
             });
-
-            console.log(`[SAVE] Response status for ${name}:`, res.status);
 
             if (!res.ok) throw new Error('Falha ao salvar');
             setStatus({ type: 'success', msg: `${name} salvo!` });
@@ -132,14 +175,35 @@ export default function ApiSettingsPage() {
 
     return (
         <div className="p-8 max-w-4xl mx-auto text-white pb-20">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold flex items-center space-x-3">
-                    <Key className="w-8 h-8 text-primary" />
-                    <span>Configurações de API</span>
-                </h1>
-                <p className="text-gray-400 mt-2 text-sm lg:text-base">
-                    Centralize suas chaves de API. Seus clientes usarão estas chaves para as integrações deles, ou poderão cadastrar as próprias chaves.
-                </p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold flex items-center space-x-3">
+                        <Key className="w-8 h-8 text-primary" />
+                        <span>Configurações de API</span>
+                    </h1>
+                    <p className="text-gray-400 mt-2 text-sm">
+                        {editMode === 'global'
+                            ? 'Editando valores padrão para todo o sistema (Global Fallback).'
+                            : 'Editando valores específicos para sua conta pessoal.'}
+                    </p>
+                </div>
+
+                {user?.role === 'superadmin' && (
+                    <div className="bg-surface border border-white/10 p-1 rounded-xl flex">
+                        <button
+                            onClick={() => setEditMode('personal')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${editMode === 'personal' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Minha Conta
+                        </button>
+                        <button
+                            onClick={() => setEditMode('global')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${editMode === 'global' ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Global (Fallback)
+                        </button>
+                    </div>
+                )}
             </div>
 
             {status && (
