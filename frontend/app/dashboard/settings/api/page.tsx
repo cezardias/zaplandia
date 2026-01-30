@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import ApiSettingsFields from '@/components/ApiSettingsFields';
 
 export default function ApiSettingsPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
 
     return (
         <div className="p-8 max-w-4xl mx-auto text-white pb-20">
@@ -27,6 +27,7 @@ export default function ApiSettingsPage() {
                     <ApiSettingsFields
                         token={token}
                         isAdminMode={false}
+                        userRole={user?.role || 'user'}
                     />
                 ) : (
                     <div className="py-12 text-center text-gray-500">
@@ -34,6 +35,7 @@ export default function ApiSettingsPage() {
                     </div>
                 )}
             </div>
+
 
             <div className="mt-8 p-6 bg-primary/10 border border-primary/20 rounded-2xl">
                 <h3 className="font-bold text-primary-light mb-2 flex items-center">

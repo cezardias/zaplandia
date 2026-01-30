@@ -104,10 +104,26 @@ export class IntegrationsService {
     }
 
     async getCredential(tenantId: string, keyName: string): Promise<string | null> {
+        // 1. First try to get tenant-specific credential
         const tenantCred = await this.apiCredentialRepository.findOne({
             where: { tenantId, key_name: keyName }
         });
-        return tenantCred?.key_value || null;
+        if (tenantCred?.key_value) {
+            this.logger.log(`[GET_CRED] Found tenant-specific "${keyName}" for tenant ${tenantId}`);
+            return tenantCred.key_value;
+        }
+
+        // 2. Fallback: get GLOBAL credential (tenantId = null)
+        const globalCred = await this.apiCredentialRepository.findOne({
+            where: { tenantId: IsNull(), key_name: keyName }
+        });
+        if (globalCred?.key_value) {
+            this.logger.log(`[GET_CRED] Found GLOBAL "${keyName}" (fallback)`);
+            return globalCred.key_value;
+        }
+
+        this.logger.warn(`[GET_CRED] No credential found for "${keyName}"`);
+        return null;
     }
 
     async findAllCredentials(tenantId: string | null) {

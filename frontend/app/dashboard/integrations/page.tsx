@@ -48,7 +48,7 @@ const PROVIDERS = [
 ];
 
 export default function IntegrationsPage() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const router = useRouter();
     const [integrations, setIntegrations] = useState<Integration[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -167,14 +167,17 @@ export default function IntegrationsPage() {
                     <h1 className="text-4xl font-extrabold tracking-tight">Canais Conectados</h1>
                     <p className="text-gray-400 mt-2">Ative e configure as redes onde sua empresa atende.</p>
                 </div>
-                <button
-                    onClick={() => router.push('/dashboard/settings/api')}
-                    className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-xl border border-white/10 transition-all font-bold text-sm"
-                >
-                    <Settings className="w-4 h-4" />
-                    <span>Configurar APIs Globais</span>
-                </button>
+                {user?.role === 'superadmin' && (
+                    <button
+                        onClick={() => router.push('/dashboard/settings/api')}
+                        className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-xl border border-white/10 transition-all font-bold text-sm"
+                    >
+                        <Settings className="w-4 h-4" />
+                        <span>Configurar APIs Globais</span>
+                    </button>
+                )}
             </div>
+
 
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center p-32 space-y-4">

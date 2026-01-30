@@ -18,9 +18,10 @@ interface ApiSettingsFieldsProps {
     token: string;
     tenantId?: string | null;
     isAdminMode?: boolean;
+    userRole?: string;
 }
 
-export default function ApiSettingsFields({ token, tenantId = null, isAdminMode = false }: ApiSettingsFieldsProps) {
+export default function ApiSettingsFields({ token, tenantId = null, isAdminMode = false, userRole = 'user' }: ApiSettingsFieldsProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
@@ -278,40 +279,43 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                 </div>
             </section>
 
-            {/* EvolutionAPI Section */}
-            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
-                    <Zap className="w-5 h-5 text-green-500" />
-                    <span>WhatsApp Unofficial (EvolutionAPI)</span>
-                </h2>
-                <div className="space-y-4">
-                    <input
-                        type="text"
-                        value={keys.evolution_api_url}
-                        onChange={(e) => setKeys({ ...keys, evolution_api_url: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                        placeholder="Instance URL (ex: https://evolution.seudominio.com)"
-                    />
-                    <input
-                        type="password"
-                        value={keys.evolution_api_key}
-                        onChange={(e) => setKeys({ ...keys, evolution_api_key: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                        placeholder="API Key / Global Token"
-                    />
-                    <button
-                        onClick={async () => {
-                            await handleSave('EVOLUTION_API_URL', keys.evolution_api_url);
-                            await handleSave('EVOLUTION_API_KEY', keys.evolution_api_key);
-                        }}
-                        disabled={isLoading}
-                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
-                    >
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        <span>Salvar EvolutionAPI</span>
-                    </button>
-                </div>
-            </section>
+            {/* EvolutionAPI Section - SuperAdmin Only */}
+            {userRole === 'superadmin' && (
+                <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                        <Zap className="w-5 h-5 text-green-500" />
+                        <span>EvolutionAPI (Configuração Global)</span>
+                    </h2>
+                    <p className="text-xs text-gray-400 mb-4">Esta configuração será usada por todos os usuários para criar suas instâncias WhatsApp.</p>
+                    <div className="space-y-4">
+                        <input
+                            type="text"
+                            value={keys.evolution_api_url}
+                            onChange={(e) => setKeys({ ...keys, evolution_api_url: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="Instance URL (ex: https://evolution.seudominio.com)"
+                        />
+                        <input
+                            type="password"
+                            value={keys.evolution_api_key}
+                            onChange={(e) => setKeys({ ...keys, evolution_api_key: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="API Key / Global Token"
+                        />
+                        <button
+                            onClick={async () => {
+                                await handleSave('EVOLUTION_API_URL', keys.evolution_api_url);
+                                await handleSave('EVOLUTION_API_KEY', keys.evolution_api_key);
+                            }}
+                            disabled={isLoading}
+                            className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            <span>Salvar EvolutionAPI (Global)</span>
+                        </button>
+                    </div>
+                </section>
+            )}
 
             {/* n8n Automation Section */}
             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
