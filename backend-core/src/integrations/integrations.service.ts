@@ -63,29 +63,34 @@ export class IntegrationsService {
 
     // Global and Tenant specific API Credentials
     async saveApiCredential(tenantId: string, keyName: string, keyValue: string) {
-        this.logger.log(`[SAVE] Key: ${keyName}, Value Length: ${keyValue?.length}, Tenant: ${tenantId}`);
+        this.logger.log(`[SAVE_CREDENTIAL] Attempting to save key "${keyName}" for tenant "${tenantId}"`);
+
+        if (!tenantId) {
+            this.logger.warn(`[SAVE_CREDENTIAL] Saving with NULL tenantId. This might be a legacy global key or a bug.`);
+        }
 
         let cred = await this.apiCredentialRepository.findOne({
-            where: { tenantId, key_name: keyName }
+            where: { tenantId: tenantId ?? IsNull(), key_name: keyName }
         });
 
         if (cred) {
             cred.key_value = keyValue;
-            this.logger.log(`[UPDATE] Found existing ID: ${cred.id}`);
+            this.logger.log(`[SAVE_CREDENTIAL] Updating existing credential ID: ${cred.id}`);
         } else {
             cred = this.apiCredentialRepository.create({
-                tenantId,
+                tenantId: tenantId || null,
                 key_name: keyName,
                 key_value: keyValue,
             });
-            this.logger.log(`[CREATE] Creating new entry`);
+            this.logger.log(`[SAVE_CREDENTIAL] Creating new credential entry`);
         }
+
         try {
             const saved = await this.apiCredentialRepository.save(cred);
-            this.logger.log(`[SUCCESS] Saved ID: ${saved.id}`);
+            this.logger.log(`[SAVE_CREDENTIAL] SUCCESS: Saved ID ${saved.id} for key ${keyName}`);
             return saved;
         } catch (error) {
-            this.logger.error(`[ERROR] Failed to save ${keyName}: ${error.message}`);
+            this.logger.error(`[SAVE_CREDENTIAL] FAILURE: Could not save ${keyName} for tenant ${tenantId}. Error: ${error.message}`);
             throw error;
         }
     }

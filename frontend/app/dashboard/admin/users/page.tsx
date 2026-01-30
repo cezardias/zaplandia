@@ -12,6 +12,7 @@ import {
     Mail,
     Calendar,
     X,
+    Zap,
     Save,
     AlertCircle
 } from 'lucide-react';
@@ -125,7 +126,8 @@ export default function UserManagementPage() {
             setFormData({ name: '', email: '', password: '', role: 'user' });
         }
         setIsModalOpen(true);
-        setActiveTab('profile');
+        // Default to profile tab, but if we opened via the zap icon, the caller sets it to 'apis'
+        if (activeTab !== 'apis') setActiveTab('profile');
     };
 
     const filteredUsers = users.filter(u =>
@@ -245,6 +247,13 @@ export default function UserManagementPage() {
                                     </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex items-center justify-end space-x-2">
+                                            <button
+                                                onClick={() => { openModal(u); setActiveTab('apis'); }}
+                                                className="p-2 text-gray-400 hover:text-purple-400 hover:bg-white/5 rounded-lg transition-all"
+                                                title="Gerenciar APIs"
+                                            >
+                                                <Zap className="w-5 h-5" />
+                                            </button>
                                             <button
                                                 onClick={() => openModal(u)}
                                                 className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-lg transition-all"
@@ -397,7 +406,8 @@ export default function UserManagementPage() {
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }

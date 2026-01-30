@@ -52,8 +52,14 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
     }, [token, tenantId]);
 
     const fetchExistingKeys = async () => {
+        setIsLoading(true);
         try {
-            const url = isAdminMode && tenantId
+            if (isAdminMode && !tenantId) {
+                console.warn('ApiSettingsFields: Modos admin ativo mas sem tenantId');
+                return;
+            }
+
+            const url = isAdminMode
                 ? `/api/admin/tenants/${tenantId}/credentials`
                 : '/api/integrations/credentials';
 
@@ -66,6 +72,9 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             }
         } catch (err) {
             console.error('Erro ao carregar chaves:', err);
+            setStatus({ type: 'error', msg: 'Erro ao carregar chaves existentes.' });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -120,7 +129,11 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         setIsLoading(true);
         setStatus(null);
         try {
-            const url = isAdminMode && tenantId
+            if (isAdminMode && !tenantId) {
+                throw new Error('Impossível salvar em modo admin sem um ID de Tenant.');
+            }
+
+            const url = isAdminMode
                 ? `/api/admin/tenants/${tenantId}/credentials`
                 : '/api/integrations/credentials';
 
@@ -130,11 +143,14 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, value, isGlobal: false })
+                body: JSON.stringify({ name, value })
             });
 
-            if (!res.ok) throw new Error('Falha ao salvar');
-            setStatus({ type: 'success', msg: `${name} salvo!` });
+            if (!res.ok) throw new Error('Falha ao salvar no servidor.');
+            setStatus({ type: 'success', msg: `${name} salvo com sucesso!` });
+
+            // Re-fetch to confirm persistence and update UI
+            setTimeout(fetchExistingKeys, 500);
         } catch (err: any) {
             setStatus({ type: 'error', msg: err.message });
         } finally {

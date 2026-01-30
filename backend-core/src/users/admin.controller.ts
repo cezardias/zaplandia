@@ -21,6 +21,7 @@ export class AdminController {
         if (req.user.role !== UserRole.SUPERADMIN) {
             throw new ForbiddenException('Acesso negado.');
         }
+        console.log(`[ADMIN_GET] Tenant: ${tenantId}`);
         return this.integrationsService.findAllCredentials(tenantId);
     }
 
@@ -30,6 +31,7 @@ export class AdminController {
             throw new ForbiddenException('Acesso negado.');
         }
         const { name, value } = body;
+        console.log(`[ADMIN_SAVE] Tenant: ${tenantId}, Key: ${name}`);
         return this.integrationsService.saveApiCredential(tenantId, name, value);
     }
 
