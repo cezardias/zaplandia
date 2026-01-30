@@ -8,16 +8,16 @@ export class ApiCredential {
     @Column()
     key_name: string; // e.g. 'FACEBOOK_CLIENT_ID'
 
-    @Column()
+    @Column({ type: 'text' })
     key_value: string; // The secret/id itself
 
-    @Column({ nullable: true })
+    @Column({ type: 'text', nullable: true })
     description: string;
 
     // Tenant ID stored as string without foreign key constraint
     // This allows saving credentials even if tenant doesn't exist in DB yet
-    @Column({ nullable: true })
-    tenantId: string | null;
+    @Column({ type: 'uuid', nullable: true })
+    tenantId: string;
 
     @CreateDateColumn()
     createdAt: Date;
