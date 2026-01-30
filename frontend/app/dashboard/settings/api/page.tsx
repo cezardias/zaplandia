@@ -1,16 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Save, Key, Shield, Info, AlertCircle, Zap, Loader2, Send, Youtube, Linkedin, ShoppingBag, Store, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Save, Key, Shield, Info, AlertCircle, Zap, Loader2, Send, Youtube, Linkedin, ShoppingBag, Store } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 
 export default function ApiSettingsPage() {
-    const { token, user } = useAuth();
-    const router = useRouter();
+    const { token } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
-    const [isSavingAll, setIsSavingAll] = useState(false);
 
     const [keys, setKeys] = useState({
         fb_app_id: '',
@@ -129,537 +126,452 @@ export default function ApiSettingsPage() {
         }
     };
 
-    const handleSaveAll = async () => {
-        setIsSavingAll(true);
-        setStatus(null);
-        try {
-            const configs = [
-                {
-                    name: 'META_APP_CONFIG', value: JSON.stringify({
-                        appId: keys.fb_app_id,
-                        secret: keys.fb_app_secret,
-                        pageAccessToken: keys.meta_page_access_token,
-                        instagramBusinessId: keys.meta_instagram_business_id,
-                        verifyToken: keys.meta_verify_token,
-                        whatsappPhoneNumberId: keys.whatsapp_phone_number_id,
-                        whatsappBusinessAccountId: keys.whatsapp_business_account_id
-                    })
-                },
-                { name: 'WHATSAPP_TOKEN', value: keys.whatsapp_token },
-                { name: 'GEMINI_API_KEY', value: keys.gemini_key },
-                { name: 'TELEGRAM_TOKEN', value: keys.telegram_token },
-                { name: 'YOUTUBE_API_KEY', value: keys.youtube_api_key },
-                { name: 'LINKEDIN_CONFIG', value: JSON.stringify({ clientId: keys.linkedin_client_id, secret: keys.linkedin_client_secret }) },
-                { name: 'MERCADO_LIVRE_CONFIG', value: JSON.stringify({ clientId: keys.ml_client_id, secret: keys.ml_client_secret }) },
-                { name: 'OLX_CONFIG', value: JSON.stringify({ appId: keys.olx_app_id, secret: keys.olx_app_secret }) },
-                { name: 'EVOLUTION_API_URL', value: keys.evolution_api_url },
-                { name: 'EVOLUTION_API_KEY', value: keys.evolution_api_key },
-                { name: 'N8N_WEBHOOK_URL', value: keys.n8n_webhook_url },
-            ];
+};
 
-            console.log('Starting handleSaveAll with configs:', configs);
+return (
+    <div className="p-8 max-w-4xl mx-auto text-white pb-20">
+        <div className="mb-8">
+            <h1 className="text-3xl font-bold flex items-center space-x-3">
+                <Key className="w-8 h-8 text-primary" />
+                <span>Configurações de API</span>
+            </h1>
+            <p className="text-gray-400 mt-2 text-sm lg:text-base">
+                Centralize suas chaves de API. Seus clientes usarão estas chaves para as integrações deles, ou poderão cadastrar as próprias chaves.
+            </p>
+        </div>
 
-            for (const config of configs) {
-                if (config.value) {
-                    console.log(`Saving config: ${config.name}`);
-                    const res = await fetch('/api/integrations/credentials', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ ...config, isGlobal: true })
-                    });
-                    if (!res.ok) {
-                        console.error(`Failed to save config: ${config.name}`, res.status);
-                    } else {
-                        console.log(`Successfully saved config: ${config.name}`);
-                    }
-                }
-            }
-
-            setStatus({ type: 'success', msg: 'Todas as configurações foram salvas com sucesso!' });
-            fetchExistingKeys();
-        } catch (err: any) {
-            console.error('Error in handleSaveAll:', err);
-            setStatus({ type: 'error', msg: 'Erro ao salvar algumas configurações.' });
-        } finally {
-            setIsSavingAll(false);
-        }
-    };
-
-    return (
-        <div className="p-8 max-w-4xl mx-auto text-white pb-20">
-            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold flex items-center space-x-3">
-                        <Key className="w-8 h-8 text-primary" />
-                        <span>Configurações de API</span>
-                    </h1>
-                    <p className="text-gray-400 mt-2 text-sm lg:text-base">
-                        Centralize suas chaves de API globais do sistema.
-                    </p>
-                </div>
-                <button
-                    onClick={() => router.push('/dashboard')}
-                    className="flex items-center space-x-2 text-gray-500 hover:text-white transition group"
-                >
-                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    <span>Voltar ao Dashboard</span>
-                </button>
+        {status && (
+            <div className={`p-4 rounded-xl mb-6 flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-500/10 border border-green-500/50 text-green-200' : 'bg-red-500/10 border border-red-500/50 text-red-200'
+                }`}>
+                {status.type === 'success' ? <Zap className="w-5 h-5 text-green-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
+                <span>{status.msg}</span>
             </div>
+        )}
 
-            {status && (
-                <div className={`p-4 rounded-xl mb-6 flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-500/10 border border-green-500/50 text-green-200' : 'bg-red-500/10 border border-red-500/50 text-red-200'
-                    }`}>
-                    {status.type === 'success' ? <Zap className="w-5 h-5 text-green-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
-                    <span>{status.msg}</span>
-                </div>
-            )}
+        <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex items-start space-x-3 mb-8 shadow-inner">
+            <Info className="w-6 h-6 text-primary shrink-0" />
+            <p className="text-sm">
+                <strong>Dica:</strong> Como Super Admin, as chaves que você salvar sem selecionar um tenant serão usadas como <strong>Globais</strong> (Fallback) para todo o sistema.
+            </p>
+        </div>
 
-            <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex items-start space-x-3 mb-8 shadow-inner">
-                <Info className="w-6 h-6 text-primary shrink-0" />
-                <p className="text-sm">
-                    <strong>Dica:</strong> Como Super Admin, as chaves que você salvar sem selecionar um tenant serão usadas como <strong>Globais</strong> (Fallback) para todo o sistema.
-                </p>
-            </div>
-
-            <div className="space-y-8">
-                {/* Meta Section */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <Shield className="w-6 h-6 text-blue-500" />
-                        <span>Meta (Facebook, Instagram & WhatsApp)</span>
-                    </h2>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Meta App ID</label>
-                                <input
-                                    type="text"
-                                    value={keys.fb_app_id}
-                                    onChange={(e) => setKeys({ ...keys, fb_app_id: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="Ex: 1234567890"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">App Secret</label>
-                                <input
-                                    type="password"
-                                    value={keys.fb_app_secret}
-                                    onChange={(e) => setKeys({ ...keys, fb_app_secret: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="••••••••••••"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
+        <div className="space-y-8">
+            {/* Meta Section */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <Shield className="w-6 h-6 text-blue-500" />
+                    <span>Meta (Facebook, Instagram & WhatsApp)</span>
+                </h2>
+                <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Page Access Token</label>
-                            <textarea
-                                value={keys.meta_page_access_token}
-                                onChange={(e) => setKeys({ ...keys, meta_page_access_token: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white h-24"
-                                placeholder="EAAB..."
-                            />
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Instagram Business ID</label>
-                                <input
-                                    type="text"
-                                    value={keys.meta_instagram_business_id}
-                                    onChange={(e) => setKeys({ ...keys, meta_instagram_business_id: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="Ex: 17841400..."
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Webhook Verify Token</label>
-                                <input
-                                    type="text"
-                                    value={keys.meta_verify_token}
-                                    onChange={(e) => setKeys({ ...keys, meta_verify_token: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white font-mono"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Phone Number ID</label>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Meta App ID</label>
                             <input
                                 type="text"
-                                value={keys.whatsapp_phone_number_id}
-                                onChange={(e) => setKeys({ ...keys, whatsapp_phone_number_id: e.target.value })}
+                                value={keys.fb_app_id}
+                                onChange={(e) => setKeys({ ...keys, fb_app_id: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                placeholder="Ex: 106545123456789"
+                                placeholder="Ex: 1234567890"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Business Account ID</label>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">App Secret</label>
                             <input
-                                type="text"
-                                value={keys.whatsapp_business_account_id}
-                                onChange={(e) => setKeys({ ...keys, whatsapp_business_account_id: e.target.value })}
+                                type="password"
+                                value={keys.fb_app_secret}
+                                onChange={(e) => setKeys({ ...keys, fb_app_secret: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                placeholder="Ex: 104545123456789"
+                                placeholder="••••••••••••"
                             />
                         </div>
                     </div>
+                </div>
 
-                    <div className="mt-8 flex items-center justify-between">
-                        <div className="text-xs text-gray-500 max-w-sm">
-                            Estas configurações são fundamentais para o funcionamento da API oficial do WhatsApp Cloud e Instagram.
-                        </div>
-                        <button
-                            onClick={() => handleSave('META_APP_CONFIG', JSON.stringify({
-                                appId: keys.fb_app_id,
-                                secret: keys.fb_app_secret,
-                                pageAccessToken: keys.meta_page_access_token,
-                                instagramBusinessId: keys.meta_instagram_business_id,
-                                verifyToken: keys.meta_verify_token,
-                                whatsappPhoneNumberId: keys.whatsapp_phone_number_id,
-                                whatsappBusinessAccountId: keys.whatsapp_business_account_id
-                            }))}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit shadow-lg shadow-primary/20"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Configuração Meta/Instagram</span>
-                        </button>
-                    </div>
-
-                    <div className="pt-8 mt-8 border-t border-white/5">
-                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Permanent Token (System User)</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Page Access Token</label>
                         <textarea
-                            value={keys.whatsapp_token}
-                            onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition h-20 text-sm text-white"
-                            placeholder="EAAW..."
+                            value={keys.meta_page_access_token}
+                            onChange={(e) => setKeys({ ...keys, meta_page_access_token: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white h-24"
+                            placeholder="EAAB..."
                         />
-                        <button
-                            onClick={() => handleSave('WHATSAPP_TOKEN', keys.whatsapp_token)}
-                            disabled={isLoading}
-                            className="mt-4 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Token WhatsApp</span>
-                        </button>
                     </div>
-                </section>
-
-                {/* AI Section (Gemini) */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <Zap className="w-6 h-6 text-purple-500 animate-pulse" />
-                        <span>Google Gemini AI</span>
-                    </h2>
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Gemini API Key</label>
-                            <input
-                                type="password"
-                                value={keys.gemini_key}
-                                onChange={(e) => setKeys({ ...keys, gemini_key: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                placeholder="AIza..."
-                            />
-                        </div>
-                        <button
-                            onClick={() => handleSave('GEMINI_API_KEY', keys.gemini_key)}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Chave Gemini</span>
-                        </button>
-                    </div>
-                </section>
-
-                {/* Telegram Section */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <Send className="w-6 h-6 text-blue-400" />
-                        <span>Telegram Bot</span>
-                    </h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Bot Token</label>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Instagram Business ID</label>
                             <input
                                 type="text"
-                                value={keys.telegram_token}
-                                onChange={(e) => setKeys({ ...keys, telegram_token: e.target.value })}
+                                value={keys.meta_instagram_business_id}
+                                onChange={(e) => setKeys({ ...keys, meta_instagram_business_id: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                placeholder="123456:ABC-DEF..."
+                                placeholder="Ex: 17841400..."
                             />
                         </div>
-                        <button
-                            onClick={() => handleSave('TELEGRAM_TOKEN', keys.telegram_token)}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Token Telegram</span>
-                        </button>
-                    </div>
-                </section>
-
-                {/* YouTube Section */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <Youtube className="w-6 h-6 text-red-600" />
-                        <span>YouTube API</span>
-                    </h2>
-                    <div className="space-y-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Google Cloud API Key</label>
-                            <input
-                                type="password"
-                                value={keys.youtube_api_key}
-                                onChange={(e) => setKeys({ ...keys, youtube_api_key: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                placeholder="AIza..."
-                            />
-                        </div>
-                        <button
-                            onClick={() => handleSave('YOUTUBE_API_KEY', keys.youtube_api_key)}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar API Key YouTube</span>
-                        </button>
-                    </div>
-                </section>
-
-                {/* LinkedIn Section */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <Linkedin className="w-6 h-6 text-blue-700" />
-                        <span>LinkedIn API</span>
-                    </h2>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Client ID</label>
-                                <input
-                                    type="text"
-                                    value={keys.linkedin_client_id}
-                                    onChange={(e) => setKeys({ ...keys, linkedin_client_id: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Client Secret</label>
-                                <input
-                                    type="password"
-                                    value={keys.linkedin_client_secret}
-                                    onChange={(e) => setKeys({ ...keys, linkedin_client_secret: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                />
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => handleSave('LINKEDIN_CONFIG', JSON.stringify({ clientId: keys.linkedin_client_id, secret: keys.linkedin_client_secret }))}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Configuração LinkedIn</span>
-                        </button>
-                    </div>
-                </section>
-
-                {/* Mercado Livre Section */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <ShoppingBag className="w-6 h-6 text-yellow-500" />
-                        <span>Mercado Livre API</span>
-                    </h2>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Application ID (Client ID)</label>
-                                <input
-                                    type="text"
-                                    value={keys.ml_client_id}
-                                    onChange={(e) => setKeys({ ...keys, ml_client_id: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="Ex: 81234567890"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Client Secret</label>
-                                <input
-                                    type="password"
-                                    value={keys.ml_client_secret}
-                                    onChange={(e) => setKeys({ ...keys, ml_client_secret: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="••••••••••••"
-                                />
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => handleSave('MERCADO_LIVRE_CONFIG', JSON.stringify({ clientId: keys.ml_client_id, secret: keys.ml_client_secret }))}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Configuração Mercado Livre</span>
-                        </button>
-                    </div>
-                </section>
-
-                {/* OLX Section */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <Store className="w-6 h-6 text-orange-600" />
-                        <span>OLX API</span>
-                    </h2>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">App ID</label>
-                                <input
-                                    type="text"
-                                    value={keys.olx_app_id}
-                                    onChange={(e) => setKeys({ ...keys, olx_app_id: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="Ex: olx_app_123"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">App Secret</label>
-                                <input
-                                    type="password"
-                                    value={keys.olx_app_secret}
-                                    onChange={(e) => setKeys({ ...keys, olx_app_secret: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="••••••••••••"
-                                />
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => handleSave('OLX_CONFIG', JSON.stringify({ appId: keys.olx_app_id, secret: keys.olx_app_secret }))}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Configuração OLX</span>
-                        </button>
-                    </div>
-                </section>
-
-                {/* EvolutionAPI Section */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <Zap className="w-6 h-6 text-green-500" />
-                        <span>WhatsApp Unofficial (EvolutionAPI)</span>
-                    </h2>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Evolution Instance URL</label>
-                                <input
-                                    type="text"
-                                    value={keys.evolution_api_url}
-                                    onChange={(e) => setKeys({ ...keys, evolution_api_url: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="https://evo.seudominio.com"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Global API Key</label>
-                                <input
-                                    type="password"
-                                    value={keys.evolution_api_key}
-                                    onChange={(e) => setKeys({ ...keys, evolution_api_key: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                    placeholder="••••••••••••"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <p className="text-xs text-gray-500 max-w-sm">
-                                Estas credenciais são usadas para conectar e gerenciar instâncias do WhatsApp via EvolutionAPI globalmente.
-                            </p>
-                            <div className="flex flex-col md:flex-row gap-2">
-                                <button
-                                    onClick={() => handleSave('EVOLUTION_API_URL', keys.evolution_api_url)}
-                                    disabled={isLoading}
-                                    className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-auto"
-                                >
-                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    <span>Salvar URL</span>
-                                </button>
-                                <button
-                                    onClick={() => handleSave('EVOLUTION_API_KEY', keys.evolution_api_key)}
-                                    disabled={isLoading}
-                                    className="bg-primary hover:bg-primary-dark px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-auto shadow-lg shadow-primary/20"
-                                >
-                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    <span>Salvar API Key</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* n8n Automation Section */}
-                <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
-                        <Zap className="w-6 h-6 text-orange-500" />
-                        <span>Automação n8n (Webhook)</span>
-                    </h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">n8n Webhook URL</label>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Webhook Verify Token</label>
                             <input
                                 type="text"
-                                value={keys.n8n_webhook_url}
-                                onChange={(e) => setKeys({ ...keys, n8n_webhook_url: e.target.value })}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
-                                placeholder="https://n8n.seudominio.com/webhook/..."
+                                value={keys.meta_verify_token}
+                                onChange={(e) => setKeys({ ...keys, meta_verify_token: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white font-mono"
                             />
-                            <p className="mt-2 text-xs text-gray-400">
-                                Novas mensagens recebidas serão enviadas para este webhook para processamento com IA.
-                            </p>
                         </div>
-                        <button
-                            onClick={() => handleSave('N8N_WEBHOOK_URL', keys.n8n_webhook_url)}
-                            disabled={isLoading}
-                            className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            <span>Salvar Webhook n8n</span>
-                        </button>
                     </div>
-                </section>
-            </div >
+                </div>
 
-            {/* Bottom Actions */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 bg-surface/80 backdrop-blur-xl border-t border-white/10 flex items-center justify-center space-x-4 z-50">
-                <button
-                    onClick={handleSaveAll}
-                    disabled={isSavingAll}
-                    className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-8 py-4 rounded-2xl font-black transition flex items-center space-x-3 shadow-xl"
-                >
-                    {isSavingAll ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    <span>SALVAR TUDO</span>
-                </button>
-                <button
-                    onClick={() => router.push('/dashboard')}
-                    className="bg-primary hover:bg-primary-dark text-white px-10 py-4 rounded-2xl font-black transition flex items-center space-x-3 shadow-xl shadow-primary/20"
-                >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>CONCLUIR E SAIR</span>
-                </button>
-            </div>
-        </div >
-    );
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Phone Number ID</label>
+                        <input
+                            type="text"
+                            value={keys.whatsapp_phone_number_id}
+                            onChange={(e) => setKeys({ ...keys, whatsapp_phone_number_id: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                            placeholder="Ex: 106545123456789"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Business Account ID</label>
+                        <input
+                            type="text"
+                            value={keys.whatsapp_business_account_id}
+                            onChange={(e) => setKeys({ ...keys, whatsapp_business_account_id: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                            placeholder="Ex: 104545123456789"
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-8 flex items-center justify-between">
+                    <div className="text-xs text-gray-500 max-w-sm">
+                        Estas configurações são fundamentais para o funcionamento da API oficial do WhatsApp Cloud e Instagram.
+                    </div>
+                    <button
+                        onClick={() => handleSave('META_APP_CONFIG', JSON.stringify({
+                            appId: keys.fb_app_id,
+                            secret: keys.fb_app_secret,
+                            pageAccessToken: keys.meta_page_access_token,
+                            instagramBusinessId: keys.meta_instagram_business_id,
+                            verifyToken: keys.meta_verify_token,
+                            whatsappPhoneNumberId: keys.whatsapp_phone_number_id,
+                            whatsappBusinessAccountId: keys.whatsapp_business_account_id
+                        }))}
+                        disabled={isLoading}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit shadow-lg shadow-primary/20"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Configuração Meta/Instagram</span>
+                    </button>
+                </div>
+
+                <div className="pt-8 mt-8 border-t border-white/5">
+                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Permanent Token (System User)</label>
+                    <textarea
+                        value={keys.whatsapp_token}
+                        onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition h-20 text-sm text-white"
+                        placeholder="EAAW..."
+                    />
+                    <button
+                        onClick={() => handleSave('WHATSAPP_TOKEN', keys.whatsapp_token)}
+                        disabled={isLoading}
+                        className="mt-4 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Token WhatsApp</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* AI Section (Gemini) */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <Zap className="w-6 h-6 text-purple-500 animate-pulse" />
+                    <span>Google Gemini AI</span>
+                </h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Gemini API Key</label>
+                        <input
+                            type="password"
+                            value={keys.gemini_key}
+                            onChange={(e) => setKeys({ ...keys, gemini_key: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                            placeholder="AIza..."
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleSave('GEMINI_API_KEY', keys.gemini_key)}
+                        disabled={isLoading}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Chave Gemini</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* Telegram Section */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <Send className="w-6 h-6 text-blue-400" />
+                    <span>Telegram Bot</span>
+                </h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Bot Token</label>
+                        <input
+                            type="text"
+                            value={keys.telegram_token}
+                            onChange={(e) => setKeys({ ...keys, telegram_token: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                            placeholder="123456:ABC-DEF..."
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleSave('TELEGRAM_TOKEN', keys.telegram_token)}
+                        disabled={isLoading}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Token Telegram</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* YouTube Section */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <Youtube className="w-6 h-6 text-red-600" />
+                    <span>YouTube API</span>
+                </h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Google Cloud API Key</label>
+                        <input
+                            type="password"
+                            value={keys.youtube_api_key}
+                            onChange={(e) => setKeys({ ...keys, youtube_api_key: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                            placeholder="AIza..."
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleSave('YOUTUBE_API_KEY', keys.youtube_api_key)}
+                        disabled={isLoading}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar API Key YouTube</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* LinkedIn Section */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <Linkedin className="w-6 h-6 text-blue-700" />
+                    <span>LinkedIn API</span>
+                </h2>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Client ID</label>
+                            <input
+                                type="text"
+                                value={keys.linkedin_client_id}
+                                onChange={(e) => setKeys({ ...keys, linkedin_client_id: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Client Secret</label>
+                            <input
+                                type="password"
+                                value={keys.linkedin_client_secret}
+                                onChange={(e) => setKeys({ ...keys, linkedin_client_secret: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                            />
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => handleSave('LINKEDIN_CONFIG', JSON.stringify({ clientId: keys.linkedin_client_id, secret: keys.linkedin_client_secret }))}
+                        disabled={isLoading}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Configuração LinkedIn</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* Mercado Livre Section */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <ShoppingBag className="w-6 h-6 text-yellow-500" />
+                    <span>Mercado Livre API</span>
+                </h2>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Application ID (Client ID)</label>
+                            <input
+                                type="text"
+                                value={keys.ml_client_id}
+                                onChange={(e) => setKeys({ ...keys, ml_client_id: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="Ex: 81234567890"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Client Secret</label>
+                            <input
+                                type="password"
+                                value={keys.ml_client_secret}
+                                onChange={(e) => setKeys({ ...keys, ml_client_secret: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="••••••••••••"
+                            />
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => handleSave('MERCADO_LIVRE_CONFIG', JSON.stringify({ clientId: keys.ml_client_id, secret: keys.ml_client_secret }))}
+                        disabled={isLoading}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Configuração Mercado Livre</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* OLX Section */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <Store className="w-6 h-6 text-orange-600" />
+                    <span>OLX API</span>
+                </h2>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">App ID</label>
+                            <input
+                                type="text"
+                                value={keys.olx_app_id}
+                                onChange={(e) => setKeys({ ...keys, olx_app_id: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="Ex: olx_app_123"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">App Secret</label>
+                            <input
+                                type="password"
+                                value={keys.olx_app_secret}
+                                onChange={(e) => setKeys({ ...keys, olx_app_secret: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="••••••••••••"
+                            />
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => handleSave('OLX_CONFIG', JSON.stringify({ appId: keys.olx_app_id, secret: keys.olx_app_secret }))}
+                        disabled={isLoading}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Configuração OLX</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* EvolutionAPI Section */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <Zap className="w-6 h-6 text-green-500" />
+                    <span>WhatsApp Unofficial (EvolutionAPI)</span>
+                </h2>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Evolution Instance URL</label>
+                            <input
+                                type="text"
+                                value={keys.evolution_api_url}
+                                onChange={(e) => setKeys({ ...keys, evolution_api_url: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="https://evo.seudominio.com"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Global API Key</label>
+                            <input
+                                type="password"
+                                value={keys.evolution_api_key}
+                                onChange={(e) => setKeys({ ...keys, evolution_api_key: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                                placeholder="••••••••••••"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <p className="text-xs text-gray-500 max-w-sm">
+                            Estas credenciais são usadas para conectar e gerenciar instâncias do WhatsApp via EvolutionAPI globalmente.
+                        </p>
+                        <div className="flex flex-col md:flex-row gap-2">
+                            <button
+                                onClick={() => handleSave('EVOLUTION_API_URL', keys.evolution_api_url)}
+                                disabled={isLoading}
+                                className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-auto"
+                            >
+                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                <span>Salvar URL</span>
+                            </button>
+                            <button
+                                onClick={() => handleSave('EVOLUTION_API_KEY', keys.evolution_api_key)}
+                                disabled={isLoading}
+                                className="bg-primary hover:bg-primary-dark px-6 py-2 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-auto shadow-lg shadow-primary/20"
+                            >
+                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                <span>Salvar API Key</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* n8n Automation Section */}
+            <section className="bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-6 flex items-center space-x-3">
+                    <Zap className="w-6 h-6 text-orange-500" />
+                    <span>Automação n8n (Webhook)</span>
+                </h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">n8n Webhook URL</label>
+                        <input
+                            type="text"
+                            value={keys.n8n_webhook_url}
+                            onChange={(e) => setKeys({ ...keys, n8n_webhook_url: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
+                            placeholder="https://n8n.seudominio.com/webhook/..."
+                        />
+                        <p className="mt-2 text-xs text-gray-400">
+                            Novas mensagens recebidas serão enviadas para este webhook para processamento com IA.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => handleSave('N8N_WEBHOOK_URL', keys.n8n_webhook_url)}
+                        disabled={isLoading}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 w-full md:w-fit ml-auto shadow-lg shadow-primary/20"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Webhook n8n</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+);
 }
