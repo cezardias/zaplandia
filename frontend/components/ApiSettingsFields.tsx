@@ -167,11 +167,11 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                 </div>
             )}
 
-            {/* Meta Section */}
+            {/* Meta Section (Official WhatsApp Cloud API) */}
             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
                     <Shield className="w-5 h-5 text-blue-500" />
-                    <span>Meta (FB/IG/WA)</span>
+                    <span>Meta (Facebook, Instagram, WhatsApp Cloud API)</span>
                 </h2>
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -212,22 +212,44 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                             placeholder="WABA ID"
                         />
                     </div>
-                    <button
-                        onClick={() => handleSave('META_APP_CONFIG', JSON.stringify({
-                            appId: keys.fb_app_id,
-                            secret: keys.fb_app_secret,
-                            pageAccessToken: keys.meta_page_access_token,
-                            instagramBusinessId: keys.meta_instagram_business_id,
-                            verifyToken: keys.meta_verify_token,
-                            whatsappPhoneNumberId: keys.whatsapp_phone_number_id,
-                            whatsappBusinessAccountId: keys.whatsapp_business_account_id
-                        }))}
-                        disabled={isLoading}
-                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
-                    >
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        <span>Salvar Meta</span>
-                    </button>
+
+                    {/* WhatsApp Permanent Token - inside Meta section */}
+                    <div className="pt-4 border-t border-white/10">
+                        <label className="text-sm text-white/60 mb-2 block">Token Permanente do System User (EAAW...)</label>
+                        <textarea
+                            value={keys.whatsapp_token}
+                            onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary h-20"
+                            placeholder="Token permanente gerado no Meta Business Suite"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => handleSave('META_APP_CONFIG', JSON.stringify({
+                                appId: keys.fb_app_id,
+                                secret: keys.fb_app_secret,
+                                pageAccessToken: keys.meta_page_access_token,
+                                instagramBusinessId: keys.meta_instagram_business_id,
+                                verifyToken: keys.meta_verify_token,
+                                whatsappPhoneNumberId: keys.whatsapp_phone_number_id,
+                                whatsappBusinessAccountId: keys.whatsapp_business_account_id
+                            }))}
+                            disabled={isLoading}
+                            className="bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            <span>Salvar Config Meta</span>
+                        </button>
+                        <button
+                            onClick={() => handleSave('WHATSAPP_TOKEN', keys.whatsapp_token)}
+                            disabled={isLoading}
+                            className="bg-green-600 hover:bg-green-700 py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            <span>Salvar Token WA</span>
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -317,30 +339,6 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     >
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         <span>Salvar n8n</span>
-                    </button>
-                </div>
-            </section>
-
-            {/* WhatsApp Permanent Token */}
-            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
-                    <Shield className="w-5 h-5 text-green-400" />
-                    <span>WhatsApp Token Permanente</span>
-                </h2>
-                <div className="space-y-4">
-                    <textarea
-                        value={keys.whatsapp_token}
-                        onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary h-20"
-                        placeholder="Token do System User (EAAW...)"
-                    />
-                    <button
-                        onClick={() => handleSave('WHATSAPP_TOKEN', keys.whatsapp_token)}
-                        disabled={isLoading}
-                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
-                    >
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        <span>Salvar Token WhatsApp</span>
                     </button>
                 </div>
             </section>
