@@ -18,7 +18,6 @@ export default function ApiSettingsPage() {
         youtube_api_key: '',
         linkedin_client_id: '',
         linkedin_client_secret: '',
-        n8n_webhook_url: '',
         meta_page_access_token: '',
         meta_instagram_business_id: '',
         meta_verify_token: 'zaplandia_verify_token',
@@ -30,6 +29,7 @@ export default function ApiSettingsPage() {
         olx_app_secret: '',
         evolution_api_url: '',
         evolution_api_key: '',
+        n8n_webhook_url: '',
     });
 
     // Fetch existing keys on load
@@ -51,6 +51,7 @@ export default function ApiSettingsPage() {
                     const next = { ...prev };
                     data.forEach((item: any) => {
                         if (item.key_name === 'META_APP_CONFIG') {
+                            console.log('Mapping META_APP_CONFIG');
                             try {
                                 const parsed = JSON.parse(item.key_value);
                                 next.fb_app_id = parsed.appId || '';
@@ -60,7 +61,9 @@ export default function ApiSettingsPage() {
                                 next.meta_verify_token = parsed.verifyToken || 'zaplandia_verify_token';
                                 next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
                                 next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
-                            } catch (e) { }
+                            } catch (e) {
+                                console.error('Error parsing META_APP_CONFIG:', e);
+                            }
                         }
                         if (item.key_name === 'WHATSAPP_TOKEN') next.whatsapp_token = item.key_value;
                         if (item.key_name === 'GEMINI_API_KEY') next.gemini_key = item.key_value;
@@ -115,6 +118,8 @@ export default function ApiSettingsPage() {
                 body: JSON.stringify({ name, value, isGlobal })
             });
 
+            console.log(`[SAVE] Response status for ${name}:`, res.status);
+
             if (!res.ok) throw new Error('Falha ao salvar');
             setStatus({ type: 'success', msg: `${name} salvo!` });
             fetchExistingKeys();
@@ -166,7 +171,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="text"
                                     value={keys.fb_app_id}
-                                    onChange={(e) => setKeys({ ...keys, fb_app_id: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, fb_app_id: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="Ex: 1234567890"
                                 />
@@ -176,7 +184,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="password"
                                     value={keys.fb_app_secret}
-                                    onChange={(e) => setKeys({ ...keys, fb_app_secret: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, fb_app_secret: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="••••••••••••"
                                 />
@@ -189,7 +200,10 @@ export default function ApiSettingsPage() {
                             <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Page Access Token</label>
                             <textarea
                                 value={keys.meta_page_access_token}
-                                onChange={(e) => setKeys({ ...keys, meta_page_access_token: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeys(prev => ({ ...prev, meta_page_access_token: val }));
+                                }}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white h-24"
                                 placeholder="EAAB..."
                             />
@@ -200,7 +214,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="text"
                                     value={keys.meta_instagram_business_id}
-                                    onChange={(e) => setKeys({ ...keys, meta_instagram_business_id: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, meta_instagram_business_id: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="Ex: 17841400..."
                                 />
@@ -210,7 +227,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="text"
                                     value={keys.meta_verify_token}
-                                    onChange={(e) => setKeys({ ...keys, meta_verify_token: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, meta_verify_token: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white font-mono"
                                 />
                             </div>
@@ -223,7 +243,10 @@ export default function ApiSettingsPage() {
                             <input
                                 type="text"
                                 value={keys.whatsapp_phone_number_id}
-                                onChange={(e) => setKeys({ ...keys, whatsapp_phone_number_id: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeys(prev => ({ ...prev, whatsapp_phone_number_id: val }));
+                                }}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="Ex: 106545123456789"
                             />
@@ -233,7 +256,10 @@ export default function ApiSettingsPage() {
                             <input
                                 type="text"
                                 value={keys.whatsapp_business_account_id}
-                                onChange={(e) => setKeys({ ...keys, whatsapp_business_account_id: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeys(prev => ({ ...prev, whatsapp_business_account_id: val }));
+                                }}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="Ex: 104545123456789"
                             />
@@ -266,7 +292,10 @@ export default function ApiSettingsPage() {
                         <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">WhatsApp Permanent Token (System User)</label>
                         <textarea
                             value={keys.whatsapp_token}
-                            onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setKeys(prev => ({ ...prev, whatsapp_token: val }));
+                            }}
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition h-20 text-sm text-white"
                             placeholder="EAAW..."
                         />
@@ -293,7 +322,10 @@ export default function ApiSettingsPage() {
                             <input
                                 type="password"
                                 value={keys.gemini_key}
-                                onChange={(e) => setKeys({ ...keys, gemini_key: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeys(prev => ({ ...prev, gemini_key: val }));
+                                }}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="AIza..."
                             />
@@ -321,7 +353,10 @@ export default function ApiSettingsPage() {
                             <input
                                 type="text"
                                 value={keys.telegram_token}
-                                onChange={(e) => setKeys({ ...keys, telegram_token: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeys(prev => ({ ...prev, telegram_token: val }));
+                                }}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="123456:ABC-DEF..."
                             />
@@ -349,7 +384,10 @@ export default function ApiSettingsPage() {
                             <input
                                 type="password"
                                 value={keys.youtube_api_key}
-                                onChange={(e) => setKeys({ ...keys, youtube_api_key: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeys(prev => ({ ...prev, youtube_api_key: val }));
+                                }}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="AIza..."
                             />
@@ -378,7 +416,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="text"
                                     value={keys.linkedin_client_id}
-                                    onChange={(e) => setKeys({ ...keys, linkedin_client_id: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, linkedin_client_id: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 />
                             </div>
@@ -387,7 +428,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="password"
                                     value={keys.linkedin_client_secret}
-                                    onChange={(e) => setKeys({ ...keys, linkedin_client_secret: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, linkedin_client_secret: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 />
                             </div>
@@ -416,7 +460,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="text"
                                     value={keys.ml_client_id}
-                                    onChange={(e) => setKeys({ ...keys, ml_client_id: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, ml_client_id: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="Ex: 81234567890"
                                 />
@@ -426,7 +473,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="password"
                                     value={keys.ml_client_secret}
-                                    onChange={(e) => setKeys({ ...keys, ml_client_secret: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, ml_client_secret: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="••••••••••••"
                                 />
@@ -456,7 +506,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="text"
                                     value={keys.olx_app_id}
-                                    onChange={(e) => setKeys({ ...keys, olx_app_id: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, olx_app_id: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="Ex: olx_app_123"
                                 />
@@ -466,7 +519,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="password"
                                     value={keys.olx_app_secret}
-                                    onChange={(e) => setKeys({ ...keys, olx_app_secret: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, olx_app_secret: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="••••••••••••"
                                 />
@@ -496,7 +552,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="text"
                                     value={keys.evolution_api_url}
-                                    onChange={(e) => setKeys({ ...keys, evolution_api_url: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, evolution_api_url: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="https://evo.seudominio.com"
                                 />
@@ -506,7 +565,10 @@ export default function ApiSettingsPage() {
                                 <input
                                     type="password"
                                     value={keys.evolution_api_key}
-                                    onChange={(e) => setKeys({ ...keys, evolution_api_key: e.target.value })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setKeys(prev => ({ ...prev, evolution_api_key: val }));
+                                    }}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                     placeholder="••••••••••••"
                                 />
@@ -550,7 +612,10 @@ export default function ApiSettingsPage() {
                             <input
                                 type="text"
                                 value={keys.n8n_webhook_url}
-                                onChange={(e) => setKeys({ ...keys, n8n_webhook_url: e.target.value })}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setKeys(prev => ({ ...prev, n8n_webhook_url: val }));
+                                }}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none transition text-sm text-white"
                                 placeholder="https://n8n.seudominio.com/webhook/..."
                             />
