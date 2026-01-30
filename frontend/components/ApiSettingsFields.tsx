@@ -320,6 +320,182 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     </button>
                 </div>
             </section>
+
+            {/* WhatsApp Permanent Token */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Shield className="w-5 h-5 text-green-400" />
+                    <span>WhatsApp Token Permanente</span>
+                </h2>
+                <div className="space-y-4">
+                    <textarea
+                        value={keys.whatsapp_token}
+                        onChange={(e) => setKeys({ ...keys, whatsapp_token: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary h-20"
+                        placeholder="Token do System User (EAAW...)"
+                    />
+                    <button
+                        onClick={() => handleSave('WHATSAPP_TOKEN', keys.whatsapp_token)}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Token WhatsApp</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* Telegram Section */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Send className="w-5 h-5 text-blue-400" />
+                    <span>Telegram Bot</span>
+                </h2>
+                <div className="space-y-4">
+                    <input
+                        type="text"
+                        value={keys.telegram_token}
+                        onChange={(e) => setKeys({ ...keys, telegram_token: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                        placeholder="Bot Token (123456:ABC-DEF...)"
+                    />
+                    <button
+                        onClick={() => handleSave('TELEGRAM_TOKEN', keys.telegram_token)}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Telegram</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* YouTube Section */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Youtube className="w-5 h-5 text-red-600" />
+                    <span>YouTube API</span>
+                </h2>
+                <div className="space-y-4">
+                    <input
+                        type="password"
+                        value={keys.youtube_api_key}
+                        onChange={(e) => setKeys({ ...keys, youtube_api_key: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                        placeholder="Google Cloud API Key"
+                    />
+                    <button
+                        onClick={() => handleSave('YOUTUBE_API_KEY', keys.youtube_api_key)}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar YouTube</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* LinkedIn Section */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Linkedin className="w-5 h-5 text-blue-700" />
+                    <span>LinkedIn API</span>
+                </h2>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            value={keys.linkedin_client_id}
+                            onChange={(e) => setKeys({ ...keys, linkedin_client_id: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="Client ID"
+                        />
+                        <input
+                            type="password"
+                            value={keys.linkedin_client_secret}
+                            onChange={(e) => setKeys({ ...keys, linkedin_client_secret: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="Client Secret"
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleSave('LINKEDIN_CONFIG', JSON.stringify({ clientId: keys.linkedin_client_id, secret: keys.linkedin_client_secret }))}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar LinkedIn</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* Mercado Livre Section */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <ShoppingBag className="w-5 h-5 text-yellow-500" />
+                    <span>Mercado Livre API</span>
+                </h2>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            value={keys.ml_client_id}
+                            onChange={(e) => setKeys({ ...keys, ml_client_id: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="Application ID"
+                        />
+                        <input
+                            type="password"
+                            value={keys.ml_client_secret}
+                            onChange={(e) => setKeys({ ...keys, ml_client_secret: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="Client Secret"
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleSave('MERCADO_LIVRE_CONFIG', JSON.stringify({ clientId: keys.ml_client_id, secret: keys.ml_client_secret }))}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Mercado Livre</span>
+                    </button>
+                </div>
+            </section>
+
+            {/* OLX Section */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Store className="w-5 h-5 text-orange-600" />
+                    <span>OLX API</span>
+                </h2>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            value={keys.olx_app_id}
+                            onChange={(e) => setKeys({ ...keys, olx_app_id: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="App ID"
+                        />
+                        <input
+                            type="password"
+                            value={keys.olx_app_secret}
+                            onChange={(e) => setKeys({ ...keys, olx_app_secret: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="App Secret"
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleSave('OLX_CONFIG', JSON.stringify({ appId: keys.olx_app_id, secret: keys.olx_app_secret }))}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar OLX</span>
+                    </button>
+                </div>
+            </section>
         </div>
     );
 }
