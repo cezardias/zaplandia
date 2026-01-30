@@ -1,5 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn } from 'typeorm';
-import { Tenant } from '../../users/entities/tenant.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 
 @Entity('api_credentials')
 export class ApiCredential {
@@ -15,9 +14,8 @@ export class ApiCredential {
     @Column({ nullable: true })
     description: string;
 
-    @ManyToOne(() => Tenant, { nullable: true })
-    tenant: Tenant; // If null, it's a GLOBAL key set by SUPERADMIN
-
+    // Tenant ID stored as string without foreign key constraint
+    // This allows saving credentials even if tenant doesn't exist in DB yet
     @Column({ nullable: true })
     tenantId: string | null;
 
