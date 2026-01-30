@@ -19,7 +19,7 @@ export class ApiCredential {
     tenant: Tenant; // If null, it's a GLOBAL key set by SUPERADMIN
 
     @Column({ nullable: true })
-    tenantId: string;
+    tenantId: string | null;
 
     @CreateDateColumn()
     createdAt: Date;

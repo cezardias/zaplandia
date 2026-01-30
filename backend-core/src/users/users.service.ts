@@ -87,6 +87,11 @@ export class UsersService implements OnModuleInit {
         return this.usersRepository.save(user);
     }
 
+    async createTenant(tenantData: any): Promise<Tenant> {
+        const tenant = this.tenantsRepository.create(tenantData as object);
+        return this.tenantsRepository.save(tenant);
+    }
+
     async findAll(): Promise<User[]> {
         return this.usersRepository.find({
             relations: ['tenant'],

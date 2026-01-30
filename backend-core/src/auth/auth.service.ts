@@ -39,8 +39,6 @@ export class AuthService {
     }
 
     async register(data: any) {
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-
         // Create new tenant for the user
         const trialEndDate = new Date();
         trialEndDate.setDate(trialEndDate.getDate() + 15);
@@ -53,7 +51,6 @@ export class AuthService {
 
         return this.usersService.create({
             ...data,
-            password: hashedPassword,
             tenantId: tenant.id,
         });
     }
