@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CrmService } from '../crm/crm.service';
 import { SupportService } from '../support/support.service';
 import { UsersService } from './users.service';
+import { IntegrationsService } from '../integrations/integrations.service';
 import { UserRole } from './entities/user.entity';
 
 @Controller('admin')
@@ -12,7 +13,25 @@ export class AdminController {
         private readonly crmService: CrmService,
         private readonly supportService: SupportService,
         private readonly usersService: UsersService,
+        private readonly integrationsService: IntegrationsService,
     ) { }
+
+    @Get('tenants/:tenantId/credentials')
+    async getTenantCredentials(@Request() req, @Param('tenantId') tenantId: string) {
+        if (req.user.role !== UserRole.SUPERADMIN) {
+            throw new ForbiddenException('Acesso negado.');
+        }
+        return this.integrationsService.findAllCredentials(tenantId, false);
+    }
+
+    @Post('tenants/:tenantId/credentials')
+    async saveTenantCredential(@Request() req, @Param('tenantId') tenantId: string, @Body() body: any) {
+        if (req.user.role !== UserRole.SUPERADMIN) {
+            throw new ForbiddenException('Acesso negado.');
+        }
+        const { name, value } = body;
+        return this.integrationsService.saveApiCredential(tenantId, name, value);
+    }
 
     @Get('users')
     async findAll(@Request() req) {

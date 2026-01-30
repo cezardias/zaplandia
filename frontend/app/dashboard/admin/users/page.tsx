@@ -11,13 +11,12 @@ import {
     Building2,
     Mail,
     Calendar,
-    MoreVertical,
     X,
     Save,
-    Loader2,
     AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import ApiSettingsFields from '@/components/ApiSettingsFields';
 
 interface UserData {
     id: string;
@@ -25,6 +24,7 @@ interface UserData {
     name: string;
     role: string;
     createdAt: string;
+    tenantId: string;
     tenant?: {
         name: string;
     };
@@ -44,6 +44,7 @@ export default function UserManagementPage() {
         role: 'user'
     });
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+    const [activeTab, setActiveTab] = useState<'profile' | 'apis'>('profile');
 
     useEffect(() => {
         if (token) fetchUsers();
@@ -124,6 +125,7 @@ export default function UserManagementPage() {
             setFormData({ name: '', email: '', password: '', role: 'user' });
         }
         setIsModalOpen(true);
+        setActiveTab('profile');
     };
 
     const filteredUsers = users.filter(u =>
@@ -220,10 +222,10 @@ export default function UserManagementPage() {
                                     </td>
                                     <td className="px-6 py-5">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${u.role === 'superadmin'
-                                                ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                                                : u.role === 'admin'
-                                                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                    : 'bg-green-500/10 text-green-400 border-green-500/20'
+                                            ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                            : u.role === 'admin'
+                                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                : 'bg-green-500/10 text-green-400 border-green-500/20'
                                             }`}>
                                             <Shield className="w-3 h-3 mr-1" />
                                             {u.role.toUpperCase()}
@@ -269,7 +271,7 @@ export default function UserManagementPage() {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden scale-in-center">
+                    <div className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden scale-in-center flex flex-col max-h-[90vh]">
                         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
                             <h3 className="text-xl font-bold text-white flex items-center">
                                 {editingUser ? <Edit className="w-5 h-5 mr-3 text-primary" /> : <UserPlus className="w-5 h-5 mr-3 text-primary" />}
@@ -280,80 +282,119 @@ export default function UserManagementPage() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-8 space-y-6">
-                            {status && (
-                                <div className={`p-4 rounded-xl flex items-center space-x-3 mb-6 ${status.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'
-                                    }`}>
-                                    {status.type === 'success' ? <Shield className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-                                    <span className="text-sm font-medium">{status.msg}</span>
+                        <div className="flex border-b border-white/10 px-6">
+                            <button
+                                onClick={() => setActiveTab('profile')}
+                                className={`px-4 py-3 text-sm font-bold transition-all relative ${activeTab === 'profile' ? 'text-primary' : 'text-gray-500 hover:text-white'}`}
+                            >
+                                Perfil
+                                {activeTab === 'profile' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                            </button>
+                            {editingUser && (
+                                <button
+                                    onClick={() => setActiveTab('apis')}
+                                    className={`px-4 py-3 text-sm font-bold transition-all relative ${activeTab === 'apis' ? 'text-primary' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    Configurações de API
+                                    {activeTab === 'apis' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto">
+                            {activeTab === 'profile' ? (
+                                <form onSubmit={handleSave} className="p-8 space-y-6">
+                                    {status && (
+                                        <div className={`p-4 rounded-xl flex items-center space-x-3 mb-6 ${status.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                                            }`}>
+                                            {status.type === 'success' ? <Shield className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                                            <span className="text-sm font-medium">{status.msg}</span>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Nome Completo</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
+                                                placeholder="Ex: Cezar Dias"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">E-mail</label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
+                                                placeholder="email@exemplo.com"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Senha {editingUser && '(Deixe em branco para manter)'}</label>
+                                            <input
+                                                type="password"
+                                                required={!editingUser}
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Cargo / Permissão</label>
+                                            <select
+                                                value={formData.role}
+                                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition appearance-none cursor-pointer"
+                                            >
+                                                <option value="user" className="bg-[#121214]">Usuário Comum</option>
+                                                <option value="admin" className="bg-[#121214]">Administrador</option>
+                                                <option value="superadmin" className="bg-[#121214]">Super Admin</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex space-x-4 pt-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsModalOpen(false)}
+                                            className="flex-1 px-6 py-4 border border-white/10 rounded-xl text-white font-bold hover:bg-white/5 transition"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="flex-1 px-6 py-4 bg-primary hover:bg-primary-dark rounded-xl text-white font-bold transition flex items-center justify-center space-x-2"
+                                        >
+                                            <Save className="w-5 h-5" />
+                                            <span>Salvar Alterações</span>
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <div className="p-8">
+                                    <ApiSettingsFields
+                                        token={token!}
+                                        tenantId={editingUser?.tenantId}
+                                        isAdminMode={true}
+                                    />
+                                    <div className="mt-8 pt-4 border-t border-white/10">
+                                        <button
+                                            onClick={() => setIsModalOpen(false)}
+                                            className="w-full px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold transition"
+                                        >
+                                            Fechar Painel
+                                        </button>
+                                    </div>
                                 </div>
                             )}
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Nome Completo</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
-                                        placeholder="Ex: Cezar Dias"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">E-mail</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
-                                        placeholder="email@exemplo.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Senha {editingUser && '(Deixe em branco para manter)'}</label>
-                                    <input
-                                        type="password"
-                                        required={!editingUser}
-                                        value={formData.password}
-                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Cargo / Permissão</label>
-                                    <select
-                                        value={formData.role}
-                                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition appearance-none cursor-pointer"
-                                    >
-                                        <option value="user" className="bg-[#121214]">Usuário Comum</option>
-                                        <option value="admin" className="bg-[#121214]">Administrador</option>
-                                        <option value="superadmin" className="bg-[#121214]">Super Admin</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="flex space-x-4 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 px-6 py-4 border border-white/10 rounded-xl text-white font-bold hover:bg-white/5 transition"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-6 py-4 bg-primary hover:bg-primary-dark rounded-xl text-white font-bold transition flex items-center justify-center space-x-2"
-                                >
-                                    <Save className="w-5 h-5" />
-                                    <span>Salvar</span>
-                                </button>
-                            </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             )}

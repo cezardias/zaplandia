@@ -6,12 +6,14 @@ import { UsersService } from './users.service';
 import { AdminController } from './admin.controller';
 import { CrmModule } from '../crm/crm.module';
 import { SupportModule } from '../support/support.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([User, Tenant]),
         forwardRef(() => CrmModule),
         SupportModule,
+        IntegrationsModule,
     ],
     controllers: [AdminController],
     providers: [UsersService],
