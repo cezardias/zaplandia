@@ -37,7 +37,7 @@ export class EvolutionApiService {
             this.logger.log(`Filtering for tenantId: ${tenantId}`);
 
             const tenantInstances = allInstances.filter((inst: any) => {
-                const name = inst.instance?.instanceName || inst.instanceName || '';
+                const name = inst.name || inst.instance?.instanceName || inst.instanceName || '';
                 const match = name.startsWith(`tenant_${tenantId}_`);
                 this.logger.log(`Checking instance: ${name}, Match: ${match}`);
                 return match;

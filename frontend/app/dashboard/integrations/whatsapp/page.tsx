@@ -317,8 +317,8 @@ export default function WhatsAppInstancesPage() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {instances.map((instance) => {
-                                    const instanceName = instance.instance?.instanceName || instance.instanceName;
+                                {instances.map((instance: any) => {
+                                    const instanceName = instance.name || instance.instance?.instanceName || instance.instanceName;
                                     const isSelected = selectedInstance === instanceName;
                                     const status = getStatus(instance);
                                     const isConnected = status === 'open' || status === 'connected';
