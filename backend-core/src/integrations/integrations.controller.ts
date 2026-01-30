@@ -23,21 +23,21 @@ export class IntegrationsController {
     @Post('evolution/instance')
     async createEvolutionInstance(@Request() req) {
         const instanceName = `tenant_${req.user.tenantId}`;
-        return this.evolutionApiService.createInstance(instanceName, req.user.id);
+        return this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.id);
     }
 
     @UseGuards(JwtAuthGuard)
     @Get('evolution/qrcode')
     async getEvolutionQrCode(@Request() req) {
         const instanceName = `tenant_${req.user.tenantId}`;
-        return this.evolutionApiService.getQrCode(instanceName);
+        return this.evolutionApiService.getQrCode(req.user.tenantId, instanceName);
     }
 
     @UseGuards(JwtAuthGuard)
     @Delete('evolution/instance')
     async deleteEvolutionInstance(@Request() req) {
         const instanceName = `tenant_${req.user.tenantId}`;
-        return this.evolutionApiService.deleteInstance(instanceName);
+        return this.evolutionApiService.deleteInstance(req.user.tenantId, instanceName);
     }
 
     // Public Webhook for EvolutionAPI

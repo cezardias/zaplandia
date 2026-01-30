@@ -8,20 +8,20 @@ export class EvolutionApiService {
 
     constructor(private readonly integrationsService: IntegrationsService) { }
 
-    private async getBaseUrl() {
-        return await this.integrationsService.getCredential(null, 'EVOLUTION_API_URL');
+    private async getBaseUrl(tenantId: string) {
+        return await this.integrationsService.getCredential(tenantId, 'EVOLUTION_API_URL');
     }
 
-    private async getApiKey() {
-        return await this.integrationsService.getCredential(null, 'EVOLUTION_API_KEY');
+    private async getApiKey(tenantId: string) {
+        return await this.integrationsService.getCredential(tenantId, 'EVOLUTION_API_KEY');
     }
 
-    async createInstance(instanceName: string, userId: string) {
-        const baseUrl = await this.getBaseUrl();
-        const apiKey = await this.getApiKey();
+    async createInstance(tenantId: string, instanceName: string, userId: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
 
         if (!baseUrl || !apiKey) {
-            throw new Error('EvolutionAPI não configurada globalmente.');
+            throw new Error('EvolutionAPI não configurada para este tenant.');
         }
 
         try {
@@ -40,9 +40,11 @@ export class EvolutionApiService {
         }
     }
 
-    async getQrCode(instanceName: string) {
-        const baseUrl = await this.getBaseUrl();
-        const apiKey = await this.getApiKey();
+    async getQrCode(tenantId: string, instanceName: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
             const response = await axios.get(`${baseUrl}/instance/connect/${instanceName}`, {
@@ -55,9 +57,11 @@ export class EvolutionApiService {
         }
     }
 
-    async logoutInstance(instanceName: string) {
-        const baseUrl = await this.getBaseUrl();
-        const apiKey = await this.getApiKey();
+    async logoutInstance(tenantId: string, instanceName: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
             const response = await axios.delete(`${baseUrl}/instance/logout/${instanceName}`, {
@@ -70,9 +74,11 @@ export class EvolutionApiService {
         }
     }
 
-    async deleteInstance(instanceName: string) {
-        const baseUrl = await this.getBaseUrl();
-        const apiKey = await this.getApiKey();
+    async deleteInstance(tenantId: string, instanceName: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
             const response = await axios.delete(`${baseUrl}/instance/delete/${instanceName}`, {
@@ -85,9 +91,11 @@ export class EvolutionApiService {
         }
     }
 
-    async setWebhook(instanceName: string, webhookUrl: string) {
-        const baseUrl = await this.getBaseUrl();
-        const apiKey = await this.getApiKey();
+    async setWebhook(tenantId: string, instanceName: string, webhookUrl: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
             const response = await axios.post(`${baseUrl}/webhook/set/${instanceName}`, {
