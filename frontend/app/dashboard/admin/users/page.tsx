@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import {
     Users, UserPlus, Search, Mail, Shield, Calendar,
     MoreHorizontal, Edit, Trash2, X, Save, AlertCircle,
