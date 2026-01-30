@@ -63,7 +63,14 @@ export default function WhatsAppInstancesPage() {
                 router.push('/auth/login');
             } else {
                 const errData = await res.json();
-                setError(errData.message || 'Erro ao carregar instâncias');
+                const errorMessage = errData.message || 'Erro ao carregar instâncias';
+
+                // Handle "EvolutionAPI not configured" specifically
+                if (errorMessage.includes('EvolutionAPI não configurada') || res.status === 500) {
+                    setError('A EvolutionAPI ainda não foi configurada no sistema.');
+                } else {
+                    setError(errorMessage);
+                }
             }
         } catch (err: any) {
             setError(err.message || 'Erro de conexão com o servidor');
@@ -238,7 +245,17 @@ export default function WhatsAppInstancesPage() {
             {/* Messages */}
             {error && (
                 <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center justify-between">
-                    <span>{error}</span>
+                    <div className="flex items-center space-x-2">
+                        <span>{error}</span>
+                        {error.includes('configurada') && (
+                            <button
+                                onClick={() => router.push('/dashboard/settings/api')}
+                                className="underline font-bold hover:text-red-300 ml-2"
+                            >
+                                Configurar Agora
+                            </button>
+                        )}
+                    </div>
                     <button onClick={() => setError(null)} className="hover:text-red-300">✕</button>
                 </div>
             )}
@@ -310,8 +327,8 @@ export default function WhatsAppInstancesPage() {
                                         <div
                                             key={instanceName}
                                             className={`p-4 border rounded-xl transition ${isSelected
-                                                    ? 'border-primary bg-primary/10'
-                                                    : 'border-white/10 bg-white/5 hover:border-white/20'
+                                                ? 'border-primary bg-primary/10'
+                                                : 'border-white/10 bg-white/5 hover:border-white/20'
                                                 }`}
                                         >
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
