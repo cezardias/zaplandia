@@ -127,6 +127,42 @@ export class SupportService implements OnModuleInit {
 - **Personalidade**: Defina como a IA deve falar (formal, amigável, técnico).
 - **Base de Conhecimento**: A IA lê seus manuais e informações da empresa para responder dúvidas dos clientes.
 - **Transferência**: Se a IA não souber responder ou o cliente pedir falar com humano, a conversa é marcada como prioritária no Omni Inbox.`,
+            },
+            {
+                title: 'WhatsApp Não Oficial: Conexão EvolutionAPI (QR Code)',
+                category: 'WhatsApp',
+                content: `Conecte qualquer número de WhatsApp sem a API oficial:
+
+1. **Acesse Integrações**: Vá ao menu lateral "Integrações" e localize o card "WhatsApp Unofficial (EvolutionAPI)".
+2. **Gerar Instância**: Clique em "Conectar". O sistema criará uma instância exclusiva para sua empresa no servidor global.
+3. **Escaneie o QR Code**: Um QR Code aparecerá na tela. Abra o WhatsApp no seu celular, vá em "Aparelhos Conectados" e escaneie o código.
+4. **Status**: Assim que o celular ler o código, o Zaplandia atualizará o status para "CONECTADO". Agora você pode receber mensagens no Omni Inbox e disparar campanhas.`,
+            },
+            {
+                title: 'Configurações de Admin: Servidor EvolutionAPI e n8n',
+                category: 'Configurações',
+                content: `Manual para Super Admins do Sistema:
+
+1. **Acesso**: Vá em Dashboard > Configurações > API.
+2. **EvolutionAPI**:
+   - **URL**: Insira o endereço do seu servidor EvolutionAPI (ex: https://evo.seudominio.com).
+   - **API Key**: Insira a chave global (Global Api Key) configurada no seu arquivo .env do Evolution.
+3. **n8n Webhook**: 
+   - Insira a URL do seu Webhook do n8n (Production URL).
+   - Isso garante que todas as mensagens recebidas sejam enviadas para o seu fluxo de IA no n8n.
+4. **Salvar Tudo**: Use o botão "SALVAR TUDO" no rodapé para garantir que as chaves sejam aplicadas globalmente.`,
+            },
+            {
+                title: 'Campanhas do CRM: Seleção de Instância e Canais',
+                category: 'CRM',
+                content: `Como escolher qual WhatsApp usar em cada disparo:
+
+1. **Nova Campanha**: No menu CRM > Campanhas, clique em "Nova Campanha".
+2. **Canais**: Ao selecionar o canal "WhatsApp", um novo campo de seleção aparecerá.
+3. **Seleção de Instância**: 
+   - Se você tiver múltiplas conexões (ex: uma Oficial e uma EvolutionAPI), você deve selecionar qual delas deve realizar o disparo desta campanha específica.
+   - Isso permite separar disparos de marketing de disparos de suporte, por exemplo.
+4. **Finalização**: Siga os passos de Público e Mensagem para concluir a criação.`,
             }
         ];
 
