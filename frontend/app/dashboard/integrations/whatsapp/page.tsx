@@ -111,6 +111,12 @@ export default function WhatsAppInstancesPage() {
                     // Check if qrcode is object or string
                     const qr = data.qrcode?.base64 || data.base64 || (typeof data.qrcode === 'string' ? data.qrcode : null);
                     if (qr) setQrCode(qr);
+                } else {
+                    // Automatically try to fetch QR code if not returned (triggering backend auto-retry)
+                    const instanceName = data.instance?.instanceName || data.instanceName || `tenant_${user?.tenantId}_${sanitizedName}`;
+                    console.log("Auto-fetching QR code for:", instanceName);
+                    setSelectedInstance(instanceName);
+                    fetchQrCode(instanceName);
                 }
             } else {
                 const errData = await res.json();

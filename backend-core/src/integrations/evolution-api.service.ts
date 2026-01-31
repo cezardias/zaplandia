@@ -118,8 +118,8 @@ export class EvolutionApiService {
                 try {
                     await axios.delete(`${baseUrl}/instance/logout/${instanceName}`, { headers: { 'apikey': apiKey } });
                     this.logger.log(`Instance ${instanceName} logged out. Retrying connect...`);
-                    // Wait 1.5 seconds
-                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    // Wait 3 seconds
+                    await new Promise(resolve => setTimeout(resolve, 3000));
 
                     const retryResponse = await axios.get(`${baseUrl}/instance/connect/${instanceName}`, {
                         headers: { 'apikey': apiKey }
