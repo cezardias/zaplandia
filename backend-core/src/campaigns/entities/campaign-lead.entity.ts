@@ -34,6 +34,9 @@ export class CampaignLead {
     @Column()
     campaignId: string;
 
+    @Column({ type: 'timestamp', nullable: true })
+    sentAt: Date;
+
     @CreateDateColumn()
     createdAt: Date;
 }

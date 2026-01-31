@@ -5,7 +5,7 @@ import { Campaign, CampaignStatus } from './entities/campaign.entity';
 import { CampaignLead, LeadStatus } from './entities/campaign-lead.entity';
 import { CrmService } from '../crm/crm.service';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 
 @Injectable()
 export class CampaignsService {

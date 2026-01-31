@@ -147,4 +147,11 @@ export class CrmService {
             await this.contactRepository.save(contact);
         }
     }
+    async updateContact(tenantId: string, contactId: string, updates: any) {
+        const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
+        if (!contact) return null;
+
+        await this.contactRepository.update(contactId, updates);
+        return this.contactRepository.findOne({ where: { id: contactId } });
+    }
 }

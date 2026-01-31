@@ -21,12 +21,11 @@ import { SupportModule } from './support/support.module';
     WebhooksModule,
     DashboardModule,
     CampaignsModule,
-    CampaignsModule,
     SupportModule,
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'redis',
-        port: parseInt(process.env.REDIS_PORT) || 6379,
+        port: parseInt(process.env.REDIS_PORT || '6379'),
       },
     }),
     TypeOrmModule.forRoot({

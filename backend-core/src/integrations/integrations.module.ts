@@ -7,6 +7,10 @@ import { IntegrationsController } from './integrations.controller';
 import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
 
+import { User } from '../users/entities/user.entity';
+import { N8nService } from './n8n.service';
+import { EvolutionApiService } from './evolution-api.service';
+
 @Module({
     imports: [TypeOrmModule.forFeature([Integration, ApiCredential, User])],
     controllers: [IntegrationsController, AiController],

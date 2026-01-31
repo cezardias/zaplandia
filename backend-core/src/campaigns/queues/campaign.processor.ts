@@ -1,6 +1,6 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { EvolutionApiService } from '../../integrations/evolution-api.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CampaignLead, LeadStatus } from '../entities/campaign-lead.entity';
@@ -29,7 +29,7 @@ export class CampaignProcessor {
         if (!this.checkRateLimit(instanceName)) {
             this.logger.warn(`Rate limit reached for ${instanceName}. Delaying job...`);
             // Delay for 24 hours (in milliseconds)
-            await job.moveToDelayed(Date.now() + 24 * 60 * 60 * 1000);
+            await (job as any).moveToDelayed(Date.now() + 24 * 60 * 60 * 1000);
             return;
         }
 
