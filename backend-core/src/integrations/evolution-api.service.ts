@@ -107,7 +107,36 @@ export class EvolutionApiService {
                 headers: { 'apikey': apiKey }
             });
             this.logger.log(`QR Code response for ${instanceName}: ${JSON.stringify(response.data)}`);
-            return response.data;
+            this.logger.log(`QR Code response for ${instanceName}: ${JSON.stringify(response.data)}`);
+
+            // Check if response contains valid QR code data
+            let data = response.data;
+            if (!data || (!data.code && !data.pairingCode && !data.base64 && (data.status !== 'open' && data.status !== 'connected'))) {
+                this.logger.warn(`Invalid QR Code response: ${JSON.stringify(data)}. Attempting to reset instance...`);
+
+                // Try to logout/reset the instance and retry
+                try {
+                    await axios.delete(`${baseUrl}/instance/logout/${instanceName}`, { headers: { 'apikey': apiKey } });
+                    this.logger.log(`Instance ${instanceName} logged out. Retrying connect...`);
+                    // Wait 1.5 seconds
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    const retryResponse = await axios.get(`${baseUrl}/instance/connect/${instanceName}`, {
+                        headers: { 'apikey': apiKey }
+                    });
+                    this.logger.log(`Retry QR Code response for ${instanceName}: ${JSON.stringify(retryResponse.data)}`);
+                    data = retryResponse.data;
+
+                    if (!data || (!data.code && !data.pairingCode && !data.base64 && (data.status !== 'open' && data.status !== 'connected'))) {
+                        throw new Error('Falha persistente ao obter QR Code');
+                    }
+                } catch (retryError) {
+                    this.logger.error(`Retry failed: ${retryError.message}`);
+                    throw new Error('Falha ao obter QR Code da EvolutionAPI (mesmo após reset). Tente excluir e recriar a instância.');
+                }
+            }
+
+            return data;
         } catch (error) {
             this.logger.error(`Erro ao buscar QR Code no EvolutionAPI: ${error.message}`);
             if (error.response) {
