@@ -30,7 +30,7 @@ export default function NewCampaignPage() {
         name: '',
         channels: [] as string[],
         integrationId: '',
-        audience: 'existing' as 'existing' | 'json',
+        audience: 'existing' as 'existing' | 'json' | 'remarketing',
         jsonLeads: null as any,
         message: '',
         variations: [] as string[]
@@ -104,7 +104,8 @@ export default function NewCampaignPage() {
                     channels: formData.channels,
                     integrationId: formData.integrationId,
                     messageTemplate: formData.message,
-                    useExistingContacts: formData.audience === 'existing',
+                    useExistingContacts: formData.audience === 'existing' || formData.audience === 'remarketing',
+                    filters: formData.audience === 'remarketing' ? { stage: 'NOT_INTERESTED' } : {},
                     leads: formData.audience === 'json' ? formData.jsonLeads : undefined,
                     variations: formData.variations // Send variations to backend
                 })
@@ -286,6 +287,22 @@ export default function NewCampaignPage() {
                             <div>
                                 <h3 className="font-bold text-lg">Contatos Existentes</h3>
                                 <p className="text-xs text-gray-400 mt-1 leading-relaxed">Envie para todos os contatos já cadastrados no seu CRM Omnichannel.</p>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={() => setFormData({ ...formData, audience: 'remarketing' })}
+                            className={`p-8 rounded-3xl border transition-all text-left space-y-4 ${formData.audience === 'remarketing'
+                                ? 'bg-indigo-500/10 border-indigo-500'
+                                : 'bg-surface border-white/5 hover:border-white/20'
+                                }`}
+                        >
+                            <div className={`p-3 rounded-2xl w-fit ${formData.audience === 'remarketing' ? 'bg-indigo-500/20' : 'bg-white/5'}`}>
+                                <Users className={`w-6 h-6 ${formData.audience === 'remarketing' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg text-indigo-400">Remarketing (Recuperação)</h3>
+                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">Filtra apenas leads marcados como <b>"Não Interessado"</b> para campanhas de recuperação.</p>
                             </div>
                         </button>
 

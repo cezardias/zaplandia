@@ -86,7 +86,9 @@ export class CampaignsService {
 
             } else if (data.useExistingContacts) {
                 // Logic to pull contacts from CRM and create leads
-                const contacts = await this.crmService.findAllByTenant(tenantId);
+                const filters = data.filters || {}; // e.g. { stage: 'NOT_INTERESTED' }
+                const contacts = await this.crmService.findAllByTenant(tenantId, filters);
+
                 if (contacts.length > 0) {
 
                     // Map Contacts to Lead Entities

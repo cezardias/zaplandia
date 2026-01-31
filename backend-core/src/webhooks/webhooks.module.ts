@@ -13,6 +13,6 @@ import { Contact, Message } from '../crm/entities/crm.entity';
         TypeOrmModule.forFeature([Contact, Message])
     ],
     controllers: [WebhooksController],
-    providers: [AiService],
+    providers: [],
 })
 export class WebhooksModule { }

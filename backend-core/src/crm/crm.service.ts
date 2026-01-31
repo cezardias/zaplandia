@@ -31,10 +31,12 @@ export class CrmService {
         });
     }
 
-    async findAllByTenant(tenantId: string) {
-        return this.contactRepository.find({
-            where: { tenantId }
-        });
+    async findAllByTenant(tenantId: string, filters?: { stage?: string }) {
+        const where: any = { tenantId };
+        if (filters?.stage) {
+            where.stage = filters.stage;
+        }
+        return this.contactRepository.find({ where });
     }
 
     async getMessages(contactId: string, tenantId: string) {

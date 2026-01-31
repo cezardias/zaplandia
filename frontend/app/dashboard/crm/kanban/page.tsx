@@ -19,7 +19,17 @@ const STAGE_KEYS = Object.keys(STAGES);
 
 export default function KanbanPage() {
     const { token } = useAuth();
-    const [columns, setColumns] = useState<any>({});
+    const [columns, setColumns] = useState<any>(() => {
+        const initialCols: any = {};
+        STAGE_KEYS.forEach(key => {
+            initialCols[key] = {
+                id: key,
+                title: STAGES[key as keyof typeof STAGES],
+                items: []
+            };
+        });
+        return initialCols;
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchContacts = async () => {

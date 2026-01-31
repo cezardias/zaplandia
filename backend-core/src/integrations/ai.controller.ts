@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class AiController {
     constructor(private readonly aiService: AiService) { }
 
+    /*
     @UseGuards(JwtAuthGuard)
     @Post('prompts')
     async createPrompt(@Request() req, @Body() body: { name: string, content: string }) {
@@ -17,6 +18,7 @@ export class AiController {
     async getPrompts(@Request() req) {
         return this.aiService.findAllPrompts(req.user.tenantId);
     }
+    */
 
     @UseGuards(JwtAuthGuard)
     @Post('generate-variations')

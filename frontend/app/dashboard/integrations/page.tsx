@@ -62,10 +62,13 @@ export default function IntegrationsPage() {
     useEffect(() => {
         if (token) {
             fetchIntegrations();
+            /*
             fetch('/api/ai/prompts', { headers: { 'Authorization': `Bearer ${token}` } })
                 .then(res => res.json())
                 .then(data => setSavedPrompts(data))
                 .catch(err => console.error(err));
+            */
+            setSavedPrompts([]);
         }
     }, [token]);
 
