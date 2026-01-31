@@ -139,9 +139,9 @@ export class WebhooksController {
 
         // Extract tenantId using multiple strategies
         let tenantId = 'default';
-        let instanceName = instance;
+        let instanceName = typeof instance === 'string' ? instance : (instance?.instanceName || instance?.name || '');
 
-        // Strategy 1: Top-level instance field
+        // Strategy 1: Top-level instance field (String or Object prop)
         if (instanceName && instanceName.startsWith('tenant_')) {
             const parts = instanceName.split('_');
             // tenant_UUID_name
@@ -154,7 +154,11 @@ export class WebhooksController {
             if (parts.length >= 2) tenantId = parts[1];
         }
 
-        this.logger.log(`Extracted tenantId: ${tenantId} from instance: ${instanceName}`);
+        if (tenantId === 'default') {
+            this.logger.error(`FAILED TO EXTRACT TENANT ID from instance: ${JSON.stringify(instance)} or sender: ${sender}. Payload: ${JSON.stringify(payload)}`);
+        } else {
+            this.logger.log(`Extracted tenantId: ${tenantId} from instance: ${instanceName}`);
+        }
 
         if (type === 'MESSAGES_UPSERT') {
             const messageData = data.data || data; // Handle potential structure variations

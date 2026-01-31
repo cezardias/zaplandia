@@ -382,6 +382,19 @@ export default function NewCampaignPage() {
                                 </div>
                             </div>
                         )}
+
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 p-6 rounded-3xl flex items-start space-x-4">
+                            <div className="p-2 bg-yellow-500/20 rounded-xl">
+                                <Zap className="w-6 h-6 text-yellow-500" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-yellow-500 text-lg">Modo de Segurança Anti-Bloqueio Ativo</h3>
+                                <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                                    Para proteger seu chip, o sistema limitará o envio a <b>40 mensagens por dia</b> (aproximadamente 1 mensagem a cada 20 minutos).
+                                    Isso garante que sua campanha rode de forma segura e contínua.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

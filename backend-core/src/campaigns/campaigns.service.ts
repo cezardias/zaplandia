@@ -122,22 +122,28 @@ export class CampaignsService {
             // Check if we have variations (passed from frontend as 'variations' or imply from messageTemplate if it's spintax - simplistically assuming variations array for now)
             const variations = data.variations || [];
 
+            // Rate Limiting: 20 minutes between messages to strictly respect ~40-50/day limit per instance
+            const DELAY_MS = 20 * 60 * 1000;
+
             // Queue jobs
-            await Promise.all(leadsToProcess.map(async (lead) => {
+            await Promise.all(leadsToProcess.map(async (lead, index) => {
                 const contactId = contactIdMap.get(lead.id);
+                // Calculate staggered delay
+                const delay = index * DELAY_MS;
 
                 await this.campaignQueue.add('send-message', {
                     leadId: lead.id,
-                    contactId: contactId, // Real Contact ID
+                    contactId: contactId,
                     externalId: lead.externalId,
                     message: saved.messageTemplate,
-                    instanceName: saved.integrationId, // Ensure this is the instance name string
+                    instanceName: saved.integrationId,
                     tenantId: tenantId,
                     variations: variations
                 }, {
                     removeOnComplete: true,
                     attempts: 3,
-                    backoff: 5000 // Retry delay
+                    backoff: 5000,
+                    delay: delay // Staggered execution
                 });
             }));
 

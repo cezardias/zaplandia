@@ -17,7 +17,8 @@ import {
     Loader2,
     Play,
     Pause,
-    Trash2
+    Trash2,
+    Pen
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -148,8 +149,12 @@ export default function CampaignsPage() {
                                     <button className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition" title="Excluir">
                                         <Trash2 className="w-4 h-4" />
                                     </button>
-                                    <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400 transition">
-                                        <MoreHorizontal className="w-4 h-4" />
+                                    <button
+                                        onClick={() => router.push(`/dashboard/crm/campaigns/${campaign.id}`)}
+                                        className="p-2 hover:bg-white/5 rounded-lg text-primary transition"
+                                        title="Editar Campanha"
+                                    >
+                                        <Pen className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
