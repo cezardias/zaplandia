@@ -119,7 +119,7 @@ export class EvolutionApiService {
                     await axios.delete(`${baseUrl}/instance/logout/${instanceName}`, { headers: { 'apikey': apiKey } });
                     this.logger.log(`Instance ${instanceName} logged out. Retrying connect...`);
                     // Wait 1.5 seconds
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    await new Promise(resolve => setTimeout(resolve, 4000));
 
                     const retryResponse = await axios.get(`${baseUrl}/instance/connect/${instanceName}`, {
                         headers: { 'apikey': apiKey }
@@ -132,7 +132,7 @@ export class EvolutionApiService {
                     }
                 } catch (retryError) {
                     this.logger.error(`Retry failed: ${retryError.message}`);
-                    throw new Error('Falha ao obter QR Code da EvolutionAPI (mesmo após reset). Tente excluir e recriar a instância.');
+                    throw new Error('Falha ao obter QR Code da EvolutionAPI (mesmo após reset). A EvolutionAPI pode estar instável ou a instância travada. Tente excluir e recriar.');
                 }
             }
 
