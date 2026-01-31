@@ -4,14 +4,13 @@ import { Integration } from './entities/integration.entity';
 import { ApiCredential } from './entities/api-credential.entity';
 import { IntegrationsService } from './integrations.service';
 import { IntegrationsController } from './integrations.controller';
-import { N8nService } from './n8n.service';
-import { EvolutionApiService } from './evolution-api.service';
-import { User } from '../users/entities/user.entity';
+import { AiService } from './ai.service';
+import { AiController } from './ai.controller';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Integration, ApiCredential, User])],
-    controllers: [IntegrationsController],
-    providers: [IntegrationsService, N8nService, EvolutionApiService],
-    exports: [IntegrationsService, N8nService, EvolutionApiService],
+    controllers: [IntegrationsController, AiController],
+    providers: [IntegrationsService, N8nService, EvolutionApiService, AiService],
+    exports: [IntegrationsService, N8nService, EvolutionApiService, AiService],
 })
 export class IntegrationsModule { }

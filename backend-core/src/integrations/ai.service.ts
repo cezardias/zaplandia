@@ -38,4 +38,25 @@ export class AiService {
             return "Desculpe, meu cérebro de silício está processando algo. Tente novamente em um minuto! 🤖";
         }
     }
+
+    async generateVariations(tenantId: string, baseMessage: string, prompt?: string, count: number = 3): Promise<string[]> {
+        const systemInstruction = "Você é um especialista em Copywriting para WhatsApp. Sua tarefa é gerar variações de mensagens mantendo o sentido original, mas mudando o tom ou a estrutura para evitar bloqueios de SPAM. Retorne APENAS um array JSON de strings, sem markdown.";
+
+        const userPrompt = `
+        Mensagem Original: "${baseMessage}"
+        Contexto/Instrução Adicional: "${prompt || 'Crie variações amigáveis e persuasivas.'}"
+        Quantidade: ${count}
+        
+        Gere as variações no formato JSON array de strings: ["variação 1", "variação 2", ...]`;
+
+        try {
+            const responseStr = await this.getAiResponse(tenantId, userPrompt, 'gemini', systemInstruction);
+            // Clean up code blocks if any
+            const cleaned = responseStr.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleaned);
+        } catch (error) {
+            this.logger.error(`Failed to generate variations: ${error.message}`);
+            return [baseMessage]; // Fallback to original
+        }
+    }
 }

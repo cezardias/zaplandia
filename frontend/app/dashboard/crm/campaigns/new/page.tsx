@@ -32,7 +32,8 @@ export default function NewCampaignPage() {
         integrationId: '',
         audience: 'existing' as 'existing' | 'json',
         jsonLeads: null as any,
-        message: ''
+        message: '',
+        variations: [] as string[]
     });
 
     useEffect(() => {
@@ -104,7 +105,8 @@ export default function NewCampaignPage() {
                     integrationId: formData.integrationId,
                     messageTemplate: formData.message,
                     useExistingContacts: formData.audience === 'existing',
-                    leads: formData.audience === 'json' ? formData.jsonLeads : undefined
+                    leads: formData.audience === 'json' ? formData.jsonLeads : undefined,
+                    variations: formData.variations // Send variations to backend
                 })
             });
 
@@ -120,6 +122,40 @@ export default function NewCampaignPage() {
             alert('Falha na conexão com o servidor.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // AI Logic
+    const [aiModalOpen, setAiModalOpen] = useState(false);
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+    const [aiResults, setAiResults] = useState<string[] | null>(null);
+
+    const handleGenerateAi = async () => {
+        setIsGeneratingAi(true);
+        try {
+            const res = await fetch('/api/ai/generate-variations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    baseMessage: formData.message || "Olá, gostaria de apresentar nossa oferta.",
+                    prompt: aiPrompt,
+                    count: 5
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAiResults(data);
+            } else {
+                alert('Erro ao gerar com IA.');
+            }
+        } catch (err) {
+            alert('Erro de conexão AI.');
+        } finally {
+            setIsGeneratingAi(false);
         }
     };
 
@@ -296,7 +332,16 @@ export default function NewCampaignPage() {
             {step === 4 && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
                     <div className="space-y-4">
-                        <h2 className="text-xl font-bold">Qual a mensagem principal?</h2>
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold">Qual a mensagem principal?</h2>
+                            <button
+                                onClick={() => setAiModalOpen(true)}
+                                className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 rounded-xl font-bold transition shadow-lg shadow-purple-500/20"
+                            >
+                                <Zap className="w-4 h-4" />
+                                <span>Gerar com IA</span>
+                            </button>
+                        </div>
                         <div className="bg-surface border border-white/10 rounded-3xl p-6">
                             <textarea
                                 value={formData.message}
@@ -305,6 +350,21 @@ export default function NewCampaignPage() {
                                 placeholder="Olá {{name}}, temos uma oferta especial para você..."
                             />
                         </div>
+                        {formData.variations.length > 0 && (
+                            <div className="bg-surface border border-white/10 rounded-3xl p-6">
+                                <h3 className="font-bold mb-4 flex items-center space-x-2">
+                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                    <span>Variações Anti-Ban Ativas ({formData.variations.length})</span>
+                                </h3>
+                                <div className="space-y-2">
+                                    {formData.variations.map((v: string, i: number) => (
+                                        <div key={i} className="p-3 bg-white/5 rounded-xl text-xs text-gray-400 border border-white/5">
+                                            {v}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -343,6 +403,85 @@ export default function NewCampaignPage() {
                     </button>
                 )}
             </div>
+
+            {/* AI Modal */}
+            {aiModalOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-surface border border-white/10 rounded-3xl p-8 max-w-2xl w-full">
+                        <h2 className="text-2xl font-bold mb-4 flex items-center space-x-2">
+                            <Zap className="w-6 h-6 text-purple-500" />
+                            <span>Gerador de Variações IA</span>
+                        </h2>
+
+                        {!aiResults ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-400 mb-2">Mensagem Base (Opcional)</label>
+                                    <textarea
+                                        value={formData.message}
+                                        onChange={e => setFormData({ ...formData, message: e.target.value })}
+                                        className="w-full bg-background border border-white/10 rounded-xl p-4 text-sm"
+                                        rows={3}
+                                        placeholder="Ex: Olá, gostaria de saber mais sobre..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-400 mb-2">Prompt / Instrução</label>
+                                    <input
+                                        type="text"
+                                        value={aiPrompt}
+                                        onChange={e => setAiPrompt(e.target.value)}
+                                        className="w-full bg-background border border-white/10 rounded-xl p-4 text-sm"
+                                        placeholder="Ex: Crie variações mais informais e curtas."
+                                    />
+                                </div>
+                                <div className="flex justify-end space-x-3 pt-4">
+                                    <button onClick={() => setAiModalOpen(false)} className="px-4 py-2 text-gray-400 hover:text-white">Cancelar</button>
+                                    <button
+                                        onClick={handleGenerateAi}
+                                        disabled={isGeneratingAi}
+                                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-xl font-bold flex items-center space-x-2"
+                                    >
+                                        {isGeneratingAi && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        <span>Gerar Variações</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-green-500 font-bold">Variações Geradas!</p>
+                                <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                                    {aiResults.map((res: string, idx: number) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                setFormData({ ...formData, message: res });
+                                                // Also add to variations list?
+                                            }}
+                                            className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/50 rounded-xl transition text-sm text-gray-300"
+                                        >
+                                            {res}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex justify-end space-x-3 pt-4 border-t border-white/5">
+                                    <button onClick={() => setAiResults(null)} className="px-4 py-2 text-gray-400">Voltar</button>
+                                    <button
+                                        onClick={() => {
+                                            setFormData(prev => ({ ...prev, variations: aiResults }));
+                                            setAiModalOpen(false);
+                                            setAiResults(null);
+                                        }}
+                                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-bold"
+                                    >
+                                        Usar Todas (Anti-Ban)
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

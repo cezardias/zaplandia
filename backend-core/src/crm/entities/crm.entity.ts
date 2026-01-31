@@ -24,6 +24,9 @@ export class Contact {
     @Column({ nullable: true })
     lastMessage: string;
 
+    @Column({ default: 'LEAD' })
+    stage: string; // LEAD, CONTACTED, INTERESTED, PROPOSAL, WON, LOST
+
     @Column({ type: 'jsonb', nullable: true })
     metadata: any; // Stores avatar, social profile links, etc.
 

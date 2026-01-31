@@ -37,6 +37,7 @@ export default function DashboardLayout({
         { name: 'Omni Inbox', icon: <MessageSquare size={20} />, path: '/dashboard/inbox' },
         { name: 'WhatsApp Manager', icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp' },
         { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm' },
+        { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban' },
         { name: 'Integrações', icon: <Zap size={20} />, path: '/dashboard/integrations' },
         { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api' },
         { name: 'Central de Ajuda', icon: <HelpCircle size={20} />, path: '/dashboard/support' },
