@@ -11,7 +11,8 @@ const STAGES = {
     'INTERESTED': 'Interessados',
     'PROPOSAL': 'Em Proposta',
     'WON': 'Ganho',
-    'LOST': 'Perdido'
+    'LOST': 'Perdido',
+    'NOT_INTERESTED': 'Não Interessado'
 };
 
 const STAGE_KEYS = Object.keys(STAGES);

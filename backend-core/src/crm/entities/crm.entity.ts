@@ -25,7 +25,7 @@ export class Contact {
     lastMessage: string;
 
     @Column({ default: 'LEAD' })
-    stage: string; // LEAD, CONTACTED, INTERESTED, PROPOSAL, WON, LOST, NOVO, EM_PESQUISA, PRIMEIRO_CONTATO, FOLLOW_UP, REUNIAO
+    stage: string; // LEAD, CONTACTED, INTERESTED, PROPOSAL, WON, LOST, NOVO, EM_PESQUISA, PRIMEIRO_CONTATO, FOLLOW_UP, REUNIAO, NOT_INTERESTED
 
     @Column('simple-array', { nullable: true })
     tags: string[];

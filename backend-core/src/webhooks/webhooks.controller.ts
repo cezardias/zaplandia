@@ -133,23 +133,39 @@ export class WebhooksController {
     @Post('evolution')
     @HttpCode(HttpStatus.OK)
     async handleEvolution(@Body() payload: any) {
-        // this.logger.debug('Received Evolution Payload: ' + JSON.stringify(payload));
+        this.logger.log('Received Evolution Payload: ' + JSON.stringify(payload));
 
-        const { type, data, instance } = payload;
+        const { type, data, instance, sender } = payload;
 
-        // Extract tenantId from instance name (format: tenant_<uuid>_<suffix>)
+        // Extract tenantId using multiple strategies
         let tenantId = 'default';
-        if (instance && instance.startsWith('tenant_')) {
-            const parts = instance.split('_');
+        let instanceName = instance;
+
+        // Strategy 1: Top-level instance field
+        if (instanceName && instanceName.startsWith('tenant_')) {
+            const parts = instanceName.split('_');
+            // tenant_UUID_name
+            if (parts.length >= 2) tenantId = parts[1];
+        }
+        // Strategy 2: Check sender field (sometimes used in newer versions)
+        else if (sender && sender.startsWith('tenant_')) {
+            instanceName = sender;
+            const parts = sender.split('_');
             if (parts.length >= 2) tenantId = parts[1];
         }
 
+        this.logger.log(`Extracted tenantId: ${tenantId} from instance: ${instanceName}`);
+
         if (type === 'MESSAGES_UPSERT') {
-            const messageData = data.data;
-            if (!messageData || !messageData.key || messageData.key.fromMe) return { status: 'ignored' };
+            const messageData = data.data || data; // Handle potential structure variations
+
+            if (!messageData || !messageData.key || messageData.key.fromMe) {
+                this.logger.log(`Ignoring message. FromMe: ${messageData?.key?.fromMe}, Data exist: ${!!messageData}`);
+                return { status: 'ignored' };
+            }
 
             const remoteJid = messageData.key.remoteJid; // e.g., 5511999998888@s.whatsapp.net
-            const pushName = messageData.pushName;
+            const pushName = messageData.pushName || payload.sender || 'WhatsApp User';
 
             // Extract text content
             let content = '';
@@ -157,43 +173,60 @@ export class WebhooksController {
             else if (messageData.message?.extendedTextMessage?.text) content = messageData.message.extendedTextMessage.text;
             else if (messageData.message?.imageMessage?.caption) content = messageData.message.imageMessage.caption;
 
-            if (!content) return { status: 'no_content' };
+            if (!content) {
+                this.logger.warn('Message has no text content.');
+                return { status: 'no_content' };
+            }
 
             this.logger.log(`WhatsApp Message from ${pushName} (${remoteJid}): ${content}`);
 
             // Remove @s.whatsapp.net for externalId
             const externalId = remoteJid.replace('@s.whatsapp.net', '');
 
-            // Find or create contact
-            let contact = await this.contactRepository.findOne({ where: { externalId, tenantId } });
-            if (!contact) {
-                contact = this.contactRepository.create({
-                    externalId,
-                    name: pushName || `WhatsApp User ${externalId.slice(-4)}`,
+            try {
+                // Find or create contact
+                let contact = await this.contactRepository.findOne({ where: { externalId, tenantId } });
+                if (!contact) {
+                    this.logger.log(`Creating new contact for ${externalId} in tenant ${tenantId}`);
+                    contact = this.contactRepository.create({
+                        externalId,
+                        name: pushName || `WhatsApp User ${externalId.slice(-4)}`,
+                        provider: 'whatsapp',
+                        tenantId // Uses extracted tenantId
+                    });
+                    await this.contactRepository.save(contact);
+                }
+
+                // Save message
+                const message = this.messageRepository.create({
+                    contactId: contact.id,
+                    content,
+                    direction: 'inbound',
                     provider: 'whatsapp',
                     tenantId
                 });
-                await this.contactRepository.save(contact);
+                await this.messageRepository.save(message);
+                this.logger.log(`Message saved successfully. ID: ${message.id}`);
+
+                // Trigger n8n for AI Automation (Uncommented and fixed)
+                try {
+                    await this.n8nService.triggerWebhook(tenantId, {
+                        type: 'whatsapp.message',
+                        sender: remoteJid,
+                        content,
+                        contact_id: contact.id,
+                        name: pushName,
+                        message_id: message.id
+                    });
+                    this.logger.log('Triggered n8n webhook');
+                } catch (n8nError) {
+                    this.logger.error(`Failed to trigger n8n: ${n8nError.message}`);
+                }
+
+            } catch (err) {
+                this.logger.error(`Error processing WhatsApp message: ${err.message}`, err.stack);
+                throw err;
             }
-
-            // Save message
-            const message = this.messageRepository.create({
-                contactId: contact.id,
-                content,
-                direction: 'inbound',
-                provider: 'whatsapp',
-                tenantId
-            });
-            await this.messageRepository.save(message);
-
-            // Trigger n8n for AI Automation
-            /* await this.n8nService.triggerWebhook(tenantId, {
-                type: 'whatsapp.message',
-                sender: remoteJid,
-                content,
-                contact_id: contact.id,
-                name: pushName
-            }); */
         }
 
         return { status: 'received' };

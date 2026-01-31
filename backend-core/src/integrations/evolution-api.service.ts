@@ -217,6 +217,7 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
+            this.logger.log(`Setting webhook for ${instanceName} to ${webhookUrl}`);
             const response = await axios.post(`${baseUrl}/webhook/set/${instanceName}`, {
                 url: webhookUrl,
                 enabled: true,

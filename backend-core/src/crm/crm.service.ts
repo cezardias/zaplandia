@@ -182,6 +182,20 @@ export class CrmService {
                 externalId: data.externalId || data.phoneNumber
             });
             await this.contactRepository.save(contact);
+        } else {
+            // Update existing contact fields if provided
+            let hasParamsToUpdate = false;
+            if (data.name && data.name !== contact.name) {
+                contact.name = data.name;
+                hasParamsToUpdate = true;
+            }
+            if (data.phoneNumber && data.phoneNumber !== contact.phoneNumber) {
+                contact.phoneNumber = data.phoneNumber;
+                hasParamsToUpdate = true;
+            }
+            if (hasParamsToUpdate) {
+                await this.contactRepository.save(contact);
+            }
         }
         return contact;
     }

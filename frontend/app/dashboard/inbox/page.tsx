@@ -46,6 +46,8 @@ export default function OmniInboxPage() {
     const { user, token } = useAuth();
     const router = useRouter();
 
+    const [activeTab, setActiveTab] = useState('all');
+
     const fetchChats = async () => {
         if (!token) return;
         try {
@@ -142,12 +144,37 @@ export default function OmniInboxPage() {
         }
     };
 
+    const filteredContacts = contacts.filter(contact => {
+        if (activeTab === 'all') return true;
+        return contact.provider === activeTab;
+    });
+
     return (
         <div className="flex h-[calc(100vh-2rem)] m-4 bg-surface rounded-3xl border border-white/5 overflow-hidden">
             {/* Contact List */}
             <div className="w-80 border-r border-white/5 flex flex-col">
-                <div className="p-4 border-b border-white/5">
-                    <h2 className="text-xl font-bold mb-4">Omni Inbox</h2>
+                <div className="p-4 border-b border-white/5 space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold">Omni Inbox</h2>
+                        {/* <button onClick={fetchChats} className="p-2 hover:bg-white/5 rounded-full"><Clock className="w-4 h-4"/></button> */}
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex bg-black/20 p-1 rounded-xl overflow-x-auto no-scrollbar gap-1">
+                        {['all', 'whatsapp', 'instagram', 'facebook'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition whitespace-nowrap ${activeTab === tab
+                                    ? 'bg-primary text-white shadow-lg'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                {tab === 'all' ? 'Todos' : tab}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <input
@@ -163,7 +190,7 @@ export default function OmniInboxPage() {
                         <div className="flex items-center justify-center h-40">
                             <Loader2 className="w-8 h-8 animate-spin text-primary opacity-20" />
                         </div>
-                    ) : contacts.length === 0 ? (
+                    ) : filteredContacts.length === 0 ? (
                         <div className="p-8 text-center">
                             <Clock className="w-12 h-12 mx-auto mb-4 opacity-10 text-gray-500" />
                             <p className="text-gray-500 text-sm mb-6">Nenhuma conversa encontrada na conta atual.</p>
@@ -179,7 +206,7 @@ export default function OmniInboxPage() {
                             )}
                         </div>
                     ) : (
-                        contacts.map((contact) => (
+                        filteredContacts.map((contact) => (
                             <button
                                 key={contact.id}
                                 onClick={() => setSelectedContact(contact)}

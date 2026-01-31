@@ -57,10 +57,15 @@ export default function IntegrationsPage() {
     const [aiConfig, setAiConfig] = useState({ enabled: false, prompt: '' });
     const [isSavingAI, setIsSavingAI] = useState(false);
     const [showEvolutionModal, setShowEvolutionModal] = useState(false);
+    const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
 
     useEffect(() => {
         if (token) {
             fetchIntegrations();
+            fetch('/api/ai/prompts', { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(res => res.json())
+                .then(data => setSavedPrompts(data))
+                .catch(err => console.error(err));
         }
     }, [token]);
 
@@ -318,7 +323,23 @@ export default function IntegrationsPage() {
                             </div>
 
                             <div className="space-y-3">
-                                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Instruções do Agente (Prompt)</label>
+                                <div className="flex justify-between items-center">
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Instruções do Agente (Prompt)</label>
+
+                                    <select
+                                        className="bg-black/40 border border-white/10 rounded-lg text-xs px-2 py-1 text-white outline-none"
+                                        onChange={(e) => {
+                                            const selected = savedPrompts.find(p => p.id === e.target.value);
+                                            if (selected) setAiConfig({ ...aiConfig, prompt: selected.content });
+                                        }}
+                                        defaultValue=""
+                                    >
+                                        <option value="" disabled>Carregar Prompt Salvo...</option>
+                                        {savedPrompts.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <textarea
                                     value={aiConfig.prompt}
                                     onChange={(e) => setAiConfig({ ...aiConfig, prompt: e.target.value })}

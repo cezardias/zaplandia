@@ -1,6 +1,9 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import axios from 'axios';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { IntegrationsService } from './integrations.service';
+import { AiPrompt } from './entities/ai-prompt.entity';
 
 @Injectable()
 export class AiService {
@@ -9,8 +12,22 @@ export class AiService {
 
     constructor(
         @Inject(forwardRef(() => IntegrationsService))
-        private integrationsService: IntegrationsService
+        private integrationsService: IntegrationsService,
+        @InjectRepository(AiPrompt)
+        private aiPromptRepository: Repository<AiPrompt>,
     ) { }
+
+    async createPrompt(tenantId: string, name: string, content: string) {
+        const prompt = this.aiPromptRepository.create({ tenantId, name, content });
+        return this.aiPromptRepository.save(prompt);
+    }
+
+    async findAllPrompts(tenantId: string) {
+        return this.aiPromptRepository.find({
+            where: { tenantId },
+            order: { createdAt: 'DESC' }
+        });
+    }
 
     async getAiResponse(tenantId: string, prompt: string, provider: string, context?: string) {
         try {
