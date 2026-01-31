@@ -25,7 +25,16 @@ export class Contact {
     lastMessage: string;
 
     @Column({ default: 'LEAD' })
-    stage: string; // LEAD, CONTACTED, INTERESTED, PROPOSAL, WON, LOST
+    stage: string; // LEAD, CONTACTED, INTERESTED, PROPOSAL, WON, LOST, NOVO, EM_PESQUISA, PRIMEIRO_CONTATO, FOLLOW_UP, REUNIAO
+
+    @Column('simple-array', { nullable: true })
+    tags: string[];
+
+    @Column({ nullable: true })
+    location: string;
+
+    @Column('decimal', { precision: 10, scale: 2, default: 0 })
+    value: number;
 
     @Column({ type: 'jsonb', nullable: true })
     metadata: any; // Stores avatar, social profile links, etc.

@@ -7,6 +7,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class CrmController {
     constructor(private readonly crmService: CrmService) { }
 
+    @Get('stats')
+    getStats(@Request() req) {
+        return this.crmService.getDashboardStats(req.user.tenantId);
+    }
+
     @Get('chats')
     getChats(@Request() req) {
         return this.crmService.getRecentChats(req.user.tenantId, req.user.role);

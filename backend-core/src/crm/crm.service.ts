@@ -154,4 +154,33 @@ export class CrmService {
         await this.contactRepository.update(contactId, updates);
         return this.contactRepository.findOne({ where: { id: contactId } });
     }
+
+    async getDashboardStats(tenantId: string) {
+        const contacts = await this.contactRepository.find({ where: { tenantId } });
+
+        const total = contacts.length;
+        const trabalhadlos = contacts.filter(c => c.stage !== 'NOVO' && c.stage !== 'LEAD').length;
+        const naoTrabalhados = total - trabalhadlos;
+        const ganhos = contacts.filter(c => c.stage === 'WON').length;
+        const perdidos = contacts.filter(c => c.stage === 'LOST').length;
+        const conversao = total > 0 ? ((ganhos / total) * 100).toFixed(1) : '0.0';
+
+        const funnelData = [
+            { name: 'Novo', value: contacts.filter(c => c.stage === 'NOVO' || c.stage === 'LEAD').length, fill: '#0088FE' },
+            { name: 'Em Pesquisa', value: contacts.filter(c => c.stage === 'EM_PESQUISA').length, fill: '#00C49F' },
+            { name: 'Primeiro Contato', value: contacts.filter(c => c.stage === 'PRIMEIRO_CONTATO' || c.stage === 'CONTACTED').length, fill: '#FFBB28' },
+            { name: 'Follow-up', value: contacts.filter(c => c.stage === 'FOLLOW_UP').length, fill: '#FF8042' },
+            { name: 'Reunião', value: contacts.filter(c => c.stage === 'REUNIAO').length, fill: '#8884d8' },
+        ].filter(d => d.value > 0);
+
+        return {
+            total,
+            trabalhadlos,
+            naoTrabalhados,
+            ganhos,
+            perdidos,
+            conversao,
+            funnelData
+        };
+    }
 }
