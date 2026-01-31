@@ -123,6 +123,39 @@ export default function WhatsAppInstancesPage() {
         }
     };
 
+    // Polling for status update when QR code is active
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        if (selectedInstance && qrCode) {
+            interval = setInterval(async () => {
+                try {
+                    // Check specific instance status
+                    const res = await fetch(`/api/integrations/evolution/status/${selectedInstance}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const statusData = await res.json();
+                        // Evolution return like { instance: { state: 'open' } } or just { state: 'open' }
+                        const state = statusData?.instance?.state || statusData?.state || 'unknown';
+
+                        if (state === 'open' || state === 'connected') {
+                            setQrCode(null); // Hide QR code
+                            setSuccessMessage('WhatsApp conectado com sucesso!');
+                            await fetchInstances(); // Refresh main list
+                        }
+                    }
+                } catch (e) {
+                    console.error("Polling error", e);
+                }
+            }, 3000); // Check every 3 seconds
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [selectedInstance, qrCode, token]);
+
     const fetchQrCode = async (instanceName: string) => {
         setQrLoading(true);
         setSelectedInstance(instanceName);
