@@ -19,7 +19,7 @@ export class IntegrationsController {
         const dbIntegrations = await this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
 
         // 2. Fetch EvolutionAPI Instances (WhatsApp)
-        let evolutionInstances = [];
+        let evolutionInstances: any[] = [];
         try {
             const instances = await this.evolutionApiService.listInstances(req.user.tenantId);
             evolutionInstances = instances.map((inst: any) => ({
