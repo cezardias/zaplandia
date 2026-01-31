@@ -128,4 +128,74 @@ export class WebhooksController {
 
         return { status: 'received' };
     }
+
+    // Handle EvolutionAPI payloads (WhatsApp)
+    @Post('evolution')
+    @HttpCode(HttpStatus.OK)
+    async handleEvolution(@Body() payload: any) {
+        // this.logger.debug('Received Evolution Payload: ' + JSON.stringify(payload));
+
+        const { type, data, instance } = payload;
+
+        // Extract tenantId from instance name (format: tenant_<uuid>_<suffix>)
+        let tenantId = 'default';
+        if (instance && instance.startsWith('tenant_')) {
+            const parts = instance.split('_');
+            if (parts.length >= 2) tenantId = parts[1];
+        }
+
+        if (type === 'MESSAGES_UPSERT') {
+            const messageData = data.data;
+            if (!messageData || !messageData.key || messageData.key.fromMe) return { status: 'ignored' };
+
+            const remoteJid = messageData.key.remoteJid; // e.g., 5511999998888@s.whatsapp.net
+            const pushName = messageData.pushName;
+
+            // Extract text content
+            let content = '';
+            if (messageData.message?.conversation) content = messageData.message.conversation;
+            else if (messageData.message?.extendedTextMessage?.text) content = messageData.message.extendedTextMessage.text;
+            else if (messageData.message?.imageMessage?.caption) content = messageData.message.imageMessage.caption;
+
+            if (!content) return { status: 'no_content' };
+
+            this.logger.log(`WhatsApp Message from ${pushName} (${remoteJid}): ${content}`);
+
+            // Remove @s.whatsapp.net for externalId
+            const externalId = remoteJid.replace('@s.whatsapp.net', '');
+
+            // Find or create contact
+            let contact = await this.contactRepository.findOne({ where: { externalId, tenantId } });
+            if (!contact) {
+                contact = this.contactRepository.create({
+                    externalId,
+                    name: pushName || `WhatsApp User ${externalId.slice(-4)}`,
+                    provider: 'whatsapp',
+                    tenantId
+                });
+                await this.contactRepository.save(contact);
+            }
+
+            // Save message
+            const message = this.messageRepository.create({
+                contactId: contact.id,
+                content,
+                direction: 'inbound',
+                provider: 'whatsapp',
+                tenantId
+            });
+            await this.messageRepository.save(message);
+
+            // Trigger n8n for AI Automation
+            /* await this.n8nService.triggerWebhook(tenantId, {
+                type: 'whatsapp.message',
+                sender: remoteJid,
+                content,
+                contact_id: contact.id,
+                name: pushName
+            }); */
+        }
+
+        return { status: 'received' };
+    }
 }

@@ -14,8 +14,28 @@ export class IntegrationsController {
 
     @UseGuards(JwtAuthGuard)
     @Get()
-    findAll(@Request() req) {
-        return this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
+    async findAll(@Request() req) {
+        // 1. Fetch DB Integrations (Official Meta, Mercado Livre, etc.)
+        const dbIntegrations = await this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
+
+        // 2. Fetch EvolutionAPI Instances (WhatsApp)
+        let evolutionInstances = [];
+        try {
+            const instances = await this.evolutionApiService.listInstances(req.user.tenantId);
+            evolutionInstances = instances.map((inst: any) => ({
+                id: inst.name || inst.instance?.instanceName || inst.instanceName,
+                name: inst.name || inst.instance?.instanceName || inst.instanceName, // Use instance name as display name
+                provider: 'evolution', // Special provider tag for frontend
+                status: inst.status === 'open' || inst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED',
+                integrationId: inst.integrationId || `evo_${inst.name}`, // Fallback ID
+                settings: inst
+            }));
+        } catch (e) {
+            console.error('Failed to fetch evolution instances for list:', e.message);
+        }
+
+        // 3. Merge Lists
+        return [...dbIntegrations, ...evolutionInstances];
     }
 
     // EvolutionAPI Management - List all instances for tenant
