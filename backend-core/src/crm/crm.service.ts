@@ -31,12 +31,19 @@ export class CrmService {
         });
     }
 
-    async findAllByTenant(tenantId: string, filters?: { stage?: string }) {
-        const where: any = { tenantId };
+    async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string }) {
+        const query = this.contactRepository.createQueryBuilder('contact')
+            .where('contact.tenantId = :tenantId', { tenantId });
+
         if (filters?.stage) {
-            where.stage = filters.stage;
+            query.andWhere('contact.stage = :stage', { stage: filters.stage });
         }
-        return this.contactRepository.find({ where });
+
+        if (filters?.search) {
+            query.andWhere('(contact.name ILIKE :search OR contact.phoneNumber ILIKE :search OR contact.externalId ILIKE :search)', { search: `%${filters.search}%` });
+        }
+
+        return query.orderBy('contact.createdAt', 'DESC').getMany();
     }
 
     async getMessages(contactId: string, tenantId: string) {

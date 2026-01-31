@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { CrmService } from './crm.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -10,6 +10,11 @@ export class CrmController {
     @Get('stats')
     getStats(@Request() req) {
         return this.crmService.getDashboardStats(req.user.tenantId);
+    }
+
+    @Get('contacts')
+    getAllContacts(@Request() req, @Query('q') q: string) {
+        return this.crmService.findAllByTenant(req.user.tenantId, { search: q });
     }
 
     @Get('chats')

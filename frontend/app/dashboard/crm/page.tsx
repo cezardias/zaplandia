@@ -39,10 +39,16 @@ export default function CrmPage() {
     const { user, token } = useAuth();
     const router = useRouter();
 
-    const fetchContacts = async () => {
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const fetchContacts = async (search = '') => {
         if (!token) return;
+        setIsLoading(true);
         try {
-            const res = await fetch('/api/crm/chats', {
+            const params = new URLSearchParams();
+            if (search) params.append('q', search);
+
+            const res = await fetch(`/api/crm/contacts?${params.toString()}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.status === 401) router.push('/auth/login');
@@ -60,6 +66,15 @@ export default function CrmPage() {
     useEffect(() => {
         fetchContacts();
     }, [token]);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchTerm) fetchContacts(searchTerm);
+            else fetchContacts();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     const handleSeed = async () => {
         if (!confirm('Gerar dados de demonstração no CRM?')) return;
@@ -151,6 +166,8 @@ export default function CrmPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <input
                             type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Buscar por nome, telefone ou ID..."
                             className="w-full bg-background border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary transition"
                         />
