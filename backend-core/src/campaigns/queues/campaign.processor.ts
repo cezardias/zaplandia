@@ -2,6 +2,7 @@ import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
 import { EvolutionApiService } from '../../integrations/evolution-api.service';
+import { CrmService } from '../../crm/crm.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CampaignLead, LeadStatus } from '../entities/campaign-lead.entity';
 import { Repository } from 'typeorm';
@@ -17,6 +18,7 @@ export class CampaignProcessor {
         private readonly evolutionApiService: EvolutionApiService,
         @InjectRepository(CampaignLead)
         private leadRepository: Repository<CampaignLead>,
+        private readonly crmService: CrmService,
     ) { }
 
     @Process('send-message')
@@ -55,6 +57,12 @@ export class CampaignProcessor {
             // Update Lead Status
             if (leadId) {
                 await this.leadRepository.update(leadId, { status: LeadStatus.SENT, sentAt: new Date() });
+            }
+
+            // Update Contact Pipeline Stage (Automated)
+            if (contactId) {
+                await this.crmService.updateContact(tenantId, contactId, { stage: 'PRIMEIRO_CONTATO' });
+                this.logger.log(`Updated contact ${contactId} stage to PRIMEIRO_CONTATO`);
             }
 
             // Increment Counter

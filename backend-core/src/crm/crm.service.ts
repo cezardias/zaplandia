@@ -155,6 +155,37 @@ export class CrmService {
         return this.contactRepository.findOne({ where: { id: contactId } });
     }
 
+    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string }) {
+        const where: any[] = [];
+        if (data.phoneNumber && data.phoneNumber !== '') where.push({ phoneNumber: data.phoneNumber, tenantId });
+        if (data.externalId && data.externalId !== '') where.push({ externalId: data.externalId, tenantId });
+
+        // If no identifiers, create generic or throw? For now create generic with random extId if needed but prefer skipping.
+        // But if name is present, we create.
+        if (where.length === 0) {
+            const contact = this.contactRepository.create({
+                ...data,
+                tenantId,
+                stage: 'NOVO',
+                externalId: data.externalId || data.phoneNumber || `gen-${Date.now()}`
+            });
+            return this.contactRepository.save(contact);
+        }
+
+        let contact = await this.contactRepository.findOne({ where });
+
+        if (!contact) {
+            contact = this.contactRepository.create({
+                ...data,
+                tenantId,
+                stage: 'NOVO',
+                externalId: data.externalId || data.phoneNumber
+            });
+            await this.contactRepository.save(contact);
+        }
+        return contact;
+    }
+
     async getDashboardStats(tenantId: string) {
         const contacts = await this.contactRepository.find({ where: { tenantId } });
 

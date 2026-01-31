@@ -45,41 +45,74 @@ export class CampaignsService {
 
             // Handle Leads & Queue
             let leadsToProcess: CampaignLead[] = [];
+            const contactIdMap = new Map<string, string>(); // Maps Lead ID -> Contact ID
 
             // If leads are provided (from JSON upload), save them
             if (data.leads && Array.isArray(data.leads)) {
-                const leads = data.leads.map(l => this.leadRepository.create({
-                    name: l.name || 'Contato',
-                    externalId: String(l.externalId || l.phoneNumber || ''),
-                    campaignId: campaignId,
-                    status: LeadStatus.PENDING
-                }));
 
-                // Batch save
-                const chunkSize = 500;
-                for (let i = 0; i < leads.length; i += chunkSize) {
-                    const savedChunk = await this.leadRepository.save(leads.slice(i, i + chunkSize));
-                    leadsToProcess.push(...savedChunk);
+                const leadsData = data.leads;
+                const chunkSize = 50;
+
+                for (let i = 0; i < leadsData.length; i += chunkSize) {
+                    const chunk = leadsData.slice(i, i + chunkSize);
+
+                    // 1. Ensure Contacts exist (or create as NOVO)
+                    const contacts = await Promise.all(chunk.map(l =>
+                        this.crmService.ensureContact(tenantId, {
+                            name: l.name || 'Contato',
+                            phoneNumber: String(l.phoneNumber || l.externalId || ''),
+                            externalId: String(l.externalId || l.phoneNumber || '')
+                        })
+                    ));
+
+                    // 2. Create Campaign Leads
+                    const leadsToCreate = chunk.map(l => this.leadRepository.create({
+                        name: l.name || 'Contato',
+                        externalId: String(l.externalId || l.phoneNumber || ''),
+                        campaignId: campaignId,
+                        status: LeadStatus.PENDING
+                    }));
+
+                    const savedLeads = await this.leadRepository.save(leadsToCreate);
+                    leadsToProcess.push(...savedLeads);
+
+                    // 3. Map Lead ID -> Contact ID
+                    // Assuming 1:1 consistent order between chunk, contacts, leadsToCreate, and savedLeads
+                    savedLeads.forEach((sl, idx) => {
+                        contactIdMap.set(sl.id, contacts[idx].id);
+                    });
                 }
-                this.logger.log(`Created ${leads.length} leads for campaign ${campaignId}`);
+                this.logger.log(`Created ${leadsToProcess.length} leads for campaign ${campaignId}`);
 
             } else if (data.useExistingContacts) {
                 // Logic to pull contacts from CRM and create leads
                 const contacts = await this.crmService.findAllByTenant(tenantId);
                 if (contacts.length > 0) {
-                    const leads = contacts.map(c => this.leadRepository.create({
-                        name: c.name || 'Contato',
-                        externalId: c.externalId || c.phoneNumber || '',
-                        campaignId: campaignId,
-                        status: LeadStatus.PENDING
+
+                    // Map Contacts to Lead Entities
+                    const leadsToCreate = contacts.map(c => ({
+                        entity: this.leadRepository.create({
+                            name: c.name || 'Contato',
+                            externalId: c.externalId || c.phoneNumber || '',
+                            campaignId: campaignId,
+                            status: LeadStatus.PENDING
+                        }),
+                        contactId: c.id
                     }));
 
                     const chunkSize = 500;
-                    for (let i = 0; i < leads.length; i += chunkSize) {
-                        const savedChunk = await this.leadRepository.save(leads.slice(i, i + chunkSize));
+                    for (let i = 0; i < leadsToCreate.length; i += chunkSize) {
+                        const chunk = leadsToCreate.slice(i, i + chunkSize);
+                        const savedChunk = await this.leadRepository.save(chunk.map(l => l.entity));
+
                         leadsToProcess.push(...savedChunk);
+
+                        // Map IDs
+                        savedChunk.forEach((sl, idx) => {
+                            contactIdMap.set(sl.id, chunk[idx].contactId);
+                        });
                     }
-                    this.logger.log(`Created ${leads.length} leads from contacts for campaign ${campaignId}`);
+                    this.logger.log(`Created ${leadsToProcess.length} leads from contacts for campaign ${campaignId}`);
                 }
             }
 
@@ -89,9 +122,11 @@ export class CampaignsService {
 
             // Queue jobs
             await Promise.all(leadsToProcess.map(async (lead) => {
+                const contactId = contactIdMap.get(lead.id);
+
                 await this.campaignQueue.add('send-message', {
                     leadId: lead.id,
-                    contactId: lead.id, // Using lead ID as contact ref for now
+                    contactId: contactId, // Real Contact ID
                     externalId: lead.externalId,
                     message: saved.messageTemplate,
                     instanceName: saved.integrationId, // Ensure this is the instance name string
