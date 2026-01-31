@@ -77,6 +77,14 @@ export class IntegrationsController {
         return this.evolutionApiService.getInstanceStatus(req.user.tenantId, instanceName);
     }
 
+    // Manual Webhook Setup (Force)
+    @UseGuards(JwtAuthGuard)
+    @Post('evolution/webhook/:instanceName')
+    async setEvolutionWebhook(@Request() req, @Param('instanceName') instanceName: string) {
+        const webhookUrl = `${process.env.API_URL || 'https://api.zaplandia.com.br'}/webhooks/evolution`;
+        return this.evolutionApiService.setWebhook(req.user.tenantId, instanceName, webhookUrl);
+    }
+
     // Delete specific instance
     @UseGuards(JwtAuthGuard)
     @Delete('evolution/instance/:instanceName')

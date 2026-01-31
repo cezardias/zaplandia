@@ -50,6 +50,17 @@ export class EvolutionApiService {
                     const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}`, {
                         headers: { 'apikey': apiKey }
                     });
+
+                    // Auto-configure Webhook if connected
+                    if (statusRes.data?.instance?.state === 'open') {
+                        // TODO: Use correct public URL from env or config
+                        const webhookUrl = `${process.env.API_URL || 'https://api.zaplandia.com.br'}/webhooks/evolution`;
+                        // Fire and forget webhook set to avoid latency
+                        this.setWebhook(tenantId, name, webhookUrl).catch(err =>
+                            this.logger.warn(`Failed to auto-set webhook for ${name}: ${err.message}`)
+                        );
+                    }
+
                     // Merge status into instance object
                     if (statusRes.data && statusRes.data.instance) {
                         // Evolution usually returns { instance: { state: 'open' } }
