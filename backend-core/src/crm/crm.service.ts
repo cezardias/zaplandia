@@ -157,17 +157,27 @@ export class CrmService {
             try {
                 const contact = await this.contactRepository.findOne({ where: { id: contactId } });
 
+                // DEBUG LOGGING
+                this.logger.log(`WhatsApp Send Request - Contact: ${contactId}, Name: ${contact?.name}, Provider: ${contact?.provider}, Phone: ${contact?.phoneNumber}, ExtId: ${contact?.externalId}`);
+
                 // FIX: STRICT number resolution logic
                 // 1. Prefer explicitly saved phoneNumber
                 let targetNumber = contact?.phoneNumber;
 
                 // 2. If no phoneNumber, use externalId ONLY if the contact is natively from WhatsApp
+                // AND the externalId looks like a phone number (e.g., typically < 15 digits)
                 if (!targetNumber && contact?.provider === 'whatsapp') {
-                    targetNumber = contact.externalId;
+                    // Extra safety: Facebook PSIDs are usually 15+ digits. Brazil numbers are 12-13.
+                    if (contact.externalId && contact.externalId.length < 15 && /^\d+$/.test(contact.externalId)) {
+                        targetNumber = contact.externalId;
+                    } else {
+                        this.logger.warn(`Skipping externalId '${contact.externalId}' as it looks invalid for WhatsApp.`);
+                    }
                 }
 
                 // 3. Validation: If we still don't have a number, we cannot send
                 if (!targetNumber) {
+                    this.logger.error(`No valid WhatsApp number found for contact ${contactId}`);
                     throw new Error('Contato não possui número de WhatsApp válido vinculado (adicione um telefone ao contato).');
                 }
 
