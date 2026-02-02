@@ -19,6 +19,7 @@ import {
     Store
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import EmojiPicker from 'emoji-picker-react';
 
 interface Contact {
     id: string;
@@ -54,6 +55,7 @@ export default function OmniInboxPage() {
     const [uploadedMedia, setUploadedMedia] = useState<{ url: string, mimetype: string, filename: string } | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const [activeTab, setActiveTab] = useState('all');
 
@@ -148,6 +150,11 @@ export default function OmniInboxPage() {
             // Reset input
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
+    };
+
+    const handleEmojiClick = (emojiData: any) => {
+        setNewMessage(prev => prev + emojiData.emoji);
+        setShowEmojiPicker(false);
     };
 
     const handleSend = async (e: React.FormEvent) => {
@@ -351,7 +358,7 @@ export default function OmniInboxPage() {
                         </div>
 
                         {/* Input */}
-                        <div className="p-4 bg-surface/50 border-t border-white/5">
+                        <div className="p-4 bg-surface/50 border-t border-white/5 relative">
                             {/* File Upload Preview */}
                             {uploadedMedia && (
                                 <div className="mb-4 flex items-center bg-white/5 p-2 rounded-xl w-fit relative group">
@@ -377,6 +384,13 @@ export default function OmniInboxPage() {
                                 onChange={handleFileSelect}
                             />
 
+                            {/* Emoji Picker */}
+                            {showEmojiPicker && (
+                                <div className="absolute bottom-20 right-4 z-50 shadow-2xl rounded-2xl overflow-hidden">
+                                    <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" width={300} height={400} />
+                                </div>
+                            )}
+
                             <form onSubmit={handleSend} className="flex items-center space-x-4">
                                 <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center focus-within:border-primary transition">
                                     <input
@@ -394,7 +408,13 @@ export default function OmniInboxPage() {
                                     >
                                         {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : '📎'}
                                     </button>
-                                    <button type="button" className="text-gray-500 hover:text-primary transition mx-2">😊</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                        className={`text-gray-500 hover:text-primary transition mx-2 ${showEmojiPicker ? 'text-primary' : ''}`}
+                                    >
+                                        😊
+                                    </button>
                                 </div>
                                 <button
                                     type="submit"

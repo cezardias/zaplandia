@@ -157,8 +157,19 @@ export class CrmService {
             try {
                 const contact = await this.contactRepository.findOne({ where: { id: contactId } });
 
-                // FIX: Prioritize phoneNumber for WhatsApp, as externalId might be a Facebook/Insta ID.
-                const targetNumber = contact?.phoneNumber || contact?.externalId;
+                // FIX: STRICT number resolution logic
+                // 1. Prefer explicitly saved phoneNumber
+                let targetNumber = contact?.phoneNumber;
+
+                // 2. If no phoneNumber, use externalId ONLY if the contact is natively from WhatsApp
+                if (!targetNumber && contact?.provider === 'whatsapp') {
+                    targetNumber = contact.externalId;
+                }
+
+                // 3. Validation: If we still don't have a number, we cannot send
+                if (!targetNumber) {
+                    throw new Error('Contato não possui número de WhatsApp válido vinculado (adicione um telefone ao contato).');
+                }
 
                 if (targetNumber) {
                     // Fetch active instance for this tenant
