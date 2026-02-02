@@ -1,18 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Loader2, Database, FileJson, CheckCircle2 } from 'lucide-react';
+import { useRouter, useParams } from 'next/navigation';
+import { ArrowLeft, Save, Loader2, Database, FileJson, CheckCircle2, Trash2 } from 'lucide-react';
 
-export default function NewFunnelPage() {
+export default function EditFunnelPage() {
     const { token } = useAuth();
     const router = useRouter();
+    const params = useParams();
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetching, setIsFetching] = useState(true);
     const [formData, setFormData] = useState({
         name: '',
         contacts: null as any
     });
+
+    useEffect(() => {
+        if (token && params.id) {
+            fetchFunnel();
+        }
+    }, [token, params.id]);
+
+    const fetchFunnel = async () => {
+        try {
+            const res = await fetch(`/api/campaigns/funnels?id=${params.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            // Note: The list endpoint returns all. Ideally we'd have a single getItem endpoint. 
+            // For now, let's filter purely client side if the API doesn't support generic GET /:id details yet 
+            // OR reuse the delete endpoint style logic but for GET. 
+            // Given previous steps, I only added DELETE. I need to make sure I can GET one.
+            // Let's assume the list endpoint is all we have for now and find it there, OR implement GET one.
+            // To be safe and quick, I'll fetch all and find. 
+            // WAIT - I need to modify the controller to support GET /:id or just filter here.
+
+            if (res.ok) {
+                const data = await res.json();
+                const funnel = data.find((f: any) => f.id === params.id);
+                if (funnel) {
+                    setFormData({
+                        name: funnel.name,
+                        contacts: funnel.contacts
+                    });
+                } else {
+                    alert('Funil não encontrado.');
+                    router.push('/dashboard/crm/funnels');
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsFetching(false);
+        }
+    };
 
     const handleJsonUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -34,12 +75,14 @@ export default function NewFunnelPage() {
         }
     };
 
-    const handleCreate = async () => {
+    const handleUpdate = async () => {
         if (!formData.name || !formData.contacts) return;
         setIsLoading(true);
         try {
-            const res = await fetch('/api/campaigns/funnels', {
-                method: 'POST',
+            // We need a PATCH endpoint for this. I will look at the controller next.
+            // Assuming I will create it.
+            const res = await fetch(`/api/campaigns/funnels/${params.id}`, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -48,11 +91,11 @@ export default function NewFunnelPage() {
             });
 
             if (res.ok) {
-                alert('Funil criado com sucesso!');
-                router.push('/dashboard/crm/funnels'); // Redirect to Funnel List
+                alert('Funil atualizado com sucesso!');
+                router.push('/dashboard/crm/funnels');
             } else {
                 const error = await res.json();
-                alert(`Erro ao criar funil: ${error.message}`);
+                alert(`Erro ao atualizar funil: ${error.message}`);
             }
         } catch (err) {
             console.error(err);
@@ -62,21 +105,29 @@ export default function NewFunnelPage() {
         }
     };
 
+    if (isFetching) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
     return (
         <div className="p-8 max-w-2xl mx-auto">
             <button
-                onClick={() => router.back()}
+                onClick={() => router.push('/dashboard/crm/funnels')}
                 className="flex items-center space-x-2 text-gray-500 hover:text-white transition mb-8"
             >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Voltar</span>
+                <span>Voltar para Lista - {params.id}</span>
             </button>
 
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
                 <Database className="w-8 h-8 text-primary" />
-                <span>Novo Funil de Contatos</span>
+                <span>Editar Funil</span>
             </h1>
-            <p className="text-gray-400 mb-8">Crie uma lista reutilizável de contatos para suas campanhas.</p>
+            <p className="text-gray-400 mb-8">Atualize o nome ou a lista de contatos deste funil.</p>
 
             <div className="space-y-8">
                 <div className="space-y-2">
@@ -119,12 +170,12 @@ export default function NewFunnelPage() {
                 </div>
 
                 <button
-                    onClick={handleCreate}
+                    onClick={handleUpdate}
                     disabled={isLoading || !formData.name || !formData.contacts}
                     className="w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-xl font-bold transition flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    <span>Salvar Funil</span>
+                    <span>Salvar Alterações</span>
                 </button>
             </div>
         </div>
