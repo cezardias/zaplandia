@@ -23,11 +23,20 @@ export class CrmService {
 
     async getRecentChats(tenantId: string, role?: string) {
         const where = role === 'superadmin' ? {} : { tenantId };
-        return this.contactRepository.find({
+        const contacts = await this.contactRepository.find({
             where,
             relations: ['messages'],
             order: { updatedAt: 'DESC' },
             take: 20
+        });
+
+        // Auto-clean JIDs and system names on the fly for UI
+        return contacts.map(c => {
+            const nameIsBad = !c.name || c.name.includes('@s.whatsapp.net') || c.name === 'Sistema' || c.name === 'WhatsApp User';
+            return {
+                ...c,
+                name: nameIsBad ? (c.phoneNumber || `Contato ${c.externalId?.slice(-4) || ''}`) : c.name
+            };
         });
     }
 

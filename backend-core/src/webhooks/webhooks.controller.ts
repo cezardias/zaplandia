@@ -203,9 +203,11 @@ export class WebhooksController {
                 // Find or create contact
                 let contact = await this.contactRepository.findOne({ where: { externalId, tenantId } });
 
-                // Try to resolve a better name (avoid JIDs and numbers)
+                // Resolve name - Prioritize Human Names over JIDs/Numbers/System
                 let resolvedName = pushName;
-                if (!resolvedName || resolvedName.includes('@') || /^\d+$/.test(resolvedName)) {
+                const isBadName = !resolvedName || resolvedName === 'Sistema' || resolvedName === 'WhatsApp User' || (resolvedName && resolvedName.includes('@')) || (resolvedName && /^\d+$/.test(resolvedName));
+
+                if (isBadName) {
                     const lead = await this.leadRepository.findOne({
                         where: {
                             externalId,
@@ -221,15 +223,21 @@ export class WebhooksController {
                     this.logger.log(`Creating new contact for ${externalId} in tenant ${tenantId}`);
                     contact = this.contactRepository.create({
                         externalId,
-                        name: resolvedName || `WhatsApp User ${externalId.slice(-4)}`,
+                        name: (resolvedName && !resolvedName.includes('@')) ? resolvedName : `Novo Contato ${externalId.slice(-4)}`,
                         provider: 'whatsapp',
-                        tenantId // Uses extracted tenantId
+                        tenantId
                     });
                     await this.contactRepository.save(contact);
-                } else if (resolvedName && (contact.name === contact.externalId || contact.name.includes('@'))) {
-                    // Update generic/JID name with real name if found
-                    contact.name = resolvedName;
-                    await this.contactRepository.save(contact);
+                } else {
+                    // "Healing" logic: overwrite if current name is a JID/system and we found a real name
+                    const currentIsBad = !contact.name || contact.name.includes('@') || contact.name === contact.externalId;
+                    const newIsBetter = resolvedName && !resolvedName.includes('@') && resolvedName !== 'Sistema';
+
+                    if (currentIsBad && newIsBetter) {
+                        this.logger.log(`Updating JID name to human name: ${contact.name} -> ${resolvedName}`);
+                        contact.name = resolvedName;
+                        await this.contactRepository.save(contact);
+                    }
                 }
 
                 // Save message
