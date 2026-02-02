@@ -282,7 +282,7 @@ export default function NewCampaignPage() {
                                                 {integration.provider === 'evolution' ? <QrCode className="w-4 h-4 text-primary" /> : <Zap className="w-4 h-4 text-green-500" />}
                                                 <div>
                                                     <p className="font-bold text-sm">
-                                                        {integration.name || (integration.provider === 'evolution' ? 'WhatsApp' : 'WhatsApp Official')} <span className="text-gray-500 text-xs">({integration.id.substring(0, 4)}...)</span>
+                                                        {integration.name || (integration.provider === 'evolution' ? 'WhatsApp' : 'WhatsApp Official')}
                                                     </p>
                                                 </div>
                                             </div>
