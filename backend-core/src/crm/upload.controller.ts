@@ -2,7 +2,7 @@ import { Controller, Post, UseInterceptors, UploadedFile, Get, Param, Res, HttpE
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
-import { Response } from 'express';
+import type { Response } from 'express';
 import * as fs from 'fs';
 
 // Helper for file naming

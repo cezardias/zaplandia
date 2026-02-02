@@ -171,7 +171,7 @@ export class CrmService {
 
                             // 1. Resolve local path from URL
                             // URL format: /uploads/filename.ext -> ./uploads/filename.ext
-                            const filename = media.url.split('/').pop();
+                            const filename = media.url.split('/').pop() || 'unknown_file';
                             const filePath = path.join(process.cwd(), 'uploads', filename);
 
                             if (fs.existsSync(filePath)) {
