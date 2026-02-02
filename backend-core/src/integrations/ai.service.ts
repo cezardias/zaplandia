@@ -64,8 +64,9 @@ export class AiService {
 
             return aiResponse;
         } catch (error: any) {
-            this.logger.error('Failed to get AI response', error.message);
-            return "Desculpe, meu cérebro de silício está processando algo. Tente novamente em um minuto! 🤖";
+            const errorDetail = error.response?.data?.detail || error.message || 'Erro desconhecido';
+            this.logger.error(`[AI_REQUEST_FAILED] ${errorDetail}`);
+            return `[ERRO CONEXÃO IA] ${errorDetail}`;
         }
     }
 
@@ -81,20 +82,38 @@ export class AiService {
 
         try {
             const responseStr = await this.getAiResponse(tenantId, userPrompt, 'gemini', systemInstruction);
-            this.logger.log(`[GEN_VAR] Raw response: ${responseStr}`);
+            this.logger.log(`[GEN_VAR] Raw response from service: ${responseStr}`);
 
-            // Clean up code blocks if any
-            const cleaned = responseStr.replace(/```json/g, '').replace(/```/g, '').trim();
-
-            // If it starts with [MODO DEMO], return it as a single variation so user sees the warning
-            if (cleaned.startsWith('[MODO DEMO')) {
-                return [cleaned];
+            // 1. If it's a known error/warning prefix, return it as the only variation
+            if (responseStr.startsWith('[MODO DEMO') || responseStr.startsWith('[ERRO')) {
+                return [responseStr];
             }
 
-            return JSON.parse(cleaned);
+            // 2. Try to extract JSON from the response (in case AI included markdown or conversational filler)
+            let cleaned = responseStr.trim();
+            const jsonMatch = cleaned.match(/\[.*\]/s); // Look for anything starting with [ and ending with ]
+            if (jsonMatch) {
+                cleaned = jsonMatch[0];
+            }
+
+            try {
+                const parsed = JSON.parse(cleaned);
+                if (Array.isArray(parsed)) {
+                    return parsed.map(v => String(v).trim());
+                }
+            } catch (pErr) {
+                this.logger.warn(`[GEN_VAR] Failed to parse as JSON array: ${cleaned}`);
+            }
+
+            // 3. Last fallback: if it's not JSON but seems like a single message, return it
+            if (responseStr.length > 5 && !responseStr.includes('{')) {
+                return [responseStr];
+            }
+
+            return [baseMessage]; // Generic fallback only for empty/invalid responses
         } catch (error) {
-            this.logger.error(`Failed to generate variations: ${error.message}`);
-            return [baseMessage]; // Fallback to original
+            this.logger.error(`[GEN_VAR_CRITICAL] ${error.message}`);
+            return [`[ERRO SISTEMA] Falha ao processar variações: ${error.message}`];
         }
     }
 }
