@@ -49,7 +49,7 @@ export class CampaignProcessor {
             const campaign = await this.campaignRepository.findOne({ where: { id: campaignId } });
             if (campaign && campaign.status === 'paused') {
                 this.logger.warn(`Campaign ${campaignId} is paused. Re-queuing job ${job.id}`);
-                await job.moveToDelayed(60000); // Check again in 1 min
+                await (job as any).moveToDelayed(60000); // Check again in 1 min
                 return;
             }
         }
