@@ -35,6 +35,8 @@ interface Message {
     content: string;
     direction: 'inbound' | 'outbound';
     createdAt: string;
+    mediaUrl?: string;
+    mediaType?: string;
 }
 
 export default function OmniInboxPage() {
@@ -45,6 +47,11 @@ export default function OmniInboxPage() {
     const [isLoading, setIsLoading] = useState(true);
     const { user, token } = useAuth();
     const router = useRouter();
+
+    // Media Upload State
+    const [uploadedMedia, setUploadedMedia] = useState<{ url: string, mimetype: string, filename: string } | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const [activeTab, setActiveTab] = useState('all');
 
@@ -107,27 +114,74 @@ export default function OmniInboxPage() {
         }
     }, [selectedContact, token]);
 
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim() || !selectedContact) return;
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
 
         try {
+            const res = await fetch('/api/uploads', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error('Falha no upload');
+
+            const data = await res.json();
+            console.log('Upload concluído:', data);
+
+            setUploadedMedia({
+                url: data.url,
+                mimetype: data.mimetype,
+                filename: data.filename // Using the generic filename from server
+            });
+        } catch (err) {
+            console.error('Erro ao fazer upload:', err);
+            alert('Erro ao enviar arquivo. Tente novamente.');
+        } finally {
+            setIsUploading(false);
+            // Reset input
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleSend = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if ((!newMessage.trim() && !uploadedMedia) || !selectedContact) return;
+
+        try {
+            const payload: any = {
+                contactId: selectedContact.id,
+                content: newMessage,
+                provider: selectedContact.provider
+            };
+
+            if (uploadedMedia) {
+                payload.media = {
+                    url: uploadedMedia.url,
+                    mimetype: uploadedMedia.mimetype,
+                    fileName: uploadedMedia.filename,
+                    type: uploadedMedia.mimetype.startsWith('image/') ? 'image' :
+                        uploadedMedia.mimetype.startsWith('video/') ? 'video' : 'document'
+                };
+            }
+
             const res = await fetch('/api/crm/messages', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    contactId: selectedContact.id,
-                    content: newMessage,
-                    provider: selectedContact.provider
-                })
+                body: JSON.stringify(payload)
             });
 
             const data = await res.json();
             setMessages([...messages, data]);
             setNewMessage('');
+            setUploadedMedia(null);
         } catch (err) {
             console.error('Erro ao enviar mensagem:', err);
         }
@@ -269,6 +323,22 @@ export default function OmniInboxPage() {
                                         ? 'bg-primary text-white rounded-br-none'
                                         : 'bg-surface border border-white/5 text-gray-200 rounded-bl-none'
                                         }`}>
+
+                                        {/* Media Rendering */}
+                                        {msg.mediaUrl && (
+                                            <div className="mb-2 rounded-lg overflow-hidden">
+                                                {msg.mediaMimeType?.startsWith('image/') || (msg.mediaUrl.match(/\.(jpeg|jpg|gif|png)$/) != null) ? (
+                                                    <img src={msg.mediaUrl} alt="Media" className="max-w-full h-auto" />
+                                                ) : msg.mediaMimeType?.startsWith('video/') ? (
+                                                    <video src={msg.mediaUrl} controls className="max-w-full h-auto" />
+                                                ) : (
+                                                    <a href={msg.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 bg-black/20 p-2 rounded hover:bg-black/30 transition">
+                                                        <span>📎 Anexo: {msg.mediaFileName || 'Arquivo'}</span>
+                                                    </a>
+                                                )}
+                                            </div>
+                                        )}
+
                                         {msg.content}
                                         <div className={`text-[10px] mt-2 opacity-50 ${msg.direction === 'outbound' ? 'text-right' : 'text-left'}`}>
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -280,6 +350,31 @@ export default function OmniInboxPage() {
 
                         {/* Input */}
                         <div className="p-4 bg-surface/50 border-t border-white/5">
+                            {/* File Upload Preview */}
+                            {uploadedMedia && (
+                                <div className="mb-4 flex items-center bg-white/5 p-2 rounded-xl w-fit relative group">
+                                    {uploadedMedia.mimetype.startsWith('image/') ? (
+                                        <img src={uploadedMedia.url} className="h-16 w-16 object-cover rounded-lg" />
+                                    ) : (
+                                        <div className="h-16 w-16 flex items-center justify-center bg-gray-700 rounded-lg">📎</div>
+                                    )}
+                                    <button
+                                        onClick={() => setUploadedMedia(null)}
+                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 shadow-lg hover:bg-red-600 transition"
+                                    >
+                                        <div className="w-3 h-3 flex items-center justify-center text-white text-[10px] font-bold">✕</div>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Hidden Input */}
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                onChange={handleFileSelect}
+                            />
+
                             <form onSubmit={handleSend} className="flex items-center space-x-4">
                                 <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center focus-within:border-primary transition">
                                     <input
@@ -289,12 +384,19 @@ export default function OmniInboxPage() {
                                         placeholder="Digite sua mensagem..."
                                         className="flex-1 bg-transparent outline-none text-sm placeholder-gray-500"
                                     />
-                                    <button type="button" className="text-gray-500 hover:text-primary transition mx-2">📎</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="text-gray-500 hover:text-primary transition mx-2 relative"
+                                        disabled={isUploading}
+                                    >
+                                        {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : '📎'}
+                                    </button>
                                     <button type="button" className="text-gray-500 hover:text-primary transition mx-2">😊</button>
                                 </div>
                                 <button
                                     type="submit"
-                                    disabled={!newMessage.trim()}
+                                    disabled={(!newMessage.trim() && !uploadedMedia) || isUploading}
                                     className="bg-primary hover:bg-primary-dark text-white p-4 rounded-2xl transition shadow-lg shadow-primary/20 disabled:opacity-50"
                                 >
                                     <Send className="w-5 h-5" />

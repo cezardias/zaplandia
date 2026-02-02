@@ -8,6 +8,8 @@ import { N8nService } from '../integrations/n8n.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 
 import { EvolutionApiService } from '../integrations/evolution-api.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class CrmService {
@@ -104,14 +106,18 @@ export class CrmService {
         });
     }
 
-    async sendMessage(tenantId: string, contactId: string, content: string, provider: string) {
+    async sendMessage(tenantId: string, contactId: string, content: string, provider: string, media?: { url: string, type: string, mimetype: string, fileName?: string }) {
         // 1. Save to DB
         const message = this.messageRepository.create({
             tenantId,
             contactId,
             content,
             direction: 'outbound',
-            provider
+            provider,
+            mediaUrl: media?.url,
+            mediaType: media?.type,
+            mediaMimeType: media?.mimetype,
+            mediaFileName: media?.fileName
         });
 
         await this.messageRepository.save(message);
@@ -158,8 +164,36 @@ export class CrmService {
 
                     if (activeInstance) {
                         const instanceName = activeInstance.name || activeInstance.instance?.instanceName || activeInstance.instanceName;
-                        this.logger.log(`Sending WhatsApp message to ${contact.externalId} via ${instanceName}`);
-                        await this.evolutionApiService.sendText(tenantId, instanceName, contact.externalId, content);
+
+                        if (media && media.url) {
+                            // MEDIA SENDING LOGIC
+                            this.logger.log(`Sending WhatsApp MEDIA to ${contact.externalId} via ${instanceName}`);
+
+                            // 1. Resolve local path from URL
+                            // URL format: /uploads/filename.ext -> ./uploads/filename.ext
+                            const filename = media.url.split('/').pop();
+                            const filePath = path.join(process.cwd(), 'uploads', filename);
+
+                            if (fs.existsSync(filePath)) {
+                                const fileBuffer = fs.readFileSync(filePath);
+                                const base64 = fileBuffer.toString('base64');
+
+                                await this.evolutionApiService.sendMedia(tenantId, instanceName, contact.externalId, {
+                                    type: media.type || 'image', // default
+                                    mimetype: media.mimetype || '',
+                                    base64: base64,
+                                    fileName: media.fileName || filename,
+                                    caption: content
+                                });
+                            } else {
+                                this.logger.error(`Media file not found at ${filePath}. Sending text only.`);
+                                await this.evolutionApiService.sendText(tenantId, instanceName, contact.externalId, content);
+                            }
+                        } else {
+                            // TEXT ONLY
+                            this.logger.log(`Sending WhatsApp message to ${contact.externalId} via ${instanceName}`);
+                            await this.evolutionApiService.sendText(tenantId, instanceName, contact.externalId, content);
+                        }
                     } else {
                         this.logger.warn(`No active WhatsApp instance found for tenant ${tenantId}`);
                     }

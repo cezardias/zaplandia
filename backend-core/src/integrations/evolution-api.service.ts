@@ -258,8 +258,12 @@ export class EvolutionApiService {
         try {
             // Evolution v2 requires 'textMessage' object, while v1 uses 'text'.
             // We send both for maximum compatibility.
+            // HARDENING: Ensure number has suffix
+            const cleanNumber = number.replace(/\D/g, '');
+            const finalNumber = number.includes('@') ? number : `${cleanNumber}@s.whatsapp.net`;
+
             const payload = {
-                number: number.includes('@') ? number : number,
+                number: finalNumber,
                 text: text,
                 textMessage: {
                     text: text
@@ -268,7 +272,7 @@ export class EvolutionApiService {
                 linkPreview: true
             };
 
-            this.logger.log(`Sending message to ${number} via ${instanceName}. Payload: ${JSON.stringify(payload)}`);
+            this.logger.log(`Sending message to ${finalNumber} via ${instanceName}. Payload: ${JSON.stringify(payload)}`);
 
             const response = await axios.post(`${baseUrl}/message/sendText/${instanceName}`, payload, {
                 headers: { 'apikey': apiKey }
@@ -278,6 +282,41 @@ export class EvolutionApiService {
         } catch (error) {
             const errorData = error.response?.data || error.message;
             this.logger.error(`Erro ao enviar mensagem texto via EvolutionAPI: ${JSON.stringify(errorData)}`);
+            throw error;
+        }
+    }
+
+    async sendMedia(tenantId: string, instanceName: string, number: string, media: { type: string, mimetype: string, base64: string, fileName?: string, caption?: string }) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
+
+        try {
+            // HARDENING: Ensure number has suffix
+            const cleanNumber = number.replace(/\D/g, '');
+            const finalNumber = number.includes('@') ? number : `${cleanNumber}@s.whatsapp.net`;
+
+            const payload = {
+                number: finalNumber,
+                mediatype: media.type, // image, video, document
+                mimetype: media.mimetype,
+                caption: media.caption || '',
+                media: media.base64, // Evolution accepts Base64 here
+                fileName: media.fileName || 'file'
+            };
+
+            this.logger.log(`Sending MEDIA to ${finalNumber} via ${instanceName}. Type: ${media.type}`);
+
+            const response = await axios.post(`${baseUrl}/message/sendMedia/${instanceName}`, payload, {
+                headers: { 'apikey': apiKey }
+            });
+
+            this.logger.log(`Media sent result: ${JSON.stringify(response.data)}`);
+            return response.data;
+        } catch (error) {
+            const errorData = error.response?.data || error.message;
+            this.logger.error(`Erro ao enviar MEDIA via EvolutionAPI: ${JSON.stringify(errorData)}`);
             throw error;
         }
     }

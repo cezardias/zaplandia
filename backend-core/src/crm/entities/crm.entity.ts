@@ -72,6 +72,18 @@ export class Message {
     @Column({ type: 'jsonb', nullable: true })
     rawPayload: any; // Original API response
 
+    @Column({ nullable: true })
+    mediaUrl: string;
+
+    @Column({ nullable: true })
+    mediaType: string; // image, video, document, audio
+
+    @Column({ nullable: true })
+    mediaMimeType: string;
+
+    @Column({ nullable: true })
+    mediaFileName: string;
+
     @ManyToOne(() => Contact, (contact) => contact.messages)
     contact: Contact;
 

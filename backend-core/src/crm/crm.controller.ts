@@ -33,8 +33,8 @@ export class CrmController {
     }
 
     @Post('messages')
-    sendMessage(@Request() req, @Body() body: { contactId: string, content: string, provider: string }) {
-        return this.crmService.sendMessage(req.user.tenantId, body.contactId, body.content, body.provider);
+    sendMessage(@Request() req, @Body() body: { contactId: string, content: string, provider: string, media?: any }) {
+        return this.crmService.sendMessage(req.user.tenantId, body.contactId, body.content, body.provider, body.media);
     }
 
     @Patch('chats/:contactId')
