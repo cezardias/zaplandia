@@ -206,7 +206,7 @@ export class CrmService {
         } else {
             // Update existing contact fields if provided
             let hasParamsToUpdate = false;
-            if (data.name && data.name !== contact.name) {
+            if (data.name && data.name !== contact.name && data.name.toLowerCase() !== 'contato') {
                 contact.name = data.name;
                 hasParamsToUpdate = true;
             }
