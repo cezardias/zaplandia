@@ -15,9 +15,10 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchStats = async () => {
+    const fetchStats = async (campaignId?: string) => {
         try {
-            const res = await fetch('/api/crm/stats', {
+            const url = campaignId ? `/api/crm/stats?campaignId=${campaignId}` : '/api/crm/stats';
+            const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -50,9 +51,15 @@ export default function DashboardPage() {
     useEffect(() => {
         if (token) {
             setIsLoading(true);
-            Promise.all([fetchStats(), fetchCampaigns()]).finally(() => setIsLoading(false));
+            Promise.all([fetchStats(selectedCampaignId), fetchCampaigns()]).finally(() => setIsLoading(false));
         }
     }, [token]);
+
+    useEffect(() => {
+        if (token && selectedCampaignId) {
+            fetchStats(selectedCampaignId);
+        }
+    }, [selectedCampaignId, token]);
 
     const handleStartCampaign = async () => {
         if (!selectedCampaignId) return alert('Selecione uma campanha!');
@@ -170,7 +177,7 @@ export default function DashboardPage() {
                                 <div className="p-3 bg-white/5 rounded-lg">
                                     <div className="text-xs text-gray-400">Status</div>
                                     <div className={`font-bold capitalize ${selectedCampaign.status === 'running' ? 'text-green-400' :
-                                            selectedCampaign.status === 'paused' ? 'text-yellow-400' : 'text-gray-300'
+                                        selectedCampaign.status === 'paused' ? 'text-yellow-400' : 'text-gray-300'
                                         }`}>
                                         {selectedCampaign.status}
                                     </div>
@@ -238,8 +245,8 @@ export default function DashboardPage() {
                 {selectedCampaign && (
                     <div className="flex items-center space-x-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${selectedCampaign.status === 'running' ? 'bg-green-500/20 text-green-400 border-green-500/20' :
-                                selectedCampaign.status === 'paused' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20' :
-                                    'bg-gray-500/20 text-gray-400 border-gray-500/20'
+                            selectedCampaign.status === 'paused' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20' :
+                                'bg-gray-500/20 text-gray-400 border-gray-500/20'
                             }`}>
                             Status: {selectedCampaign.status.toUpperCase()}
                         </span>
@@ -254,8 +261,8 @@ export default function DashboardPage() {
                         onClick={handleStartCampaign}
                         disabled={!selectedCampaign || selectedCampaign.status === 'running'}
                         className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center space-x-2 transition ${!selectedCampaign || selectedCampaign.status === 'running'
-                                ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                : 'bg-primary hover:bg-primary-dark text-white'
+                            ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                            : 'bg-primary hover:bg-primary-dark text-white'
                             }`}
                     >
                         <PlayCircle className="w-4 h-4" />

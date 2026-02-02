@@ -31,10 +31,15 @@ export default function KanbanPage() {
     });
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchContacts = async () => {
+    const [campaigns, setCampaigns] = useState<any[]>([]);
+    const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
+
+    const fetchContacts = async (campaignId?: string) => {
         if (!token) return;
+        setIsLoading(true);
         try {
-            const res = await fetch('/api/crm/contacts', {
+            const url = campaignId ? `/api/crm/contacts?campaignId=${campaignId}` : '/api/crm/contacts';
+            const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -47,6 +52,23 @@ export default function KanbanPage() {
             setIsLoading(false);
         }
     };
+
+    const fetchCampaigns = async () => {
+        try {
+            const res = await fetch('/api/campaigns', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCampaigns(data);
+                if (data.length > 0 && !selectedCampaignId) {
+                    setSelectedCampaignId(data[0].id);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
     const organizeKanban = (contacts: any[]) => {
         const cols: any = {};
@@ -61,8 +83,18 @@ export default function KanbanPage() {
     };
 
     useEffect(() => {
-        fetchContacts();
+        if (token) {
+            fetchCampaigns();
+        }
     }, [token]);
+
+    useEffect(() => {
+        if (token && selectedCampaignId) {
+            fetchContacts(selectedCampaignId);
+        } else if (token && !selectedCampaignId) {
+            fetchContacts();
+        }
+    }, [selectedCampaignId, token]);
 
     const onDragEnd = async (result: any) => {
         if (!result.destination) return;
