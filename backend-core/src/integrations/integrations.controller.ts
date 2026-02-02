@@ -22,14 +22,21 @@ export class IntegrationsController {
         let evolutionInstances: any[] = [];
         try {
             const instances = await this.evolutionApiService.listInstances(req.user.tenantId);
-            evolutionInstances = instances.map((inst: any) => ({
-                id: inst.name || inst.instance?.instanceName || inst.instanceName,
-                name: inst.name || inst.instance?.instanceName || inst.instanceName, // Use instance name as display name
-                provider: 'evolution', // Special provider tag for frontend
-                status: inst.status === 'open' || inst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED',
-                integrationId: inst.integrationId || `evo_${inst.name}`, // Fallback ID
-                settings: inst
-            }));
+            evolutionInstances = instances.map((inst: any) => {
+                const rawName = inst.name || inst.instance?.instanceName || inst.instanceName;
+                // Clean name: remove technical prefix "tenant_<uuid>_"
+                // We keep everything after the second underscore
+                const friendlyName = rawName.replace(/^tenant_[0-9a-fA-F-]{36}_/, '');
+
+                return {
+                    id: rawName,
+                    name: friendlyName,
+                    provider: 'evolution',
+                    status: inst.status === 'open' || inst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED',
+                    integrationId: inst.integrationId || `evo_${rawName}`,
+                    settings: inst
+                };
+            });
         } catch (e) {
             console.error('Failed to fetch evolution instances for list:', e.message);
         }

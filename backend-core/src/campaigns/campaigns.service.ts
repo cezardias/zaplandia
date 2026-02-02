@@ -130,7 +130,7 @@ export class CampaignsService {
 
     // Helper to extract name robustly
     private extractLeadName(l: any): string {
-        const nameKeys = ['name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome'];
+        const nameKeys = ['title', 'titulo', 'name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome', 'Razão Social', 'razao_social'];
 
         // 1. Try explicit search with case-insensitivity
         const foundKey = Object.keys(l).find(k => nameKeys.some(nk => nk.toLowerCase() === k.toLowerCase().trim()));
