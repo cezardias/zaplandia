@@ -207,7 +207,11 @@ export class WebhooksController {
                 let resolvedName = pushName;
                 if (!resolvedName || resolvedName.includes('@') || /^\d+$/.test(resolvedName)) {
                     const lead = await this.leadRepository.findOne({
-                        where: { externalId, tenantId },
+                        where: {
+                            externalId,
+                            campaign: { tenantId }
+                        },
+                        relations: ['campaign'],
                         order: { createdAt: 'DESC' }
                     });
                     if (lead && lead.name) resolvedName = lead.name;
