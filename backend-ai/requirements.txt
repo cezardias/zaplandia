@@ -4,3 +4,4 @@ pydantic
 google-generativeai>=0.7.2
 python-dotenv
 redis
+requests

@@ -109,21 +109,45 @@ async def chat(request: AIRequest):
         return {"response": "[MODO DEMO - SEM CHAVE] Por favor, cadastre sua API Key no dashboard. Recebi: " + request.prompt}
     
     try:
+        # Try SDK first
         response = model.generate_content(request.prompt)
-        
-        if not response.text:
-            return {"response": "A IA gerou uma resposta vazia ou foi bloqueada por filtros de segurança."}
-            
-        return {
-            "response": response.text,
-            "usage": str(response.usage_metadata) if hasattr(response, 'usage_metadata') else None
-        }
+        if response.text:
+            return {
+                "response": response.text,
+                "usage": str(response.usage_metadata) if hasattr(response, 'usage_metadata') else None
+            }
+        else:
+             return {"response": "A IA gerou uma resposta vazia ou foi bloqueada por filtros de segurança."}
     except Exception as e:
-        print(f"Erro Gemini API: {str(e)}")
+        error_msg = str(e)
+        print(f"Erro Gemini SDK: {error_msg}")
+        
+        # 404 or "not found" -> Try REST Fallback as suggested by user
+        if "404" in error_msg or "not found" in error_msg.lower():
+            print("Tentando fallback via REST API...")
+            import requests
+            
+            # Try 2.0-flash then 1.5-flash
+            for model_name in ["gemini-2.0-flash", "gemini-1.5-flash"]:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={request.api_key if request.api_key else GLOBAL_GEMINI_KEY}"
+                payload = {
+                    "contents": [{"parts": [{"text": f"{request.system_instruction}\n\n{request.prompt}"}]}]
+                }
+                try:
+                    res = requests.post(url, json=payload, timeout=30)
+                    if res.status_code == 200:
+                        data = res.json()
+                        text = data['candidates'][0]['content']['parts'][0]['text']
+                        print(f"Sucesso via REST com {model_name}!")
+                        return {"response": text, "fallback": True, "model": model_name}
+                except Exception as rest_e:
+                    print(f"Falha no REST com {model_name}: {str(rest_e)}")
+        
         # Se a chave do cliente for inválida, avisamos explicitamente
-        if "API_KEY_INVALID" in str(e) or "403" in str(e):
+        if "API_KEY_INVALID" in error_msg or "403" in error_msg:
             return {"response": "Sua chave de API do Gemini parece ser inválida. Por favor, verifique nas configurações."}
-        raise HTTPException(status_code=500, detail=str(e))
+        
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @app.get("/health")
 def health():
