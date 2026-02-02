@@ -18,6 +18,11 @@ export class CampaignsController {
         return this.campaignsService.create(req.user.tenantId, body);
     }
 
+    @Post(':id/start')
+    start(@Request() req, @Param('id') id: string) {
+        return this.campaignsService.start(id, req.user.tenantId);
+    }
+
     @Post('funnels')
     createFunnel(@Request() req, @Body() body: any) {
         return this.campaignsService.createContactList(req.user.tenantId, body.name, body.contacts);
