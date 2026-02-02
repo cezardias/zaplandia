@@ -175,6 +175,28 @@ export class CrmService {
                     }
                 }
 
+                // 2.5 SMART FALLBACK: Auto-heal if duplicate exists
+                if (!targetNumber && contact?.name) {
+                    this.logger.log(`Searching for duplicates to heal contact ${contactId} (${contact.name})...`);
+                    const duplicates = await this.contactRepository.find({
+                        where: {
+                            tenantId,
+                            name: contact.name
+                        }
+                    });
+
+                    // Find any duplicate that HAS a phone number
+                    // Must be decently long to be a phone (e.g. > 8 chars)
+                    const healthyContact = duplicates.find(c => c.phoneNumber && c.phoneNumber.length > 8);
+
+                    if (healthyContact) {
+                        this.logger.log(`Auto-healing phone from duplicate ${healthyContact.id}: ${healthyContact.phoneNumber}`);
+                        targetNumber = healthyContact.phoneNumber;
+                        // Persist the fix!
+                        await this.contactRepository.update(contactId, { phoneNumber: targetNumber });
+                    }
+                }
+
                 // 3. Validation: If we still don't have a number, we cannot send
                 if (!targetNumber) {
                     this.logger.error(`No valid WhatsApp number found for contact ${contactId}`);
