@@ -38,6 +38,11 @@ export class AiService {
             // Fetch the Gemini API Key for this specific tenant (or global fallback)
             const apiKey = await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY');
 
+            this.logger.log(`[AI_REQUEST] Tenant: ${tenantId}, Provider: ${provider}, HasKey: ${!!apiKey}`);
+            if (!apiKey) {
+                this.logger.warn(`[AI_REQUEST] No API Key found for Tenant ${tenantId}. AI will likely return Demo Mode message.`);
+            }
+
             // Fetch custom prompt for this provider if it exists
             const integrations = await this.integrationsService.findAllByTenant(tenantId, 'admin');
             const integration = integrations.find(i => i.provider === provider);
@@ -53,7 +58,11 @@ export class AiService {
                 system_instruction: systemInstruction,
                 api_key: apiKey
             });
-            return response.data.response;
+
+            const aiResponse = response.data.response;
+            this.logger.log(`[AI_RESPONSE] Received ${aiResponse?.length || 0} chars from AI Service`);
+
+            return aiResponse;
         } catch (error: any) {
             this.logger.error('Failed to get AI response', error.message);
             return "Desculpe, meu cérebro de silício está processando algo. Tente novamente em um minuto! 🤖";
@@ -72,8 +81,16 @@ export class AiService {
 
         try {
             const responseStr = await this.getAiResponse(tenantId, userPrompt, 'gemini', systemInstruction);
+            this.logger.log(`[GEN_VAR] Raw response: ${responseStr}`);
+
             // Clean up code blocks if any
             const cleaned = responseStr.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            // If it starts with [MODO DEMO], return it as a single variation so user sees the warning
+            if (cleaned.startsWith('[MODO DEMO')) {
+                return [cleaned];
+            }
+
             return JSON.parse(cleaned);
         } catch (error) {
             this.logger.error(`Failed to generate variations: ${error.message}`);

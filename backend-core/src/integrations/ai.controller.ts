@@ -21,8 +21,11 @@ export class AiController {
     @UseGuards(JwtAuthGuard)
     @Post('generate-variations')
     async generateVariations(@Request() req, @Body() body: { baseMessage: string, prompt?: string, count?: number }) {
+        const tenantId = req.user.tenantId || req.user.id; // Fallback to userId if tenantId missing from older tokens
+        console.log(`[AI_CONTROLLER] Generating variations for tenant ${tenantId}`);
+
         return this.aiService.generateVariations(
-            req.user.tenantId,
+            tenantId,
             body.baseMessage,
             body.prompt,
             body.count || 3

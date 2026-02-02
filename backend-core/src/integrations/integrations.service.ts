@@ -109,7 +109,7 @@ export class IntegrationsService {
             where: { tenantId, key_name: keyName }
         });
         if (tenantCred?.key_value) {
-            this.logger.log(`[GET_CRED] Found tenant-specific "${keyName}" for tenant ${tenantId}`);
+            this.logger.log(`[GET_CRED] SUCCESS: Found tenant-specific "${keyName}" for tenant ${tenantId}`);
             return tenantCred.key_value;
         }
 
@@ -118,7 +118,7 @@ export class IntegrationsService {
             where: { tenantId: IsNull(), key_name: keyName }
         });
         if (globalCred?.key_value) {
-            this.logger.log(`[GET_CRED] Found GLOBAL "${keyName}" (fallback)`);
+            this.logger.log(`[GET_CRED] SUCCESS: Found GLOBAL fallback "${keyName}"`);
             return globalCred.key_value;
         }
 
