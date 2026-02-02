@@ -140,7 +140,8 @@ export class WebhooksController {
     async handleEvolution(@Body() payload: any) {
         this.logger.log('Received Evolution Payload: ' + JSON.stringify(payload));
 
-        const { type, data, instance, sender } = payload;
+        const { type, event, data, instance, sender } = payload;
+        const eventType = (type || event || '').toUpperCase();
 
         // Extract tenantId using multiple strategies
         let tenantId = 'default';
@@ -152,7 +153,7 @@ export class WebhooksController {
             // tenant_UUID_name
             if (parts.length >= 2) tenantId = parts[1];
         }
-        // Strategy 2: Check sender field (sometimes used in newer versions)
+        // Strategy 2: Check sender field
         else if (sender && sender.startsWith('tenant_')) {
             instanceName = sender;
             const parts = sender.split('_');
@@ -165,29 +166,32 @@ export class WebhooksController {
             this.logger.log(`Extracted tenantId: ${tenantId} from instance: ${instanceName}`);
         }
 
-        if (type === 'MESSAGES_UPSERT') {
+        if (eventType === 'MESSAGES_UPSERT' || eventType === 'SEND_MESSAGE' || eventType === 'MESSAGES.UPSERT' || eventType === 'SEND.MESSAGE') {
             const messageData = data.data || data; // Handle potential structure variations
 
-            if (!messageData || !messageData.key || messageData.key.fromMe) {
-                this.logger.log(`Ignoring message. FromMe: ${messageData?.key?.fromMe}, Data exist: ${!!messageData}`);
+            if (!messageData || !messageData.key) {
+                this.logger.log(`Ignoring message: Data incomplete.`);
                 return { status: 'ignored' };
             }
 
+            const isOutbound = messageData.key.fromMe === true;
             const remoteJid = messageData.key.remoteJid; // e.g., 5511999998888@s.whatsapp.net
-            const pushName = messageData.pushName || payload.sender || 'WhatsApp User';
+            const pushName = messageData.pushName || payload.sender || (isOutbound ? 'Sistema' : 'WhatsApp User');
 
             // Extract text content
             let content = '';
             if (messageData.message?.conversation) content = messageData.message.conversation;
             else if (messageData.message?.extendedTextMessage?.text) content = messageData.message.extendedTextMessage.text;
             else if (messageData.message?.imageMessage?.caption) content = messageData.message.imageMessage.caption;
+            // Also check for send.message specific structure if different
+            else if (messageData.extendedTextMessage?.text) content = messageData.extendedTextMessage.text;
 
             if (!content) {
-                this.logger.warn('Message has no text content.');
+                this.logger.warn(`Message from ${remoteJid} has no text content. Type: ${messageData.messageType}`);
                 return { status: 'no_content' };
             }
 
-            this.logger.log(`WhatsApp Message from ${pushName} (${remoteJid}): ${content}`);
+            this.logger.log(`WhatsApp (${isOutbound ? 'OUT' : 'IN'}) from ${pushName} (${remoteJid}): ${content}`);
 
             // Remove @s.whatsapp.net for externalId
             const externalId = remoteJid.replace('@s.whatsapp.net', '');
@@ -210,7 +214,7 @@ export class WebhooksController {
                 const message = this.messageRepository.create({
                     contactId: contact.id,
                     content,
-                    direction: 'inbound',
+                    direction: isOutbound ? 'outbound' : 'inbound',
                     provider: 'whatsapp',
                     tenantId
                 });
