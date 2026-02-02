@@ -18,6 +18,16 @@ export class CampaignsController {
         return this.campaignsService.create(req.user.tenantId, body);
     }
 
+    @Post('funnels')
+    createFunnel(@Request() req, @Body() body: any) {
+        return this.campaignsService.createContactList(req.user.tenantId, body.name, body.contacts);
+    }
+
+    @Get('funnels')
+    getFunnels(@Request() req) {
+        return this.campaignsService.getContactLists(req.user.tenantId);
+    }
+
     @Get(':id')
     findOne(@Request() req, @Param('id') id: string) {
         return this.campaignsService.findOne(id, req.user.tenantId);

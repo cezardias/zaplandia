@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Campaign, CampaignStatus } from './entities/campaign.entity';
+import { ContactList } from './entities/contact-list.entity';
 import { CampaignLead, LeadStatus } from './entities/campaign-lead.entity';
 import { CrmService } from '../crm/crm.service';
 import { InjectQueue } from '@nestjs/bull';
