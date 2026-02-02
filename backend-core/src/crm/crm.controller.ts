@@ -8,8 +8,8 @@ export class CrmController {
     constructor(private readonly crmService: CrmService) { }
 
     @Get('stats')
-    getStats(@Request() req) {
-        return this.crmService.getDashboardStats(req.user.tenantId);
+    getStats(@Request() req, @Query('campaignId') campaignId?: string) {
+        return this.crmService.getDashboardStats(req.user.tenantId, campaignId);
     }
 
     @Get('contacts')
