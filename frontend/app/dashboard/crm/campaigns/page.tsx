@@ -79,6 +79,40 @@ export default function CampaignsPage() {
         }
     };
 
+    const handleToggleStatus = async (id: string, currentStatus: string) => {
+        const newStatus = currentStatus === 'running' ? 'paused' : 'running';
+        try {
+            const res = await fetch(`/api/campaigns/${id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (res.ok) {
+                fetchCampaigns();
+            }
+        } catch (err) {
+            console.error('Erro ao atualizar status:', err);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Tem certeza que deseja excluir esta campanha?')) return;
+        try {
+            const res = await fetch(`/api/campaigns/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchCampaigns();
+            }
+        } catch (err) {
+            console.error('Erro ao excluir campanha:', err);
+        }
+    };
+
     return (
         <div className="p-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
@@ -143,10 +177,18 @@ export default function CampaignsPage() {
                                 <div className="h-4 w-px bg-white/10 hidden md:block"></div>
 
                                 <div className="flex items-center space-x-2">
-                                    <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400 transition" title="Pausar/Retomar">
+                                    <button
+                                        onClick={() => handleToggleStatus(campaign.id, campaign.status)}
+                                        className="p-2 hover:bg-white/5 rounded-lg text-gray-400 transition"
+                                        title={campaign.status === 'running' ? "Pausar" : "Iniciar"}
+                                    >
                                         {campaign.status === 'running' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                                     </button>
-                                    <button className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition" title="Excluir">
+                                    <button
+                                        onClick={() => handleDelete(campaign.id)}
+                                        className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition"
+                                        title="Excluir"
+                                    >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                     <button

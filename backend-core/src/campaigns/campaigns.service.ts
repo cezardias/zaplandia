@@ -183,6 +183,17 @@ export class CampaignsService {
         return null;
     }
 
+    async update(id: string, tenantId: string, data: any) {
+        // Simple update for basic fields
+        return this.campaignRepository.update({ id, tenantId }, {
+            name: data.name,
+            channels: data.channels,
+            integrationId: data.integrationId,
+            messageTemplate: data.messageTemplate,
+            variations: data.variations
+        });
+    }
+
     async remove(id: string, tenantId: string) {
         const campaign = await this.findOne(id, tenantId);
         if (campaign) {

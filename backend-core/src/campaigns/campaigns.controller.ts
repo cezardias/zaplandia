@@ -23,6 +23,11 @@ export class CampaignsController {
         return this.campaignsService.findOne(id, req.user.tenantId);
     }
 
+    @Patch(':id')
+    update(@Request() req, @Param('id') id: string, @Body() body: any) {
+        return this.campaignsService.update(id, req.user.tenantId, body);
+    }
+
     @Patch(':id/status')
     updateStatus(@Request() req, @Param('id') id: string, @Body() body: { status: CampaignStatus }) {
         return this.campaignsService.updateStatus(id, req.user.tenantId, body.status);
