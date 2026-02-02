@@ -82,20 +82,16 @@ export class CampaignsService {
 
         if (leads.length === 0) throw new Error('Não há leads pendentes para iniciar.');
 
-        this.logger.log(`Starting campaign ${id} for tenant ${tenantId}. Queuing ${leads.length} leads...`);
+        this.logger.log(`[MOTOR] Iniciando campanha ${id} (${campaign.name}). Enfileirando ${leads.length} leads...`);
 
-        const DELAY_MS = 15 * 1000; // 15 seconds stagger (faster but safe)
+        const STAGGER_MS = 15 * 1000; // 15 seconds stagger (faster but safe)
         const CHUNK_SIZE = 50; // Process in chunks to avoid blocking everything
 
         for (let i = 0; i < leads.length; i += CHUNK_SIZE) {
             const chunk = leads.slice(i, i + CHUNK_SIZE);
             await Promise.all(chunk.map(async (lead, chunkIndex) => {
                 const globalIndex = i + chunkIndex;
-                const delay = globalIndex * DELAY_MS;
-
-                // We don't strictly need contactId here if we just want to send. 
-                // The processor will try to find it if it needs to update CRM stage.
-                // Removing the await findOneByExternalId here for massive performance gain.
+                const delay = globalIndex * STAGGER_MS;
 
                 await this.campaignQueue.add('send-message', {
                     leadId: lead.id,
@@ -113,8 +109,10 @@ export class CampaignsService {
                     delay: delay
                 });
             }));
-            this.logger.log(`Queued chunk ${Math.floor(i / CHUNK_SIZE) + 1} of ${Math.ceil(leads.length / CHUNK_SIZE)}`);
+            this.logger.log(`[QUEUE] Lote ${Math.floor(i / CHUNK_SIZE) + 1} de ${Math.ceil(leads.length / CHUNK_SIZE)} enfileirado.`);
         }
+
+        this.logger.log(`[SUCESSO] Campanha ${id} iniciada com sucesso. O processamento começou.`);
 
         campaign.status = CampaignStatus.RUNNING;
         return this.campaignRepository.save(campaign);
