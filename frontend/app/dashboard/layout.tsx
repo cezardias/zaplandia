@@ -57,7 +57,7 @@ export default function DashboardLayout({
     return (
         <div className="flex h-screen bg-background overflow-hidden text-white">
             {/* Sidebar */}
-            <aside className="w-64 bg-surface border-r border-white/5 flex flex-col">
+            <aside className="w-64 bg-surface border-r border-white/5 flex flex-col h-screen fixed md:relative z-50">
                 <div className="p-6">
                     <div className="flex items-center space-x-2">
                         <Zap className="text-primary w-8 h-8 fill-primary" />
@@ -65,7 +65,7 @@ export default function DashboardLayout({
                     </div>
                 </div>
 
-                <nav className="flex-grow px-4 space-y-1">
+                <nav className="flex-1 overflow-y-auto px-4 space-y-1">
                     {menuItems.map((item) => (
                         <Link
                             key={item.path}
@@ -94,7 +94,7 @@ export default function DashboardLayout({
                     )}
                 </nav>
 
-                <div className="p-4 mt-auto border-t border-white/5">
+                <div className="p-4 border-t border-white/5 bg-surface">
                     <div className="flex items-center space-x-3 px-4 py-3 mb-2">
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
                             {user?.name?.charAt(0)}

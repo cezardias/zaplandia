@@ -16,7 +16,8 @@ import {
     FileJson,
     Save,
     Loader2,
-    QrCode
+    QrCode,
+    Database
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -26,11 +27,12 @@ export default function NewCampaignPage() {
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [availableIntegrations, setAvailableIntegrations] = useState<any[]>([]);
+    const [availableFunnels, setAvailableFunnels] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         name: '',
         channels: [] as string[],
         integrationId: '',
-        audience: 'existing' as 'existing' | 'json' | 'remarketing',
+        audience: 'existing' as 'existing' | 'json' | 'remarketing' | 'saved_funnel',
         jsonLeads: null as any,
         message: '',
         variations: [] as string[]
@@ -39,6 +41,7 @@ export default function NewCampaignPage() {
     useEffect(() => {
         if (token) {
             fetchIntegrations();
+            fetchFunnels();
         }
     }, [token]);
 
@@ -53,6 +56,20 @@ export default function NewCampaignPage() {
             }
         } catch (err) {
             console.error('Erro ao buscar integrações:', err);
+        }
+    };
+
+    const fetchFunnels = async () => {
+        try {
+            const res = await fetch('/api/campaigns/funnels', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAvailableFunnels(data);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar funis:', err);
         }
     };
 
@@ -307,6 +324,20 @@ export default function NewCampaignPage() {
                         </button>
 
                         <button
+                            onClick={() => setFormData({ ...formData, audience: 'saved_funnel' })}
+                            className={`p-8 rounded-3xl border transition-all text-left space-y-4 ${formData.audience === 'saved_funnel'
+                                ? 'bg-primary/10 border-primary'
+                                : 'bg-surface border-white/5 hover:border-white/20'
+                                }`}
+                        >
+                            <Database className={`w-8 h-8 ${formData.audience === 'saved_funnel' ? 'text-primary' : 'text-gray-500'}`} />
+                            <div>
+                                <h3 className="font-bold text-lg">Funil Salvo</h3>
+                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">Use uma lista de contatos que você já subiu anteriormente.</p>
+                            </div>
+                        </button>
+
+                        <button
                             onClick={() => setFormData({ ...formData, audience: 'json' })}
                             className={`p-8 rounded-3xl border transition-all text-left space-y-4 ${formData.audience === 'json'
                                 ? 'bg-primary/10 border-primary'
@@ -320,6 +351,46 @@ export default function NewCampaignPage() {
                             </div>
                         </button>
                     </div>
+
+                    {formData.audience === 'saved_funnel' && (
+                        <div className="mt-8 space-y-4">
+                            <h3 className="text-lg font-bold">Selecione o Funil</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {availableFunnels.map(funnel => (
+                                    <button
+                                        key={funnel.id}
+                                        onClick={() => setFormData(prev => ({ ...prev, jsonLeads: funnel.contacts }))}
+                                        className={`p-4 rounded-2xl border text-left transition-all ${JSON.stringify(formData.jsonLeads) === JSON.stringify(funnel.contacts)
+                                            ? 'bg-primary/10 border-primary'
+                                            : 'bg-white/5 border-white/5 hover:border-white/20'
+                                            }`}
+                                    >
+                                        <div className="flex items-center space-x-3 mb-2">
+                                            <Database className="w-5 h-5 text-primary" />
+                                            <span className="font-bold">{funnel.name}</span>
+                                        </div>
+                                        <div className="text-xs text-gray-400">
+                                            {funnel.contacts?.length || 0} contatos
+                                        </div>
+                                        <div className="text-[10px] text-gray-500 mt-1">
+                                            Criado em: {new Date(funnel.createdAt).toLocaleDateString()}
+                                        </div>
+                                    </button>
+                                ))}
+                                {availableFunnels.length === 0 && (
+                                    <div className="col-span-3 p-8 text-center border border-dashed border-white/10 rounded-2xl">
+                                        <p className="text-gray-500">Nenhum funil salvo encontrado.</p>
+                                        <button
+                                            onClick={() => router.push('/dashboard/crm/funnels/new')}
+                                            className="text-primary text-sm font-bold mt-2 hover:underline"
+                                        >
+                                            Criar Novo Funil
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {formData.audience === 'json' && (
                         <div className="p-8 bg-white/5 border border-dashed border-white/10 rounded-3xl text-center">
@@ -414,7 +485,7 @@ export default function NewCampaignPage() {
                         disabled={
                             (step === 1 && !formData.name) ||
                             (step === 2 && (formData.channels.length === 0 || (formData.channels.includes('whatsapp') && !formData.integrationId))) ||
-                            (step === 3 && formData.audience === 'json' && !formData.jsonLeads)
+                            (step === 3 && (formData.audience === 'json' || formData.audience === 'saved_funnel') && !formData.jsonLeads)
                         }
                         onClick={() => setStep(step + 1)}
                         className="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-2xl flex items-center space-x-2 transition shadow-lg shadow-primary/20 disabled:opacity-50 font-black"

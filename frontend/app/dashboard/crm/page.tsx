@@ -120,11 +120,11 @@ export default function CrmPage() {
                 <div className="flex space-x-3">
                     {user?.role === 'superadmin' && (
                         <button
-                            onClick={handleSeed}
+                            onClick={() => router.push('/dashboard/crm/funnels/new')}
                             className="flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2.5 rounded-xl transition font-bold border border-primary/20"
                         >
                             <Database className="w-4 h-4" />
-                            <span>Gerar Dados</span>
+                            <span>Criar Funil</span>
                         </button>
                     )}
                     <button
@@ -141,7 +141,10 @@ export default function CrmPage() {
                         <HelpCircle className="w-4 h-4" />
                         <span>Suporte</span>
                     </button>
-                    <button className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center space-x-2 shadow-lg shadow-primary/20">
+                    <button
+                        onClick={() => router.push('/dashboard/crm/new')}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center space-x-2 shadow-lg shadow-primary/20"
+                    >
                         <UserPlus className="w-4 h-4" />
                         <span>Novo Contato</span>
                     </button>
