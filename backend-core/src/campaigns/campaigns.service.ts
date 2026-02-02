@@ -298,6 +298,10 @@ export class CampaignsService {
     }
 
     async updateStatus(id: string, tenantId: string, status: CampaignStatus) {
+        if (status === CampaignStatus.RUNNING) {
+            return this.start(id, tenantId);
+        }
+
         const campaign = await this.findOne(id, tenantId);
         if (campaign) {
             campaign.status = status;
