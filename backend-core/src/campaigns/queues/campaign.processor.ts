@@ -33,14 +33,17 @@ export class CampaignProcessor {
         // 0. Campaign Status Check (Critical for Pausing)
         if (campaignId) {
             const campaign = await this.campaignRepository.findOne({ where: { id: campaignId } });
+
+            // If campaign doesn't exist or is in a terminal state, stop job
             if (!campaign || campaign.status === 'failed' || campaign.status === 'completed') {
                 this.logger.log(`[CANCELADO] Job abortado: Campanha ${campaignId} está ${campaign?.status || 'inexistente'}.`);
-                return; // Mark as done, don't re-queue
+                return;
             }
+
+            // If paused, wait indefinitely (check every 5 min)
             if (campaign.status === 'paused') {
-                // If paused, move the job 5 minutes into the future to stop log spam and wait for resume
                 const waitTime = 5 * 60 * 1000;
-                this.logger.log(`[PAUSADO] Campanha ${campaignId} está em pausa. Reprogramando contato ${externalId} para daqui a 5 min.`);
+                this.logger.log(`[PAUSADO] Campanha ${campaignId} em pausa. O envio só continuará quando você der PLAY.`);
                 await (job as any).moveToDelayed(Date.now() + waitTime);
                 return;
             }
@@ -53,10 +56,10 @@ export class CampaignProcessor {
             return;
         }
 
-        // 1. Rate Limiting Check
+        // 1. Hard Daily Limit Check (40 Messages)
         if (!this.checkRateLimit(instanceName)) {
-            this.logger.warn(`[LIMITE] Limite diário de ${this.MAX_DAILY_LIMIT} mensagens atingido para ${instanceName}. O envio continuará automaticamente amanhã.`);
-            // Delay for 24 hours (in milliseconds)
+            this.logger.warn(`[LIMITE] Limite de 40 mensagens atingido em ${instanceName}. Parando disparos por hoje.`);
+            // Move to tomorrow (24h)
             await (job as any).moveToDelayed(Date.now() + 24 * 60 * 60 * 1000);
             return;
         }
