@@ -145,7 +145,7 @@ export default function FunnelsListPage() {
                             </div>
 
                             <button
-                                onClick={() => router.push(`/dashboard/crm/campaigns/new?funnelId=${funnel.id}`)}
+                                onClick={() => router.push(`/dashboard/crm/campaigns/new?funnelId=${funnel.id}&funnelName=${encodeURIComponent(funnel.name)}`)}
                                 className="mt-6 w-full py-3 rounded-xl border border-white/10 hover:bg-white/5 text-sm font-bold transition"
                             >
                                 Usar em Campanha

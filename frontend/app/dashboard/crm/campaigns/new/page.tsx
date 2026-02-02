@@ -109,15 +109,17 @@ export default function NewCampaignPage() {
 
     useEffect(() => {
         const funnelId = new URLSearchParams(window.location.search).get('funnelId');
+        const funnelName = new URLSearchParams(window.location.search).get('funnelName');
         if (funnelId && availableFunnels.length > 0) {
             const funnel = availableFunnels.find(f => f.id === funnelId);
             if (funnel) {
                 setFormData(prev => ({
                     ...prev,
+                    name: `Campanha: ${funnelName || funnel.name}`,
                     audience: 'saved_funnel',
                     jsonLeads: funnel.contacts
                 }));
-                setStep(3); // Go straight to step 3
+                // Stay on step 1 to let user see/change name
             }
         }
     }, [availableFunnels]);
@@ -572,7 +574,8 @@ export default function NewCampaignPage() {
                                             key={idx}
                                             onClick={() => {
                                                 setFormData({ ...formData, message: res });
-                                                // Also add to variations list?
+                                                setAiModalOpen(false);
+                                                setAiResults(null);
                                             }}
                                             className="w-full text-left p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-purple-500/50 rounded-xl transition text-sm text-gray-300"
                                         >
@@ -584,9 +587,15 @@ export default function NewCampaignPage() {
                                     <button onClick={() => setAiResults(null)} className="px-4 py-2 text-gray-400">Voltar</button>
                                     <button
                                         onClick={() => {
-                                            setFormData(prev => ({ ...prev, variations: aiResults }));
-                                            setAiModalOpen(false);
-                                            setAiResults(null);
+                                            if (aiResults && aiResults.length > 0) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    message: aiResults[0],
+                                                    variations: aiResults
+                                                }));
+                                                setAiModalOpen(false);
+                                                setAiResults(null);
+                                            }
                                         }}
                                         className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-bold"
                                     >
