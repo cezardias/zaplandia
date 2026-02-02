@@ -153,31 +153,6 @@ export class CampaignsService {
         return 'Contato';
     }
 
-    // Helper to extract name robustly
-    private extractLeadName(l: any): string {
-        const nameKeys = ['name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome'];
-
-        // 1. Try explicit search with case-insensitivity
-        const foundKey = Object.keys(l).find(k => nameKeys.some(nk => nk.toLowerCase() === k.toLowerCase().trim()));
-        if (foundKey && l[foundKey] && String(l[foundKey]).trim().toLowerCase() !== 'contato' && String(l[foundKey]).trim() !== '') {
-            return String(l[foundKey]).trim();
-        }
-
-        // 2. Try common fallbacks if no explicit key found or if it was "contato"
-        const fallback = l.name || l.nome || l.Name || l.Nome;
-        if (fallback && String(fallback).trim().toLowerCase() !== 'contato' && String(fallback).trim() !== '') {
-            return String(fallback).trim();
-        }
-
-        // 3. Last resort: any key that contains "nome" or "name"
-        const looseKey = Object.keys(l).find(k => k.toLowerCase().includes('nome') || k.toLowerCase().includes('name'));
-        if (looseKey && l[looseKey] && String(l[looseKey]).trim() !== '') {
-            return String(l[looseKey]).trim();
-        }
-
-        return 'Contato';
-    }
-
     async create(tenantId: string, data: any) {
         try {
             // Sanitize data to only include valid entity fields
@@ -207,13 +182,8 @@ export class CampaignsService {
                     const chunk = leadsData.slice(i, i + chunkSize);
 
                     // 1. Ensure Contacts exist
-                    const contacts = await Promise.all(chunk.map(l => {
-                        // Broaden name search for case-insensitivity and common variants
-                        const nameKey = Object.keys(l).find(key =>
-                            ['name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico'].includes(key.toLowerCase())
-                        );
-                        const name = nameKey ? l[nameKey] : (l.name || l.nome || l.Name || l.Nome || 'Contato');
-
+                    await Promise.all(chunk.map(l => {
+                        const name = this.extractLeadName(l);
                         const phone = String(l.phoneNumber || l.telefone || l.phone || l.celular || l.externalId || '').replace(/\D/g, '');
                         return this.crmService.ensureContact(tenantId, {
                             name: name,
@@ -224,11 +194,7 @@ export class CampaignsService {
 
                     // 2. Create Campaign Leads
                     const leadsToCreate = chunk.map(l => {
-                        const nameKey = Object.keys(l).find(key =>
-                            ['name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico'].includes(key.toLowerCase())
-                        );
-                        const name = nameKey ? l[nameKey] : (l.name || l.nome || l.Name || l.Nome || 'Contato');
-
+                        const name = this.extractLeadName(l);
                         const phone = String(l.phoneNumber || l.telefone || l.phone || l.celular || l.externalId || '').replace(/\D/g, '');
                         return this.leadRepository.create({
                             name: name,
