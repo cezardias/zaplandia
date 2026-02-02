@@ -177,18 +177,21 @@ export class CrmService {
 
                 // 2.5 SMART FALLBACK: Auto-heal if duplicate exists
                 if (!targetNumber && contact?.name) {
-                    // Fuzzy Search Strategy: Match first 2 words
+                    // Broader Search Strategy: Match FIRST WORD only
+                    // This handles "Renato Porto" vs "Renato" vs "Dr. Renato"
                     const nameParts = contact.name.trim().split(' ');
-                    const searchName = nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1]}` : nameParts[0];
+                    const searchName = nameParts[0]; // Just "Renato"
 
-                    this.logger.log(`Searching for duplicates to heal contact ${contactId} (Name: ${contact.name}). Fuzzy: '${searchName}'...`);
+                    this.logger.log(`Searching for duplicates to heal contact ${contactId} (Name: ${contact.name}). Broad Search: '${searchName}%'...`);
 
                     const duplicates = await this.contactRepository.find({
                         where: {
                             tenantId,
-                            name: Like(`%${searchName}%`)
+                            name: Like(`${searchName}%`)
                         }
                     });
+
+                    this.logger.log(`Found ${duplicates.length} candidates starting with '${searchName}'`);
 
                     // Match must have phone > 8 chars OR be a valid WhatsApp External Id (digits only, < 15 chars)
                     const healthyContact = duplicates.find(c =>
@@ -206,6 +209,10 @@ export class CrmService {
                         targetNumber = recoveredNumber;
                         // Persist the fix
                         await this.contactRepository.update(contactId, { phoneNumber: targetNumber });
+                    } else {
+                        // Log candidates to help debug if still failing
+                        const candidateInfo = duplicates.map(d => `${d.name} (Ph: ${d.phoneNumber}, Ext: ${d.externalId})`).join(', ');
+                        this.logger.warn(`No healthy duplicate found for '${searchName}'. Candidates: ${candidateInfo}`);
                     }
                 }
 
