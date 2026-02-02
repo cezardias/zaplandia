@@ -19,7 +19,7 @@ import {
     Store
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import EmojiPicker from 'emoji-picker-react';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 interface Contact {
     id: string;
@@ -387,7 +387,7 @@ export default function OmniInboxPage() {
                             {/* Emoji Picker */}
                             {showEmojiPicker && (
                                 <div className="absolute bottom-20 right-4 z-50 shadow-2xl rounded-2xl overflow-hidden">
-                                    <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" width={300} height={400} />
+                                    <EmojiPicker onEmojiClick={handleEmojiClick} theme={Theme.DARK} width={300} height={400} />
                                 </div>
                             )}
 
