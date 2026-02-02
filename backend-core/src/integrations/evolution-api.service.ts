@@ -217,32 +217,29 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            this.logger.log(`Setting webhook for ${instanceName} to ${webhookUrl}`);
-            const response = await axios.post(`${baseUrl}/webhook/set/${instanceName}`, {
+            const payload = {
                 url: webhookUrl,
                 enabled: true,
+                webhook_by_events: false, // Use flat events list
+                webhook_by_instance: false,
                 events: [
                     "MESSAGES_UPSERT",
                     "MESSAGES_UPDATE",
                     "MESSAGES_DELETE",
                     "SEND_MESSAGE",
-                    "CONTACTS_UPSERT",
-                    "CONTACTS_UPDATE",
-                    "PRESENCE_UPDATE",
-                    "CHATS_UPSERT",
-                    "CHATS_UPDATE",
-                    "CHATS_DELETE",
-                    "GROUPS_UPSERT",
-                    "GROUPS_UPDATE",
-                    "GROUP_PARTICIPANTS_UPDATE",
-                    "CONNECTION_UPDATE"
+                    "CONNECTION_UPDATE",
+                    "CALL"
                 ]
-            }, {
+            };
+            this.logger.log(`Setting webhook for ${instanceName} to ${webhookUrl}. Payload: ${JSON.stringify(payload)}`);
+
+            const response = await axios.post(`${baseUrl}/webhook/set/${instanceName}`, payload, {
                 headers: { 'apikey': apiKey }
             });
             return response.data;
         } catch (error) {
-            this.logger.error(`Erro ao configurar webhook no EvolutionAPI: ${error.message}`);
+            const errorData = error.response?.data || error.message;
+            this.logger.error(`Erro ao configurar webhook no EvolutionAPI: ${JSON.stringify(errorData)}`);
             throw error;
         }
     }
@@ -254,17 +251,23 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            const response = await axios.post(`${baseUrl}/message/sendText/${instanceName}`, {
-                number,
-                text,
+            // Some Evolution versions expect a more nested structure, we'll try a very compatible one
+            const payload = {
+                number: number.includes('@') ? number : number, // Evolution handles raw number or jid
+                text: text,
                 delay: 1200,
                 linkPreview: true
-            }, {
+            };
+
+            this.logger.log(`Sending message to ${number} via ${instanceName}. Payload: ${JSON.stringify(payload)}`);
+
+            const response = await axios.post(`${baseUrl}/message/sendText/${instanceName}`, payload, {
                 headers: { 'apikey': apiKey }
             });
             return response.data;
         } catch (error) {
-            this.logger.error(`Erro ao enviar mensagem texto via EvolutionAPI: ${error.message}`);
+            const errorData = error.response?.data || error.message;
+            this.logger.error(`Erro ao enviar mensagem texto via EvolutionAPI: ${JSON.stringify(errorData)}`);
             throw error;
         }
     }
