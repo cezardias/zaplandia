@@ -10,6 +10,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export default function DashboardPage() {
     const { user, token } = useAuth();
+    const [campaigns, setCampaigns] = useState<any[]>([]);
+    const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -24,14 +26,56 @@ export default function DashboardPage() {
             }
         } catch (err) {
             console.error(err);
-        } finally {
-            setIsLoading(false);
         }
     };
 
+    const fetchCampaigns = async () => {
+        try {
+            const res = await fetch('/api/campaigns', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCampaigns(data);
+                // Auto-select latest if not selected
+                if (data.length > 0 && !selectedCampaignId) {
+                    setSelectedCampaignId(data[0].id);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     useEffect(() => {
-        if (token) fetchStats();
+        if (token) {
+            setIsLoading(true);
+            Promise.all([fetchStats(), fetchCampaigns()]).finally(() => setIsLoading(false));
+        }
     }, [token]);
+
+    const handleStartCampaign = async () => {
+        if (!selectedCampaignId) return alert('Selecione uma campanha!');
+        if (!confirm('Deseja iniciar os disparos para esta campanha?')) return;
+
+        try {
+            const res = await fetch(`/api/campaigns/${selectedCampaignId}/start`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                alert('Campanha iniciada com sucesso! As mensagens entrarão na fila.');
+                fetchCampaigns(); // Refresh status
+            } else {
+                const err = await res.json();
+                alert(`Erro ao iniciar: ${err.message}`);
+            }
+        } catch (e) {
+            alert('Erro de conexão.');
+        }
+    }
+
+    const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
 
     const kpiCards = [
         { title: 'Total de Leads', value: stats?.total || 0, icon: <Users className="text-gray-400" />, sub: '' },
@@ -61,14 +105,19 @@ export default function DashboardPage() {
                         onClick={async () => {
                             if (confirm('ATENÇÃO: Isso apagará TODOS os contatos do CRM. Tem certeza?')) {
                                 try {
-                                    await fetch('/api/crm/contacts/all', {
+                                    const res = await fetch('/api/crm/contacts/all', {
                                         method: 'DELETE',
                                         headers: { 'Authorization': `Bearer ${token}` }
                                     });
-                                    alert('Base limpa com sucesso!');
-                                    fetchStats();
+                                    if (res.ok) {
+                                        alert('Base limpa com sucesso!');
+                                        fetchStats();
+                                    } else {
+                                        const err = await res.json();
+                                        alert(`Erro ao limpar: ${err.message || 'Falha desconhecida'}`);
+                                    }
                                 } catch (e) {
-                                    alert('Erro ao limpar base.');
+                                    alert('Erro de conexão ao limpar base.');
                                 }
                             }
                         }}
@@ -97,13 +146,55 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-96">
                 {/* Desempenho da Campanha */}
                 <div className="bg-surface border border-white/10 rounded-2xl p-6 flex flex-col">
-                    <div className="mb-4">
-                        <h3 className="text-xl font-bold">Desempenho da Campanha</h3>
-                        <p className="text-sm text-gray-400">Resultado dos disparos para o funil ativo.</p>
+                    <div className="mb-4 flex justify-between items-center">
+                        <div>
+                            <h3 className="text-xl font-bold">Desempenho da Campanha</h3>
+                            <p className="text-sm text-gray-400">Resultado dos disparos para o funil ativo.</p>
+                        </div>
+                        {/* Campaign Selector */}
+                        <select
+                            value={selectedCampaignId}
+                            onChange={(e) => setSelectedCampaignId(e.target.value)}
+                            className="bg-black/20 border border-white/10 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:border-primary"
+                        >
+                            <option value="">Selecione uma campanha...</option>
+                            {campaigns.map(c => (
+                                <option key={c.id} value={c.id}>{c.name} ({new Date(c.createdAt).toLocaleDateString()})</option>
+                            ))}
+                        </select>
                     </div>
-                    <div className="flex-1 flex items-center justify-center text-gray-500 border-2 border-dashed border-white/5 rounded-xl">
-                        Selecione um funil para ver o desempenho da campanha.
-                    </div>
+
+                    {selectedCampaign ? (
+                        <div className="flex-1 space-y-4">
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                                <div className="p-3 bg-white/5 rounded-lg">
+                                    <div className="text-xs text-gray-400">Status</div>
+                                    <div className={`font-bold capitalize ${selectedCampaign.status === 'running' ? 'text-green-400' :
+                                            selectedCampaign.status === 'paused' ? 'text-yellow-400' : 'text-gray-300'
+                                        }`}>
+                                        {selectedCampaign.status}
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-white/5 rounded-lg">
+                                    <div className="text-xs text-gray-400">Canais</div>
+                                    <div className="font-bold">{selectedCampaign.channels?.join(', ') || 'N/A'}</div>
+                                </div>
+                                <div className="p-3 bg-white/5 rounded-lg">
+                                    <div className="text-xs text-gray-400">Template</div>
+                                    <div className="font-bold truncate" title={selectedCampaign.messageTemplate}>
+                                        {selectedCampaign.messageTemplate ? 'Definido' : 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center text-gray-500 border-2 border-dashed border-white/5 rounded-xl h-40">
+                                Gráfico de Envios (Em Breve)
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex items-center justify-center text-gray-500 border-2 border-dashed border-white/5 rounded-xl">
+                            Selecione um funil para ver o desempenho da campanha.
+                        </div>
+                    )}
                 </div>
 
                 {/* Saude do Funil */}
@@ -144,17 +235,29 @@ export default function DashboardPage() {
                     <h3 className="font-bold text-lg">Controle da Campanha</h3>
                     <p className="text-xs text-gray-400">Inicie, pare e monitore os disparos deste funil.</p>
                 </div>
-                <div className="flex items-center space-x-4">
-                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold border border-blue-500/20">
-                        Status: Concluída
-                    </span>
-                    <span className="px-3 py-1 bg-white/5 text-gray-300 rounded-full text-xs font-bold border border-white/10 flex items-center space-x-2">
-                        <span>Instância:</span>
-                        <span className="text-primary truncate max-w-[100px]">zaplandia_envio</span>
-                    </span>
-                </div>
+                {selectedCampaign && (
+                    <div className="flex items-center space-x-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${selectedCampaign.status === 'running' ? 'bg-green-500/20 text-green-400 border-green-500/20' :
+                                selectedCampaign.status === 'paused' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20' :
+                                    'bg-gray-500/20 text-gray-400 border-gray-500/20'
+                            }`}>
+                            Status: {selectedCampaign.status.toUpperCase()}
+                        </span>
+                        <span className="px-3 py-1 bg-white/5 text-gray-300 rounded-full text-xs font-bold border border-white/10 flex items-center space-x-2">
+                            <span>Integração:</span>
+                            <span className="text-primary truncate max-w-[150px]">{selectedCampaign.integrationId || 'N/A'}</span>
+                        </span>
+                    </div>
+                )}
                 <div className="flex space-x-2">
-                    <button className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center space-x-2">
+                    <button
+                        onClick={handleStartCampaign}
+                        disabled={!selectedCampaign || selectedCampaign.status === 'running'}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center space-x-2 transition ${!selectedCampaign || selectedCampaign.status === 'running'
+                                ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                : 'bg-primary hover:bg-primary-dark text-white'
+                            }`}
+                    >
                         <PlayCircle className="w-4 h-4" />
                         <span>Iniciar Campanha</span>
                     </button>

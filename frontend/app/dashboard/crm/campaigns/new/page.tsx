@@ -302,8 +302,8 @@ export default function NewCampaignPage() {
                         >
                             <Users className={`w-8 h-8 ${formData.audience === 'existing' ? 'text-primary' : 'text-gray-500'}`} />
                             <div>
-                                <h3 className="font-bold text-lg">Contatos Existentes</h3>
-                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">Envie para todos os contatos já cadastrados no seu CRM Omnichannel.</p>
+                                <h3 className="font-bold text-lg">Base de Leads (CRM)</h3>
+                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">Filtre leads já cadastrados por Etapa ou Tags (Não inclui listas JSON salvas).</p>
                             </div>
                         </button>
 
@@ -332,8 +332,8 @@ export default function NewCampaignPage() {
                         >
                             <Database className={`w-8 h-8 ${formData.audience === 'saved_funnel' ? 'text-primary' : 'text-gray-500'}`} />
                             <div>
-                                <h3 className="font-bold text-lg">Funil Salvo</h3>
-                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">Use uma lista de contatos que você já subiu anteriormente.</p>
+                                <h3 className="font-bold text-lg">Meus Funis (Listas Salvas)</h3>
+                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">Selecione uma lista de contatos que você já subiu anteriormente.</p>
                             </div>
                         </button>
 
