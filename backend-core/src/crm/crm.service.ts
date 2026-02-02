@@ -177,22 +177,26 @@ export class CrmService {
 
                 // 2.5 SMART FALLBACK: Auto-heal if duplicate exists
                 if (!targetNumber && contact?.name) {
-                    this.logger.log(`Searching for duplicates to heal contact ${contactId} (${contact.name})...`);
+                    // Fuzzy Search Strategy: Match first 2 words
+                    const nameParts = contact.name.trim().split(' ');
+                    const searchName = nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1]}` : nameParts[0];
+
+                    this.logger.log(`Searching for duplicates to heal contact ${contactId} (Name: ${contact.name}). Fuzzy: '${searchName}'...`);
+
                     const duplicates = await this.contactRepository.find({
                         where: {
                             tenantId,
-                            name: contact.name
+                            name: Like(`%${searchName}%`)
                         }
                     });
 
-                    // Find any duplicate that HAS a phone number
-                    // Must be decently long to be a phone (e.g. > 8 chars)
-                    const healthyContact = duplicates.find(c => c.phoneNumber && c.phoneNumber.length > 8);
+                    // Match must have phone > 8 chars
+                    const healthyContact = duplicates.find(c => c.phoneNumber && c.phoneNumber.length > 8 && c.id !== contactId);
 
                     if (healthyContact) {
-                        this.logger.log(`Auto-healing phone from duplicate ${healthyContact.id}: ${healthyContact.phoneNumber}`);
+                        this.logger.log(`Auto-healing phone from duplicate ${healthyContact.id} (${healthyContact.name}): ${healthyContact.phoneNumber}`);
                         targetNumber = healthyContact.phoneNumber;
-                        // Persist the fix!
+                        // Persist the fix
                         await this.contactRepository.update(contactId, { phoneNumber: targetNumber });
                     }
                 }
