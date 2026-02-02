@@ -3,6 +3,7 @@ import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact, Message } from './entities/crm.entity';
+import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { N8nService } from '../integrations/n8n.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 
@@ -16,6 +17,8 @@ export class CrmService {
         private contactRepository: Repository<Contact>,
         @InjectRepository(Message)
         private messageRepository: Repository<Message>,
+        @InjectRepository(CampaignLead)
+        private leadRepository: Repository<CampaignLead>,
         private readonly n8nService: N8nService,
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
@@ -30,14 +33,27 @@ export class CrmService {
             take: 20
         });
 
-        // Auto-clean JIDs and system names on the fly for UI
-        return contacts.map(c => {
-            const nameIsBad = !c.name || c.name.includes('@s.whatsapp.net') || c.name === 'Sistema' || c.name === 'WhatsApp User';
+        // Auto-clean JIDs and resolve names from CampaignLead on the fly
+        return Promise.all(contacts.map(async c => {
+            const nameIsBad = !c.name || c.name.includes('@s.whatsapp.net') || c.name === 'Sistema' || c.name === 'WhatsApp User' || c.name.includes('Contato ');
+
+            if (nameIsBad && c.externalId) {
+                // Try to find a better name in leads
+                const lead = await this.leadRepository.findOne({
+                    where: { externalId: c.externalId, campaign: { tenantId } },
+                    relations: ['campaign'],
+                    order: { createdAt: 'DESC' }
+                });
+                if (lead && lead.name) {
+                    return { ...c, name: lead.name };
+                }
+            }
+
             return {
                 ...c,
-                name: nameIsBad ? (c.phoneNumber || `Contato ${c.externalId?.slice(-4) || ''}`) : c.name
+                name: (c.name && c.name.includes('@s.whatsapp.net')) ? (c.phoneNumber || `Contato ${c.externalId?.slice(-4) || ''}`) : (c.name || c.phoneNumber || `Contato ${c.externalId?.slice(-4) || ''}`)
             };
-        });
+        }));
     }
 
     async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string, campaignId?: string }) {
