@@ -40,6 +40,13 @@ export class CampaignsService {
         });
     }
 
+    async removeContactList(id: string, tenantId: string) {
+        const list = await this.contactListRepository.findOne({ where: { id, tenantId } });
+        if (list) {
+            return this.contactListRepository.remove(list);
+        }
+    }
+
     async findAllByTenant(tenantId: string) {
         return this.campaignRepository.find({
             where: { tenantId },
@@ -218,6 +225,8 @@ export class CampaignsService {
     async remove(id: string, tenantId: string) {
         const campaign = await this.findOne(id, tenantId);
         if (campaign) {
+            // Manually delete leads first to ensure no foreign key issues
+            await this.leadRepository.delete({ campaignId: id });
             return this.campaignRepository.remove(campaign);
         }
     }

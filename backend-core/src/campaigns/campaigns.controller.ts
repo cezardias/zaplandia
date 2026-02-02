@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { CampaignsService } from './campaigns.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CampaignStatus } from './entities/campaign.entity';
@@ -26,6 +26,11 @@ export class CampaignsController {
     @Get('funnels')
     getFunnels(@Request() req) {
         return this.campaignsService.getContactLists(req.user.tenantId);
+    }
+
+    @Delete('funnels/:id')
+    deleteFunnel(@Request() req, @Param('id') id: string) {
+        return this.campaignsService.removeContactList(id, req.user.tenantId);
     }
 
     @Get(':id')
