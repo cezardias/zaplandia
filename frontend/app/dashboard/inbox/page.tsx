@@ -37,6 +37,8 @@ interface Message {
     createdAt: string;
     mediaUrl?: string;
     mediaType?: string;
+    mediaMimeType?: string;
+    mediaFileName?: string;
 }
 
 export default function OmniInboxPage() {
