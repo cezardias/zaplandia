@@ -144,7 +144,7 @@ export default function NewCampaignPage() {
                 body: JSON.stringify({
                     baseMessage: formData.message || "Olá, gostaria de apresentar nossa oferta.",
                     prompt: aiPrompt,
-                    count: 5
+                    count: 10
                 })
             });
             if (res.ok) {

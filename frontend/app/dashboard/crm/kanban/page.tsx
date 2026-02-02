@@ -35,7 +35,7 @@ export default function KanbanPage() {
     const fetchContacts = async () => {
         if (!token) return;
         try {
-            const res = await fetch('/api/crm/chats', {
+            const res = await fetch('/api/crm/contacts', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
