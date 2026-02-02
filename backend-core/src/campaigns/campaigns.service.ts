@@ -62,7 +62,7 @@ export class CampaignsService {
                             name: l.name || 'Contato',
                             phoneNumber: String(l.phoneNumber || l.externalId || ''),
                             externalId: String(l.externalId || l.phoneNumber || '')
-                        })
+                        }, { forceStage: 'NOVO' })
                     ));
 
                     // 2. Create Campaign Leads

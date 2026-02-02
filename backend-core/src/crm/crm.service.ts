@@ -164,7 +164,7 @@ export class CrmService {
         return this.contactRepository.findOne({ where: { id: contactId } });
     }
 
-    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string }) {
+    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string }, options?: { forceStage?: string }) {
         const where: any[] = [];
         if (data.phoneNumber && data.phoneNumber !== '') where.push({ phoneNumber: data.phoneNumber, tenantId });
         if (data.externalId && data.externalId !== '') where.push({ externalId: data.externalId, tenantId });
@@ -200,6 +200,10 @@ export class CrmService {
             }
             if (data.phoneNumber && data.phoneNumber !== contact.phoneNumber) {
                 contact.phoneNumber = data.phoneNumber;
+                hasParamsToUpdate = true;
+            }
+            if (options?.forceStage && contact.stage !== options.forceStage) {
+                contact.stage = options.forceStage;
                 hasParamsToUpdate = true;
             }
             if (hasParamsToUpdate) {

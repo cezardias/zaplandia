@@ -91,6 +91,11 @@ export class WebhooksController {
                             });
                             await this.messageRepository.save(message);
 
+                            // Update Contact Stage on Reply
+                            if (contact.stage === 'NOVO' || contact.stage === 'LEAD' || contact.stage === 'SENT') {
+                                await this.crmService.updateContact(tenantId, contact.id, { stage: 'PRIMEIRO_CONTATO' });
+                            }
+
                             // Trigger n8n for AI Automation
                             await this.n8nService.triggerWebhook('default-tenant', {
                                 type: 'instagram.message',
@@ -211,6 +216,12 @@ export class WebhooksController {
                 });
                 await this.messageRepository.save(message);
                 this.logger.log(`Message saved successfully. ID: ${message.id}`);
+
+                // Update Contact Stage on Reply
+                if (contact.stage === 'NOVO' || contact.stage === 'LEAD' || contact.stage === 'SENT') {
+                    await this.crmService.updateContact(tenantId, contact.id, { stage: 'PRIMEIRO_CONTATO' });
+                    this.logger.log(`Updated contact ${contact.id} stage to PRIMEIRO_CONTATO due to reply`);
+                }
 
                 // Trigger n8n for AI Automation (Uncommented and fixed)
                 try {
