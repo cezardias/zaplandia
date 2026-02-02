@@ -90,7 +90,11 @@ export class CampaignsService {
             take: 10000 // Limit to avoid memory crash, or handle standard pagination/chunks
         });
 
-        if (leads.length === 0) throw new Error('Não há leads pendentes para iniciar.');
+        if (!leads || leads.length === 0) throw new Error('Não há leads pendentes para iniciar.');
+
+        // Update status to RUNNING immediately to avoid race conditions with the worker
+        campaign.status = CampaignStatus.RUNNING;
+        await this.campaignRepository.save(campaign);
 
         this.logger.log(`[MOTOR] Iniciando campanha ${id} (${campaign.name}). Enfileirando ${leads.length} leads...`);
 
@@ -123,9 +127,7 @@ export class CampaignsService {
         }
 
         this.logger.log(`[SUCESSO] Campanha ${id} iniciada com sucesso. O processamento começou.`);
-
-        campaign.status = CampaignStatus.RUNNING;
-        return this.campaignRepository.save(campaign);
+        return campaign;
     }
 
     async findAllByTenant(tenantId: string) {
