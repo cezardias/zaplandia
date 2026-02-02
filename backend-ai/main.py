@@ -46,12 +46,24 @@ def get_gemini_model(api_key: str, system_instruction: str):
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
     }
 
-    return genai.GenerativeModel(
-        model_name="gemini-1.5-flash-latest",
-        generation_config=generation_config,
-        safety_settings=safety_settings,
-        system_instruction=system_instruction
-    )
+    model_name = "gemini-1.5-flash" # Use standard stable name
+    
+    try:
+        return genai.GenerativeModel(
+            model_name=model_name,
+            generation_config=generation_config,
+            safety_settings=safety_settings,
+            system_instruction=system_instruction
+        )
+    except Exception as e:
+        print(f"Erro ao instanciar modelo {model_name}: {str(e)}")
+        # Log available models to help debug
+        try:
+            models = [m.name for m in genai.list_models()]
+            print(f"Modelos disponíveis para esta chave: {models}")
+        except:
+            pass
+        return None
 
 @app.post("/v1/chat")
 async def chat(request: AIRequest):
