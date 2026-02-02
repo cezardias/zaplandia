@@ -219,16 +219,16 @@ export class CrmService {
         const total = contacts.length;
         const trabalhadlos = contacts.filter(c => c.stage !== 'NOVO' && c.stage !== 'LEAD').length;
         const naoTrabalhados = total - trabalhadlos;
-        const ganhos = contacts.filter(c => c.stage === 'WON').length;
-        const perdidos = contacts.filter(c => c.stage === 'LOST').length;
+        const ganhos = contacts.filter(c => c.stage === 'CONVERTIDO').length;
+        const perdidos = contacts.filter(c => c.stage === 'NOT_INTERESTED').length; // Mapping Not Interested as "Lost" for stats purposes
         const conversao = total > 0 ? ((ganhos / total) * 100).toFixed(1) : '0.0';
 
         const funnelData = [
             { name: 'Novo', value: contacts.filter(c => c.stage === 'NOVO' || c.stage === 'LEAD').length, fill: '#0088FE' },
-            { name: 'Em Pesquisa', value: contacts.filter(c => c.stage === 'EM_PESQUISA').length, fill: '#00C49F' },
-            { name: 'Primeiro Contato', value: contacts.filter(c => c.stage === 'PRIMEIRO_CONTATO' || c.stage === 'CONTACTED').length, fill: '#FFBB28' },
-            { name: 'Follow-up', value: contacts.filter(c => c.stage === 'FOLLOW_UP').length, fill: '#FF8042' },
-            { name: 'Reunião', value: contacts.filter(c => c.stage === 'REUNIAO').length, fill: '#8884d8' },
+            { name: 'Contatados', value: contacts.filter(c => c.stage === 'CONTACTED').length, fill: '#00C49F' },
+            { name: 'Em Negociação', value: contacts.filter(c => c.stage === 'NEGOTIATION').length, fill: '#FFBB28' },
+            { name: 'Interessados', value: contacts.filter(c => c.stage === 'INTERESTED').length, fill: '#FF8042' },
+            { name: 'Convertido', value: contacts.filter(c => c.stage === 'CONVERTIDO').length, fill: '#8884d8' },
         ].filter(d => d.value > 0);
 
         return {

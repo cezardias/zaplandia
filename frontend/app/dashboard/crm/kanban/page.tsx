@@ -6,12 +6,11 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Loader2, MoreHorizontal, MessageSquare, Plus } from 'lucide-react';
 
 const STAGES = {
-    'LEAD': 'Novos Leads',
+    'NOVO': 'Novos Leads',
     'CONTACTED': 'Contatados',
+    'NEGOTIATION': 'Em Negociação',
     'INTERESTED': 'Interessados',
-    'PROPOSAL': 'Em Proposta',
-    'WON': 'Ganho',
-    'LOST': 'Perdido',
+    'CONVERTIDO': 'Convertido',
     'NOT_INTERESTED': 'Não Interessado'
 };
 

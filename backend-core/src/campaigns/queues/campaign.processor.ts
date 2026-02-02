@@ -61,8 +61,8 @@ export class CampaignProcessor {
 
             // Update Contact Pipeline Stage (Automated)
             if (contactId) {
-                await this.crmService.updateContact(tenantId, contactId, { stage: 'PRIMEIRO_CONTATO' });
-                this.logger.log(`Updated contact ${contactId} stage to PRIMEIRO_CONTATO`);
+                await this.crmService.updateContact(tenantId, contactId, { stage: 'CONTACTED' });
+                this.logger.log(`Updated contact ${contactId} stage to CONTACTED`);
             }
 
             // Increment Counter
