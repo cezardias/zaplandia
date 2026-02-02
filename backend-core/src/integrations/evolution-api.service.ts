@@ -53,8 +53,8 @@ export class EvolutionApiService {
 
                     // Auto-configure Webhook if connected
                     if (statusRes.data?.instance?.state === 'open') {
-                        // TODO: Use correct public URL from env or config
-                        const webhookUrl = `${process.env.API_URL || 'https://api.zaplandia.com.br'}/webhooks/evolution`;
+                        // Use internal URL for webhooks so Evolution can reach backend-core inside docker
+                        const webhookUrl = process.env.INTERNAL_WEBHOOK_URL || 'http://backend-core:3000/webhooks/evolution';
                         // Fire and forget webhook set to avoid latency
                         this.setWebhook(tenantId, name, webhookUrl).catch(err =>
                             this.logger.warn(`Failed to auto-set webhook for ${name}: ${err.message}`)
@@ -264,6 +264,7 @@ export class EvolutionApiService {
             const response = await axios.post(`${baseUrl}/message/sendText/${instanceName}`, payload, {
                 headers: { 'apikey': apiKey }
             });
+            this.logger.log(`Message sent result: ${JSON.stringify(response.data)}`);
             return response.data;
         } catch (error) {
             const errorData = error.response?.data || error.message;
