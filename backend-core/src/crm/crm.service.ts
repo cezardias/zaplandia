@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
@@ -178,7 +178,7 @@ export class CrmService {
                 // 3. Validation: If we still don't have a number, we cannot send
                 if (!targetNumber) {
                     this.logger.error(`No valid WhatsApp number found for contact ${contactId}`);
-                    throw new Error('Contato não possui número de WhatsApp válido vinculado (adicione um telefone ao contato).');
+                    throw new BadRequestException('Contato não possui número de WhatsApp válido vinculado (adicione um telefone ao contato).');
                 }
 
                 if (targetNumber) {
@@ -226,7 +226,8 @@ export class CrmService {
             } catch (err: any) {
                 this.logger.error(`Failed to send WhatsApp message: ${err.message}`);
                 // Throw error to notify frontend
-                throw new Error(`Falha no envio: ${err.message}`);
+                if (err instanceof BadRequestException) throw err;
+                throw new BadRequestException(`Falha no envio: ${err.message}`);
             }
         }
 
