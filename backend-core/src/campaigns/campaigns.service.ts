@@ -82,7 +82,9 @@ export class CampaignsService {
 
         if (leads.length === 0) throw new Error('Não há leads pendentes para iniciar.');
 
-        const DELAY_MS = 20 * 60 * 1000; // 20 mins stagger
+        this.logger.log(`Starting campaign ${id} for tenant ${tenantId}. Queuing ${leads.length} leads...`);
+
+        const DELAY_MS = 30 * 1000; // 30 seconds stagger (additive to random processor delay)
 
         // Add to Queue
         await Promise.all(leads.map(async (lead, index) => {
