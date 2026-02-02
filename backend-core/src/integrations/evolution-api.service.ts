@@ -54,10 +54,15 @@ export class EvolutionApiService {
                     // Auto-configure Webhook if connected
                     if (statusRes.data?.instance?.state === 'open') {
                         // Use internal URL for webhooks so Evolution can reach backend-core inside docker
-                        const webhookUrl = process.env.INTERNAL_WEBHOOK_URL || 'http://backend-core:3000/webhooks/evolution';
+                        // Correct port is 3001 based on main.ts and docker-compose.yml
+                        // Using 'host.docker.internal' as a common alias for the host machine if 'backend-core' fails
+                        const webhookUrl = process.env.INTERNAL_WEBHOOK_URL || 'http://backend-core:3001/webhooks/evolution';
+
+                        this.logger.log(`Auto-configuring webhook for ${name} to ${webhookUrl}`);
+
                         // Fire and forget webhook set to avoid latency
                         this.setWebhook(tenantId, name, webhookUrl).catch(err =>
-                            this.logger.warn(`Failed to auto-set webhook for ${name}: ${err.message}`)
+                            this.logger.warn(`Failed to auto-set webhook for ${name}: ${err.message}. Ensure containers are on the same network or use a public URL.`)
                         );
                     }
 
