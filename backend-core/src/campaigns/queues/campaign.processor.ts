@@ -2,9 +2,11 @@ import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
 import { EvolutionApiService } from '../../integrations/evolution-api.service';
+import { IntegrationsService } from '../../integrations/integrations.service';
 import { CrmService } from '../../crm/crm.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CampaignLead, LeadStatus } from '../entities/campaign-lead.entity';
+import { Campaign } from '../entities/campaign.entity';
 import { Repository } from 'typeorm';
 
 @Processor('campaign-queue')
@@ -16,9 +18,12 @@ export class CampaignProcessor {
 
     constructor(
         private readonly integrationsService: IntegrationsService,
+        private readonly evolutionApiService: EvolutionApiService,
         private readonly crmService: CrmService,
         @InjectRepository(Campaign)
         private campaignRepository: Repository<Campaign>,
+        @InjectRepository(CampaignLead)
+        private leadRepository: Repository<CampaignLead>,
     ) { }
 
     @Process('send-message')
