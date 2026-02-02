@@ -29,6 +29,23 @@ export class CampaignProcessor {
     @Process('send-message')
     async handleSendMessage(job: Job) {
         const { leadId, contactId, campaignId, externalId, message, instanceName, tenantId, variations, leadName } = job.data;
+
+        // 0. Campaign Status Check (Critical for Pausing)
+        if (campaignId) {
+            const campaign = await this.campaignRepository.findOne({ where: { id: campaignId } });
+            if (!campaign || campaign.status === 'failed' || campaign.status === 'completed') {
+                this.logger.log(`[CANCELADO] Job abortado: Campanha ${campaignId} está ${campaign?.status || 'inexistente'}.`);
+                return; // Mark as done, don't re-queue
+            }
+            if (campaign.status === 'paused') {
+                // If paused, move the job 5 minutes into the future to stop log spam and wait for resume
+                const waitTime = 5 * 60 * 1000;
+                this.logger.log(`[PAUSADO] Campanha ${campaignId} está em pausa. Reprogramando contato ${externalId} para daqui a 5 min.`);
+                await (job as any).moveToDelayed(Date.now() + waitTime);
+                return;
+            }
+        }
+
         this.logger.log(`[CAMPANHA] Processando lead ${leadName || leadId} (${externalId})`);
 
         if (!instanceName || (!message && (!variations || variations.length === 0))) {
@@ -44,24 +61,14 @@ export class CampaignProcessor {
             return;
         }
 
-        // Fetch campaign to check status
-        if (campaignId) {
-            const campaign = await this.campaignRepository.findOne({ where: { id: campaignId } });
-            if (campaign && campaign.status === 'paused') {
-                this.logger.warn(`[PAUSADO] Campanha ${campaignId} está pausada. Retentando em 1 min...`);
-                await (job as any).moveToDelayed(60000); // Check again in 1 min
-                return;
-            }
-        }
+        // 2. Random Delay (Organic Human Staggering: 30s to 5min)
+        // User requested: 30s, 2m, 5m, 1m variations.
+        // We use a wide random spread: 30,000ms to 300,000ms
+        const minDelay = 30 * 1000;
+        const maxDelay = 300 * 1000;
+        const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
 
-        // 2. Random Delay (Anti-Ban)
-        // If it's the first few messages, we can be a bit faster, otherwise standard stagger
-        const isFirstBatch = (job.id as any) < 5;
-        const randomDelay = isFirstBatch
-            ? Math.floor(Math.random() * 5000) + 1000  // 1-5s for first ones
-            : Math.floor(Math.random() * 15000) + 15000; // 15-30s standard stagger
-
-        this.logger.log(`[AGUARDANDO] Esperando ${Math.round(randomDelay / 1000)}s para evitar banimento no WhatsApp...`);
+        this.logger.log(`[AGUARDANDO] Intervalo orgânico (Anti-Ban): Esperando ${Math.round(randomDelay / 1000)}s antes do disparo...`);
         await new Promise(resolve => setTimeout(resolve, randomDelay));
 
         // 3. AI Variation & Personalization Logic

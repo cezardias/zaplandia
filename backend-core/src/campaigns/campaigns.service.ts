@@ -98,7 +98,7 @@ export class CampaignsService {
 
         this.logger.log(`[MOTOR] Iniciando campanha ${id} (${campaign.name}). Enfileirando ${leads.length} leads...`);
 
-        const STAGGER_MS = 15 * 1000; // 15 seconds stagger (faster but safe)
+        const STAGGER_MS = 30 * 1000; // 30 seconds stagger (more spaced)
         const CHUNK_SIZE = 50; // Process in chunks to avoid blocking everything
 
         for (let i = 0; i < leads.length; i += CHUNK_SIZE) {
