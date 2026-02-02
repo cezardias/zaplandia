@@ -193,8 +193,8 @@ export class WebhooksController {
 
             this.logger.log(`WhatsApp (${isOutbound ? 'OUT' : 'IN'}) from ${pushName} (${remoteJid}): ${content}`);
 
-            // Remove @s.whatsapp.net for externalId
-            const externalId = remoteJid.replace('@s.whatsapp.net', '');
+            // Clean remoteJid for externalId (strip @s.whatsapp.net, @lid, etc.)
+            const externalId = remoteJid.split('@')[0];
 
             try {
                 // Find or create contact
@@ -220,6 +220,11 @@ export class WebhooksController {
                 });
                 await this.messageRepository.save(message);
                 this.logger.log(`Message saved successfully. ID: ${message.id}`);
+
+                // Update contact meta info to show in inbox
+                contact.lastMessage = content;
+                contact.updatedAt = new Date(); // Explicitly touch updatedAt
+                await this.contactRepository.save(contact);
 
                 // Update Contact Stage on Reply
                 if (['NOVO', 'LEAD', 'CONTACTED', 'SENT'].includes(contact.stage || '')) {
