@@ -107,6 +107,21 @@ export default function NewCampaignPage() {
         }
     };
 
+    useEffect(() => {
+        const funnelId = new URLSearchParams(window.location.search).get('funnelId');
+        if (funnelId && availableFunnels.length > 0) {
+            const funnel = availableFunnels.find(f => f.id === funnelId);
+            if (funnel) {
+                setFormData(prev => ({
+                    ...prev,
+                    audience: 'saved_funnel',
+                    jsonLeads: funnel.contacts
+                }));
+                setStep(3); // Go straight to step 3
+            }
+        }
+    }, [availableFunnels]);
+
     const handleCreate = async () => {
         setIsLoading(true);
         try {
@@ -123,7 +138,7 @@ export default function NewCampaignPage() {
                     messageTemplate: formData.message,
                     useExistingContacts: formData.audience === 'existing' || formData.audience === 'remarketing',
                     filters: formData.audience === 'remarketing' ? { stage: 'NOT_INTERESTED' } : {},
-                    leads: formData.audience === 'json' ? formData.jsonLeads : undefined,
+                    leads: (formData.audience === 'json' || formData.audience === 'saved_funnel') ? formData.jsonLeads : undefined,
                     variations: formData.variations // Send variations to backend
                 })
             });
