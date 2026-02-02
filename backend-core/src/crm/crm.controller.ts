@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, Query, Delete } from '@nestjs/common';
 import { CrmService } from './crm.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -40,5 +40,10 @@ export class CrmController {
     @Patch('chats/:contactId')
     updateContact(@Request() req, @Param('contactId') contactId: string, @Body() body: any) {
         return this.crmService.updateContact(req.user.tenantId, contactId, body);
+    }
+
+    @Delete('contacts/all')
+    deleteAllContacts(@Request() req) {
+        return this.crmService.removeAllContacts(req.user.tenantId);
     }
 }

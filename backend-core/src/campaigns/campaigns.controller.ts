@@ -33,6 +33,11 @@ export class CampaignsController {
         return this.campaignsService.removeContactList(id, req.user.tenantId);
     }
 
+    @Patch('funnels/:id')
+    updateFunnel(@Request() req, @Param('id') id: string, @Body() body: any) {
+        return this.campaignsService.updateContactList(id, req.user.tenantId, body);
+    }
+
     @Get(':id')
     findOne(@Request() req, @Param('id') id: string) {
         return this.campaignsService.findOne(id, req.user.tenantId);

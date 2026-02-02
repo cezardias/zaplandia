@@ -213,6 +213,13 @@ export class CrmService {
         return contact;
     }
 
+    async removeAllContacts(tenantId: string) {
+        this.logger.warn(`Deleting ALL contacts for tenant ${tenantId}`);
+        // Manually delete related messages first to avoid FK constraints
+        await this.messageRepository.delete({ tenantId });
+        return this.contactRepository.delete({ tenantId });
+    }
+
     async getDashboardStats(tenantId: string) {
         const contacts = await this.contactRepository.find({ where: { tenantId } });
 

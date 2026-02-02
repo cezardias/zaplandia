@@ -47,6 +47,18 @@ export class CampaignsService {
         }
     }
 
+    async updateContactList(id: string, tenantId: string, data: any) {
+        const list = await this.contactListRepository.findOne({ where: { id, tenantId } });
+        if (list) {
+            list.name = data.name;
+            if (data.contacts) {
+                list.contacts = data.contacts;
+            }
+            return this.contactListRepository.save(list);
+        }
+        return null;
+    }
+
     async findAllByTenant(tenantId: string) {
         return this.campaignRepository.find({
             where: { tenantId },
@@ -84,21 +96,27 @@ export class CampaignsService {
                     const chunk = leadsData.slice(i, i + chunkSize);
 
                     // 1. Ensure Contacts exist (or create as NOVO)
-                    const contacts = await Promise.all(chunk.map(l =>
-                        this.crmService.ensureContact(tenantId, {
-                            name: l.name || 'Contato',
-                            phoneNumber: String(l.phoneNumber || l.externalId || ''),
-                            externalId: String(l.externalId || l.phoneNumber || '')
-                        }, { forceStage: 'NOVO' })
-                    ));
+                    const contacts = await Promise.all(chunk.map(l => {
+                        const name = l.name || l.nome || l.Name || l.Nome || 'Contato';
+                        const phone = String(l.phoneNumber || l.telefone || l.phone || l.celular || l.externalId || '').replace(/\D/g, '');
+                        return this.crmService.ensureContact(tenantId, {
+                            name: name,
+                            phoneNumber: phone,
+                            externalId: String(l.externalId || phone)
+                        }, { forceStage: 'NOVO' });
+                    }));
 
                     // 2. Create Campaign Leads
-                    const leadsToCreate = chunk.map(l => this.leadRepository.create({
-                        name: l.name || 'Contato',
-                        externalId: String(l.externalId || l.phoneNumber || ''),
-                        campaignId: campaignId,
-                        status: LeadStatus.PENDING
-                    }));
+                    const leadsToCreate = chunk.map(l => {
+                        const name = l.name || l.nome || l.Name || l.Nome || 'Contato';
+                        const phone = String(l.phoneNumber || l.telefone || l.phone || l.celular || l.externalId || '').replace(/\D/g, '');
+                        return this.leadRepository.create({
+                            name: name,
+                            externalId: String(l.externalId || phone),
+                            campaignId: campaignId,
+                            status: LeadStatus.PENDING
+                        });
+                    });
 
                     const savedLeads = await this.leadRepository.save(leadsToCreate);
                     leadsToProcess.push(...savedLeads);
