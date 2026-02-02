@@ -127,8 +127,8 @@ async def chat(request: AIRequest):
             print("Tentando fallback via REST API...")
             import requests
             
-            # Try 2.0-flash then 1.5-flash
-            for model_name in ["gemini-2.0-flash", "gemini-1.5-flash"]:
+            # Try latest models as suggested by user
+            for model_name in ["gemini-3-flash-preview", "gemini-2.0-flash", "gemini-1.5-flash"]:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={request.api_key if request.api_key else GLOBAL_GEMINI_KEY}"
                 payload = {
                     "contents": [{"parts": [{"text": f"{request.system_instruction}\n\n{request.prompt}"}]}]
