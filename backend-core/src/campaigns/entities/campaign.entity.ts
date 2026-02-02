@@ -34,6 +34,9 @@ export class Campaign {
     @Column({ type: 'text', nullable: true })
     integrationId: string;
 
+    @Column({ type: 'jsonb', nullable: true })
+    variations: string[];
+
     @ManyToOne(() => Tenant)
     tenant: Tenant;
 
