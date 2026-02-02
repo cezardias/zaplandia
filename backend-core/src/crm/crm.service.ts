@@ -156,7 +156,11 @@ export class CrmService {
         } else if (provider === 'whatsapp') {
             try {
                 const contact = await this.contactRepository.findOne({ where: { id: contactId } });
-                if (contact?.externalId) {
+
+                // FIX: Prioritize phoneNumber for WhatsApp, as externalId might be a Facebook/Insta ID.
+                const targetNumber = contact?.phoneNumber || contact?.externalId;
+
+                if (targetNumber) {
                     // Fetch active instance for this tenant
                     const instances = await this.evolutionApiService.listInstances(tenantId);
                     // Find first connected instance or fallback to first available
@@ -167,7 +171,7 @@ export class CrmService {
 
                         if (media && media.url) {
                             // MEDIA SENDING LOGIC
-                            this.logger.log(`Sending WhatsApp MEDIA to ${contact.externalId} via ${instanceName}`);
+                            this.logger.log(`Sending WhatsApp MEDIA to ${targetNumber} via ${instanceName}`);
 
                             // 1. Resolve local path from URL
                             // URL format: /uploads/filename.ext -> ./uploads/filename.ext
@@ -178,7 +182,7 @@ export class CrmService {
                                 const fileBuffer = fs.readFileSync(filePath);
                                 const base64 = fileBuffer.toString('base64');
 
-                                await this.evolutionApiService.sendMedia(tenantId, instanceName, contact.externalId, {
+                                await this.evolutionApiService.sendMedia(tenantId, instanceName, targetNumber, {
                                     type: media.type || 'image', // default
                                     mimetype: media.mimetype || '',
                                     base64: base64,
@@ -187,12 +191,12 @@ export class CrmService {
                                 });
                             } else {
                                 this.logger.error(`Media file not found at ${filePath}. Sending text only.`);
-                                await this.evolutionApiService.sendText(tenantId, instanceName, contact.externalId, content);
+                                await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
                             }
                         } else {
                             // TEXT ONLY
-                            this.logger.log(`Sending WhatsApp message to ${contact.externalId} via ${instanceName}`);
-                            await this.evolutionApiService.sendText(tenantId, instanceName, contact.externalId, content);
+                            this.logger.log(`Sending WhatsApp message to ${targetNumber} via ${instanceName}`);
+                            await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
                         }
                     } else {
                         this.logger.warn(`No active WhatsApp instance found for tenant ${tenantId}`);
@@ -200,6 +204,8 @@ export class CrmService {
                 }
             } catch (err: any) {
                 this.logger.error(`Failed to send WhatsApp message: ${err.message}`);
+                // Throw error to notify frontend
+                throw new Error(`Falha no envio: ${err.message}`);
             }
         }
 
