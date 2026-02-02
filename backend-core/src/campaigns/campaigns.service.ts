@@ -162,6 +162,19 @@ export class CampaignsService {
         return 'Contato';
     }
 
+    // Helper to normalize phone numbers (standardize to E.164-like)
+    private normalizePhoneNumber(raw: string): string {
+        let sanitized = raw.replace(/\D/g, ''); // Remove non-digits
+        if (sanitized.startsWith('0')) sanitized = sanitized.substring(1); // Strip leading zero
+
+        // If 10 or 11 digits, assume Brazil and prepend 55
+        if (sanitized.length === 10 || sanitized.length === 11) {
+            sanitized = '55' + sanitized;
+        }
+
+        return sanitized;
+    }
+
     // Helper to extract phone robustly
     private extractPhoneNumber(l: any): string {
         const phoneKeys = [
@@ -172,9 +185,8 @@ export class CampaignsService {
         // 1. Try explicit search with case-insensitivity
         const foundKey = Object.keys(l).find(k => phoneKeys.some(pk => pk.toLowerCase() === k.toLowerCase().trim()));
         if (foundKey && l[foundKey]) {
-            const raw = String(l[foundKey]).trim();
-            const sanitized = raw.replace(/\D/g, '');
-            if (sanitized.length >= 8) return sanitized;
+            const normalized = this.normalizePhoneNumber(String(l[foundKey]));
+            if (normalized.length >= 8) return normalized;
         }
 
         // 2. Fallback to any key that contains "tel" or "phone" or "cel" or "zap"
@@ -183,8 +195,8 @@ export class CampaignsService {
             return lowKey.includes('tel') || lowKey.includes('phone') || lowKey.includes('cel') || lowKey.includes('zap') || lowKey.includes('num');
         });
         if (looseKey && l[looseKey]) {
-            const sanitized = String(l[looseKey]).replace(/\D/g, '');
-            if (sanitized.length >= 8) return sanitized;
+            const normalized = this.normalizePhoneNumber(String(l[looseKey]));
+            if (normalized.length >= 8) return normalized;
         }
 
         return '';

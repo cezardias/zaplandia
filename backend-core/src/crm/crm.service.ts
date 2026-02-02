@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { Contact, Message } from './entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { N8nService } from '../integrations/n8n.service';
@@ -35,16 +35,34 @@ export class CrmService {
 
         // Auto-clean JIDs and resolve names from CampaignLead on the fly
         return Promise.all(contacts.map(async c => {
-            const nameIsBad = !c.name || c.name.includes('@s.whatsapp.net') || c.name === 'Sistema' || c.name === 'WhatsApp User' || c.name.includes('Contato ');
+            const nameIsBad = !c.name || c.name.includes('@s.whatsapp.net') || c.name === 'Sistema' || c.name === 'WhatsApp User' || c.name.startsWith('Contato ') || c.name.startsWith('Novo Contato ');
 
             if (nameIsBad && c.externalId) {
                 // Try to find a better name in leads
-                const lead = await this.leadRepository.findOne({
+                // 1. Exact match first
+                let lead = await this.leadRepository.findOne({
                     where: { externalId: c.externalId, campaign: { tenantId } },
                     relations: ['campaign'],
                     order: { createdAt: 'DESC' }
                 });
+
+                // 2. Suffix match (last 8 digits) if exact fails
+                if (!lead && c.externalId.length >= 8) {
+                    const suffix = c.externalId.slice(-8);
+                    lead = await this.leadRepository.findOne({
+                        where: {
+                            externalId: Like(`%${suffix}`),
+                            campaign: { tenantId }
+                        },
+                        relations: ['campaign'],
+                        order: { createdAt: 'DESC' }
+                    });
+                }
+
                 if (lead && lead.name) {
+                    // Auto-healing: update contact record permanentely if bad name
+                    this.logger.log(`Auto-healing name for contact ${c.externalId}: ${c.name} -> ${lead.name}`);
+                    await this.contactRepository.update(c.id, { name: lead.name });
                     return { ...c, name: lead.name };
                 }
             }
@@ -74,10 +92,6 @@ export class CrmService {
 
         return query.orderBy('contact.createdAt', 'DESC').getMany();
     }
-
-
-
-
 
     async findOneByExternalId(tenantId: string, externalId: string) {
         return this.contactRepository.findOne({ where: { tenantId, externalId } });

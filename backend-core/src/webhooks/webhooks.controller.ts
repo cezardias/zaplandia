@@ -3,7 +3,7 @@ import { CrmService } from '../crm/crm.service';
 import { AiService } from '../integrations/ai.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { N8nService } from '../integrations/n8n.service';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { Contact, Message } from '../crm/entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -208,7 +208,8 @@ export class WebhooksController {
                 const isBadName = !resolvedName || resolvedName === 'Sistema' || resolvedName === 'WhatsApp User' || (resolvedName && resolvedName.includes('@')) || (resolvedName && /^\d+$/.test(resolvedName));
 
                 if (isBadName) {
-                    const lead = await this.leadRepository.findOne({
+                    // Try exact match first
+                    let lead = await this.leadRepository.findOne({
                         where: {
                             externalId,
                             campaign: { tenantId }
@@ -216,6 +217,20 @@ export class WebhooksController {
                         relations: ['campaign'],
                         order: { createdAt: 'DESC' }
                     });
+
+                    // Fallback to suffix matching (last 8 digits) if exact match fails
+                    if (!lead && externalId.length >= 8) {
+                        const suffix = externalId.slice(-8);
+                        lead = await this.leadRepository.findOne({
+                            where: {
+                                externalId: Like(`%${suffix}`),
+                                campaign: { tenantId }
+                            },
+                            relations: ['campaign'],
+                            order: { createdAt: 'DESC' }
+                        });
+                    }
+
                     if (lead && lead.name) resolvedName = lead.name;
                 }
 
@@ -230,11 +245,11 @@ export class WebhooksController {
                     await this.contactRepository.save(contact);
                 } else {
                     // "Healing" logic: overwrite if current name is a JID/system and we found a real name
-                    const currentIsBad = !contact.name || contact.name.includes('@') || contact.name === contact.externalId;
-                    const newIsBetter = resolvedName && !resolvedName.includes('@') && resolvedName !== 'Sistema';
+                    const currentIsBad = !contact.name || contact.name.includes('@') || contact.name === contact.externalId || contact.name.startsWith('Novo Contato ') || contact.name.startsWith('Contato ');
+                    const newIsBetter = resolvedName && !resolvedName.includes('@') && resolvedName !== 'Sistema' && !resolvedName.startsWith('Novo Contato ') && !resolvedName.startsWith('Contato ');
 
                     if (currentIsBad && newIsBetter) {
-                        this.logger.log(`Updating JID name to human name: ${contact.name} -> ${resolvedName}`);
+                        this.logger.log(`Updating JID/Generic name to human name: ${contact.name} -> ${resolvedName}`);
                         contact.name = resolvedName;
                         await this.contactRepository.save(contact);
                     }
@@ -262,7 +277,7 @@ export class WebhooksController {
                     this.logger.log(`Updated contact ${contact.id} stage to NEGOTIATION due to reply`);
                 }
 
-                // Trigger n8n for AI Automation (Uncommented and fixed)
+                // Trigger n8n for AI Automation
                 try {
                     await this.n8nService.triggerWebhook(tenantId, {
                         type: 'whatsapp.message',
