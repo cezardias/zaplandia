@@ -17,9 +17,28 @@ export class CampaignsService {
         private campaignRepository: Repository<Campaign>,
         @InjectRepository(CampaignLead)
         private leadRepository: Repository<CampaignLead>,
+        @InjectRepository(ContactList)
+        private contactListRepository: Repository<ContactList>,
         private crmService: CrmService,
         @InjectQueue('campaign-queue') private campaignQueue: Queue,
     ) { }
+
+    // Contact List (Funnel) Methods
+    async createContactList(tenantId: string, name: string, contacts: any[]) {
+        const list = this.contactListRepository.create({
+            tenantId,
+            name,
+            contacts
+        });
+        return this.contactListRepository.save(list);
+    }
+
+    async getContactLists(tenantId: string) {
+        return this.contactListRepository.find({
+            where: { tenantId },
+            order: { createdAt: 'DESC' }
+        });
+    }
 
     async findAllByTenant(tenantId: string) {
         return this.campaignRepository.find({
