@@ -131,6 +131,31 @@ export class CampaignsService {
         });
     }
 
+    // Helper to extract name robustly
+    private extractLeadName(l: any): string {
+        const nameKeys = ['title', 'titulo', 'name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome', 'Razão Social', 'razao_social'];
+
+        // 1. Try explicit search with case-insensitivity
+        const foundKey = Object.keys(l).find(k => nameKeys.some(nk => nk.toLowerCase() === k.toLowerCase().trim()));
+        if (foundKey && l[foundKey] && String(l[foundKey]).trim().toLowerCase() !== 'contato' && String(l[foundKey]).trim() !== '') {
+            return String(l[foundKey]).trim();
+        }
+
+        // 2. Try common fallbacks if no explicit key found or if it was "contato"
+        const fallback = l.name || l.nome || l.Name || l.Nome;
+        if (fallback && String(fallback).trim().toLowerCase() !== 'contato' && String(fallback).trim() !== '') {
+            return String(fallback).trim();
+        }
+
+        // 3. Last resort: any key that contains "nome" or "name"
+        const looseKey = Object.keys(l).find(k => k.toLowerCase().includes('nome') || k.toLowerCase().includes('name'));
+        if (looseKey && l[looseKey] && String(looseKey).trim() !== '') {
+            return String(l[looseKey]).trim();
+        }
+
+        return 'Contato';
+    }
+
     // Helper to extract phone robustly
     private extractPhoneNumber(l: any): string {
         const phoneKeys = [
