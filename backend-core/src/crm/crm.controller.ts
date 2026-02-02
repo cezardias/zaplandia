@@ -17,6 +17,11 @@ export class CrmController {
         return this.crmService.findAllByTenant(req.user.tenantId, { search: q });
     }
 
+    @Post('contacts')
+    createContact(@Request() req, @Body() body: any) {
+        return this.crmService.ensureContact(req.user.tenantId, body, { forceStage: 'NOVO' });
+    }
+
     @Get('chats')
     getChats(@Request() req) {
         return this.crmService.getRecentChats(req.user.tenantId, req.user.role);

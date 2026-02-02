@@ -43,7 +43,7 @@ export class Campaign {
     @Column()
     tenantId: string;
 
-    @OneToMany(() => CampaignLead, (lead) => lead.campaign)
+    @OneToMany(() => CampaignLead, (lead) => lead.campaign, { onDelete: 'CASCADE' })
     leads: CampaignLead[];
 
     @CreateDateColumn()

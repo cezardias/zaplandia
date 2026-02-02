@@ -134,6 +134,7 @@ export class CampaignsService {
                 await this.campaignQueue.add('send-message', {
                     leadId: lead.id,
                     contactId: contactId,
+                    campaignId: campaignId, // Added for status check
                     externalId: lead.externalId,
                     message: saved.messageTemplate,
                     instanceName: saved.integrationId,

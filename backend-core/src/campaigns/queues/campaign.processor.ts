@@ -15,17 +15,21 @@ export class CampaignProcessor {
     private readonly MAX_DAILY_LIMIT = 40;
 
     constructor(
-        private readonly evolutionApiService: EvolutionApiService,
-        @InjectRepository(CampaignLead)
-        private leadRepository: Repository<CampaignLead>,
+        private readonly integrationsService: IntegrationsService,
         private readonly crmService: CrmService,
+        @InjectRepository(Campaign)
+        private campaignRepository: Repository<Campaign>,
     ) { }
 
     @Process('send-message')
     async handleSendMessage(job: Job) {
-        const { leadId, contactId, externalId, message, instanceName, tenantId, variations } = job.data;
+        const { leadId, contactId, campaignId, externalId, message, instanceName, tenantId, variations } = job.data;
+        this.logger.log(`Processing job ${job.id} for lead ${leadId} (External: ${externalId})`);
 
-        this.logger.log(`Processing job ${job.id} for lead ${leadId} via ${instanceName}`);
+        if (!instanceName || (!message && (!variations || variations.length === 0))) {
+            this.logger.error(`Missing instanceName or message for job ${job.id}`);
+            return;
+        }
 
         // 1. Rate Limiting Check
         if (!this.checkRateLimit(instanceName)) {
@@ -35,9 +39,20 @@ export class CampaignProcessor {
             return;
         }
 
+        // Fetch campaign to check status
+        if (campaignId) {
+            const campaign = await this.campaignRepository.findOne({ where: { id: campaignId } });
+            if (campaign && campaign.status === 'paused') {
+                this.logger.warn(`Campaign ${campaignId} is paused. Re-queuing job ${job.id}`);
+                await job.moveToDelayed(60000); // Check again in 1 min
+                return;
+            }
+        }
+
         // 2. Random Delay (Anti-Ban)
-        // Delay between 1 min (60000ms) and 4 min (240000ms)
-        const randomDelay = Math.floor(Math.random() * (240000 - 60000 + 1)) + 60000;
+        // Staggering:
+        // Decrease random delay to 10-30 seconds for faster testing, but still anti-ban safe-ish
+        const randomDelay = Math.floor(Math.random() * 20000) + 10000; // Delay between 10s (10000ms) and 30s (30000ms)
         this.logger.log(`Waiting ${Math.round(randomDelay / 1000)}s before sending to ${externalId}...`);
         await new Promise(resolve => setTimeout(resolve, randomDelay));
 
