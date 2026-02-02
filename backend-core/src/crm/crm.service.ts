@@ -31,12 +31,16 @@ export class CrmService {
         });
     }
 
-    async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string }) {
+    async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string, campaignId?: string }) {
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
 
         if (filters?.stage) {
             query.andWhere('contact.stage = :stage', { stage: filters.stage });
+        }
+
+        if (filters?.campaignId) {
+            query.innerJoin('campaign_leads', 'cl', 'cl.externalId = contact.externalId AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
         }
 
         if (filters?.search) {
