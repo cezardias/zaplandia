@@ -256,10 +256,14 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            // Some Evolution versions expect a more nested structure, we'll try a very compatible one
+            // Evolution v2 requires 'textMessage' object, while v1 uses 'text'.
+            // We send both for maximum compatibility.
             const payload = {
-                number: number.includes('@') ? number : number, // Evolution handles raw number or jid
+                number: number.includes('@') ? number : number,
                 text: text,
+                textMessage: {
+                    text: text
+                },
                 delay: 1200,
                 linkPreview: true
             };
