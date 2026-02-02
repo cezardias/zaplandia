@@ -39,7 +39,7 @@ export class CrmService {
             query.andWhere('contact.stage = :stage', { stage: filters.stage });
         }
 
-        if (filters?.campaignId) {
+        if (filters?.campaignId && filters.campaignId !== '') {
             query.innerJoin('campaign_leads', 'cl', 'cl.externalId = contact.externalId AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
         }
 
@@ -236,7 +236,7 @@ export class CrmService {
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
 
-        if (campaignId) {
+        if (campaignId && campaignId !== '') {
             query.innerJoin('campaign_leads', 'cl', 'cl.externalId = contact.externalId AND cl.campaignId = :campaignId', { campaignId });
         }
 

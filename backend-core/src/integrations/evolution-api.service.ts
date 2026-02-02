@@ -108,7 +108,7 @@ export class EvolutionApiService {
         try {
             const response = await axios.post(`${baseUrl}/instance/create`, {
                 instanceName,
-                token: userId,
+                token: instanceName,
                 qrcode: true,
                 integration: "WHATSAPP-BAILEYS"
             }, {
