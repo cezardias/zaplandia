@@ -131,29 +131,32 @@ export class CampaignsService {
         });
     }
 
-    // Helper to extract name robustly
-    private extractLeadName(l: any): string {
-        const nameKeys = ['title', 'titulo', 'name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome', 'Razão Social', 'razao_social'];
+    // Helper to extract phone robustly
+    private extractPhoneNumber(l: any): string {
+        const phoneKeys = [
+            'phoneNumber', 'telefone', 'phone', 'celular', 'externalId', 'whatsapp', 'wa', 'number', 'numero', 'tel', 'cell',
+            'Phone', 'Telefone', 'Celular', 'Número', 'Numero', 'WhatsApp', 'Público', 'Publico'
+        ];
 
         // 1. Try explicit search with case-insensitivity
-        const foundKey = Object.keys(l).find(k => nameKeys.some(nk => nk.toLowerCase() === k.toLowerCase().trim()));
-        if (foundKey && l[foundKey] && String(l[foundKey]).trim().toLowerCase() !== 'contato' && String(l[foundKey]).trim() !== '') {
-            return String(l[foundKey]).trim();
+        const foundKey = Object.keys(l).find(k => phoneKeys.some(pk => pk.toLowerCase() === k.toLowerCase().trim()));
+        if (foundKey && l[foundKey]) {
+            const raw = String(l[foundKey]).trim();
+            const sanitized = raw.replace(/\D/g, '');
+            if (sanitized.length >= 8) return sanitized;
         }
 
-        // 2. Try common fallbacks if no explicit key found or if it was "contato"
-        const fallback = l.name || l.nome || l.Name || l.Nome;
-        if (fallback && String(fallback).trim().toLowerCase() !== 'contato' && String(fallback).trim() !== '') {
-            return String(fallback).trim();
+        // 2. Fallback to any key that contains "tel" or "phone" or "cel" or "zap"
+        const looseKey = Object.keys(l).find(k => {
+            const lowKey = k.toLowerCase();
+            return lowKey.includes('tel') || lowKey.includes('phone') || lowKey.includes('cel') || lowKey.includes('zap') || lowKey.includes('num');
+        });
+        if (looseKey && l[looseKey]) {
+            const sanitized = String(l[looseKey]).replace(/\D/g, '');
+            if (sanitized.length >= 8) return sanitized;
         }
 
-        // 3. Last resort: any key that contains "nome" or "name"
-        const looseKey = Object.keys(l).find(k => k.toLowerCase().includes('nome') || k.toLowerCase().includes('name'));
-        if (looseKey && l[looseKey] && String(l[looseKey]).trim() !== '') {
-            return String(l[looseKey]).trim();
-        }
-
-        return 'Contato';
+        return '';
     }
 
     async create(tenantId: string, data: any) {
@@ -166,6 +169,7 @@ export class CampaignsService {
                 integrationId: data.integrationId,
                 status: CampaignStatus.PAUSED, // Default to PAUSED
                 tenantId,
+                variations: data.variations
             };
 
             const campaign = this.campaignRepository.create(campaignData);
@@ -174,10 +178,8 @@ export class CampaignsService {
 
             // Handle Leads (Save to DB but DO NOT Queue yet)
             let leadsToProcess: CampaignLead[] = [];
-            const contactIdMap = new Map<string, string>();
 
             if (data.leads && Array.isArray(data.leads)) {
-                // ... (existing logic for JSON leads) ...
                 const leadsData = data.leads;
                 const chunkSize = 50;
 
@@ -187,25 +189,33 @@ export class CampaignsService {
                     // 1. Ensure Contacts exist
                     await Promise.all(chunk.map(l => {
                         const name = this.extractLeadName(l);
-                        const phone = String(l.phoneNumber || l.telefone || l.phone || l.celular || l.externalId || '').replace(/\D/g, '');
+                        const phone = this.extractPhoneNumber(l);
+                        if (!phone) return Promise.resolve(); // Skip missing phone
+
                         return this.crmService.ensureContact(tenantId, {
                             name: name,
                             phoneNumber: phone,
-                            externalId: String(l.externalId || phone)
+                            externalId: phone
                         }, { forceStage: 'NOVO' });
                     }));
 
                     // 2. Create Campaign Leads
                     const leadsToCreate = chunk.map(l => {
                         const name = this.extractLeadName(l);
-                        const phone = String(l.phoneNumber || l.telefone || l.phone || l.celular || l.externalId || '').replace(/\D/g, '');
+                        const phone = this.extractPhoneNumber(l);
+
+                        if (!phone) {
+                            this.logger.warn(`Lead sem telefone ignorado na importação: ${name}`);
+                            return null;
+                        }
+
                         return this.leadRepository.create({
                             name: name,
-                            externalId: String(l.externalId || phone),
+                            externalId: phone,
                             campaignId: campaignId,
                             status: LeadStatus.PENDING
                         });
-                    });
+                    }).filter(l => l !== null);
 
                     const savedLeads = await this.leadRepository.save(leadsToCreate);
                     leadsToProcess.push(...savedLeads);
@@ -213,17 +223,21 @@ export class CampaignsService {
                 this.logger.log(`Created ${leadsToProcess.length} leads for campaign ${campaignId}`);
 
             } else if (data.useExistingContacts) {
-                // ... (existing logic for CRM leads) ...
                 const filters = data.filters || {};
                 const contacts = await this.crmService.findAllByTenant(tenantId, filters);
 
                 if (contacts.length > 0) {
-                    const leadsToCreateEntities = contacts.map(c => this.leadRepository.create({
-                        name: c.name || 'Contato',
-                        externalId: c.externalId || c.phoneNumber || '',
-                        campaignId: campaignId,
-                        status: LeadStatus.PENDING
-                    }));
+                    const leadsToCreateEntities = contacts.map(c => {
+                        const phone = c.externalId || c.phoneNumber || '';
+                        if (!phone) return null;
+
+                        return this.leadRepository.create({
+                            name: c.name || 'Contato',
+                            externalId: phone,
+                            campaignId: campaignId,
+                            status: LeadStatus.PENDING
+                        });
+                    }).filter(l => l !== null);
 
                     const chunkSize = 500;
                     for (let i = 0; i < leadsToCreateEntities.length; i += chunkSize) {
