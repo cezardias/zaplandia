@@ -190,12 +190,20 @@ export class CrmService {
                         }
                     });
 
-                    // Match must have phone > 8 chars
-                    const healthyContact = duplicates.find(c => c.phoneNumber && c.phoneNumber.length > 8 && c.id !== contactId);
+                    // Match must have phone > 8 chars OR be a valid WhatsApp External Id (digits only, < 15 chars)
+                    const healthyContact = duplicates.find(c =>
+                        c.id !== contactId && (
+                            (c.phoneNumber && c.phoneNumber.length > 8) ||
+                            (c.provider === 'whatsapp' && c.externalId && c.externalId.length > 8 && c.externalId.length < 15 && /^\d+$/.test(c.externalId))
+                        )
+                    );
 
                     if (healthyContact) {
-                        this.logger.log(`Auto-healing phone from duplicate ${healthyContact.id} (${healthyContact.name}): ${healthyContact.phoneNumber}`);
-                        targetNumber = healthyContact.phoneNumber;
+                        // Use phoneNumber if available, otherwise externalId
+                        const recoveredNumber = healthyContact.phoneNumber || healthyContact.externalId;
+                        this.logger.log(`Auto-healing phone from duplicate ${healthyContact.id} (${healthyContact.name}): ${recoveredNumber}`);
+
+                        targetNumber = recoveredNumber;
                         // Persist the fix
                         await this.contactRepository.update(contactId, { phoneNumber: targetNumber });
                     }
