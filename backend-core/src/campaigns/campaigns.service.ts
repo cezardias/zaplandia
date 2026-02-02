@@ -67,11 +67,21 @@ export class CampaignsService {
         if (campaign.status === CampaignStatus.RUNNING) throw new Error('Campanha já está rodando.');
 
         // Resolve Integration to get real instance name
-        const integration = await this.integrationsService.findOne(campaign.integrationId, tenantId);
-        if (!integration) throw new Error('Integração não encontrada. Verifique se a instância ainda existe.');
+        let instanceName: string | undefined;
 
-        // Assuming the 'instanceName' is stored in credentials.instanceName (based on Evolution Service usage)
-        const instanceName = integration.credentials?.instanceName || integration.settings?.instanceName;
+        // Check if integrationId is a UUID (for DB integrations like Meta)
+        const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(campaign.integrationId);
+
+        if (isUuid) {
+            const integration = await this.integrationsService.findOne(campaign.integrationId, tenantId);
+            if (!integration) throw new Error('Integração não encontrada. Verifique se a instância ainda existe.');
+            instanceName = integration.credentials?.instanceName || integration.settings?.instanceName;
+        } else {
+            // If not UUID, it's likely a direct Evolution instance name
+            instanceName = campaign.integrationId;
+            this.logger.log(`Using direct instance name for campaign ${id}: ${instanceName}`);
+        }
+
         if (!instanceName) throw new Error('Nome da instância não encontrado na integração.');
 
         // Fetch PENDING leads
