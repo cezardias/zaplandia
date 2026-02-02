@@ -188,6 +188,12 @@ export default function OmniInboxPage() {
             });
 
             const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.message || 'Falha ao enviar mensagem');
+                throw new Error(data.message || 'Falha ao enviar');
+            }
+
             setMessages([...messages, data]);
             setNewMessage('');
             setUploadedMedia(null);
