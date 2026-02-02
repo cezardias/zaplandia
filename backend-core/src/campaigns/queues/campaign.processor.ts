@@ -59,6 +59,19 @@ export class CampaignProcessor {
             }
         }
 
+        // 0.2 CRM Stage Check (Prevent sending to already engaged contacts)
+        if (externalId && tenantId) {
+            const contact = await this.crmService.findOneByExternalId(tenantId, externalId);
+            if (contact && !['NOVO', 'LEAD'].includes(contact.stage || '')) {
+                this.logger.log(`[IGNORADO] Lead ${externalId} já está em estágio avançado (${contact.stage}). Abortando campanha para não queimar o contato.`);
+                if (leadToProcess) {
+                    leadToProcess.status = LeadStatus.SENT;
+                    await this.leadRepository.save(leadToProcess);
+                }
+                return;
+            }
+        }
+
         this.logger.log(`[CAMPANHA] Processando lead ${leadName || leadToProcess?.name || leadId} (${externalId})`);
 
         if (!instanceName || (!message && (!variations || variations.length === 0))) {
