@@ -84,41 +84,37 @@ export class CampaignsService {
 
         this.logger.log(`Starting campaign ${id} for tenant ${tenantId}. Queuing ${leads.length} leads...`);
 
-        const DELAY_MS = 30 * 1000; // 30 seconds stagger (additive to random processor delay)
+        const DELAY_MS = 15 * 1000; // 15 seconds stagger (faster but safe)
+        const CHUNK_SIZE = 50; // Process in chunks to avoid blocking everything
 
-        // Add to Queue
-        await Promise.all(leads.map(async (lead, index) => {
-            // Find contactID if needed - for now simpler logic assuming we just need to send
-            // Ideally we kept the mapping, but after a reload we might need to fetch Contacts to update their stage?
-            // The CampaignProcessor uses contactId to update CRM. We should join relation or fetch.
-            // Let's rely on looking up by externalId if contactId is missing, OR fetch with relations.
-            // Actually, lead doesn't store contact UUID directly unless we added a column? 
-            // We didn't see a contactId column in CampaignLead entity. 
-            // WAIT. CampaignProcessor expects contactId. 
-            // In create() we had a map. Now we lost it.
-            // We need to fetch Contact by externalId here (expensive) or just pass null and let processor decide?
-            // Processor: if (contactId) update stage.
-            // We should probably FIND the contact by externalId + tenantId to pass it.
-            const contact = await this.crmService.findOneByExternalId(tenantId, lead.externalId);
+        for (let i = 0; i < leads.length; i += CHUNK_SIZE) {
+            const chunk = leads.slice(i, i + CHUNK_SIZE);
+            await Promise.all(chunk.map(async (lead, chunkIndex) => {
+                const globalIndex = i + chunkIndex;
+                const delay = globalIndex * DELAY_MS;
 
-            const delay = index * DELAY_MS;
-            await this.campaignQueue.add('send-message', {
-                leadId: lead.id,
-                contactId: contact?.id,
-                leadName: lead.name,
-                campaignId: id,
-                externalId: lead.externalId,
-                message: campaign.messageTemplate,
-                instanceName: instanceName,
-                tenantId: tenantId,
-                variations: campaign.variations
-            }, {
-                removeOnComplete: true,
-                attempts: 3,
-                backoff: 5000,
-                delay: delay
-            });
-        }));
+                // We don't strictly need contactId here if we just want to send. 
+                // The processor will try to find it if it needs to update CRM stage.
+                // Removing the await findOneByExternalId here for massive performance gain.
+
+                await this.campaignQueue.add('send-message', {
+                    leadId: lead.id,
+                    leadName: lead.name,
+                    campaignId: id,
+                    externalId: lead.externalId,
+                    message: campaign.messageTemplate,
+                    instanceName: instanceName,
+                    tenantId: tenantId,
+                    variations: campaign.variations
+                }, {
+                    removeOnComplete: true,
+                    attempts: 3,
+                    backoff: 5000,
+                    delay: delay
+                });
+            }));
+            this.logger.log(`Queued chunk ${Math.floor(i / CHUNK_SIZE) + 1} of ${Math.ceil(leads.length / CHUNK_SIZE)}`);
+        }
 
         campaign.status = CampaignStatus.RUNNING;
         return this.campaignRepository.save(campaign);

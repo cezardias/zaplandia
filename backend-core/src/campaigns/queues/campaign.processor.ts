@@ -83,7 +83,7 @@ export class CampaignProcessor {
             return;
         }
 
-        // 4. Send Message
+        // 4. Send Message & Metadata Update
         try {
             await this.evolutionApiService.sendText(tenantId, instanceName, recipient, finalMessage);
 
@@ -93,9 +93,16 @@ export class CampaignProcessor {
             }
 
             // Update Contact Pipeline Stage (Automated)
-            if (contactId) {
-                await this.crmService.updateContact(tenantId, contactId, { stage: 'CONTACTED' });
-                this.logger.log(`Updated contact ${contactId} stage to CONTACTED`);
+            let cId = contactId;
+            if (!cId && tenantId && recipient) {
+                // Try to find the contact by externalId (phone) since we didn't pass it in the job
+                const contact = await this.crmService.findOneByExternalId(tenantId, recipient);
+                if (contact) cId = contact.id;
+            }
+
+            if (cId) {
+                await this.crmService.updateContact(tenantId, cId, { stage: 'CONTACTED' });
+                this.logger.log(`Updated contact ${cId} stage to CONTACTED`);
             }
 
             // Increment Counter
