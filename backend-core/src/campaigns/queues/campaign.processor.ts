@@ -61,18 +61,31 @@ export class CampaignProcessor {
         this.logger.log(`Waiting ${Math.round(randomDelay / 1000)}s before sending to ${externalId}...`);
         await new Promise(resolve => setTimeout(resolve, randomDelay));
 
-        // 3. AI Variation Logic
+        // 3. AI Variation & Personalization Logic
         let finalMessage = message;
+
+        // Pick variation if available
         if (variations && Array.isArray(variations) && variations.length > 0) {
-            // Pick random variation
             const randomIndex = Math.floor(Math.random() * variations.length);
             finalMessage = variations[randomIndex];
             this.logger.log(`Using variation ${randomIndex + 1} for ${externalId}`);
         }
 
+        // Apply personalization ({{name}}, {{nome}}, etc.)
+        const nameToUse = job.data.leadName || 'Contato';
+        finalMessage = finalMessage.replace(/{{(name|nome|NAME|NOME)}}/g, nameToUse);
+
+        // Ensure externalId is not empty (it should be the phone number)
+        const recipient = externalId || '';
+        if (!recipient) {
+            this.logger.error(`Lead ${leadId} has no externalId (phone). Aborting.`);
+            if (leadId) await this.leadRepository.update(leadId, { status: LeadStatus.FAILED, errorReason: 'Missing phone' });
+            return;
+        }
+
         // 4. Send Message
         try {
-            await this.evolutionApiService.sendText(tenantId, instanceName, externalId, finalMessage);
+            await this.evolutionApiService.sendText(tenantId, instanceName, recipient, finalMessage);
 
             // Update Lead Status
             if (leadId) {

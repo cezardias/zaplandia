@@ -103,6 +103,7 @@ export class CampaignsService {
             await this.campaignQueue.add('send-message', {
                 leadId: lead.id,
                 contactId: contact?.id,
+                leadName: lead.name,
                 campaignId: id,
                 externalId: lead.externalId,
                 message: campaign.messageTemplate,
