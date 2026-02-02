@@ -210,7 +210,7 @@ export default function EditCampaignPage() {
                         >
                             <option value="">Selecione...</option>
                             {waIntegrations.map(i => (
-                                <option key={i.id} value={i.id}>{i.id} ({i.provider})</option>
+                                <option key={i.id} value={i.id}>{i.name || (i.provider === 'evolution' ? 'WhatsApp' : 'WhatsApp Oficial')}</option>
                             ))}
                         </select>
                     </div>

@@ -381,7 +381,6 @@ export default function WhatsAppInstancesPage() {
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-lg">{getDisplayName(instanceName)}</p>
-                                                        <p className="text-xs text-gray-500 font-mono">{instanceName}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center space-x-3">

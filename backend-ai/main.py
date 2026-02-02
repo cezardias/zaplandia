@@ -46,28 +46,64 @@ def get_gemini_model(api_key: str, system_instruction: str):
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
     }
 
-    model_name = "gemini-1.5-flash" # Use standard stable name
+    models_to_try = [
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-pro",
+        "gemini-pro"
+    ]
     
+    # 1. First attempt with standard flash
     try:
-        return genai.GenerativeModel(
-            model_name=model_name,
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
             generation_config=generation_config,
             safety_settings=safety_settings,
             system_instruction=system_instruction
         )
+        return model
     except Exception as e:
-        print(f"Erro ao instanciar modelo {model_name}: {str(e)}")
-        # Log available models to help debug
-        try:
-            models = [m.name for m in genai.list_models()]
-            print(f"Modelos disponíveis para esta chave: {models}")
-        except:
-            pass
-        return None
+        print(f"Erro inicial com gemini-1.5-flash: {str(e)}")
+
+    # 2. Dynamic Discovery
+    try:
+        available_models = [m for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        print(f"Modelos reais disponíveis para esta chave: {[m.name for m in available_models]}")
+        
+        # Prefer flash, then pro
+        for model_variant in ["flash", "pro"]:
+            for m in available_models:
+                if model_variant in m.name.lower():
+                    print(f"Usando modelo descoberto dinamicamente: {m.name}")
+                    return genai.GenerativeModel(
+                        model_name=m.name,
+                        generation_config=generation_config,
+                        safety_settings=safety_settings,
+                        system_instruction=system_instruction
+                    )
+        
+        # Last resort: first available
+        if available_models:
+            print(f"Usando fallback final: {available_models[0].name}")
+            return genai.GenerativeModel(
+                model_name=available_models[0].name,
+                generation_config=generation_config,
+                safety_settings=safety_settings,
+                system_instruction=system_instruction
+            )
+    except Exception as list_err:
+        print(f"Erro crítico ao listar modelos: {str(list_err)}")
+        
+    return None
 
 @app.post("/v1/chat")
 async def chat(request: AIRequest):
-    model = get_gemini_model(request.api_key, request.system_instruction)
+    model = None
+    try:
+        model = get_gemini_model(request.api_key, request.system_instruction)
+    except Exception as e:
+        print(f"Falha total ao obter modelo: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"[ERRO CRÍTICO IA] {str(e)}")
     
     if not model:
         return {"response": "[MODO DEMO - SEM CHAVE] Por favor, cadastre sua API Key no dashboard. Recebi: " + request.prompt}
