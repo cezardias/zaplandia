@@ -5,12 +5,13 @@ import { IntegrationsModule } from '../integrations/integrations.module';
 import { AiService } from '../integrations/ai.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Contact, Message } from '../crm/entities/crm.entity';
+import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 
 @Module({
     imports: [
         CrmModule,
         IntegrationsModule,
-        TypeOrmModule.forFeature([Contact, Message])
+        TypeOrmModule.forFeature([Contact, Message, CampaignLead])
     ],
     controllers: [WebhooksController],
     providers: [],

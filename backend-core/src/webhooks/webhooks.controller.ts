@@ -5,6 +5,7 @@ import { IntegrationsService } from '../integrations/integrations.service';
 import { N8nService } from '../integrations/n8n.service';
 import { Repository } from 'typeorm';
 import { Contact, Message } from '../crm/entities/crm.entity';
+import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Controller('webhooks')
@@ -20,6 +21,8 @@ export class WebhooksController {
         private contactRepository: Repository<Contact>,
         @InjectRepository(Message)
         private messageRepository: Repository<Message>,
+        @InjectRepository(CampaignLead)
+        private leadRepository: Repository<CampaignLead>,
     ) { }
 
     // Meta (Face/Insta/WhatsApp) Webhook verification
@@ -199,14 +202,29 @@ export class WebhooksController {
             try {
                 // Find or create contact
                 let contact = await this.contactRepository.findOne({ where: { externalId, tenantId } });
+
+                // Try to resolve a better name (avoid JIDs and numbers)
+                let resolvedName = pushName;
+                if (!resolvedName || resolvedName.includes('@') || /^\d+$/.test(resolvedName)) {
+                    const lead = await this.leadRepository.findOne({
+                        where: { externalId, tenantId },
+                        order: { createdAt: 'DESC' }
+                    });
+                    if (lead && lead.name) resolvedName = lead.name;
+                }
+
                 if (!contact) {
                     this.logger.log(`Creating new contact for ${externalId} in tenant ${tenantId}`);
                     contact = this.contactRepository.create({
                         externalId,
-                        name: pushName || `WhatsApp User ${externalId.slice(-4)}`,
+                        name: resolvedName || `WhatsApp User ${externalId.slice(-4)}`,
                         provider: 'whatsapp',
                         tenantId // Uses extracted tenantId
                     });
+                    await this.contactRepository.save(contact);
+                } else if (resolvedName && (contact.name === contact.externalId || contact.name.includes('@'))) {
+                    // Update generic/JID name with real name if found
+                    contact.name = resolvedName;
                     await this.contactRepository.save(contact);
                 }
 

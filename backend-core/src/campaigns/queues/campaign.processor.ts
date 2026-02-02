@@ -49,7 +49,17 @@ export class CampaignProcessor {
             }
         }
 
-        this.logger.log(`[CAMPANHA] Processando lead ${leadName || leadId} (${externalId})`);
+        // 0.1 Lead Status Check (Prevent Duplicates on Resume)
+        let leadToProcess: CampaignLead | null = null;
+        if (leadId) {
+            leadToProcess = await this.leadRepository.findOne({ where: { id: leadId } });
+            if (!leadToProcess || leadToProcess.status !== 'pending') {
+                this.logger.log(`[IGNORADO] Lead ${leadId} já foi processado ou enviado (${leadToProcess?.status}). Cancelando job duplicado.`);
+                return;
+            }
+        }
+
+        this.logger.log(`[CAMPANHA] Processando lead ${leadName || leadToProcess?.name || leadId} (${externalId})`);
 
         if (!instanceName || (!message && (!variations || variations.length === 0))) {
             this.logger.error(`[ERRO] Instância ou mensagem ausente para o job ${job.id}`);
