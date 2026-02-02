@@ -41,8 +41,14 @@ export class IntegrationsController {
             console.error('Failed to fetch evolution instances for list:', e.message);
         }
 
-        // 3. Merge Lists
-        return [...dbIntegrations, ...evolutionInstances];
+        // 3. Merge and Polish Names
+        const finalIntegrations = dbIntegrations.map(i => ({
+            ...i,
+            name: i.provider === 'whatsapp' ? 'WhatsApp Oficial' :
+                i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
+        }));
+
+        return [...finalIntegrations, ...evolutionInstances];
     }
 
     // EvolutionAPI Management - List all instances for tenant

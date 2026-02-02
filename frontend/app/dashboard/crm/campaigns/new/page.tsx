@@ -282,10 +282,7 @@ export default function NewCampaignPage() {
                                                 {integration.provider === 'evolution' ? <QrCode className="w-4 h-4 text-primary" /> : <Zap className="w-4 h-4 text-green-500" />}
                                                 <div>
                                                     <p className="font-bold text-sm">
-                                                        {integration.name || (integration.provider === 'evolution' ? 'Unofficial (EvolutionAPI)' : 'Official (Meta)')}
-                                                    </p>
-                                                    <p className="text-[10px] text-gray-500 uppercase tracking-tighter">
-                                                        {integration.id.includes('-') || integration.id.length > 20 ? `ID: ${integration.id.substring(0, 8)}...` : `ID: ${integration.id}`}
+                                                        {integration.name || (integration.provider === 'evolution' ? 'WhatsApp' : 'WhatsApp Official')} <span className="text-gray-500 text-xs">({integration.id.substring(0, 4)}...)</span>
                                                     </p>
                                                 </div>
                                             </div>

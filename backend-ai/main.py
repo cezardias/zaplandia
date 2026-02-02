@@ -47,7 +47,7 @@ def get_gemini_model(api_key: str, system_instruction: str):
     }
 
     return genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+        model_name="gemini-1.5-flash-latest",
         generation_config=generation_config,
         safety_settings=safety_settings,
         system_instruction=system_instruction
