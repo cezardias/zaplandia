@@ -75,7 +75,19 @@ export class CampaignsService {
         if (isUuid) {
             const integration = await this.integrationsService.findOne(campaign.integrationId, tenantId);
             if (!integration) throw new Error('Integração não encontrada. Verifique se a instância ainda existe.');
-            instanceName = integration.credentials?.instanceName || integration.settings?.instanceName;
+
+            // Robust resolution: try multiple common keys for instance name
+            instanceName =
+                integration.credentials?.instanceName ||
+                integration.settings?.instanceName ||
+                integration.credentials?.name ||
+                integration.credentials?.instance ||
+                integration.settings?.name;
+
+            // Log raw credentials if resolution fails (for debugging)
+            if (!instanceName) {
+                this.logger.warn(`[MOTOR] Falha ao extrair instanceName. Credentials keys: ${Object.keys(integration.credentials || {}).join(',')}`);
+            }
         } else {
             // If not UUID, it's likely a direct Evolution instance name
             instanceName = campaign.integrationId;
