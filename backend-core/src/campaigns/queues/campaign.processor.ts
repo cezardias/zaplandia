@@ -74,7 +74,7 @@ export class CampaignProcessor {
             }
         }
 
-        this.logger.log(`[CAMPANHA] Processando lead ${leadName || leadToProcess?.name || leadId} (${externalId})`);
+        this.logger.log(`[CAMPANHA] Processando lead ${leadName || leadToProcess?.name || leadId} (${externalId}) via ${instanceName}`);
 
         if (!instanceName || (!message && (!variations || variations.length === 0))) {
             this.logger.error(`[ERRO] Instância ou mensagem ausente para o job ${job.id}`);

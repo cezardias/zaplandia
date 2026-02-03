@@ -381,8 +381,9 @@ export class WebhooksController {
                 contact.updatedAt = new Date(); // Explicitly touch updatedAt
                 await this.contactRepository.save(contact);
 
-                // Update Contact Stage on Reply
-                if (['NOVO', 'LEAD', 'CONTACTED', 'SENT'].includes(contact.stage || '')) {
+                // Update Contact Stage on Reply (INBOUND ONLY)
+                // We only move to NEGOTIATION if it's a real inbound message from the customer
+                if (!isOutbound && ['NOVO', 'LEAD', 'CONTACTED', 'SENT'].includes(contact.stage || '')) {
                     await this.crmService.updateContact(tenantId, contact.id, { stage: 'NEGOTIATION' });
                     this.logger.log(`Updated contact ${contact.id} stage to NEGOTIATION due to reply`);
                 }

@@ -82,7 +82,12 @@ export class CampaignsService {
             this.logger.log(`Using direct instance name for campaign ${id}: ${instanceName}`);
         }
 
-        if (!instanceName) throw new Error('Nome da instância não encontrado na integração.');
+        if (!instanceName) {
+            this.logger.error(`[MOTOR] Falha ao resolver instanceName para campanha ${id}. integrationId: ${campaign.integrationId}`);
+            throw new Error('Nome da instância não encontrado na integração.');
+        }
+
+        this.logger.log(`[MOTOR] Campanha ${id} resolvida para instância: ${instanceName}`);
 
         // Fetch PENDING leads
         const leads = await this.leadRepository.find({
@@ -270,7 +275,21 @@ export class CampaignsService {
                 const contacts = await this.crmService.findAllByTenant(tenantId, filters);
 
                 if (contacts.length > 0) {
-                    const leadsToCreateEntities = contacts.map(c => {
+                    // Filter contacts by instance if integrationId (instanceName) is provided
+                    let filteredContacts = contacts;
+                    if (data.integrationId) {
+                        // The user might send UUID or direct instance name. 
+                        // CrmService.findAllByTenant already handles 'instance' filter.
+                        // However, here we might want to double check or re-fetch with instance filter.
+
+                        // Let's re-fetch with instance to be 100% safe if integrationId is present
+                        filteredContacts = await this.crmService.findAllByTenant(tenantId, {
+                            ...filters,
+                            instance: data.integrationId
+                        });
+                    }
+
+                    const leadsToCreateEntities = filteredContacts.map(c => {
                         const phone = c.externalId || c.phoneNumber || '';
                         if (!phone) return null;
 
