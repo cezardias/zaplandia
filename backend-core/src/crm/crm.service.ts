@@ -38,7 +38,14 @@ export class CrmService {
         }
 
         if (filters?.instance && filters.instance !== 'all') { // Filter by Instance
-            query.andWhere('contact.instance = :instance', { instance: filters.instance });
+            // Match both full name (tenant_uuid_zaplandia_01) and friendly name (zaplandia_01)
+            query.andWhere(
+                '(contact.instance = :instance OR contact.instance LIKE :instancePattern)',
+                {
+                    instance: filters.instance,
+                    instancePattern: `%_${filters.instance}` // Matches tenant_uuid_zaplandia_01 when searching for zaplandia_01
+                }
+            );
         }
 
         if (filters?.campaignId && filters.campaignId !== '') {
