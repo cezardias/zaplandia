@@ -27,7 +27,7 @@ export class Contact {
     @Column({ nullable: true })
     instance: string; // The Evolution API instance (e.g. "zaplandia_01")
 
-    @Column({ nullable: true })
+    @Column({ type: 'boolean', nullable: true })
     aiEnabled: boolean | null; // null = use instance default, true/false = override
 
     @Column({ default: 'LEAD' })
