@@ -291,9 +291,9 @@ export class EvolutionApiService {
         const sendRequest = async (targetNumber: string) => {
             // Evolution v2 requires 'textMessage' object, while v1 uses 'text'.
             // We send both for maximum compatibility.
-            // HARDENING: Ensure number has suffix, but strip device suffixes first
-            const cleanNumber = targetNumber.split(':')[0].replace(/\D/g, '');
-            const finalNumber = targetNumber.includes('@') ? targetNumber : `${cleanNumber}@s.whatsapp.net`;
+            // HARDENING: Standardize to base phone number (remove :suffix and @suffix)
+            const baseId = targetNumber.split('@')[0].split(':')[0].replace(/\D/g, '');
+            const finalNumber = `${baseId}@s.whatsapp.net`;
 
             const payload = {
                 number: finalNumber,
