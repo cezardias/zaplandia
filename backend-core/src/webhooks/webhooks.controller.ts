@@ -307,7 +307,7 @@ export class WebhooksController {
                 // 3. IDEMPOTENCY CHECK: Ensure we don't save the same message twice
                 const wamid = messageData.key.id;
                 const existingMessage = await this.messageRepository.findOne({
-                    where: { wamid, contactId: contact.id }
+                    where: { wamid, contactId: contact.id, direction: isOutbound ? 'outbound' : 'inbound' }
                 });
                 if (existingMessage) {
                     this.logger.warn(`[Deduplication] Message ${wamid} already exists. Skipping.`);

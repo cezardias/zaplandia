@@ -216,23 +216,34 @@ export class AiService {
      */
     async sendAIResponse(contact: Contact, aiResponse: string, tenantId: string): Promise<void> {
         try {
-            if (!contact.instance) {
-                this.logger.error(`Contact ${contact.id} has no instance`);
+            // CRITICAL: Re-fetch contact from DB to ensure we have the LATEST externalId/JID
+            // (fixes "exists: false" when a Smart Link/ACK updated the JID while AI was generating)
+            const freshContact = await this.contactRepository.findOne({ where: { id: contact.id } });
+            const useContact = freshContact || contact;
+
+            // Get target number
+            let targetNumber = useContact.externalId || useContact.phoneNumber;
+            if (!targetNumber) {
+                this.logger.error(`Cannot send AI response: No target number for contact ${useContact.id}`);
                 return;
             }
 
-            // Get target number
-            let targetNumber = contact.externalId || contact.phoneNumber;
             // HARDENING: Standardize number to base JID (remove :device but keep @suffix)
             const cleanNumber = targetNumber.replace(/:[0-9]+/, '');
             targetNumber = cleanNumber.includes('@') ? cleanNumber : `${cleanNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+
+            this.logger.log(`Sending AI response to ${targetNumber} via ${useContact.instance}`);
+
             // Send via Evolution API
-            await this.evolutionApiService.sendText(tenantId, contact.instance, targetNumber, aiResponse);
+            await this.evolutionApiService.sendText(tenantId, useContact.instance, targetNumber, aiResponse);
 
-            this.logger.log(`AI response sent to ${targetNumber} via ${contact.instance}`);
-
+            this.logger.log(`AI response sent to ${targetNumber} via ${useContact.instance}`);
         } catch (error) {
             this.logger.error(`Failed to send AI response: ${error.message}`);
+            // EXTRA RESILIENCE: Log the full error to help debug LID issues
+            if (error.response?.data) {
+                this.logger.error(`Evolution API Error Detail: ${JSON.stringify(error.response.data)}`);
+            }
         }
     }
 
