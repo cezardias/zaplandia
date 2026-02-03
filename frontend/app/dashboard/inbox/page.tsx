@@ -61,6 +61,12 @@ export default function OmniInboxPage() {
     const [selectedInstance, setSelectedInstance] = useState<string>('all');
     const [availableInstances, setAvailableInstances] = useState<any[]>([]);
 
+    // AI Agent State
+    const [aiEnabled, setAiEnabled] = useState(false);
+    const [aiPrompts, setAiPrompts] = useState<any[]>([]);
+    const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+    const [contactAiEnabled, setContactAiEnabled] = useState<boolean | null>(null);
+
     const fetchInstances = async () => {
         if (!token) return;
         try {

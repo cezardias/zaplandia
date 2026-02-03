@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Contact } from '../crm/entities/crm.entity';
-import { Message } from '../crm/entities/crm.entity';
+import { Contact, Message } from '../crm/entities/crm.entity';
 import { Integration } from '../integrations/entities/integration.entity';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
+import { IntegrationsService } from '../integrations/integrations.service';
 
 export interface AIPrompt {
     id: string;
@@ -17,7 +17,6 @@ export interface AIPrompt {
 @Injectable()
 export class AiService {
     private readonly logger = new Logger(AiService.name);
-    private genAI: GoogleGenerativeAI;
 
     constructor(
         @InjectRepository(Contact)
@@ -27,13 +26,19 @@ export class AiService {
         @InjectRepository(Integration)
         private integrationRepository: Repository<Integration>,
         private evolutionApiService: EvolutionApiService,
-    ) {
-        // Initialize Gemini AI
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (apiKey) {
-            this.genAI = new GoogleGenerativeAI(apiKey);
-        } else {
-            this.logger.warn('GEMINI_API_KEY not found. AI features will be disabled.');
+        private integrationsService: IntegrationsService,
+    ) { }
+
+    /**
+     * Get Gemini API key for tenant from integrations
+     */
+    private async getGeminiApiKey(tenantId: string): Promise<string | null> {
+        try {
+            const apiKey = await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY');
+            return apiKey;
+        } catch (error) {
+            this.logger.error(`Failed to get Gemini API key for tenant ${tenantId}: ${error.message}`);
+            return null;
         }
     }
 
@@ -80,7 +85,17 @@ export class AiService {
      */
     async generateResponse(contact: Contact, userMessage: string, tenantId: string): Promise<string | null> {
         try {
-            // 1. Get integration to find prompt
+            // 1. Get tenant's Gemini API key
+            const apiKey = await this.getGeminiApiKey(tenantId);
+            if (!apiKey) {
+                this.logger.error(`No Gemini API key configured for tenant ${tenantId}`);
+                return null;
+            }
+
+            // 2. Initialize Gemini with tenant's key
+            const genAI = new GoogleGenerativeAI(apiKey);
+
+            // 3. Get integration to find prompt
             const integration = await this.integrationRepository.findOne({
                 where: {
                     tenantId,
@@ -93,8 +108,7 @@ export class AiService {
                 return null;
             }
 
-            // 2. Fetch AI prompt from database (assuming you have a prompts table)
-            // For now, using a placeholder - you'll need to implement this
+            // 4. Fetch AI prompt from database
             const promptContent = await this.getPromptContent(integration.aiPromptId, tenantId);
 
             if (!promptContent) {
@@ -102,7 +116,7 @@ export class AiService {
                 return null;
             }
 
-            // 3. Get conversation history (last 10 messages)
+            // 5. Get conversation history (last 10 messages)
             const history = await this.messageRepository.find({
                 where: { contactId: contact.id },
                 order: { createdAt: 'DESC' },
@@ -115,8 +129,8 @@ export class AiService {
                 .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`)
                 .join('\n');
 
-            // 4. Call Gemini API
-            const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+            // 6. Call Gemini API
+            const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
             const fullPrompt = `${promptContent}\n\nHistórico da conversa:\n${conversationContext}\n\nCliente: ${userMessage}\n\nVocê:`;
 

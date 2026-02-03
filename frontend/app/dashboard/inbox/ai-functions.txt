@@ -1,0 +1,67 @@
+// AI Toggle and Prompt Selector Functions
+const toggleAI = async () => {
+    if (!token || selectedInstance === 'all') return;
+    
+    try {
+        const integration = availableInstances.find(i => i.id === selectedInstance);
+        if (!integration) return;
+
+        const res = await fetch(`/api/ai/integration/${integration.id}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                enabled: !aiEnabled,
+                promptId: selectedPromptId
+            })
+        });
+
+        if (res.ok) {
+            setAiEnabled(!aiEnabled);
+        }
+    } catch (err) {
+        console.error('Erro ao alternar IA:', err);
+    }
+};
+
+const toggleContactAI = async () => {
+    if (!token || !selectedContact) return;
+
+    try {
+        const newValue = contactAiEnabled === null ? false : (contactAiEnabled ? null : false);
+        
+        const res = await fetch(`/api/ai/contact/${selectedContact.id}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                enabled: newValue
+            })
+        });
+
+        if (res.ok) {
+            setContactAiEnabled(newValue);
+        }
+    } catch (err) {
+        console.error('Erro ao alternar IA do contato:', err);
+    }
+};
+
+const fetchAIPrompts = async () => {
+    if (!token) return;
+    try {
+        const res = await fetch('/api/ai/prompts', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            setAiPrompts(data.prompts || []);
+        }
+    } catch (err) {
+        console.error('Erro ao carregar prompts:', err);
+    }
+};
