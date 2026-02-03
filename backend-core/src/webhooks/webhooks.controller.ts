@@ -348,41 +348,43 @@ export class WebhooksController {
                 }
 
                 // AI AUTO-RESPONSE LOGIC
-                // Check if AI should respond to this message
-                try {
-                    const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+                // Check if AI should respond to this message (INBOUND ONLY)
+                if (!isOutbound) {
+                    try {
+                        const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
 
-                    if (shouldRespond) {
-                        this.logger.log(`AI enabled for contact ${contact.id} on instance ${instanceName}. Generating response...`);
+                        if (shouldRespond) {
+                            this.logger.log(`AI enabled for contact ${contact.id} on instance ${instanceName}. Generating response...`);
 
-                        // Generate AI response
-                        const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
+                            // Generate AI response
+                            const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
 
-                        if (aiResponse) {
-                            this.logger.log(`AI generated response for ${contact.id}: ${aiResponse.substring(0, 50)}...`);
-                            // Save AI response to database
-                            const aiMessage = this.messageRepository.create({
-                                tenantId,
-                                contactId: contact.id,
-                                content: aiResponse,
-                                direction: 'outbound',
-                                provider: 'whatsapp',
-                            });
-                            await this.messageRepository.save(aiMessage);
+                            if (aiResponse) {
+                                this.logger.log(`AI generated response for ${contact.id}: ${aiResponse.substring(0, 50)}...`);
+                                // Save AI response to database
+                                const aiMessage = this.messageRepository.create({
+                                    tenantId,
+                                    contactId: contact.id,
+                                    content: aiResponse,
+                                    direction: 'outbound',
+                                    provider: 'whatsapp',
+                                });
+                                await this.messageRepository.save(aiMessage);
 
-                            // Send AI response via Evolution API
-                            await this.aiService.sendAIResponse(contact, aiResponse, tenantId);
+                                // Send AI response via Evolution API
+                                await this.aiService.sendAIResponse(contact, aiResponse, tenantId);
 
-                            this.logger.log(`AI response sent successfully to contact ${contact.id} via ${instanceName}`);
+                                this.logger.log(`AI response sent successfully to contact ${contact.id} via ${instanceName}`);
+                            } else {
+                                this.logger.warn(`AI failed to generate response for contact ${contact.id} (Check Gemini API Key and Prompt Configuration)`);
+                            }
                         } else {
-                            this.logger.warn(`AI failed to generate response for contact ${contact.id} (Check Gemini API Key and Prompt Configuration)`);
+                            this.logger.debug(`AI should not respond to contact ${contact.id} on instance ${instanceName}`);
                         }
-                    } else {
-                        this.logger.debug(`AI should not respond to contact ${contact.id} on instance ${instanceName}`);
+                    } catch (aiError) {
+                        this.logger.error(`AI auto-response error: ${aiError.message}`);
+                        // Don't throw - AI errors shouldn't break the webhook
                     }
-                } catch (aiError) {
-                    this.logger.error(`AI auto-response error: ${aiError.message}`);
-                    // Don't throw - AI errors shouldn't break the webhook
                 }
 
             } catch (err) {

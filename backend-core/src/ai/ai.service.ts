@@ -149,8 +149,8 @@ export class AiService {
                 .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`)
                 .join('\n');
 
-            // 6. Call Gemini API manually (v1beta) - Using stable gemini-2.0-flash for 2026
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // 6. Call Gemini API manually (v1beta) - Using Gemini 2.5 Flash Lite as requested
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
             const fullPrompt = `${promptContent}\n\nHistórico da conversa:\n${conversationContext}\n\nCliente: ${userMessage}\n\nVocê:`;
 
             const response = await axios.post(url, {
@@ -192,15 +192,9 @@ export class AiService {
 
             // Get target number
             let targetNumber = contact.externalId || contact.phoneNumber;
-            if (!targetNumber) {
-                this.logger.error(`Contact ${contact.id} has no phone number`);
-                return;
-            }
-
             // HARDENING: Standardize number to base JID (remove :suffix and @suffix)
             const baseId = targetNumber.split('@')[0].split(':')[0].replace(/\D/g, '');
             targetNumber = `${baseId}@s.whatsapp.net`;
-
             // Send via Evolution API
             await this.evolutionApiService.sendText(tenantId, contact.instance, targetNumber, aiResponse);
 
