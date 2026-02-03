@@ -67,10 +67,15 @@ export class CrmService {
             query.andWhere('(contact.name ILIKE :search OR contact.phoneNumber ILIKE :search OR contact.externalId ILIKE :search)', { search: `%${filters.search}%` });
         }
 
+        // DEBUG: Output the SQL to see what's happening
+        // this.logger.debug(`[SQL] ${query.getSql()}`);
+        // this.logger.debug(`[PARAMS] ${JSON.stringify(query.getParameters())}`);
+
         return query.orderBy('contact.updatedAt', 'DESC').getMany(); // Order by updatedAt to show recent chats first
     }
 
     async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string, campaignId?: string, instance?: string }) {
+        this.logger.debug(`[FIND_ALL] Tenant: ${tenantId}, Filters: ${JSON.stringify(filters)}`);
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
 
