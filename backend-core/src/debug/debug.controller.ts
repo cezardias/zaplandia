@@ -3,6 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull } from 'typeorm';
 import { Contact } from '../crm/entities/crm.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { IntegrationsService } from '../integrations/integrations.service';
+import { EvolutionApiService } from '../integrations/evolution-api.service';
+import { Integration } from '../integrations/entities/integration.entity';
 
 @Controller('debug')
 @UseGuards(JwtAuthGuard)
@@ -10,6 +13,10 @@ export class DebugController {
     constructor(
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
+        @InjectRepository(Integration)
+        private integrationRepository: Repository<Integration>,
+        private integrationsService: IntegrationsService,
+        private evolutionApiService: EvolutionApiService,
     ) { }
 
     @Get('instances')
@@ -78,6 +85,46 @@ export class DebugController {
         return {
             message: `Atualizados ${contactsWithoutInstance.length} contatos com instância ${defaultInstance}`,
             updated: contactsWithoutInstance.length
+        };
+    }
+
+    @Post('sync-evolution-instances')
+    async syncEvolutionInstances(@Request() req) {
+        const tenantId = req.user.tenantId;
+
+        // Get instances from Evolution API
+        const instances = await this.evolutionApiService.listInstances(tenantId);
+
+        const results: any[] = [];
+
+        for (const inst of instances) {
+            const instanceName = inst.name || inst.instance?.instanceName || inst.instanceName;
+
+            // Check if integration already exists
+            const existing = await this.integrationRepository.findOne({
+                where: {
+                    tenantId,
+                    provider: 'evolution' as any,
+                    settings: { instanceName } as any
+                }
+            });
+
+            if (!existing) {
+                // Create new integration
+                const integration = await this.integrationsService.create(
+                    tenantId,
+                    'evolution' as any,
+                    { instanceName, syncedFromEvolution: true }
+                );
+                results.push({ instanceName, action: 'created', id: integration.id });
+            } else {
+                results.push({ instanceName, action: 'already_exists', id: existing.id });
+            }
+        }
+
+        return {
+            message: 'Sincronização concluída',
+            results
         };
     }
 }
