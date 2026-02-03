@@ -201,7 +201,20 @@ export class WebhooksController {
 
             try {
                 // Find or create contact
-                let contact = await this.contactRepository.findOne({ where: { externalId, tenantId } });
+                // FIXED: Search by externalId OR phoneNumber to preventing duplicates for manually added contacts
+                let contact = await this.contactRepository.findOne({
+                    where: [
+                        { externalId, tenantId },
+                        { phoneNumber: externalId, tenantId } // Match phone number too!
+                    ]
+                });
+
+                // Auto-link: If found by phone but externalId is missing, save it.
+                if (contact && !contact.externalId) {
+                    this.logger.log(`[Smart Link] Found contact by Phone ${externalId}. Linking externalId.`);
+                    contact.externalId = externalId;
+                    await this.contactRepository.save(contact);
+                }
 
                 // Resolve name - Prioritize Human Names over JIDs/Numbers/System
                 let resolvedName = pushName;
@@ -266,7 +279,8 @@ export class WebhooksController {
                     content,
                     direction: isOutbound ? 'outbound' : 'inbound',
                     provider: 'whatsapp',
-                    tenantId
+                    tenantId,
+                    wamid: messageData.key.id // Save External WhatsApp ID
                 });
                 await this.messageRepository.save(message);
                 this.logger.log(`Message saved successfully. ID: ${message.id}`);
@@ -313,7 +327,8 @@ export class WebhooksController {
                 const status = eventData.status;
 
                 // 1. Find the message
-                const message = await this.messageRepository.findOne({ where: { id: messageId /*, tenantId*/ } });
+                // 1. Find the message by WAMID (External ID) to avoid UUID errors
+                const message = await this.messageRepository.findOne({ where: { wamid: messageId /*, tenantId*/ } });
 
                 if (message) {
                     // Update Status

@@ -250,21 +250,40 @@ export class CrmService {
                                 const fileBuffer = fs.readFileSync(filePath);
                                 const base64 = fileBuffer.toString('base64');
 
-                                await this.evolutionApiService.sendMedia(tenantId, instanceName, targetNumber, {
+                                const response = await this.evolutionApiService.sendMedia(tenantId, instanceName, targetNumber, {
                                     type: media.type || 'image', // default
                                     mimetype: media.mimetype || '',
                                     base64: base64,
                                     fileName: media.fileName || filename,
                                     caption: content
                                 });
+
+                                if (response?.key?.id) {
+                                    message.wamid = response.key.id;
+                                    message.status = 'SENT';
+                                    await this.messageRepository.save(message);
+                                    this.logger.log(`Updated Outbound WAMID: ${message.wamid}`);
+                                }
+
                             } else {
                                 this.logger.error(`Media file not found at ${filePath}. Sending text only.`);
-                                await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
+                                const response = await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
+                                if (response?.key?.id) {
+                                    message.wamid = response.key.id;
+                                    message.status = 'SENT';
+                                    await this.messageRepository.save(message);
+                                }
                             }
                         } else {
                             // TEXT ONLY
                             this.logger.log(`Sending WhatsApp message to ${targetNumber} via ${instanceName}`);
-                            await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
+                            const response = await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
+                            if (response?.key?.id) {
+                                message.wamid = response.key.id;
+                                message.status = 'SENT';
+                                await this.messageRepository.save(message);
+                                this.logger.log(`Updated Outbound WAMID: ${message.wamid}`);
+                            }
                         }
                     } else {
                         this.logger.warn(`No active WhatsApp instance found for tenant ${tenantId}`);

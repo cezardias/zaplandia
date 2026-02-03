@@ -66,6 +66,9 @@ export class Message {
     @Column()
     direction: 'inbound' | 'outbound';
 
+    @Column({ nullable: true })
+    wamid: string; // WhatsApp Message ID (external)
+
     @Column({ nullable: true, default: 'PENDING' })
     status: string; // PENDING, SENT, DELIVERED, READ, PLAYED
 
