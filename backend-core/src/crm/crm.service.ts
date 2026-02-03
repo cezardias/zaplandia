@@ -48,13 +48,14 @@ export class CrmService {
                 }
             }
 
-            // Match both full name (tenant_uuid_zaplandia_01) and friendly name (zaplandia_01)
-            // AND allow NULL instance to ensure "lost" contacts appear
+            // Match both full name, friendly name, AND unassigned instances (NULL, default, empty) to ensure they are visible
             query.andWhere(
-                '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL)',
+                '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal)',
                 {
                     instance: instanceName,
-                    instancePattern: `%_${instanceName}`
+                    instancePattern: `%_${instanceName}`,
+                    defVal: 'default',
+                    emptyVal: ''
                 }
             );
         }
@@ -101,13 +102,14 @@ export class CrmService {
                         instancePattern: `%_${instanceName}`
                     }
                 );
-            } else {
-                // Strict filtering for general view
+                // Strict filtering for general view but allow fallback for unassigned
                 query.andWhere(
-                    '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL)',
+                    '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal)',
                     {
                         instance: instanceName,
-                        instancePattern: `%_${instanceName}`
+                        instancePattern: `%_${instanceName}`,
+                        defVal: 'default',
+                        emptyVal: ''
                     }
                 );
             }
