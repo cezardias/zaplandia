@@ -215,17 +215,19 @@ export class AiService {
      * Send AI response via Evolution API
      */
     async sendAIResponse(contact: Contact, aiResponse: string, tenantId: string, instanceNameOverride?: string): Promise<void> {
+        // Variables needed in catch block for healing
+        let targetNumber = '';
+        let useContact = contact;
+        let useInstance = '';
+
         try {
             // CRITICAL: Re-fetch contact from DB to ensure we have the LATEST externalId/JID
-            // (fixes "exists: false" when a Smart Link/ACK updated the JID while AI was generating)
             const freshContact = await this.contactRepository.findOne({ where: { id: contact.id } });
-            const useContact = freshContact || contact;
-            const useInstance = instanceNameOverride || useContact.instance;
+            useContact = freshContact || contact;
+            useInstance = instanceNameOverride || useContact.instance;
 
             // Get target number
             // PRIORITY: If we have a numeric phoneNumber, use that with @s.whatsapp.net
-            // It's the most stable cross-instance identifier.
-            let targetNumber: string;
             if (useContact.phoneNumber && useContact.phoneNumber.length > 8) {
                 targetNumber = `${useContact.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
                 this.logger.debug(`[AI_SEND] Using phone-based JID for stability: ${targetNumber}`);
@@ -249,7 +251,26 @@ export class AiService {
 
             this.logger.log(`AI response sent to ${targetNumber} via ${useInstance}`);
         } catch (error) {
-            this.logger.error(`Failed to send AI response: ${error.message}`);
+            const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+            this.logger.error(`Failed to send AI response: ${errorMsg}`);
+
+            // AUTOMATIC HEALING: If delivery failed with "exists: false" and we were using a LID
+            // Try falling back to the phone number if we have it in the contact.
+            const isExistsFalse = errorMsg.includes('exists":false') || errorMsg.includes('not found');
+            const wasLid = targetNumber && targetNumber.includes('@lid');
+
+            if (isExistsFalse && wasLid && useContact.phoneNumber && useContact.phoneNumber.length > 8) {
+                const fallbackNumber = `${useContact.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+                this.logger.warn(`[AI_HEAL] LID delivery failed. Trying stable phone fallback: ${fallbackNumber}`);
+                try {
+                    await this.evolutionApiService.sendText(tenantId, useInstance, fallbackNumber, aiResponse);
+                    this.logger.log(`[AI_HEAL] Success! AI response delivered via phone fallback.`);
+                    return; // Successfully healed
+                } catch (fallbackError) {
+                    this.logger.error(`[AI_HEAL] Phone fallback also failed: ${fallbackError.message}`);
+                }
+            }
+
             // EXTRA RESILIENCE: Log the full error to help debug LID issues
             if (error.response?.data) {
                 this.logger.error(`Evolution API Error Detail: ${JSON.stringify(error.response.data)}`);

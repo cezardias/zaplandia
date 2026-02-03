@@ -228,15 +228,31 @@ export class WebhooksController {
 
                     if (fuzzyMatches.length > 0) {
                         contact = fuzzyMatches[0];
-                        this.logger.log(`[Smart Link] Fuzzy matched contact: ${contact.name}. Updating externalId.`);
-                        contact.externalId = externalId;
-                        await this.contactRepository.save(contact);
+
+                        // SMART LINK RULES:
+                        const isNewLid = externalId.includes('@lid');
+                        const isCurrentLid = contact.externalId?.includes('@lid');
+                        const isSameInstance = !contact.instance || contact.instance === instanceName;
+
+                        // Only update if:
+                        // 1. It's a real phone number (upgrade from LID)
+                        // 2. OR it's a LID from the same instance
+                        let shouldUpdate = false;
+                        if (!isNewLid && isCurrentLid) shouldUpdate = true; // Upgrade to phone
+                        if (isNewLid && isSameInstance) shouldUpdate = true; // Same instance update
+                        if (!isNewLid && !isCurrentLid) shouldUpdate = true; // Phone to Phone update
+
+                        if (shouldUpdate) {
+                            this.logger.log(`[Smart Link] Fuzzy matched contact: ${contact.name}. Updating externalId: ${contact.externalId} -> ${externalId}`);
+                            contact.externalId = externalId;
+                            await this.contactRepository.save(contact);
+                        }
                     }
                 }
 
                 // STEP 3: Auto-link externalId if found by phone but externalId is missing
                 if (contact && !contact.externalId) {
-                    this.logger.log(`[Smart Link] Found contact by Phone ${externalId}. Linking externalId.`);
+                    this.logger.log(`[Smart Link] Found contact by Phone. Linking initial externalId: ${externalId}`);
                     contact.externalId = externalId;
                     await this.contactRepository.save(contact);
                 }
@@ -417,21 +433,24 @@ export class WebhooksController {
                         message.status = status;
                         await this.messageRepository.save(message);
                     }
-                    // 2. LID LINKING MAGIC - Only update if JID actually changed AND it's from the same instance
-                    // or if we DON'T have a phone number yet.
+                    // 2. LID LINKING MAGIC - Strict instance-locked rules
                     if (remoteJid && message.contactId) {
                         const contact = await this.contactRepository.findOne({ where: { id: message.contactId } });
                         if (contact) {
-                            // Clean the JID
                             const newExternalId = remoteJid.replace(/:[0-9]+/, '');
                             const currentExternalId = contact.externalId;
 
-                            // CRITICAL: Only allow LID update if we are on the same instance
-                            // because LIDs are instance-specific.
+                            const isNewLid = newExternalId.includes('@lid');
+                            const isCurrentLid = currentExternalId?.includes('@lid');
                             const isSameInstance = !contact.instance || contact.instance === instanceName;
 
-                            if (newExternalId && newExternalId !== currentExternalId && !newExternalId.includes('status') && isSameInstance) {
-                                this.logger.log(`[Smart Link] Updating Contact ${contact.name} JID: ${currentExternalId} -> ${newExternalId} (Instance: ${instanceName})`);
+                            let shouldUpdate = false;
+                            if (!isNewLid && isCurrentLid) shouldUpdate = true; // Upgrade to phone
+                            if (isNewLid && isSameInstance) shouldUpdate = true; // Same instance LID update
+                            if (!isNewLid && !isCurrentLid && newExternalId !== currentExternalId) shouldUpdate = true;
+
+                            if (shouldUpdate && !newExternalId.includes('status')) {
+                                this.logger.log(`[Smart Link] Updating JID: ${currentExternalId} -> ${newExternalId} (Instance: ${instanceName})`);
                                 contact.externalId = newExternalId;
                                 await this.contactRepository.save(contact);
                             }
