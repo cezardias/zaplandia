@@ -196,8 +196,9 @@ export class WebhooksController {
 
             this.logger.log(`WhatsApp (${isOutbound ? 'OUT' : 'IN'}) from ${pushName} (${remoteJid}): ${content}`);
 
-            // Clean remoteJid for externalId (strip @s.whatsapp.net, @lid, and device suffixes like :7)
-            const externalId = remoteJid.split('@')[0].split(':')[0];
+            // Clean remoteJid for externalId (strip device suffixes like :7 but keep @s.whatsapp.net or @lid)
+            const externalId = remoteJid.replace(/:[0-9]+/, '');
+            this.logger.debug(`[JID] remoteJid: ${remoteJid} -> externalId: ${externalId}`);
 
             try {
                 // STEP 1: Try exact match by externalId or phoneNumber

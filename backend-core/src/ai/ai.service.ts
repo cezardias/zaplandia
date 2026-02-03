@@ -221,9 +221,9 @@ export class AiService {
 
             // Get target number
             let targetNumber = contact.externalId || contact.phoneNumber;
-            // HARDENING: Standardize number to base JID (remove :suffix and @suffix)
-            const baseId = targetNumber.split('@')[0].split(':')[0].replace(/\D/g, '');
-            targetNumber = `${baseId}@s.whatsapp.net`;
+            // HARDENING: Standardize number to base JID (remove :device but keep @suffix)
+            const cleanNumber = targetNumber.replace(/:[0-9]+/, '');
+            targetNumber = cleanNumber.includes('@') ? cleanNumber : `${cleanNumber.replace(/\D/g, '')}@s.whatsapp.net`;
             // Send via Evolution API
             await this.evolutionApiService.sendText(tenantId, contact.instance, targetNumber, aiResponse);
 
