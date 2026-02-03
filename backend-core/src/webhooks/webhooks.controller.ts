@@ -210,9 +210,10 @@ export class WebhooksController {
                     ]
                 });
 
-                // STEP 2: If no exact match, try fuzzy match by suffix (last 8 digits of the PHONE part)
-                if (!contact && phonePart.length >= 8) {
-                    const suffix = phonePart.slice(-8);
+                // STEP 2: If no exact match, try fuzzy match by suffix (last 10 digits of the PHONE part)
+                // Using 10 digits instead of 8 to avoid collisions between similar business numbers
+                if (!contact && phonePart.length >= 10) {
+                    const suffix = phonePart.slice(-10);
                     this.logger.log(`No exact match. Trying fuzzy match for suffix: ${suffix}`);
 
                     // Search in BOTH externalId and phoneNumber columns
@@ -255,9 +256,9 @@ export class WebhooksController {
                         order: { createdAt: 'DESC' }
                     });
 
-                    // Fallback to suffix matching (last 8 digits) if exact match fails
-                    if (!lead && externalId.length >= 8) {
-                        const suffix = externalId.slice(-8);
+                    // Fallback to suffix matching (last 10 digits) if exact match fails
+                    if (!lead && externalId.length >= 10) {
+                        const suffix = externalId.slice(-10);
                         lead = await this.leadRepository.findOne({
                             where: {
                                 externalId: Like(`%${suffix}`),

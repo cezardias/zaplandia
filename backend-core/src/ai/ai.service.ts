@@ -75,8 +75,10 @@ export class AiService {
         }
 
         // 3. Check conversation-level override
+        this.logger.debug(`[AI_CHECK] Contact ${contact.id} aiEnabled status: ${contact.aiEnabled} (Type: ${typeof contact.aiEnabled})`);
+
         if (contact.aiEnabled === false) {
-            this.logger.log(`AI disabled for contact ${contact.id} (override)`);
+            this.logger.log(`AI disabled for contact ${contact.id} (Explicit Override: OFF)`);
             return false;
         }
 
