@@ -56,26 +56,7 @@ export class CrmService {
             query.andWhere('(contact.name ILIKE :search OR contact.phoneNumber ILIKE :search OR contact.externalId ILIKE :search)', { search: `%${filters.search}%` });
         }
 
-        const contacts = await query.orderBy('contact.updatedAt', 'DESC').getMany(); // Order by updatedAt to show recent chats first
-
-        // AUTO-HEAL: Populate instance for contacts that don't have one (legacy data)
-        // This makes the system self-healing without manual intervention
-        const contactsWithoutInstance = contacts.filter(c => !c.instance);
-        if (contactsWithoutInstance.length > 0) {
-            // Get the first available instance for this tenant as default
-            const defaultInstance = `tenant_${tenantId}_zaplandia_01`;
-
-            for (const contact of contactsWithoutInstance) {
-                contact.instance = defaultInstance;
-            }
-
-            // Save in background (don't await to avoid slowing down the response)
-            this.contactRepository.save(contactsWithoutInstance).catch(err => {
-                console.error('Failed to auto-populate instances:', err);
-            });
-        }
-
-        return contacts;
+        return query.orderBy('contact.updatedAt', 'DESC').getMany(); // Order by updatedAt to show recent chats first
     }
 
     async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string, campaignId?: string }) {
