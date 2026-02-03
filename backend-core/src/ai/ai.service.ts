@@ -122,12 +122,19 @@ export class AiService {
             }
 
             // 4. Fetch AI prompt from database
-            const promptContent = await this.getPromptContent(integration.aiPromptId, tenantId);
+            let promptContent = await this.getPromptContent(integration.aiPromptId, tenantId);
 
             if (!promptContent) {
                 this.logger.error(`Prompt ${integration.aiPromptId} content not found or empty`);
                 return null;
             }
+
+            // SMART FIX: Replace common n8n/template variables if present in prompt
+            // Use contact details for replacement
+            const pushName = contact.name || 'Cliente';
+            promptContent = promptContent.replace(/\{\{\s*\$\(?'Webhook'\)?\.item\.json\.body\.data\.pushName\s*\}\}/g, pushName);
+            promptContent = promptContent.replace(/\{\{\s*pushName\s*\}\}/g, pushName);
+            promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName);
 
             // 5. Get conversation history (last 10 messages)
             const history = await this.messageRepository.find({
@@ -184,10 +191,16 @@ export class AiService {
             }
 
             // Get target number
-            const targetNumber = contact.externalId || contact.phoneNumber;
+            let targetNumber = contact.externalId || contact.phoneNumber;
             if (!targetNumber) {
                 this.logger.error(`Contact ${contact.id} has no phone number`);
                 return;
+            }
+
+            // HARDENING: Ensure number has suffix, but preserve colons for JIDs
+            if (!targetNumber.includes('@')) {
+                const cleanNumber = targetNumber.replace(/[^\d:]/g, ''); // Keep digits and colons
+                targetNumber = `${cleanNumber}@s.whatsapp.net`;
             }
 
             // Send via Evolution API
