@@ -91,9 +91,14 @@ export default function OmniInboxPage() {
         if (!token) return;
         try {
             console.log('Buscando chats...');
-            const url = selectedInstance === 'all'
+            // Get instance name from ID for filtering
+            const instanceName = selectedInstance === 'all'
+                ? 'all'
+                : availableInstances.find(i => i.id === selectedInstance)?.name || selectedInstance;
+
+            const url = instanceName === 'all'
                 ? '/api/crm/chats'
-                : `/api/crm/chats?instance=${selectedInstance}`;
+                : `/api/crm/chats?instance=${instanceName}`;
             const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -488,8 +493,8 @@ export default function OmniInboxPage() {
                                     <button
                                         onClick={toggleContactAI}
                                         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition ${contactAiEnabled === false
-                                                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                                : 'bg-primary/20 text-primary hover:bg-primary/30'
+                                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                            : 'bg-primary/20 text-primary hover:bg-primary/30'
                                             }`}
                                         title={contactAiEnabled === false ? 'IA desativada para este contato' : 'IA ativa para este contato'}
                                     >
