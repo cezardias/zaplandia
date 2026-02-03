@@ -235,6 +235,11 @@ export class WebhooksController {
                 }
 
                 if (!contact) {
+                    if (isOutbound) {
+                        this.logger.warn(`[Ghost Protection] Ignoring Outbound message from unknown ID ${externalId} (likely LID/Echo). Keeping CRM clean.`);
+                        return { status: 'ignored_ghost' };
+                    }
+
                     this.logger.log(`Creating new contact for ${externalId} in tenant ${tenantId}`);
                     contact = this.contactRepository.create({
                         externalId,
