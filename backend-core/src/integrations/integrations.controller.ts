@@ -73,7 +73,23 @@ export class IntegrationsController {
         // Generate a unique instance name: tenant_<tenantId>_<customName or timestamp>
         const customName = body.instanceName || Date.now().toString();
         const instanceName = `tenant_${req.user.tenantId}_${customName}`;
-        return this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.userId);
+
+        // Create instance in Evolution API
+        const evolutionResponse = await this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.userId);
+
+        // Save integration to database
+        const integration = await this.integrationsService.create({
+            tenantId: req.user.tenantId,
+            provider: 'evolution' as any,
+            status: 'CONNECTED' as any,
+            settings: {
+                instanceName: instanceName,
+                evolutionData: evolutionResponse
+            },
+            credentials: {}
+        });
+
+        return { ...evolutionResponse, integrationId: integration.id };
     }
 
     // Get QR Code for specific instance
