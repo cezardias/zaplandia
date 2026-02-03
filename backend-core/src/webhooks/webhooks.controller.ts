@@ -198,20 +198,21 @@ export class WebhooksController {
 
             // Clean remoteJid for externalId (strip device suffixes like :7 but keep @s.whatsapp.net or @lid)
             const externalId = remoteJid.replace(/:[0-9]+/, '');
-            this.logger.debug(`[JID] remoteJid: ${remoteJid} -> externalId: ${externalId}`);
+            const phonePart = externalId.split('@')[0];
+            this.logger.debug(`[JID] remoteJid: ${remoteJid} -> externalId: ${externalId} (Phone: ${phonePart})`);
 
             try {
-                // STEP 1: Try exact match by externalId or phoneNumber
+                // STEP 1: Try exact match by externalId (JID) or phoneNumber
                 let contact = await this.contactRepository.findOne({
                     where: [
                         { externalId, tenantId },
-                        { phoneNumber: externalId, tenantId }
+                        { phoneNumber: phonePart, tenantId }
                     ]
                 });
 
-                // STEP 2: If no exact match, try fuzzy match by suffix (last 8 digits)
-                if (!contact && externalId.length >= 8) {
-                    const suffix = externalId.slice(-8);
+                // STEP 2: If no exact match, try fuzzy match by suffix (last 8 digits of the PHONE part)
+                if (!contact && phonePart.length >= 8) {
+                    const suffix = phonePart.slice(-8);
                     this.logger.log(`No exact match. Trying fuzzy match for suffix: ${suffix}`);
 
                     // Search in BOTH externalId and phoneNumber columns
