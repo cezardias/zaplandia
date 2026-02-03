@@ -57,11 +57,27 @@ export class IntegrationsController {
         }
 
         // 3. Merge and Polish Names
-        const finalIntegrations = dbIntegrations.map(i => ({
-            ...i,
-            name: i.provider === 'whatsapp' ? 'WhatsApp Oficial' :
-                i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
-        }));
+        const finalIntegrations = dbIntegrations.map(i => {
+            if (i.provider === 'evolution') {
+                // Extract friendly name from credentials.instanceName
+                const instanceName = i.credentials?.instanceName || i.settings?.instanceName;
+                const friendlyName = instanceName
+                    ? instanceName.replace(/^tenant_[0-9a-fA-F-]{36}_/, '')
+                    : 'Evolution';
+
+                return {
+                    ...i,
+                    name: friendlyName,
+                    instanceName: instanceName
+                };
+            }
+
+            return {
+                ...i,
+                name: i.provider === 'whatsapp' ? 'WhatsApp Oficial' :
+                    i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
+            };
+        });
 
 
         const result = [...finalIntegrations, ...evolutionInstances];
