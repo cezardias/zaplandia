@@ -3,7 +3,7 @@ import { AppModule } from '../app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Contact } from '../crm/entities/crm.entity';
 import { Message } from '../crm/entities/crm.entity';
-import { Repository } from 'typeorm';
+import { Repository, Not, IsNull } from 'typeorm';
 
 /**
  * Script para popular instâncias nos contatos existentes
@@ -19,7 +19,7 @@ async function bootstrap() {
 
     // Buscar todos os contatos sem instância
     const contactsWithoutInstance = await contactRepo.find({
-        where: { instance: null }
+        where: { instance: IsNull() }
     });
 
     console.log(`📝 Encontrados ${contactsWithoutInstance.length} contatos sem instância`);
@@ -55,7 +55,7 @@ async function bootstrap() {
     // Relatório final
     const totalContacts = await contactRepo.count();
     const contactsWithInstance = await contactRepo.count({
-        where: { instance: Not(null) }
+        where: { instance: Not(IsNull()) }
     });
 
     console.log('📊 RELATÓRIO FINAL:');

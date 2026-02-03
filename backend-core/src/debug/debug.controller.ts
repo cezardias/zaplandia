@@ -27,13 +27,13 @@ export class DebugController {
 
         // Buscar alguns exemplos de contatos com e sem instância
         const withInstance = await this.contactRepository.find({
-            where: { tenantId, instance: Not(null) },
+            where: { tenantId, instance: Not(IsNull()) },
             take: 5,
             order: { createdAt: 'DESC' }
         });
 
         const withoutInstance = await this.contactRepository.find({
-            where: { tenantId, instance: null },
+            where: { tenantId, instance: IsNull() },
             take: 5,
             order: { createdAt: 'DESC' }
         });
