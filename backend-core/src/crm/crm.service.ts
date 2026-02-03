@@ -212,10 +212,32 @@ export class CrmService {
                 }
 
                 if (targetNumber) {
-                    // Fetch active instance for this tenant
+                    // CRITICAL FIX: Use the contact's instance, not just the first available one!
+                    // This ensures we reply from the same WhatsApp number the contact messaged
                     const instances = await this.evolutionApiService.listInstances(tenantId);
-                    // Find first connected instance or fallback to first available
-                    const activeInstance = instances.find((i: any) => i.status === 'open' || i.status === 'connected') || instances[0];
+
+                    let activeInstance;
+
+                    // 1. Try to find the exact instance this contact belongs to
+                    if (contact?.instance) {
+                        activeInstance = instances.find((i: any) => {
+                            const instanceName = i.name || i.instance?.instanceName || i.instanceName;
+                            // Match both full name and friendly name
+                            return instanceName === contact.instance || instanceName.endsWith(`_${contact.instance}`);
+                        });
+
+                        if (activeInstance) {
+                            this.logger.log(`Using contact's instance: ${contact.instance}`);
+                        } else {
+                            this.logger.warn(`Contact's instance '${contact.instance}' not found. Falling back to first available.`);
+                        }
+                    }
+
+                    // 2. Fallback: Use first connected instance
+                    if (!activeInstance) {
+                        activeInstance = instances.find((i: any) => i.status === 'open' || i.status === 'connected') || instances[0];
+                        this.logger.warn(`No instance found for contact. Using fallback: ${activeInstance?.name || 'none'}`);
+                    }
 
                     if (activeInstance) {
                         const instanceName = activeInstance.name || activeInstance.instance?.instanceName || activeInstance.instanceName;
