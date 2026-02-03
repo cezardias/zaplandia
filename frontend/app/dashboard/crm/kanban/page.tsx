@@ -192,22 +192,6 @@ export default function KanbanPage() {
                         </select>
                     </div>
 
-                    {/* Campaign Selector */}
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider ml-1 text-white/50">Campanha</label>
-                        <select
-                            value={selectedCampaignId}
-                            onChange={(e) => setSelectedCampaignId(e.target.value)}
-                            className="bg-surface border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[200px] shadow-lg transition-all hover:border-white/20"
-                        >
-                            <option value="">Todas as Campanhas</option>
-                            {campaigns
-                                .filter(c => selectedInstance === 'all' || c.integrationId === selectedInstance)
-                                .map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                        </select>
-                    </div>
                 </div>
             </div>
 
