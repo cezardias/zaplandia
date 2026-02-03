@@ -255,12 +255,12 @@ export class EvolutionApiService {
 
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
-        try {
+        const sendRequest = async (targetNumber: string) => {
             // Evolution v2 requires 'textMessage' object, while v1 uses 'text'.
             // We send both for maximum compatibility.
             // HARDENING: Ensure number has suffix
-            const cleanNumber = number.replace(/\D/g, '');
-            const finalNumber = number.includes('@') ? number : `${cleanNumber}@s.whatsapp.net`;
+            const cleanNumber = targetNumber.replace(/\D/g, '');
+            const finalNumber = targetNumber.includes('@') ? targetNumber : `${cleanNumber}@s.whatsapp.net`;
 
             const payload = {
                 number: finalNumber,
@@ -279,9 +279,45 @@ export class EvolutionApiService {
             });
             this.logger.log(`Message sent result: ${JSON.stringify(response.data)}`);
             return response.data;
-        } catch (error) {
+        }
+
+        try {
+            return await sendRequest(number);
+        } catch (error: any) {
             const errorData = error.response?.data || error.message;
             this.logger.error(`Erro ao enviar mensagem texto via EvolutionAPI: ${JSON.stringify(errorData)}`);
+
+            // BRAZIL 9-DIGIT RETRY LOGIC
+            // Check if error is "exists: false" AND number is Brazilian (55...)
+            const isExistsError = errorData?.response?.message?.[0]?.exists === false || JSON.stringify(errorData).includes('"exists":false');
+            const cleanNum = number.replace(/\D/g, '');
+
+            if (isExistsError && cleanNum.startsWith('55')) {
+                this.logger.warn(`Number ${number} failed existence check. Attempting Brazil 9-digit fix...`);
+                let retryNum = '';
+
+                // Case 1: Has 13 digits (55 + 2 DDD + 9 + 8 digits) -> Try REMOVING 9
+                if (cleanNum.length === 13 && parseInt(cleanNum[4]) === 9) {
+                    // 55 61 9 98655077 -> 55 61 98655077
+                    retryNum = cleanNum.slice(0, 4) + cleanNum.slice(5);
+                }
+                // Case 2: Has 12 digits (55 + 2 DDD + 8 digits) -> Try ADDING 9
+                else if (cleanNum.length === 12) {
+                    // 55 61 98655077 -> 55 61 9 98655077
+                    retryNum = cleanNum.slice(0, 4) + '9' + cleanNum.slice(4);
+                }
+
+                if (retryNum) {
+                    this.logger.log(`Retrying send with adjusted number: ${retryNum}`);
+                    try {
+                        return await sendRequest(retryNum);
+                    } catch (retryError: any) {
+                        this.logger.error(`Retry failed for ${retryNum}: ${JSON.stringify(retryError.response?.data || retryError.message)}`);
+                        // Throw original error to propagate 400 if both fail
+                    }
+                }
+            }
+
             throw error;
         }
     }
