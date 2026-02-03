@@ -33,12 +33,41 @@ export default function KanbanPage() {
 
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
+    const [selectedInstance, setSelectedInstance] = useState<string>('all');
+    const [availableInstances, setAvailableInstances] = useState<any[]>([]);
 
-    const fetchContacts = async (campaignId?: string) => {
+    const fetchInstances = async () => {
+        if (!token) return;
+        try {
+            const res = await fetch('/api/integrations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const evolutionInstances = data.filter((i: any) =>
+                    i.provider === 'evolution' && (i.status === 'CONNECTED' || i.status === 'connected')
+                );
+                setAvailableInstances(evolutionInstances);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar instâncias:', err);
+        }
+    };
+
+    const fetchContacts = async (campaignId?: string, instanceId?: string) => {
         if (!token) return;
         setIsLoading(true);
         try {
-            const url = campaignId ? `/api/crm/contacts?campaignId=${campaignId}` : '/api/crm/contacts';
+            const instanceIdToUse = instanceId !== undefined ? instanceId : selectedInstance;
+            const inst = availableInstances.find(i => i.id === instanceIdToUse);
+            const instanceName = inst ? inst.instanceName : instanceIdToUse;
+
+            let url = `/api/crm/contacts?instance=${instanceName}`;
+            const campaignToUse = campaignId !== undefined ? campaignId : selectedCampaignId;
+            if (campaignToUse) {
+                url += `&campaignId=${campaignToUse}`;
+            }
+
             const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -85,16 +114,15 @@ export default function KanbanPage() {
     useEffect(() => {
         if (token) {
             fetchCampaigns();
+            fetchInstances();
         }
     }, [token]);
 
     useEffect(() => {
-        if (token && selectedCampaignId) {
-            fetchContacts(selectedCampaignId);
-        } else if (token && !selectedCampaignId) {
-            fetchContacts();
+        if (token) {
+            fetchContacts(selectedCampaignId, selectedInstance);
         }
-    }, [selectedCampaignId, token]);
+    }, [selectedCampaignId, selectedInstance, token, availableInstances]);
 
     const onDragEnd = async (result: any) => {
         if (!result.destination) return;
@@ -139,20 +167,47 @@ export default function KanbanPage() {
     return (
         <div className="p-8 h-[calc(100vh-80px)] overflow-x-auto">
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">Pipeline de Vendas</h1>
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-bold tracking-tight text-white">Pipeline de Vendas</h1>
+                    <p className="text-sm text-gray-500">Gerencie seus leads e estágios de conversão</p>
+                </div>
 
-                <div className="flex items-center space-x-4">
-                    <label className="text-sm text-gray-400">Filtrar por Campanha:</label>
-                    <select
-                        value={selectedCampaignId}
-                        onChange={(e) => setSelectedCampaignId(e.target.value)}
-                        className="bg-surface border border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    >
-                        <option value="">Todas as Campanhas</option>
-                        {campaigns.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                    </select>
+                <div className="flex items-center space-x-6">
+                    {/* Instance Selector */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider ml-1 text-white/50">Chip / Canal</label>
+                        <select
+                            value={selectedInstance}
+                            onChange={(e) => {
+                                const newInstId = e.target.value;
+                                setSelectedInstance(newInstId);
+                                setSelectedCampaignId(''); // Reset campaign when instance changes
+                            }}
+                            className="bg-surface border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[200px] shadow-lg transition-all hover:border-white/20"
+                        >
+                            <option value="all">Todas as Contas</option>
+                            {availableInstances.map(inst => (
+                                <option key={inst.id} value={inst.id}>{inst.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Campaign Selector */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] text-gray-500 font-bold uppercase tracking-wider ml-1 text-white/50">Campanha</label>
+                        <select
+                            value={selectedCampaignId}
+                            onChange={(e) => setSelectedCampaignId(e.target.value)}
+                            className="bg-surface border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[200px] shadow-lg transition-all hover:border-white/20"
+                        >
+                            <option value="">Todas as Campanhas</option>
+                            {campaigns
+                                .filter(c => selectedInstance === 'all' || c.integrationId === selectedInstance)
+                                .map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 

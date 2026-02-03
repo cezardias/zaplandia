@@ -59,9 +59,19 @@ export class CrmService {
         return query.orderBy('contact.updatedAt', 'DESC').getMany(); // Order by updatedAt to show recent chats first
     }
 
-    async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string, campaignId?: string }) {
+    async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string, campaignId?: string, instance?: string }) {
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
+
+        if (filters?.instance && filters.instance !== 'all') {
+            query.andWhere(
+                '(contact.instance = :instance OR contact.instance LIKE :instancePattern)',
+                {
+                    instance: filters.instance,
+                    instancePattern: `%_${filters.instance}`
+                }
+            );
+        }
 
         if (filters?.stage) {
             query.andWhere('contact.stage = :stage', { stage: filters.stage });

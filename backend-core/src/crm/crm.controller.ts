@@ -13,8 +13,8 @@ export class CrmController {
     }
 
     @Get('contacts')
-    getAllContacts(@Request() req, @Query('q') q: string, @Query('campaignId') campaignId: string) {
-        return this.crmService.findAllByTenant(req.user.tenantId, { search: q, campaignId });
+    getAllContacts(@Request() req, @Query('q') q: string, @Query('campaignId') campaignId: string, @Query('instance') instance: string) {
+        return this.crmService.findAllByTenant(req.user.tenantId, { search: q, campaignId, instance });
     }
 
     @Post('contacts')
