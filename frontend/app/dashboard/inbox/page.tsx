@@ -118,6 +118,7 @@ export default function OmniInboxPage() {
 
     useEffect(() => {
         fetchInstances();
+        fetchAiPrompts();
     }, [token]);
 
     useEffect(() => {
