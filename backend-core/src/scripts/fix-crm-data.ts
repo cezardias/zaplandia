@@ -50,12 +50,12 @@ async function bootstrap() {
     }
     console.log(`   ✅ ${namesFixed} nomes corrigidos\n`);
 
-    // PASSO 2: Remover duplicatas
+    // PASSO 2: Remover duplicatas (com migração de mensagens)
     console.log('🗑️  PASSO 2: Removendo duplicatas...');
     const allContacts = await contactRepo.find({ order: { createdAt: 'ASC' } });
 
     const seenSuffixes = new Map<string, Contact>();
-    const toDelete: string[] = [];
+    let duplicatesRemoved = 0;
 
     for (const contact of allContacts) {
         const identifier = contact.externalId || contact.phoneNumber;
@@ -64,18 +64,28 @@ async function bootstrap() {
         const suffix = identifier.slice(-8);
 
         if (seenSuffixes.has(suffix)) {
-            // Duplicata encontrada - marcar para deletar
-            toDelete.push(contact.id);
-            console.log(`   🗑️  Removendo duplicata: ${contact.name} (${suffix})`);
+            // Duplicata encontrada
+            const keepContact = seenSuffixes.get(suffix)!;
+            console.log(`   🔄 Migrando mensagens de "${contact.name}" para "${keepContact.name}"`);
+
+            // Migrar todas as mensagens do duplicado para o contato correto
+            await contactRepo.query(
+                `UPDATE messages SET contact_id = $1 WHERE contact_id = $2`,
+                [keepContact.id, contact.id]
+            );
+
+            // Agora podemos deletar o duplicado com segurança
+            await contactRepo.delete(contact.id);
+            duplicatesRemoved++;
+            console.log(`   🗑️  Removido: ${contact.name} (${suffix})`);
         } else {
             // Primeira ocorrência - manter
             seenSuffixes.set(suffix, contact);
         }
     }
 
-    if (toDelete.length > 0) {
-        await contactRepo.delete(toDelete);
-        console.log(`   ✅ ${toDelete.length} duplicatas removidas\n`);
+    if (duplicatesRemoved > 0) {
+        console.log(`   ✅ ${duplicatesRemoved} duplicatas removidas\n`);
     } else {
         console.log(`   ✅ Nenhuma duplicata encontrada\n`);
     }
