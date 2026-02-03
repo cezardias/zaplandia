@@ -78,7 +78,7 @@ export default function OmniInboxPage() {
                 const data = await res.json();
                 // Filter only Evolution instances that are connected
                 const evolutionInstances = data.filter((i: any) =>
-                    i.provider === 'evolution' && i.status === 'CONNECTED'
+                    i.provider === 'evolution' && (i.status === 'CONNECTED' || i.status === 'connected')
                 );
                 setAvailableInstances(evolutionInstances);
             }
