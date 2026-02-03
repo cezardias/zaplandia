@@ -56,7 +56,9 @@ export class IntegrationsController {
         }));
 
 
-        return [...finalIntegrations, ...evolutionInstances];
+        const result = [...finalIntegrations, ...evolutionInstances];
+        console.log('Integrations being returned:', JSON.stringify(result, null, 2));
+        return result;
     }
 
     // EvolutionAPI Management - List all instances for tenant
