@@ -296,6 +296,47 @@ export class WebhooksController {
                 this.logger.error(`Error processing WhatsApp message: ${err.message}`, err.stack);
                 throw err;
             }
+        } else if (eventType === 'MESSAGES_UPDATE' || eventType === 'MESSAGES.UPDATE') {
+            // ACK / READ STATUS UPDATES
+            // This is critical for "Learning" LIDs. 
+            // If we sent to a Phone Number but get an ACK from a LID, we link them here.
+
+            const eventData = data.data || data;
+            if (eventData && eventData.id) {
+                const messageId = eventData.id;
+                const remoteJid = eventData.remoteJid;
+                const status = eventData.status;
+
+                // 1. Find the message
+                const message = await this.messageRepository.findOne({ where: { id: messageId /*, tenantId*/ } });
+
+                if (message) {
+                    // Update Status
+                    if (status) {
+                        message.status = status;
+                        await this.messageRepository.save(message);
+                    }
+
+                    // 2. LID LINKING MAGIC
+                    if (remoteJid && message.contactId) {
+                        const contact = await this.contactRepository.findOne({ where: { id: message.contactId } });
+                        if (contact) {
+                            // Clean the JID
+                            const newExternalId = remoteJid.split('@')[0];
+                            const currentExternalId = contact.externalId;
+
+                            // If we have a NEW external ID (e.g. LID) and it's different from what we have
+                            // We update externalId to the new one (LID), because that's what WA is using.
+                            // CRITICAL: We DO NOT touch phoneNumber. sending uses phoneNumber priority.
+                            if (newExternalId && newExternalId !== currentExternalId && !newExternalId.includes('status')) {
+                                this.logger.log(`[Smart Link] Linking Contact ${contact.name} (Ph: ${contact.phoneNumber}) to new JID/LID: ${newExternalId}`);
+                                contact.externalId = newExternalId;
+                                await this.contactRepository.save(contact);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         return { status: 'received' };
