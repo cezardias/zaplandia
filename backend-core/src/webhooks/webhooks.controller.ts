@@ -210,24 +210,41 @@ export class WebhooksController {
                     ]
                 });
 
-                // STEP 2: If no exact match, try fuzzy match by suffix (last 10 digits of the PHONE part)
-                // Using 10 digits instead of 8 to avoid collisions between similar business numbers
-                if (!contact && phonePart.length >= 10) {
-                    const suffix = phonePart.slice(-10);
-                    this.logger.log(`No exact match. Trying fuzzy match for suffix: ${suffix}`);
+                // STEP 2: If no exact match, try fuzzy match by suffix
+                // We use tiered matching: 
+                // 1. Last 10 digits (DDD + Number) - Stronger
+                // 2. Last 8 digits (Base Number) - Weaker but handles Brazil 9-digit diff
+                if (!contact && phonePart.length >= 8) {
+                    const suffix10 = phonePart.slice(-10);
+                    const suffix8 = phonePart.slice(-8);
 
-                    // Search in BOTH externalId and phoneNumber columns
-                    const fuzzyMatches = await this.contactRepository.find({
+                    this.logger.log(`No exact match. Trying fuzzy match for suffix: ${suffix10} (10d) or ${suffix8} (8d)`);
+
+                    // Search for 10 digits first
+                    let fuzzyMatches = await this.contactRepository.find({
                         where: [
-                            { externalId: Like(`%${suffix}`), tenantId },
-                            { phoneNumber: Like(`%${suffix}`), tenantId }
+                            { externalId: Like(`%${suffix10}`), tenantId },
+                            { phoneNumber: Like(`%${suffix10}`), tenantId }
                         ],
                         take: 1,
                         order: { createdAt: 'DESC' }
                     });
 
+                    // If failed, try 8 digits
+                    if (fuzzyMatches.length === 0 && suffix8.length === 8) {
+                        fuzzyMatches = await this.contactRepository.find({
+                            where: [
+                                { externalId: Like(`%${suffix8}`), tenantId },
+                                { phoneNumber: Like(`%${suffix8}`), tenantId }
+                            ],
+                            take: 1,
+                            order: { createdAt: 'DESC' }
+                        });
+                    }
+
                     if (fuzzyMatches.length > 0) {
                         contact = fuzzyMatches[0];
+                        this.logger.log(`[Smart Link] Fuzzy matched contact: ${contact.name} via ${fuzzyMatches[0].externalId === contact.externalId ? 'externalId' : 'phoneNumber'}`);
 
                         // SMART LINK RULES:
                         const isNewLid = externalId.includes('@lid');
@@ -243,7 +260,7 @@ export class WebhooksController {
                         if (!isNewLid && !isCurrentLid) shouldUpdate = true; // Phone to Phone update
 
                         if (shouldUpdate) {
-                            this.logger.log(`[Smart Link] Fuzzy matched contact: ${contact.name}. Updating externalId: ${contact.externalId} -> ${externalId}`);
+                            this.logger.log(`[Smart Link] Updating externalId: ${contact.externalId} -> ${externalId}`);
                             contact.externalId = externalId;
                             await this.contactRepository.save(contact);
                         }
@@ -261,9 +278,11 @@ export class WebhooksController {
                 let resolvedName = pushName;
                 const isBadName = !resolvedName || resolvedName === 'Sistema' || resolvedName === 'WhatsApp User' || (resolvedName && resolvedName.includes('@')) || (resolvedName && /^\d+$/.test(resolvedName));
 
-                if (isBadName) {
+                let lead: CampaignLead | null = null;
+
+                if (isBadName || isOutbound) {
                     // Try exact match first
-                    let lead = await this.leadRepository.findOne({
+                    lead = await this.leadRepository.findOne({
                         where: {
                             externalId,
                             campaign: { tenantId }
@@ -272,35 +291,50 @@ export class WebhooksController {
                         order: { createdAt: 'DESC' }
                     });
 
-                    // Fallback to suffix matching (last 10 digits) if exact match fails
-                    if (!lead && externalId.length >= 10) {
-                        const suffix = externalId.slice(-10);
+                    // STEP 4: Fallback to suffix matching if exact match fails
+                    if (!lead && phonePart.length >= 8) {
+                        const suffix10 = phonePart.slice(-10);
+                        const suffix8 = phonePart.slice(-8);
+
+                        // Try 10 digits first
                         lead = await this.leadRepository.findOne({
                             where: {
-                                externalId: Like(`%${suffix}`),
+                                externalId: Like(`%${suffix10}`),
                                 campaign: { tenantId }
                             },
                             relations: ['campaign'],
                             order: { createdAt: 'DESC' }
                         });
+
+                        // Then 8 digits
+                        if (!lead && suffix8.length === 8) {
+                            lead = await this.leadRepository.findOne({
+                                where: {
+                                    externalId: Like(`%${suffix8}`),
+                                    campaign: { tenantId }
+                                },
+                                relations: ['campaign'],
+                                order: { createdAt: 'DESC' }
+                            });
+                        }
                     }
 
-                    if (lead && lead.name) resolvedName = lead.name;
+                    if (lead && lead.name && isBadName) resolvedName = lead.name;
                 }
 
                 if (!contact) {
-                    if (isOutbound) {
+                    if (isOutbound && !lead) {
                         this.logger.warn(`[Ghost Protection] Ignoring Outbound message from unknown ID ${externalId} (likely LID/Echo). Keeping CRM clean.`);
                         return { status: 'ignored_ghost' };
                     }
 
-                    this.logger.log(`Creating new contact for ${externalId} in tenant ${tenantId}`);
+                    this.logger.log(`Creating contact for ${externalId} (Lead match: ${lead ? 'YES' : 'NO'}) in tenant ${tenantId}`);
                     contact = this.contactRepository.create({
                         externalId,
-                        name: (resolvedName && !resolvedName.includes('@')) ? resolvedName : `Novo Contato ${externalId.slice(-4)}`,
+                        name: (resolvedName && !resolvedName.includes('@')) ? resolvedName : (lead?.name || `Novo Contato ${externalId.slice(-4)}`),
                         provider: 'whatsapp',
                         tenantId,
-                        instance: instanceName // Save Instance Name (FIXED: was data.instance)
+                        instance: instanceName
                     });
                     await this.contactRepository.save(contact);
                 } else {

@@ -138,7 +138,23 @@ export default function KanbanPage() {
 
     return (
         <div className="p-8 h-[calc(100vh-80px)] overflow-x-auto">
-            <h1 className="text-3xl font-bold mb-8">Pipeline de Vendas</h1>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">Pipeline de Vendas</h1>
+
+                <div className="flex items-center space-x-4">
+                    <label className="text-sm text-gray-400">Filtrar por Campanha:</label>
+                    <select
+                        value={selectedCampaignId}
+                        onChange={(e) => setSelectedCampaignId(e.target.value)}
+                        className="bg-surface border border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                        <option value="">Todas as Campanhas</option>
+                        {campaigns.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
 
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="flex space-x-6 min-w-max h-full">

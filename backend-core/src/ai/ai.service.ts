@@ -57,11 +57,18 @@ export class AiService {
             }
         });
 
-        // Match by instanceName in credentials or settings
-        const integration = integrations.find(i =>
-            i.credentials?.instanceName === instanceName ||
-            i.settings?.instanceName === instanceName
-        );
+        // Match by instanceName in credentials or settings (Flexible match: ends with or starts with)
+        const integration = integrations.find(i => {
+            const credInst = i.credentials?.instanceName;
+            const settInst = i.settings?.instanceName;
+
+            const match = (name: string) =>
+                name === instanceName ||
+                instanceName.endsWith(`_${name}`) ||
+                name.endsWith(`_${instanceName}`);
+
+            return (credInst && match(credInst)) || (settInst && match(settInst));
+        });
 
         if (!integration) {
             this.logger.warn(`No integration found for instance ${instanceName} to handle auto-response`);
@@ -113,10 +120,19 @@ export class AiService {
 
             // Match by instanceName (contact.instance or provided)
             const targetInstance = instanceName || contact.instance;
-            const integration = integrations.find(i =>
-                i.credentials?.instanceName === targetInstance ||
-                i.settings?.instanceName === targetInstance
-            );
+            const integration = integrations.find(i => {
+                const credInst = i.credentials?.instanceName;
+                const settInst = i.settings?.instanceName;
+
+                if (!targetInstance) return false;
+
+                const match = (name: string) =>
+                    name === targetInstance ||
+                    targetInstance.endsWith(`_${name}`) ||
+                    name.endsWith(`_${targetInstance}`);
+
+                return (credInst && match(credInst)) || (settInst && match(settInst));
+            });
 
             if (!integration?.aiPromptId) {
                 this.logger.error(`No AI prompt configured for instance ${targetInstance}`);
