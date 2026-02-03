@@ -149,20 +149,49 @@ export class AiService {
                 .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`)
                 .join('\n');
 
-            // 6. Call Gemini API manually (v1beta) - Using Gemini 2.5 Flash Lite as requested
+            // 6. Call Gemini API manually with Retry Logic for 503/Overload errors
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
             const fullPrompt = `${promptContent}\n\nHistórico da conversa:\n${conversationContext}\n\nCliente: ${userMessage}\n\nVocê:`;
 
-            const response = await axios.post(url, {
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [
-                            { text: fullPrompt }
-                        ]
+            let retryCount = 0;
+            const maxRetries = 3;
+            let response: any;
+
+            while (retryCount <= maxRetries) {
+                try {
+                    response = await axios.post(url, {
+                        contents: [
+                            {
+                                role: 'user',
+                                parts: [
+                                    { text: fullPrompt }
+                                ]
+                            }
+                        ],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 1024,
+                        }
+                    }, {
+                        timeout: 30000 // 30 seconds
+                    });
+
+                    // If success, break the loop
+                    break;
+                } catch (error) {
+                    const status = error.response?.status;
+                    if ((status === 503 || status === 429) && retryCount < maxRetries) {
+                        retryCount++;
+                        const delay = retryCount * 2000; // 2s, 4s, 6s...
+                        this.logger.warn(`Gemini API returned ${status}. Retrying in ${delay}ms... (Attempt ${retryCount}/${maxRetries})`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
                     }
-                ]
-            });
+                    throw error; // Rethrow if not a retryable error or max retries reached
+                }
+            }
 
             const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
@@ -175,7 +204,7 @@ export class AiService {
             return aiResponse;
 
         } catch (error) {
-            this.logger.error(`Failed to generate AI response: ${error.message}`);
+            this.logger.error(`Failed to generate AI response: ${error.response?.data?.error?.message || error.message}`);
             return null;
         }
     }
