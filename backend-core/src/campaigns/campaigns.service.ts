@@ -25,6 +25,25 @@ export class CampaignsService {
         @InjectQueue('campaign-queue') private campaignQueue: Queue,
     ) { }
 
+    private async resolveInstanceName(integrationId: string, tenantId: string): Promise<string | null> {
+        // Check if it's a UUID
+        const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(integrationId);
+
+        if (isUuid) {
+            const integration = await this.integrationsService.findOne(integrationId, tenantId);
+            if (!integration) return null;
+
+            return integration.credentials?.instanceName ||
+                integration.settings?.instanceName ||
+                integration.credentials?.name ||
+                integration.credentials?.instance ||
+                integration.settings?.name || null;
+        }
+
+        // If not UUID, assume it's the direct name
+        return integrationId;
+    }
+
     // Contact List (Funnel) Methods
     async createContactList(tenantId: string, name: string, contacts: any[]) {
         const list = this.contactListRepository.create({
@@ -67,32 +86,7 @@ export class CampaignsService {
         if (campaign.status === CampaignStatus.RUNNING) throw new Error('Campanha já está rodando.');
 
         // Resolve Integration to get real instance name
-        let instanceName: string | undefined;
-
-        // Check if integrationId is a UUID (for DB integrations like Meta)
-        const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(campaign.integrationId);
-
-        if (isUuid) {
-            const integration = await this.integrationsService.findOne(campaign.integrationId, tenantId);
-            if (!integration) throw new Error('Integração não encontrada. Verifique se a instância ainda existe.');
-
-            // Robust resolution: try multiple common keys for instance name
-            instanceName =
-                integration.credentials?.instanceName ||
-                integration.settings?.instanceName ||
-                integration.credentials?.name ||
-                integration.credentials?.instance ||
-                integration.settings?.name;
-
-            // Log raw credentials if resolution fails (for debugging)
-            if (!instanceName) {
-                this.logger.warn(`[MOTOR] Falha ao extrair instanceName. Credentials keys: ${Object.keys(integration.credentials || {}).join(',')}`);
-            }
-        } else {
-            // If not UUID, it's likely a direct Evolution instance name
-            instanceName = campaign.integrationId;
-            this.logger.log(`Using direct instance name for campaign ${id}: ${instanceName}`);
-        }
+        const instanceName = await this.resolveInstanceName(campaign.integrationId, tenantId);
 
         if (!instanceName) {
             this.logger.error(`[MOTOR] Falha ao resolver instanceName para campanha ${id}. integrationId: ${campaign.integrationId}`);
@@ -236,6 +230,13 @@ export class CampaignsService {
             const saved = await this.campaignRepository.save(campaign) as unknown as Campaign;
             const campaignId = saved.id;
 
+            // Resolve instance name early for Contact association
+            let instanceName = 'default';
+            if (data.integrationId) {
+                const resolved = await this.resolveInstanceName(data.integrationId, tenantId);
+                if (resolved) instanceName = resolved;
+            }
+
             // Handle Leads (Save to DB but DO NOT Queue yet)
             let leadsToProcess: CampaignLead[] = [];
 
@@ -252,10 +253,12 @@ export class CampaignsService {
                         const phone = this.extractPhoneNumber(l);
                         if (!phone) return Promise.resolve(); // Skip missing phone
 
+                        // Pass resolved instanceName to bind contact to instance
                         return this.crmService.ensureContact(tenantId, {
                             name: name,
                             phoneNumber: phone,
-                            externalId: phone
+                            externalId: phone,
+                            instance: instanceName
                         }, { forceStage: 'NOVO' });
                     }));
 

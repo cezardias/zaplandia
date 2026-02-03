@@ -141,8 +141,9 @@ export class CampaignProcessor {
             }
 
             if (cId) {
-                await this.crmService.updateContact(tenantId, cId, { stage: 'CONTACTED' });
-                this.logger.log(`[CRM] Lead ${cleanRecipient} atualizado para estágio 'PRIMEIRO CONTATO'`);
+                // Self-healing: Update stage AND instance to ensure visibility
+                await this.crmService.updateContact(tenantId, cId, { stage: 'CONTACTED', instance: instanceName });
+                this.logger.log(`[CRM] Lead ${cleanRecipient} atualizado para estágio 'CONTACTED' e instância '${instanceName}'`);
             }
 
             // Increment Counter

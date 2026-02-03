@@ -387,7 +387,7 @@ export class CrmService {
         return this.contactRepository.findOne({ where: { id: contactId } });
     }
 
-    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string }, options?: { forceStage?: string }) {
+    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string, instance?: string }, options?: { forceStage?: string }) {
         const where: any[] = [];
         if (data.phoneNumber && data.phoneNumber !== '') where.push({ phoneNumber: data.phoneNumber, tenantId });
         if (data.externalId && data.externalId !== '') where.push({ externalId: data.externalId, tenantId });
@@ -396,7 +396,7 @@ export class CrmService {
         // But if name is present, we create.
         if (where.length === 0) {
             const contact = this.contactRepository.create({
-                ...data,
+                ...data, // includes instance if provided
                 tenantId,
                 stage: 'NOVO',
                 externalId: data.externalId || data.phoneNumber || `gen-${Date.now()}`
@@ -408,7 +408,7 @@ export class CrmService {
 
         if (!contact) {
             contact = this.contactRepository.create({
-                ...data,
+                ...data, // includes instance if provided
                 tenantId,
                 stage: 'NOVO',
                 externalId: data.externalId || data.phoneNumber
@@ -423,6 +423,10 @@ export class CrmService {
             }
             if (data.phoneNumber && data.phoneNumber !== contact.phoneNumber) {
                 contact.phoneNumber = data.phoneNumber;
+                hasParamsToUpdate = true;
+            }
+            if (data.instance && data.instance !== contact.instance) {
+                contact.instance = data.instance;
                 hasParamsToUpdate = true;
             }
             if (options?.forceStage && contact.stage !== options.forceStage) {
