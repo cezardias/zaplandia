@@ -101,7 +101,7 @@ export class AiService {
                 return null;
             }
 
-            // 2. Initialize Gemini with tenant's key
+            // 2. Initialize Gemini with tenant's key (using v1beta for newest models)
             const genAI = new GoogleGenerativeAI(apiKey);
 
             // 3. Get integration to find prompt
@@ -146,7 +146,7 @@ export class AiService {
                 .join('\n');
 
             // 6. Call Gemini API
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' }, { apiVersion: 'v1beta' });
 
             const fullPrompt = `${promptContent}\n\nHistórico da conversa:\n${conversationContext}\n\nCliente: ${userMessage}\n\nVocê:`;
 
