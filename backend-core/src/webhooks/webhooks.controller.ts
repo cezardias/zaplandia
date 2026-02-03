@@ -305,7 +305,9 @@ export class WebhooksController {
 
                 // 3. IDEMPOTENCY CHECK: Ensure we don't save the same message twice
                 const wamid = messageData.key.id;
-                const existingMessage = await this.messageRepository.findOne({ where: { wamid } });
+                const existingMessage = await this.messageRepository.findOne({
+                    where: { wamid, contactId: contact.id }
+                });
                 if (existingMessage) {
                     this.logger.warn(`[Deduplication] Message ${wamid} already exists. Skipping.`);
                     return { status: 'duplicate_skipped' };
@@ -420,14 +422,13 @@ export class WebhooksController {
                         const contact = await this.contactRepository.findOne({ where: { id: message.contactId } });
                         if (contact) {
                             // Clean the JID
-                            const newExternalId = remoteJid.split('@')[0];
+                            const newExternalId = remoteJid.replace(/:[0-9]+/, '');
                             const currentExternalId = contact.externalId;
 
                             // If we have a NEW external ID (e.g. LID) and it's different from what we have
                             // We update externalId to the new one (LID), because that's what WA is using.
-                            // CRITICAL: We DO NOT touch phoneNumber. sending uses phoneNumber priority.
                             if (newExternalId && newExternalId !== currentExternalId && !newExternalId.includes('status')) {
-                                this.logger.log(`[Smart Link] Linking Contact ${contact.name} (Ph: ${contact.phoneNumber}) to new JID/LID: ${newExternalId}`);
+                                this.logger.log(`[Smart Link] Updating Contact ${contact.name} JID: ${currentExternalId} -> ${newExternalId}`);
                                 contact.externalId = newExternalId;
                                 await this.contactRepository.save(contact);
                             }
