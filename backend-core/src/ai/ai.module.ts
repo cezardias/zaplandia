@@ -6,9 +6,11 @@ import { Contact, Message } from '../crm/entities/crm.entity';
 import { Integration } from '../integrations/entities/integration.entity';
 import { IntegrationsModule } from '../integrations/integrations.module';
 
+import { AiPrompt } from '../integrations/entities/ai-prompt.entity';
+
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Contact, Message, Integration]),
+        TypeOrmModule.forFeature([Contact, Message, Integration, AiPrompt]),
         IntegrationsModule,
     ],
     controllers: [AiController],

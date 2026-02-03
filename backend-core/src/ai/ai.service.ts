@@ -6,6 +6,7 @@ import { Integration } from '../integrations/entities/integration.entity';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { IntegrationsService } from '../integrations/integrations.service';
+import { AiPrompt as AiPromptEntity } from '../integrations/entities/ai-prompt.entity';
 
 export interface AIPrompt {
     id: string;
@@ -25,6 +26,8 @@ export class AiService {
         private messageRepository: Repository<Message>,
         @InjectRepository(Integration)
         private integrationRepository: Repository<Integration>,
+        @InjectRepository(AiPromptEntity)
+        private aiPromptRepository: Repository<AiPromptEntity>,
         private evolutionApiService: EvolutionApiService,
         private integrationsService: IntegrationsService,
     ) { }
@@ -46,16 +49,22 @@ export class AiService {
      * Check if AI should respond to this message
      */
     async shouldRespond(contact: Contact, instanceName: string, tenantId: string): Promise<boolean> {
-        // 1. Find the integration for this instance
-        const integration = await this.integrationRepository.findOne({
+        // 1. Find the integration for this specific instance
+        const integrations = await this.integrationRepository.find({
             where: {
                 tenantId,
                 provider: 'evolution' as any,
             }
         });
 
+        // Match by instanceName in credentials or settings
+        const integration = integrations.find(i =>
+            i.credentials?.instanceName === instanceName ||
+            i.settings?.instanceName === instanceName
+        );
+
         if (!integration) {
-            this.logger.warn(`No integration found for instance ${instanceName}`);
+            this.logger.warn(`No integration found for instance ${instanceName} to handle auto-response`);
             return false;
         }
 
@@ -83,7 +92,7 @@ export class AiService {
     /**
      * Generate AI response for a message
      */
-    async generateResponse(contact: Contact, userMessage: string, tenantId: string): Promise<string | null> {
+    async generateResponse(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
         try {
             // 1. Get tenant's Gemini API key
             const apiKey = await this.getGeminiApiKey(tenantId);
@@ -96,15 +105,22 @@ export class AiService {
             const genAI = new GoogleGenerativeAI(apiKey);
 
             // 3. Get integration to find prompt
-            const integration = await this.integrationRepository.findOne({
+            const integrations = await this.integrationRepository.find({
                 where: {
                     tenantId,
                     provider: 'evolution' as any,
                 }
             });
 
+            // Match by instanceName (contact.instance or provided)
+            const targetInstance = instanceName || contact.instance;
+            const integration = integrations.find(i =>
+                i.credentials?.instanceName === targetInstance ||
+                i.settings?.instanceName === targetInstance
+            );
+
             if (!integration?.aiPromptId) {
-                this.logger.error('No AI prompt configured');
+                this.logger.error(`No AI prompt configured for instance ${targetInstance}`);
                 return null;
             }
 
@@ -112,7 +128,7 @@ export class AiService {
             const promptContent = await this.getPromptContent(integration.aiPromptId, tenantId);
 
             if (!promptContent) {
-                this.logger.error(`Prompt ${integration.aiPromptId} not found`);
+                this.logger.error(`Prompt ${integration.aiPromptId} content not found or empty`);
                 return null;
             }
 
@@ -138,7 +154,7 @@ export class AiService {
             const response = result.response;
             const aiResponse = response.text();
 
-            this.logger.log(`AI generated response for contact ${contact.id}`);
+            this.logger.log(`AI generated response for contact ${contact.id} using prompt ${integration.aiPromptId}`);
             return aiResponse;
 
         } catch (error) {
@@ -174,13 +190,15 @@ export class AiService {
         }
     }
 
-    /**
-     * Get prompt content from database
-     * TODO: Implement this based on your AI prompts table structure
-     */
     private async getPromptContent(promptId: string, tenantId: string): Promise<string | null> {
-        // Placeholder - you need to implement this based on your prompts table
-        // For now, returning a default prompt
-        return `Você é um assistente virtual prestativo. Responda de forma educada e profissional.`;
+        try {
+            const prompt = await this.aiPromptRepository.findOne({
+                where: { id: promptId, tenantId }
+            });
+            return prompt?.content || null;
+        } catch (error) {
+            this.logger.error(`Error fetching prompt content for ${promptId}: ${error.message}`);
+            return null;
+        }
     }
 }
