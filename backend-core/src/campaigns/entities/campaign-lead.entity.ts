@@ -27,7 +27,7 @@ export class CampaignLead {
     status: LeadStatus;
 
     @Column({ type: 'text', nullable: true })
-    errorReason: string;
+    errorReason: string | null;
 
     @ManyToOne(() => Campaign, (campaign) => campaign.leads)
     campaign: Campaign;
