@@ -211,6 +211,14 @@ export class CrmService {
                     throw new BadRequestException('Contato não possui número de WhatsApp válido vinculado (adicione um telefone ao contato).');
                 }
 
+                // 3.5 Final Formatting: Ensure WhatsApp JID suffix
+                if (provider === 'whatsapp' && !targetNumber.includes('@')) {
+                    // If it's a number, append @s.whatsapp.net
+                    if (/^\d+$/.test(targetNumber)) {
+                        targetNumber = `${targetNumber}@s.whatsapp.net`;
+                    }
+                }
+
                 if (targetNumber) {
                     // CRITICAL FIX: Use the contact's instance, not just the first available one!
                     // This ensures we reply from the same WhatsApp number the contact messaged

@@ -139,7 +139,18 @@ export default function OmniInboxPage() {
 
     useEffect(() => {
         fetchChats();
-    }, [token, selectedInstance]);
+        // Sync AI state for the newly selected instance
+        if (selectedInstance !== 'all') {
+            const inst = availableInstances.find(i => i.id === selectedInstance);
+            if (inst) {
+                setAiEnabled(inst.aiEnabled || false);
+                setSelectedPromptId(inst.aiPromptId || null);
+            }
+        } else {
+            setAiEnabled(false);
+            setSelectedPromptId(null);
+        }
+    }, [token, selectedInstance, availableInstances]);
 
     const handleSeed = async () => {
         if (!confirm('Gerar dados de demonstração para o Inbox?')) return;
@@ -277,7 +288,14 @@ export default function OmniInboxPage() {
             });
 
             if (res.ok) {
-                setAiEnabled(!aiEnabled);
+                const data = await res.json();
+                setAiEnabled(data.integration?.aiEnabled ?? !aiEnabled);
+                // Update availableInstances local state to keep it in sync
+                setAvailableInstances(prev => prev.map(i =>
+                    i.id === selectedInstance
+                        ? { ...i, aiEnabled: data.integration?.aiEnabled ?? !aiEnabled }
+                        : i
+                ));
             }
         } catch (err) {
             console.error('Erro ao alternar IA:', err);
@@ -288,7 +306,9 @@ export default function OmniInboxPage() {
         if (!token || !selectedContact) return;
 
         try {
-            const newValue = contactAiEnabled === null ? false : (contactAiEnabled ? null : false);
+            // Simplified logic: toggle between true and null (or false if you prefer strict)
+            // If contactAiEnabled is true, turn off (null or false). If null/false, turn on (true).
+            const newValue = contactAiEnabled ? null : true;
 
             const res = await fetch(`/api/ai/contact/${selectedContact.id}/toggle`, {
                 method: 'POST',
@@ -389,7 +409,28 @@ export default function OmniInboxPage() {
                                     {aiEnabled && (
                                         <select
                                             value={selectedPromptId || ''}
-                                            onChange={(e) => setSelectedPromptId(e.target.value)}
+                                            onChange={async (e) => {
+                                                const newPromptId = e.target.value;
+                                                setSelectedPromptId(newPromptId);
+                                                // Save immediately to backend
+                                                if (token && selectedInstance !== 'all') {
+                                                    try {
+                                                        await fetch(`/api/ai/integration/${selectedInstance}/toggle`, {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Authorization': `Bearer ${token}`,
+                                                                'Content-Type': 'application/json'
+                                                            },
+                                                            body: JSON.stringify({
+                                                                enabled: true,
+                                                                promptId: newPromptId
+                                                            })
+                                                        });
+                                                    } catch (err) {
+                                                        console.error('Erro ao salvar prompt:', err);
+                                                    }
+                                                }
+                                            }}
                                             className="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
                                         >
                                             <option value="">Selecione um prompt...</option>
