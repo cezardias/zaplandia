@@ -78,16 +78,11 @@ export class IntegrationsController {
         const evolutionResponse = await this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.userId);
 
         // Save integration to database
-        const integration = await this.integrationsService.create({
-            tenantId: req.user.tenantId,
-            provider: 'evolution' as any,
-            status: 'CONNECTED' as any,
-            settings: {
-                instanceName: instanceName,
-                evolutionData: evolutionResponse
-            },
-            credentials: {}
-        });
+        const integration = await this.integrationsService.create(
+            req.user.tenantId,
+            'evolution' as any,
+            { instanceName, evolutionData: evolutionResponse }
+        );
 
         return { ...evolutionResponse, integrationId: integration.id };
     }
