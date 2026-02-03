@@ -87,6 +87,22 @@ export default function OmniInboxPage() {
         }
     };
 
+    const fetchAiPrompts = async () => {
+        if (!token) return;
+        try {
+            const res = await fetch('/api/ai/prompts', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                console.log('Prompts carregados:', data);
+                setAiPrompts(data);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar prompts:', err);
+        }
+    };
+
     const fetchChats = async () => {
         if (!token) return;
         try {
