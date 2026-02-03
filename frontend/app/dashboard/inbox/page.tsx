@@ -94,7 +94,7 @@ export default function OmniInboxPage() {
             // Get instance name from ID for filtering
             const instanceName = selectedInstance === 'all'
                 ? 'all'
-                : availableInstances.find(i => i.id === selectedInstance)?.name || selectedInstance;
+                : availableInstances.find(i => i.id === selectedInstance)?.instanceName || selectedInstance;
 
             const url = instanceName === 'all'
                 ? '/api/crm/chats'
