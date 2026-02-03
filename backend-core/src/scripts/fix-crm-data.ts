@@ -70,7 +70,7 @@ async function bootstrap() {
 
             // Migrar todas as mensagens do duplicado para o contato correto
             await contactRepo.query(
-                `UPDATE messages SET contact_id = $1 WHERE contact_id = $2`,
+                `UPDATE messages SET "contactId" = $1 WHERE "contactId" = $2`,
                 [keepContact.id, contact.id]
             );
 
