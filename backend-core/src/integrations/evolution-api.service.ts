@@ -318,26 +318,32 @@ export class EvolutionApiService {
             return await sendRequest(number);
         } catch (error: any) {
             const errorData = error.response?.data || error.message;
-            this.logger.error(`Erro ao enviar mensagem texto via EvolutionAPI: ${JSON.stringify(errorData)}`);
+            const errorString = JSON.stringify(errorData);
 
             // BRAZIL 9-DIGIT RETRY LOGIC
-            // Check if error is "exists: false" AND number is Brazilian (55...)
-            const isExistsError = errorData?.response?.message?.[0]?.exists === false || JSON.stringify(errorData).includes('"exists":false');
+            // Check if error is specifically "exists: false"
+            const isExistsError = errorString.includes('"exists":false') || errorString.includes('not found');
             const cleanNum = number.replace(/\D/g, '');
 
             if (isExistsError && cleanNum.startsWith('55')) {
-                this.logger.warn(`Number ${number} failed existence check. Attempting Brazil 9-digit fix...`);
                 let retryNum = '';
 
                 // Case 1: Has 13 digits (55 + 2 DDD + 9 + 8 digits) -> Try REMOVING 9
-                if (cleanNum.length === 13 && parseInt(cleanNum[4]) === 9) {
-                    // 55 61 9 98655077 -> 55 61 98655077
+                // Example: 55 61 9 98655077 -> 55 61 98655077
+                if (cleanNum.length === 13 && cleanNum[4] === '9') {
                     retryNum = cleanNum.slice(0, 4) + cleanNum.slice(5);
                 }
                 // Case 2: Has 12 digits (55 + 2 DDD + 8 digits) -> Try ADDING 9
+                // ONLY for mobile candidates (Starts with 6, 7, 8, 9). 
+                // Landlines (2, 3, 4, 5) DON'T get the 9th digit in Brazil.
                 else if (cleanNum.length === 12) {
-                    // 55 61 98655077 -> 55 61 9 98655077
-                    retryNum = cleanNum.slice(0, 4) + '9' + cleanNum.slice(4);
+                    const firstDigitOfNumber = cleanNum[4];
+                    if (['6', '7', '8', '9'].includes(firstDigitOfNumber)) {
+                        this.logger.debug(`[EvolutionAPI] Number ${cleanNum} looks like a mobile missing the 9. Retrying...`);
+                        retryNum = cleanNum.slice(0, 4) + '9' + cleanNum.slice(4);
+                    } else {
+                        this.logger.warn(`[EvolutionAPI] Number ${cleanNum} failed existence check. It looks like a landline, skipping 9-digit retry.`);
+                    }
                 }
 
                 if (retryNum) {
@@ -345,12 +351,20 @@ export class EvolutionApiService {
                     try {
                         return await sendRequest(retryNum);
                     } catch (retryError: any) {
-                        this.logger.error(`Retry failed for ${retryNum}: ${JSON.stringify(retryError.response?.data || retryError.message)}`);
-                        // Throw original error to propagate 400 if both fail
+                        const retryErrorData = retryError.response?.data || retryError.message;
+                        this.logger.error(`Retry failed for ${retryNum}: ${JSON.stringify(retryErrorData)}`);
+                        // Explicitly label the error for the caller
+                        if (JSON.stringify(retryErrorData).includes('"exists":false')) {
+                            throw new Error(`WhatsApp number does not exist (even after 9-digit fix): ${retryNum}`);
+                        }
                     }
+                } else if (isExistsError) {
+                    // It's a landline (or 13 digits already) and failed. Mark as non-existent.
+                    throw new Error(`WhatsApp number does not exist: ${cleanNum}`);
                 }
             }
 
+            this.logger.error(`Erro ao enviar mensagem texto via EvolutionAPI: ${errorString}`);
             throw error;
         }
     }

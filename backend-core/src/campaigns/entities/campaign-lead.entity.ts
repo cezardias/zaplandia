@@ -5,6 +5,7 @@ export enum LeadStatus {
     PENDING = 'pending',
     SENT = 'sent',
     FAILED = 'failed',
+    INVALID = 'invalid', // Number does not have WhatsApp
 }
 
 @Entity('campaign_leads')

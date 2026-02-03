@@ -122,36 +122,50 @@ export class CampaignProcessor {
         }
 
         // 4. Send Message & Metadata Update
+        const cleanRecipient = recipient.replace(/\D/g, '');
+
         try {
-            this.logger.log(`[ENVIANDO] Disparando mensagem para ${recipient}...`);
-            await this.evolutionApiService.sendText(tenantId, instanceName, recipient, finalMessage);
+            this.logger.log(`[ENVIANDO] Disparando mensagem para ${cleanRecipient}...`);
+            await this.evolutionApiService.sendText(tenantId, instanceName, cleanRecipient, finalMessage);
 
             // Update Lead Status
             if (leadId) {
-                await this.leadRepository.update(leadId, { status: LeadStatus.SENT, sentAt: new Date() });
+                await this.leadRepository.update(leadId, { status: LeadStatus.SENT, sentAt: new Date(), errorReason: null });
             }
 
             // Update Contact Pipeline Stage (Automated)
             let cId = contactId;
-            if (!cId && tenantId && recipient) {
-                const contact = await this.crmService.findOneByExternalId(tenantId, recipient);
+            if (!cId && tenantId && cleanRecipient) {
+                const contact = await this.crmService.findOneByExternalId(tenantId, cleanRecipient);
                 if (contact) cId = contact.id;
             }
 
             if (cId) {
                 await this.crmService.updateContact(tenantId, cId, { stage: 'CONTACTED' });
-                this.logger.log(`[CRM] Lead ${recipient} atualizado para estágio 'PRIMEIRO CONTATO'`);
+                this.logger.log(`[CRM] Lead ${cleanRecipient} atualizado para estágio 'PRIMEIRO CONTATO'`);
             }
 
             // Increment Counter
             this.incrementCounter(instanceName);
 
-            this.logger.log(`[SUCESSO] Mensagem enviada com sucesso para ${recipient}`);
+            this.logger.log(`[SUCESSO] Mensagem enviada com sucesso para ${cleanRecipient}`);
         } catch (error) {
-            this.logger.error(`[FALHA] Erro ao enviar para ${recipient}: ${error.message}`);
+            const errorMsg = error.message.toLowerCase();
+            this.logger.error(`[FALHA] Erro ao enviar para ${cleanRecipient}: ${error.message}`);
+
             if (leadId) {
-                await this.leadRepository.update(leadId, { status: LeadStatus.FAILED, errorReason: error.message });
+                // If it's a "does not exist" error, mark as INVALID instead of FAILED
+                const isInvalid = errorMsg.includes('does not exist') || errorMsg.includes('not found') || errorMsg.includes('exists":false');
+                const newStatus = isInvalid ? LeadStatus.INVALID : LeadStatus.FAILED;
+
+                await this.leadRepository.update(leadId, {
+                    status: newStatus,
+                    errorReason: error.message
+                });
+
+                this.logger.warn(`[CAMPANHA] Lead ${cleanRecipient} marcado como ${newStatus.toUpperCase()}`);
             }
+
             throw error;
         }
     }
