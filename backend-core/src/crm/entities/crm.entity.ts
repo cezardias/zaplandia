@@ -66,6 +66,9 @@ export class Message {
     @Column()
     direction: 'inbound' | 'outbound';
 
+    @Column({ nullable: true, default: 'PENDING' })
+    status: string; // PENDING, SENT, DELIVERED, READ, PLAYED
+
     @Column({ nullable: true })
     provider: string; // which network it came from
 
