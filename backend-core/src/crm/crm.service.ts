@@ -168,7 +168,7 @@ export class CrmService {
 
                 // 2. If no full JID, prefer explicitly saved phoneNumber
                 if (!targetNumber) {
-                    targetNumber = contact?.phoneNumber;
+                    targetNumber = contact?.phoneNumber || null;
                 }
 
                 // 3. Fallback: If externalId looks like a raw number (no suffix), use it
