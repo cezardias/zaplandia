@@ -174,6 +174,10 @@ export default function OmniInboxPage() {
     useEffect(() => {
         if (selectedContact && token) {
             console.log(`Buscando mensagens do contato: ${selectedContact.id}`);
+
+            // Sync AI state for the newly selected contact
+            setContactAiEnabled(selectedContact.aiEnabled ?? null);
+
             fetch(`/api/crm/chats/${selectedContact.id}/messages`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
@@ -323,6 +327,12 @@ export default function OmniInboxPage() {
 
             if (res.ok) {
                 setContactAiEnabled(newValue);
+                // Update local contacts list to stay in sync
+                setContacts(prev => prev.map(c =>
+                    c.id === selectedContact.id
+                        ? { ...c, aiEnabled: newValue }
+                        : c
+                ));
             }
         } catch (err) {
             console.error('Erro ao alternar IA do contato:', err);
