@@ -22,21 +22,28 @@ export class IntegrationsController {
         let evolutionInstances: any[] = [];
         try {
             const instances = await this.evolutionApiService.listInstances(req.user.tenantId);
-            evolutionInstances = instances.map((inst: any) => {
+            evolutionInstances = await Promise.all(instances.map(async (inst: any) => {
                 const rawName = inst.name || inst.instance?.instanceName || inst.instanceName;
                 // Clean name: remove technical prefix "tenant_<uuid>_"
                 // We keep everything after the second underscore
                 const friendlyName = rawName.replace(/^tenant_[0-9a-fA-F-]{36}_/, '');
 
+                // Find the corresponding integration in the database by matching the instance name
+                const dbIntegration = dbIntegrations.find(i =>
+                    i.provider === 'evolution' &&
+                    i.settings?.instanceName === rawName
+                );
+
                 return {
-                    id: rawName,
+                    id: dbIntegration?.id || rawName, // Use DB UUID if found, fallback to rawName
                     name: friendlyName,
+                    instanceName: rawName, // Keep raw name for filtering chats
                     provider: 'evolution',
                     status: inst.status === 'open' || inst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED',
                     integrationId: inst.integrationId || `evo_${rawName}`,
                     settings: inst
                 };
-            });
+            }));
         } catch (e) {
             console.error('Failed to fetch evolution instances for list:', e.message);
         }
@@ -47,6 +54,7 @@ export class IntegrationsController {
             name: i.provider === 'whatsapp' ? 'WhatsApp Oficial' :
                 i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
         }));
+
 
         return [...finalIntegrations, ...evolutionInstances];
     }
