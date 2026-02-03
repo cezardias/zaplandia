@@ -29,6 +29,7 @@ interface Contact {
     lastMessage?: string;
     updatedAt: string;
     provider: string;
+    aiEnabled?: boolean | null;
 }
 
 interface Message {
@@ -236,6 +237,71 @@ export default function OmniInboxPage() {
         }
     };
 
+    // AI Control Functions
+    const toggleAI = async () => {
+        if (!token || selectedInstance === 'all') return;
+
+        try {
+            const res = await fetch(`/api/ai/integration/${selectedInstance}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    enabled: !aiEnabled,
+                    promptId: selectedPromptId
+                })
+            });
+
+            if (res.ok) {
+                setAiEnabled(!aiEnabled);
+            }
+        } catch (err) {
+            console.error('Erro ao alternar IA:', err);
+        }
+    };
+
+    const toggleContactAI = async () => {
+        if (!token || !selectedContact) return;
+
+        try {
+            const newValue = contactAiEnabled === null ? false : (contactAiEnabled ? null : false);
+
+            const res = await fetch(`/api/ai/contact/${selectedContact.id}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    enabled: newValue
+                })
+            });
+
+            if (res.ok) {
+                setContactAiEnabled(newValue);
+            }
+        } catch (err) {
+            console.error('Erro ao alternar IA do contato:', err);
+        }
+    };
+
+    const fetchAIPrompts = async () => {
+        if (!token) return;
+        try {
+            const res = await fetch('/api/ai/prompts', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAiPrompts(data.prompts || []);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar prompts:', err);
+        }
+    };
+
     const getProviderIcon = (provider: string) => {
         switch (provider) {
             case 'whatsapp': return <Zap className="w-4 h-4 text-green-500" />;
@@ -278,6 +344,42 @@ export default function OmniInboxPage() {
                                     </option>
                                 ))}
                             </select>
+
+                            {/* AI Toggle & Prompt Selector */}
+                            {selectedInstance !== 'all' && (
+                                <div className="mt-3 p-3 bg-black/20 rounded-lg border border-white/10 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium">🤖 IA Ativa</span>
+                                        </div>
+                                        <button
+                                            onClick={toggleAI}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${aiEnabled ? 'bg-primary' : 'bg-gray-600'
+                                                }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${aiEnabled ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    {aiEnabled && (
+                                        <select
+                                            value={selectedPromptId || ''}
+                                            onChange={(e) => setSelectedPromptId(e.target.value)}
+                                            className="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                        >
+                                            <option value="">Selecione um prompt...</option>
+                                            {aiPrompts.map(prompt => (
+                                                <option key={prompt.id} value={prompt.id}>
+                                                    {prompt.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -345,7 +447,12 @@ export default function OmniInboxPage() {
                                 </div>
                                 <div className="flex-1 text-left overflow-hidden">
                                     <div className="flex justify-between items-center">
-                                        <p className="font-bold truncate">{contact.name || 'Contato'}</p>
+                                        <div className="flex items-center gap-1">
+                                            <p className="font-bold truncate">{contact.name || 'Contato'}</p>
+                                            {aiEnabled && contact.aiEnabled !== false && (
+                                                <span className="text-xs">🤖</span>
+                                            )}
+                                        </div>
                                         <span className="text-[10px] text-gray-500">12:30</span>
                                     </div>
                                     <p className="text-xs text-gray-500 truncate">{contact.lastMessage || 'Sem mensagens...'}</p>
@@ -376,6 +483,20 @@ export default function OmniInboxPage() {
                             </div>
                             <div className="flex items-center space-x-4 text-gray-400">
                                 <button className="hover:text-white transition"><Phone className="w-5 h-5" /></button>
+                                {/* AI Toggle for this conversation */}
+                                {aiEnabled && (
+                                    <button
+                                        onClick={toggleContactAI}
+                                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition ${contactAiEnabled === false
+                                                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                                : 'bg-primary/20 text-primary hover:bg-primary/30'
+                                            }`}
+                                        title={contactAiEnabled === false ? 'IA desativada para este contato' : 'IA ativa para este contato'}
+                                    >
+                                        <span>🤖</span>
+                                        {contactAiEnabled === false && <span className="line-through">OFF</span>}
+                                    </button>
+                                )}
                                 <button className="hover:text-white transition"><MoreVertical className="w-5 h-5" /></button>
                             </div>
                         </div>
