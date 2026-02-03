@@ -66,7 +66,7 @@ export class AiController {
             return { success: false, message: 'Contact not found' };
         }
 
-        contact.aiEnabled = body.enabled;
+        contact.aiEnabled = body.enabled as boolean | null;
         await this.contactRepository.save(contact);
 
         return {
