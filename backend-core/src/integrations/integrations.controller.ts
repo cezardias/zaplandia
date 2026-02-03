@@ -34,8 +34,13 @@ export class IntegrationsController {
                     i.settings?.instanceName === rawName
                 );
 
+                // Skip if already in database
+                if (dbIntegration) {
+                    return null;
+                }
+
                 return {
-                    id: dbIntegration?.id || rawName, // Use DB UUID if found, fallback to rawName
+                    id: rawName, // Use rawName as fallback ID
                     name: friendlyName,
                     instanceName: rawName, // Keep raw name for filtering chats
                     provider: 'evolution',
@@ -44,6 +49,9 @@ export class IntegrationsController {
                     settings: inst
                 };
             }));
+
+            // Filter out null entries (instances already in DB)
+            evolutionInstances = evolutionInstances.filter(inst => inst !== null);
         } catch (e) {
             console.error('Failed to fetch evolution instances for list:', e.message);
         }
