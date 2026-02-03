@@ -31,7 +31,7 @@ export class IntegrationsController {
                 // Find the corresponding integration in the database by matching the instance name
                 const dbIntegration = dbIntegrations.find(i =>
                     i.provider === 'evolution' &&
-                    i.settings?.instanceName === rawName
+                    (i.settings?.instanceName === rawName || i.credentials?.instanceName === rawName)
                 );
 
                 // Skip if already in database
