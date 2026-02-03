@@ -24,6 +24,9 @@ export class Contact {
     @Column({ nullable: true })
     lastMessage: string;
 
+    @Column({ nullable: true })
+    instance: string; // The Evolution API instance (e.g. "zaplandia_01")
+
     @Column({ default: 'LEAD' })
     stage: string; // NOVO, CONTACTED, NEGOTIATION, INTERESTED, CONVERTIDO, NOT_INTERESTED
 

@@ -23,8 +23,8 @@ export class CrmController {
     }
 
     @Get('chats')
-    getChats(@Request() req) {
-        return this.crmService.getRecentChats(req.user.tenantId, req.user.role);
+    getChats(@Request() req, @Query('instance') instance?: string) {
+        return this.crmService.getRecentChats(req.user.tenantId, req.user.role, { instance });
     }
 
     @Get('chats/:contactId/messages')

@@ -278,10 +278,16 @@ export class WebhooksController {
                         externalId,
                         name: (resolvedName && !resolvedName.includes('@')) ? resolvedName : `Novo Contato ${externalId.slice(-4)}`,
                         provider: 'whatsapp',
-                        tenantId
+                        tenantId,
+                        instance: data.instance // Save Instance Name
                     });
                     await this.contactRepository.save(contact);
                 } else {
+                    // Update instance if missing or changed
+                    if ((!contact.instance || contact.instance !== data.instance) && data.instance) {
+                        contact.instance = data.instance;
+                        await this.contactRepository.save(contact);
+                    }
                     // "Healing" logic: overwrite if current name is a JID/system and we found a real name
                     const currentIsBad = !contact.name || contact.name.includes('@') || contact.name === contact.externalId || contact.name.startsWith('Novo Contato ') || contact.name.startsWith('Contato ');
                     const newIsBetter = resolvedName && !resolvedName.includes('@') && resolvedName !== 'Sistema' && !resolvedName.startsWith('Novo Contato ') && !resolvedName.startsWith('Contato ');
@@ -294,6 +300,7 @@ export class WebhooksController {
                 }
 
                 // 3. IDEMPOTENCY CHECK: Ensure we don't save the same message twice
+                const wamid = messageData.key.id;
                 const existingMessage = await this.messageRepository.findOne({ where: { wamid } });
                 if (existingMessage) {
                     this.logger.warn(`[Deduplication] Message ${wamid} already exists. Skipping.`);

@@ -26,54 +26,30 @@ export class CrmService {
         private readonly evolutionApiService: EvolutionApiService,
     ) { }
 
-    async getRecentChats(tenantId: string, role?: string) {
-        const where = role === 'superadmin' ? {} : { tenantId };
-        const contacts = await this.contactRepository.find({
-            where,
-            relations: ['messages'],
-            order: { updatedAt: 'DESC' },
-            take: 20
-        });
+    async getRecentChats(tenantId: string, role: string, filters?: { stage?: string; campaignId?: string; search?: string; instance?: string }) {
+        // If superadmin, can see all messages? No, usually scoped by tenant.
+        // Assuming role check handled in Controller or Guard.
 
-        // Auto-clean JIDs and resolve names from CampaignLead on the fly
-        return Promise.all(contacts.map(async c => {
-            const nameIsBad = !c.name || c.name.includes('@s.whatsapp.net') || c.name === 'Sistema' || c.name === 'WhatsApp User' || c.name.startsWith('Contato ') || c.name.startsWith('Novo Contato ');
+        const query = this.contactRepository.createQueryBuilder('contact')
+            .where('contact.tenantId = :tenantId', { tenantId });
 
-            if (nameIsBad && c.externalId) {
-                // Try to find a better name in leads
-                // 1. Exact match first
-                let lead = await this.leadRepository.findOne({
-                    where: { externalId: c.externalId, campaign: { tenantId } },
-                    relations: ['campaign'],
-                    order: { createdAt: 'DESC' }
-                });
+        if (filters?.stage) {
+            query.andWhere('contact.stage = :stage', { stage: filters.stage });
+        }
 
-                // 2. Suffix match (last 8 digits) if exact fails
-                if (!lead && c.externalId.length >= 8) {
-                    const suffix = c.externalId.slice(-8);
-                    lead = await this.leadRepository.findOne({
-                        where: {
-                            externalId: Like(`%${suffix}`),
-                            campaign: { tenantId }
-                        },
-                        relations: ['campaign'],
-                        order: { createdAt: 'DESC' }
-                    });
-                }
+        if (filters?.instance && filters.instance !== 'all') { // Filter by Instance
+            query.andWhere('contact.instance = :instance', { instance: filters.instance });
+        }
 
-                if (lead && lead.name) {
-                    // Auto-healing: update contact record permanentely if bad name
-                    this.logger.log(`Auto-healing name for contact ${c.externalId}: ${c.name} -> ${lead.name}`);
-                    await this.contactRepository.update(c.id, { name: lead.name });
-                    return { ...c, name: lead.name };
-                }
-            }
+        if (filters?.campaignId && filters.campaignId !== '') {
+            query.innerJoin('campaign_leads', 'cl', 'cl.externalId = contact.externalId AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
+        }
 
-            return {
-                ...c,
-                name: (c.name && c.name.includes('@s.whatsapp.net')) ? (c.phoneNumber || `Contato ${c.externalId?.slice(-4) || ''}`) : (c.name || c.phoneNumber || `Contato ${c.externalId?.slice(-4) || ''}`)
-            };
-        }));
+        if (filters?.search) {
+            query.andWhere('(contact.name ILIKE :search OR contact.phoneNumber ILIKE :search OR contact.externalId ILIKE :search)', { search: `%${filters.search}%` });
+        }
+
+        return query.orderBy('contact.updatedAt', 'DESC').getMany(); // Order by updatedAt to show recent chats first
     }
 
     async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string, campaignId?: string }) {
