@@ -11,6 +11,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { SupportModule } from './support/support.module';
+import { DebugModule } from './debug/debug.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SupportModule } from './support/support.module';
     DashboardModule,
     CampaignsModule,
     SupportModule,
+    DebugModule,
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'redis',

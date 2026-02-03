@@ -1,0 +1,83 @@
+import { Controller, Get, UseGuards, Request, Post } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Not, IsNull } from 'typeorm';
+import { Contact } from '../crm/entities/crm.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+@Controller('debug')
+@UseGuards(JwtAuthGuard)
+export class DebugController {
+    constructor(
+        @InjectRepository(Contact)
+        private contactRepository: Repository<Contact>,
+    ) { }
+
+    @Get('instances')
+    async getInstanceStats(@Request() req) {
+        const tenantId = req.user.tenantId;
+
+        // Contar contatos por instância
+        const instanceCounts = await this.contactRepository
+            .createQueryBuilder('contact')
+            .select('contact.instance', 'instance')
+            .addSelect('COUNT(*)', 'count')
+            .where('contact.tenantId = :tenantId', { tenantId })
+            .groupBy('contact.instance')
+            .getRawMany();
+
+        // Buscar alguns exemplos de contatos com e sem instância
+        const withInstance = await this.contactRepository.find({
+            where: { tenantId, instance: Not(null) },
+            take: 5,
+            order: { createdAt: 'DESC' }
+        });
+
+        const withoutInstance = await this.contactRepository.find({
+            where: { tenantId, instance: null },
+            take: 5,
+            order: { createdAt: 'DESC' }
+        });
+
+        return {
+            summary: instanceCounts,
+            examples: {
+                withInstance: withInstance.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    instance: c.instance,
+                    createdAt: c.createdAt
+                })),
+                withoutInstance: withoutInstance.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    instance: c.instance,
+                    createdAt: c.createdAt
+                }))
+            }
+        };
+    }
+
+    @Post('force-update-instances')
+    async forceUpdateInstances(@Request() req) {
+        const tenantId = req.user.tenantId;
+
+        // Buscar todos os contatos sem instância
+        const contactsWithoutInstance = await this.contactRepository.find({
+            where: { tenantId, instance: IsNull() }
+        });
+
+        // Atualizar todos com a instância padrão
+        const defaultInstance = `tenant_${tenantId}_zaplandia_01`;
+
+        for (const contact of contactsWithoutInstance) {
+            contact.instance = defaultInstance;
+        }
+
+        await this.contactRepository.save(contactsWithoutInstance);
+
+        return {
+            message: `Atualizados ${contactsWithoutInstance.length} contatos com instância ${defaultInstance}`,
+            updated: contactsWithoutInstance.length
+        };
+    }
+}
