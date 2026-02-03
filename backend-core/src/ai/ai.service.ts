@@ -197,9 +197,9 @@ export class AiService {
                 return;
             }
 
-            // HARDENING: Ensure number has suffix, but preserve colons for JIDs
+            // HARDENING: Standardize number to pure digits for delivery
             if (!targetNumber.includes('@')) {
-                const cleanNumber = targetNumber.replace(/[^\d:]/g, ''); // Keep digits and colons
+                const cleanNumber = targetNumber.split(':')[0].replace(/\D/g, ''); // Remove :suffix and non-digits
                 targetNumber = `${cleanNumber}@s.whatsapp.net`;
             }
 
