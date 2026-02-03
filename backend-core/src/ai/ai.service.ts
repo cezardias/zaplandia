@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import axios from 'axios';
 import { Contact, Message } from '../crm/entities/crm.entity';
 import { Integration } from '../integrations/entities/integration.entity';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { AiPrompt as AiPromptEntity } from '../integrations/entities/ai-prompt.entity';
@@ -101,9 +101,6 @@ export class AiService {
                 return null;
             }
 
-            // 2. Initialize Gemini with tenant's key (using v1beta for newest models)
-            const genAI = new GoogleGenerativeAI(apiKey);
-
             // 3. Get integration to find prompt
             const integrations = await this.integrationRepository.find({
                 where: {
@@ -145,14 +142,27 @@ export class AiService {
                 .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`)
                 .join('\n');
 
-            // 6. Call Gemini API
-            const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' }, { apiVersion: 'v1beta' });
-
+            // 6. Call Gemini API manually (v1beta)
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
             const fullPrompt = `${promptContent}\n\nHistórico da conversa:\n${conversationContext}\n\nCliente: ${userMessage}\n\nVocê:`;
 
-            const result = await model.generateContent(fullPrompt);
-            const response = result.response;
-            const aiResponse = response.text();
+            const response = await axios.post(url, {
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [
+                            { text: fullPrompt }
+                        ]
+                    }
+                ]
+            });
+
+            const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!aiResponse) {
+                this.logger.error('Empty response from Gemini API');
+                return null;
+            }
 
             this.logger.log(`AI generated response for contact ${contact.id} using prompt ${integration.aiPromptId}`);
             return aiResponse;
