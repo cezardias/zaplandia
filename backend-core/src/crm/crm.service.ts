@@ -85,13 +85,26 @@ export class CrmService {
                 }
             }
 
-            query.andWhere(
-                '(contact.instance = :instance OR contact.instance LIKE :instancePattern)',
-                {
-                    instance: instanceName,
-                    instancePattern: `%_${instanceName}`
-                }
-            );
+            if (filters.campaignId && filters.campaignId !== '') {
+                // If filtering by specific CAMPAIGN, include contacts that are part of the campaign despite NULL instance
+                // The Inner Join on campaign_leads ensures safety.
+                query.andWhere(
+                    '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL)',
+                    {
+                        instance: instanceName,
+                        instancePattern: `%_${instanceName}`
+                    }
+                );
+            } else {
+                // Strict filtering for general view
+                query.andWhere(
+                    '(contact.instance = :instance OR contact.instance LIKE :instancePattern)',
+                    {
+                        instance: instanceName,
+                        instancePattern: `%_${instanceName}`
+                    }
+                );
+            }
         }
 
         if (filters?.stage) {
