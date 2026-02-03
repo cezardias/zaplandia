@@ -310,9 +310,14 @@ export default function OmniInboxPage() {
         if (!token || !selectedContact) return;
 
         try {
-            // Simplified logic: toggle between true and null (or false if you prefer strict)
-            // If contactAiEnabled is true, turn off (null or false). If null/false, turn on (true).
-            const newValue = contactAiEnabled ? null : true;
+            // 3-state cycle logic:
+            // 1. null (follow global) -> click -> false (strictly disabled)
+            // 2. false (strictly disabled) -> click -> true (strictly enabled)
+            // 3. true (strictly enabled) -> click -> null (follow global)
+            let newValue: boolean | null;
+            if (contactAiEnabled === null) newValue = false;
+            else if (contactAiEnabled === false) newValue = true;
+            else newValue = null;
 
             const res = await fetch(`/api/ai/contact/${selectedContact.id}/toggle`, {
                 method: 'POST',
@@ -555,19 +560,39 @@ export default function OmniInboxPage() {
                                 </div>
                             </div>
                             <div className="flex items-center space-x-4 text-gray-400">
-                                <button className="hover:text-white transition"><Phone className="w-5 h-5" /></button>
+                                <a
+                                    href={`tel:${selectedContact.phoneNumber || selectedContact.externalId?.replace(/\D/g, '')}`}
+                                    className="hover:text-white transition"
+                                    title="Ligar para o contato"
+                                >
+                                    <Phone className="w-5 h-5" />
+                                </a>
                                 {/* AI Toggle for this conversation */}
                                 {aiEnabled && (
                                     <button
                                         onClick={toggleContactAI}
                                         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition ${contactAiEnabled === false
-                                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                            : 'bg-primary/20 text-primary hover:bg-primary/30'
+                                                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                                : contactAiEnabled === true
+                                                    ? 'bg-primary text-white hover:bg-primary/80 shadow-lg shadow-primary/20'
+                                                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                             }`}
-                                        title={contactAiEnabled === false ? 'IA desativada para este contato' : 'IA ativa para este contato'}
+                                        title={
+                                            contactAiEnabled === false
+                                                ? 'IA Forçada: OFF (Clique para ON)'
+                                                : contactAiEnabled === true
+                                                    ? 'IA Forçada: ON (Clique para PADRÃO)'
+                                                    : 'IA Modo: PADRÃO (Clique para OFF)'
+                                        }
                                     >
                                         <span>🤖</span>
-                                        {contactAiEnabled === false && <span className="line-through">OFF</span>}
+                                        {contactAiEnabled === false ? (
+                                            <span className="font-bold">OFF</span>
+                                        ) : contactAiEnabled === true ? (
+                                            <span className="font-bold">ON</span>
+                                        ) : (
+                                            <span>AUTO</span>
+                                        )}
                                     </button>
                                 )}
                                 <button className="hover:text-white transition"><MoreVertical className="w-5 h-5" /></button>
