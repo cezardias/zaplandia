@@ -265,7 +265,8 @@ export class EvolutionApiService {
                 groups_ignore: true, // IMPORTANT: Ignore groups to avoid inbox pollution
                 always_online: true,
                 read_messages: false,
-                read_status: false
+                read_status: false,
+                sync_full_history: false // Required by Evolution API v2
             };
             this.logger.log(`Setting settings for ${instanceName}. Payload: ${JSON.stringify(payload)}`);
 
