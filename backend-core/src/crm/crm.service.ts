@@ -161,14 +161,20 @@ export class CrmService {
                 this.logger.log(`WhatsApp Send Request - Contact: ${contactId}, Name: ${contact?.name}, Provider: ${contact?.provider}, Phone: ${contact?.phoneNumber}, ExtId: ${contact?.externalId}`);
 
                 // FIX: STRICT number resolution logic
-                // 1. Prefer explicitly saved phoneNumber
-                let targetNumber = contact?.phoneNumber;
+                // 1. Prefer full JID from externalId (Supports LIDs and strict JIDs)
+                // If the externalId already has a suffix like @s.whatsapp.net or @lid, use it directly.
+                // This ensures we reply to the EXACT same thread the user contacted us from.
+                let targetNumber = (contact?.externalId && contact.externalId.includes('@')) ? contact.externalId : null;
 
-                // 2. If no phoneNumber, use externalId ONLY if the contact is natively from WhatsApp
-                // AND the externalId looks like a phone number (e.g., typically < 15 digits)
-                if (!targetNumber && contact?.provider === 'whatsapp') {
+                // 2. If no full JID, prefer explicitly saved phoneNumber
+                if (!targetNumber) {
+                    targetNumber = contact?.phoneNumber;
+                }
+
+                // 3. Fallback: If externalId looks like a raw number (no suffix), use it
+                if (!targetNumber && contact?.provider === 'whatsapp' && contact?.externalId) {
                     // Extra safety: Facebook PSIDs are usually 15+ digits. Brazil numbers are 12-13.
-                    if (contact.externalId && contact.externalId.length < 15 && /^\d+$/.test(contact.externalId)) {
+                    if (contact.externalId.length < 15 && /^\d+$/.test(contact.externalId)) {
                         targetNumber = contact.externalId;
                     } else {
                         this.logger.warn(`Skipping externalId '${contact.externalId}' as it looks invalid for WhatsApp.`);
