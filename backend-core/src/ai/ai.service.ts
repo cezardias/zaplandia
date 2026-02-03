@@ -214,15 +214,25 @@ export class AiService {
     /**
      * Send AI response via Evolution API
      */
-    async sendAIResponse(contact: Contact, aiResponse: string, tenantId: string): Promise<void> {
+    async sendAIResponse(contact: Contact, aiResponse: string, tenantId: string, instanceNameOverride?: string): Promise<void> {
         try {
             // CRITICAL: Re-fetch contact from DB to ensure we have the LATEST externalId/JID
             // (fixes "exists: false" when a Smart Link/ACK updated the JID while AI was generating)
             const freshContact = await this.contactRepository.findOne({ where: { id: contact.id } });
             const useContact = freshContact || contact;
+            const useInstance = instanceNameOverride || useContact.instance;
 
             // Get target number
-            let targetNumber = useContact.externalId || useContact.phoneNumber;
+            // PRIORITY: If we have a numeric phoneNumber, use that with @s.whatsapp.net
+            // It's the most stable cross-instance identifier.
+            let targetNumber: string;
+            if (useContact.phoneNumber && useContact.phoneNumber.length > 8) {
+                targetNumber = `${useContact.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+                this.logger.debug(`[AI_SEND] Using phone-based JID for stability: ${targetNumber}`);
+            } else {
+                targetNumber = useContact.externalId || useContact.phoneNumber;
+            }
+
             if (!targetNumber) {
                 this.logger.error(`Cannot send AI response: No target number for contact ${useContact.id}`);
                 return;
@@ -232,12 +242,12 @@ export class AiService {
             const cleanNumber = targetNumber.replace(/:[0-9]+/, '');
             targetNumber = cleanNumber.includes('@') ? cleanNumber : `${cleanNumber.replace(/\D/g, '')}@s.whatsapp.net`;
 
-            this.logger.log(`Sending AI response to ${targetNumber} via ${useContact.instance}`);
+            this.logger.log(`Sending AI response to ${targetNumber} via ${useInstance}`);
 
             // Send via Evolution API
-            await this.evolutionApiService.sendText(tenantId, useContact.instance, targetNumber, aiResponse);
+            await this.evolutionApiService.sendText(tenantId, useInstance, targetNumber, aiResponse);
 
-            this.logger.log(`AI response sent to ${targetNumber} via ${useContact.instance}`);
+            this.logger.log(`AI response sent to ${targetNumber} via ${useInstance}`);
         } catch (error) {
             this.logger.error(`Failed to send AI response: ${error.message}`);
             // EXTRA RESILIENCE: Log the full error to help debug LID issues

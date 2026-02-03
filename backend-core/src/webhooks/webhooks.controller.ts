@@ -376,8 +376,8 @@ export class WebhooksController {
                                 });
                                 await this.messageRepository.save(aiMessage);
 
-                                // Send AI response via Evolution API
-                                await this.aiService.sendAIResponse(contact, aiResponse, tenantId);
+                                // Send AI response via Evolution API (passing instanceName to ensure context lock)
+                                await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
 
                                 this.logger.log(`AI response sent successfully to contact ${contact.id} via ${instanceName}`);
                             } else {
@@ -417,8 +417,8 @@ export class WebhooksController {
                         message.status = status;
                         await this.messageRepository.save(message);
                     }
-
-                    // 2. LID LINKING MAGIC
+                    // 2. LID LINKING MAGIC - Only update if JID actually changed AND it's from the same instance
+                    // or if we DON'T have a phone number yet.
                     if (remoteJid && message.contactId) {
                         const contact = await this.contactRepository.findOne({ where: { id: message.contactId } });
                         if (contact) {
@@ -426,10 +426,12 @@ export class WebhooksController {
                             const newExternalId = remoteJid.replace(/:[0-9]+/, '');
                             const currentExternalId = contact.externalId;
 
-                            // If we have a NEW external ID (e.g. LID) and it's different from what we have
-                            // We update externalId to the new one (LID), because that's what WA is using.
-                            if (newExternalId && newExternalId !== currentExternalId && !newExternalId.includes('status')) {
-                                this.logger.log(`[Smart Link] Updating Contact ${contact.name} JID: ${currentExternalId} -> ${newExternalId}`);
+                            // CRITICAL: Only allow LID update if we are on the same instance
+                            // because LIDs are instance-specific.
+                            const isSameInstance = !contact.instance || contact.instance === instanceName;
+
+                            if (newExternalId && newExternalId !== currentExternalId && !newExternalId.includes('status') && isSameInstance) {
+                                this.logger.log(`[Smart Link] Updating Contact ${contact.name} JID: ${currentExternalId} -> ${newExternalId} (Instance: ${instanceName})`);
                                 contact.externalId = newExternalId;
                                 await this.contactRepository.save(contact);
                             }
