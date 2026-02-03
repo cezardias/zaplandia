@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { CrmService } from '../crm/crm.service';
-import { AiService } from '../integrations/ai.service';
+import { AiService } from '../ai/ai.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { N8nService } from '../integrations/n8n.service';
 import { Repository, Like } from 'typeorm';
@@ -345,6 +345,41 @@ export class WebhooksController {
                     this.logger.log('Triggered n8n webhook');
                 } catch (n8nError) {
                     this.logger.error(`Failed to trigger n8n: ${n8nError.message}`);
+                }
+
+                // AI AUTO-RESPONSE LOGIC
+                // Check if AI should respond to this message
+                try {
+                    const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+
+                    if (shouldRespond) {
+                        this.logger.log(`AI enabled for contact ${contact.id}. Generating response...`);
+
+                        // Generate AI response
+                        const aiResponse = await this.aiService.generateResponse(contact, content, tenantId);
+
+                        if (aiResponse) {
+                            // Save AI response to database
+                            const aiMessage = this.messageRepository.create({
+                                tenantId,
+                                contactId: contact.id,
+                                content: aiResponse,
+                                direction: 'outbound',
+                                provider: 'whatsapp',
+                            });
+                            await this.messageRepository.save(aiMessage);
+
+                            // Send AI response via Evolution API
+                            await this.aiService.sendAIResponse(contact, aiResponse, tenantId);
+
+                            this.logger.log(`AI response sent successfully to contact ${contact.id}`);
+                        } else {
+                            this.logger.warn(`AI failed to generate response for contact ${contact.id}`);
+                        }
+                    }
+                } catch (aiError) {
+                    this.logger.error(`AI auto-response error: ${aiError.message}`);
+                    // Don't throw - AI errors shouldn't break the webhook
                 }
 
             } catch (err) {

@@ -48,6 +48,13 @@ export class Integration {
     @Column({ type: 'jsonb', nullable: true })
     settings: any; // specific config for this network (e.g. which phone number for WhatsApp)
 
+    // AI Agent Configuration
+    @Column({ default: false })
+    aiEnabled: boolean; // Enable AI auto-responses for this instance
+
+    @Column({ nullable: true })
+    aiPromptId: string; // ID of the AI prompt to use
+
     @ManyToOne(() => Tenant)
     tenant: Tenant;
 
