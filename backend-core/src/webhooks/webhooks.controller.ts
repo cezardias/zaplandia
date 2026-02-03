@@ -201,13 +201,33 @@ export class WebhooksController {
 
             try {
                 // Find or create contact
+                // Find or create contact
                 // FIXED: Search by externalId OR phoneNumber to preventing duplicates for manually added contacts
+                // AGGRESSIVE: If no strict match, try to match by suffix (last 8 digits) to catch format differences
                 let contact = await this.contactRepository.findOne({
                     where: [
                         { externalId, tenantId },
                         { phoneNumber: externalId, tenantId } // Match phone number too!
                     ]
                 });
+
+                if (!contact && externalId.length >= 8) {
+                    const suffix = externalId.slice(-8); // Last 8 digits (e.g. 99998888)
+                    this.logger.log(`No strict contact match. Trying fuzzy match for suffix: ${suffix}`);
+                    const fuzzyMatch = await this.contactRepository.findOne({
+                        where: {
+                            phoneNumber: Like(`%${suffix}`),
+                            tenantId
+                        }
+                    });
+
+                    if (fuzzyMatch) {
+                        this.logger.log(`[Smart Link] Fuzzy matched contact by Phone Suffix ${suffix} -> ${fuzzyMatch.name}. Linking.`);
+                        contact = fuzzyMatch;
+                        contact.externalId = externalId; // Update externalId to match incoming
+                        await this.contactRepository.save(contact);
+                    }
+                }
 
                 // Auto-link: If found by phone but externalId is missing, save it.
                 if (contact && !contact.externalId) {
