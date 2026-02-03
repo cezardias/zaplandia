@@ -150,7 +150,7 @@ export class AiService {
                 .join('\n');
 
             // 6. Call Gemini API manually (v1beta)
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
             const fullPrompt = `${promptContent}\n\nHistórico da conversa:\n${conversationContext}\n\nCliente: ${userMessage}\n\nVocê:`;
 
             const response = await axios.post(url, {
