@@ -60,9 +60,13 @@ export class EvolutionApiService {
 
                         this.logger.log(`Auto-configuring webhook for ${name} to ${webhookUrl}`);
 
-                        // Fire and forget webhook set to avoid latency
                         this.setWebhook(tenantId, name, webhookUrl).catch(err =>
                             this.logger.warn(`Failed to auto-set webhook for ${name}: ${err.message}. Ensure containers are on the same network or use a public URL.`)
+                        );
+
+                        // Auto-configure Settings (Global Config)
+                        this.setSettings(tenantId, name).catch(err =>
+                            this.logger.warn(`Failed to auto-set settings for ${name}: ${err.message}`)
                         );
                     }
 
@@ -246,6 +250,34 @@ export class EvolutionApiService {
             const errorData = error.response?.data || error.message;
             this.logger.error(`Erro ao configurar webhook no EvolutionAPI: ${JSON.stringify(errorData)}`);
             throw error;
+        }
+    }
+
+    async setSettings(tenantId: string, instanceName: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
+
+        try {
+            const payload = {
+                reject_call: false,
+                groups_ignore: true, // IMPORTANT: Ignore groups to avoid inbox pollution
+                always_online: true,
+                read_messages: false,
+                read_status: false
+            };
+            this.logger.log(`Setting settings for ${instanceName}. Payload: ${JSON.stringify(payload)}`);
+
+            const response = await axios.post(`${baseUrl}/settings/set/${instanceName}`, payload, {
+                headers: { 'apikey': apiKey }
+            });
+            return response.data;
+        } catch (error) {
+            const errorData = error.response?.data || error.message;
+            this.logger.error(`Erro ao configurar settings no EvolutionAPI: ${JSON.stringify(errorData)}`);
+            // Don't throw, just log. Settings are optional.
+            return null;
         }
     }
 
