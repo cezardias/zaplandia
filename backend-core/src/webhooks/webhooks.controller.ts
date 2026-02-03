@@ -281,13 +281,13 @@ export class WebhooksController {
                         name: (resolvedName && !resolvedName.includes('@')) ? resolvedName : `Novo Contato ${externalId.slice(-4)}`,
                         provider: 'whatsapp',
                         tenantId,
-                        instance: data.instance // Save Instance Name
+                        instance: instanceName // Save Instance Name (FIXED: was data.instance)
                     });
                     await this.contactRepository.save(contact);
                 } else {
                     // Update instance if missing or changed
-                    if ((!contact.instance || contact.instance !== data.instance) && data.instance) {
-                        contact.instance = data.instance;
+                    if ((!contact.instance || contact.instance !== instanceName) && instanceName) {
+                        contact.instance = instanceName;
                         await this.contactRepository.save(contact);
                     }
                     // "Healing" logic: overwrite if current name is a JID/system and we found a real name
