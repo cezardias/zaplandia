@@ -49,18 +49,19 @@ export class CrmService {
             }
 
             // Match both full name (tenant_uuid_zaplandia_01) and friendly name (zaplandia_01)
+            // AND allow NULL instance to ensure "lost" contacts appear
             query.andWhere(
-                '(contact.instance = :instance OR contact.instance LIKE :instancePattern)',
+                '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL)',
                 {
                     instance: instanceName,
-                    instancePattern: `%_${instanceName}` // Matches tenant_uuid_zaplandia_01 when searching for zaplandia_01
+                    instancePattern: `%_${instanceName}`
                 }
             );
         }
 
-
         if (filters?.campaignId && filters.campaignId !== '') {
-            query.innerJoin('campaign_leads', 'cl', 'cl.externalId = contact.externalId AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
+            // Robust join: match externalId OR phoneNumber
+            query.innerJoin('campaign_leads', 'cl', '(cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber) AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
         }
 
         if (filters?.search) {
@@ -103,7 +104,7 @@ export class CrmService {
             } else {
                 // Strict filtering for general view
                 query.andWhere(
-                    '(contact.instance = :instance OR contact.instance LIKE :instancePattern)',
+                    '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL)',
                     {
                         instance: instanceName,
                         instancePattern: `%_${instanceName}`
@@ -117,7 +118,8 @@ export class CrmService {
         }
 
         if (filters?.campaignId && filters.campaignId !== '') {
-            query.innerJoin('campaign_leads', 'cl', 'cl.externalId = contact.externalId AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
+            // Robust join: match externalId OR phoneNumber
+            query.innerJoin('campaign_leads', 'cl', '(cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber) AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
         }
 
         if (filters?.search) {
