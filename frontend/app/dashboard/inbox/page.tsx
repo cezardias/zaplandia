@@ -58,12 +58,36 @@ export default function OmniInboxPage() {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const [activeTab, setActiveTab] = useState('all');
+    const [selectedInstance, setSelectedInstance] = useState<string>('all');
+    const [availableInstances, setAvailableInstances] = useState<any[]>([]);
+
+    const fetchInstances = async () => {
+        if (!token) return;
+        try {
+            const res = await fetch('/api/integrations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                // Filter only Evolution instances that are connected
+                const evolutionInstances = data.filter((i: any) =>
+                    i.provider === 'evolution' && i.status === 'CONNECTED'
+                );
+                setAvailableInstances(evolutionInstances);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar instâncias:', err);
+        }
+    };
 
     const fetchChats = async () => {
         if (!token) return;
         try {
             console.log('Buscando chats...');
-            const res = await fetch('/api/crm/chats', {
+            const url = selectedInstance === 'all'
+                ? '/api/crm/chats'
+                : `/api/crm/chats?instance=${selectedInstance}`;
+            const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             console.log('Chats Status:', res.status);
@@ -81,8 +105,12 @@ export default function OmniInboxPage() {
     };
 
     useEffect(() => {
-        fetchChats();
+        fetchInstances();
     }, [token]);
+
+    useEffect(() => {
+        fetchChats();
+    }, [token, selectedInstance]);
 
     const handleSeed = async () => {
         if (!confirm('Gerar dados de demonstração para o Inbox?')) return;
@@ -227,6 +255,25 @@ export default function OmniInboxPage() {
                         <h2 className="text-xl font-bold">Omni Inbox</h2>
                         {/* <button onClick={fetchChats} className="p-2 hover:bg-white/5 rounded-full"><Clock className="w-4 h-4"/></button> */}
                     </div>
+
+                    {/* Instance Selector (WhatsApp Only) */}
+                    {activeTab === 'whatsapp' && availableInstances.length > 0 && (
+                        <div className="space-y-2">
+                            <label className="text-xs text-gray-400 font-medium">Caixa de Entrada</label>
+                            <select
+                                value={selectedInstance}
+                                onChange={(e) => setSelectedInstance(e.target.value)}
+                                className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            >
+                                <option value="all">Todas as Caixas</option>
+                                {availableInstances.map(inst => (
+                                    <option key={inst.id} value={inst.id}>
+                                        {inst.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Tabs */}
                     <div className="flex bg-black/20 p-1 rounded-xl overflow-x-auto no-scrollbar gap-1">

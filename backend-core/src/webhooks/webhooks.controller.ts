@@ -200,36 +200,38 @@ export class WebhooksController {
             const externalId = remoteJid.split('@')[0];
 
             try {
-                // Find or create contact
-                // Find or create contact
-                // FIXED: Search by externalId OR phoneNumber to preventing duplicates for manually added contacts
-                // AGGRESSIVE: If no strict match, try to match by suffix (last 8 digits) to catch format differences
+                // STEP 1: Try exact match by externalId or phoneNumber
                 let contact = await this.contactRepository.findOne({
                     where: [
                         { externalId, tenantId },
-                        { phoneNumber: externalId, tenantId } // Match phone number too!
+                        { phoneNumber: externalId, tenantId }
                     ]
                 });
 
+                // STEP 2: If no exact match, try fuzzy match by suffix (last 8 digits)
                 if (!contact && externalId.length >= 8) {
-                    const suffix = externalId.slice(-8); // Last 8 digits (e.g. 99998888)
-                    this.logger.log(`No strict contact match. Trying fuzzy match for suffix: ${suffix}`);
-                    const fuzzyMatch = await this.contactRepository.findOne({
-                        where: {
-                            phoneNumber: Like(`%${suffix}`),
-                            tenantId
-                        }
+                    const suffix = externalId.slice(-8);
+                    this.logger.log(`No exact match. Trying fuzzy match for suffix: ${suffix}`);
+
+                    // Search in BOTH externalId and phoneNumber columns
+                    const fuzzyMatches = await this.contactRepository.find({
+                        where: [
+                            { externalId: Like(`%${suffix}`), tenantId },
+                            { phoneNumber: Like(`%${suffix}`), tenantId }
+                        ],
+                        take: 1,
+                        order: { createdAt: 'DESC' }
                     });
 
-                    if (fuzzyMatch) {
-                        this.logger.log(`[Smart Link] Fuzzy matched contact by Phone Suffix ${suffix} -> ${fuzzyMatch.name}. Linking.`);
-                        contact = fuzzyMatch;
-                        contact.externalId = externalId; // Update externalId to match incoming
+                    if (fuzzyMatches.length > 0) {
+                        contact = fuzzyMatches[0];
+                        this.logger.log(`[Smart Link] Fuzzy matched contact: ${contact.name}. Updating externalId.`);
+                        contact.externalId = externalId;
                         await this.contactRepository.save(contact);
                     }
                 }
 
-                // Auto-link: If found by phone but externalId is missing, save it.
+                // STEP 3: Auto-link externalId if found by phone but externalId is missing
                 if (contact && !contact.externalId) {
                     this.logger.log(`[Smart Link] Found contact by Phone ${externalId}. Linking externalId.`);
                     contact.externalId = externalId;
