@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards, Request, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull } from 'typeorm';
-import { Contact } from '../crm/entities/crm.entity';
+import { Contact, Message } from '../crm/entities/crm.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
@@ -13,6 +13,8 @@ export class DebugController {
     constructor(
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
+        @InjectRepository(Message)
+        private messageRepository: Repository<Message>,
         @InjectRepository(Integration)
         private integrationRepository: Repository<Integration>,
         private integrationsService: IntegrationsService,
@@ -125,6 +127,37 @@ export class DebugController {
         return {
             message: 'Sincronização concluída',
             results
+        };
+    }
+
+    @Post('backfill-instances')
+    async backfillInstances(@Request() req) {
+        const tenantId = req.user.tenantId;
+
+        // 1. Get all contacts with an instance set
+        const contactsWithInstance = await this.contactRepository.find({
+            where: { tenantId, instance: Not(IsNull()) }
+        });
+
+        let totalUpdated = 0;
+
+        for (const contact of contactsWithInstance) {
+            if (!contact.instance) continue;
+
+            const result = await this.messageRepository.createQueryBuilder()
+                .update('messages')
+                .set({ instance: contact.instance })
+                .where('contactId = :contactId', { contactId: contact.id })
+                .andWhere('instance IS NULL')
+                .execute();
+
+            totalUpdated += (result.affected || 0);
+        }
+
+        return {
+            message: `Backfill completed. Updated ${totalUpdated} messages across ${contactsWithInstance.length} contacts.`,
+            updatedMessages: totalUpdated,
+            contactsProcessed: contactsWithInstance.length
         };
     }
 }

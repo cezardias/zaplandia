@@ -165,7 +165,7 @@ export class WebhooksController {
         }
 
         if (tenantId === 'default') {
-            this.logger.error(`FAILED TO EXTRACT TENANT ID from instance: ${JSON.stringify(instance)} or sender: ${sender}. Payload: ${JSON.stringify(payload)}`);
+            this.logger.error(`[CRITICAL] FAILED TO EXTRACT TENANT ID from instance: ${JSON.stringify(instance)} (Type: ${typeof instance}) or sender: ${sender}. Payload Key Keys: ${Object.keys(payload)}`);
         } else {
             this.logger.log(`Extracted tenantId: ${tenantId} from instance: ${instanceName}`);
         }
