@@ -90,7 +90,8 @@ export class WebhooksController {
                                 content: text,
                                 direction: 'inbound',
                                 provider: 'instagram',
-                                tenantId: 'default-tenant'
+                                tenantId: 'default-tenant',
+                                instance: tenantId // Mapping tenantId as instance for Meta for now
                             });
                             await this.messageRepository.save(message);
 
@@ -371,7 +372,8 @@ export class WebhooksController {
                     direction: isOutbound ? 'outbound' : 'inbound',
                     provider: 'whatsapp',
                     tenantId,
-                    wamid: messageData.key.id // Save External WhatsApp ID
+                    wamid: messageData.key.id, // Save External WhatsApp ID
+                    instance: instanceName
                 });
                 await this.messageRepository.save(message);
                 this.logger.log(`Message saved successfully. ID: ${message.id}`);
@@ -420,10 +422,10 @@ export class WebhooksController {
                                 // Save AI response to database
                                 const aiMessage = this.messageRepository.create({
                                     tenantId,
-                                    contactId: contact.id,
                                     content: aiResponse,
                                     direction: 'outbound',
                                     provider: 'whatsapp',
+                                    instance: instanceName
                                 });
                                 await this.messageRepository.save(aiMessage);
 

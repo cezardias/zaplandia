@@ -108,6 +108,9 @@ export class Message {
     @Column()
     tenantId: string;
 
+    @Column({ nullable: true })
+    instance: string; // The instance where this message was sent/received
+
     @CreateDateColumn()
     createdAt: Date;
 }
