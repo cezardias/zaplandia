@@ -8,13 +8,13 @@ export class CrmController {
     constructor(private readonly crmService: CrmService) { }
 
     @Get('stats')
-    getStats(@Request() req, @Query('campaignId') campaignId?: string) {
-        return this.crmService.getDashboardStats(req.user.tenantId, campaignId);
+    getStats(@Request() req, @Query('campaignId') campaignId?: string, @Query('campaign_id') campaignIdAlt?: string, @Query('globalCampaignId') globId?: string, @Query('instance') instance?: string) {
+        return this.crmService.getDashboardStats(req.user.tenantId, campaignId || campaignIdAlt || globId, instance);
     }
 
     @Get('contacts')
-    getAllContacts(@Request() req, @Query('q') q: string, @Query('campaignId') campaignId: string, @Query('instance') instance: string) {
-        return this.crmService.findAllByTenant(req.user.tenantId, { search: q, campaignId, instance });
+    getAllContacts(@Request() req, @Query('q') q: string, @Query('campaignId') campaignId: string, @Query('campaign_id') campaignIdAlt: string, @Query('globalCampaignId') globId: string, @Query('instance') instance: string) {
+        return this.crmService.findAllByTenant(req.user.tenantId, { search: q, campaignId: campaignId || campaignIdAlt || globId, instance });
     }
 
     @Post('contacts')

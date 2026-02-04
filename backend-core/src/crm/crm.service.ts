@@ -48,14 +48,17 @@ export class CrmService {
                 }
             }
 
-            // Match both full name, friendly name, AND unassigned instances (NULL, default, empty) to ensure they are visible
+            // Broad match for instance name to catch variations (uuid_name, name_suffix, etc)
+            // AND allow NULL/Default/Empty/Undefined for legacy data
+            // Use ILIKE for case-insensitive matching
             query.andWhere(
-                '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal)',
+                '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal OR contact.instance = :undefVal)',
                 {
                     instance: instanceName,
-                    instancePattern: `%_${instanceName}`,
+                    instancePattern: `%${instanceName}%`,
                     defVal: 'default',
-                    emptyVal: ''
+                    emptyVal: '',
+                    undefVal: 'undefined'
                 }
             );
         }
@@ -65,9 +68,12 @@ export class CrmService {
             query.innerJoin('campaign_leads', 'cl', '(cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber) AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
         }
 
-        if (filters?.search) {
-            query.andWhere('(contact.name ILIKE :search OR contact.phoneNumber ILIKE :search OR contact.externalId ILIKE :search)', { search: `%${filters.search}%` });
-        }
+        // DEBUG: Log distinct instances found for this tenant to identify data issues
+        const distinctInstances = await this.contactRepository.createQueryBuilder('c')
+            .select('DISTINCT c.instance', 'instance')
+            .where('c.tenantId = :tenantId', { tenantId })
+            .getRawMany();
+        this.logger.debug(`[DEBUG_INSTANCES] Tenant ${tenantId} has instances: ${JSON.stringify(distinctInstances.map(d => d.instance))}`);
 
         // DEBUG: Output the SQL to see what's happening
         // this.logger.debug(`[SQL] ${query.getSql()}`);
@@ -97,19 +103,22 @@ export class CrmService {
                 // The Inner Join on campaign_leads ensures safety.
                 query.andWhere(
                     '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL)',
+                    '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL)',
                     {
                         instance: instanceName,
                         instancePattern: `%_${instanceName}`
                     }
                 );
                 // Strict filtering for general view but allow fallback for unassigned
+                // Use ILIKE for case-insensitive matching
                 query.andWhere(
-                    '(contact.instance = :instance OR contact.instance LIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal)',
+                    '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal OR contact.instance = :undefVal)',
                     {
                         instance: instanceName,
-                        instancePattern: `%_${instanceName}`,
+                        instancePattern: `%${instanceName}%`,
                         defVal: 'default',
-                        emptyVal: ''
+                        emptyVal: '',
+                        undefVal: 'undefined'
                     }
                 );
             }
@@ -469,12 +478,39 @@ export class CrmService {
         return this.contactRepository.delete({ tenantId });
     }
 
-    async getDashboardStats(tenantId: string, campaignId?: string) {
+    async getDashboardStats(tenantId: string, campaignId?: string, instance?: string) {
+        this.logger.debug(`[STATS] Tenant: ${tenantId}, Campaign: ${campaignId}, Instance: ${instance}`);
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
 
+        // Apply Instance Filter if provided
+        if (instance && instance !== 'all') {
+            let instanceName = instance;
+            // Check if it's a UUID (Integration ID) and resolve to Name
+            if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(instanceName)) {
+                const integration = await this.integrationsService.findOne(instanceName, tenantId);
+                if (integration) {
+                    instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || instanceName;
+                }
+            }
+
+            // Match both full name, friendly name, AND unassigned (null/default/empty) for legacy visibility
+            // Use ILIKE for case-insensitive matching
+            query.andWhere(
+                '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal OR contact.instance = :undefVal)',
+                {
+                    instance: instanceName,
+                    instancePattern: `%${instanceName}%`,
+                    defVal: 'default',
+                    emptyVal: '',
+                    undefVal: 'undefined'
+                }
+            );
+        }
+
         if (campaignId && campaignId !== '') {
-            query.innerJoin('campaign_leads', 'cl', 'cl.externalId = contact.externalId AND cl.campaignId = :campaignId', { campaignId });
+            // Robust join: match externalId OR phoneNumber
+            query.innerJoin('campaign_leads', 'cl', '(cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber) AND cl.campaignId = :campaignId', { campaignId });
         }
 
         const contacts = await query.getMany();

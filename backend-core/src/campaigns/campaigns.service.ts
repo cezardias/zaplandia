@@ -33,15 +33,16 @@ export class CampaignsService {
             const integration = await this.integrationsService.findOne(integrationId, tenantId);
             if (!integration) return null;
 
-            return integration.credentials?.instanceName ||
+            const val = integration.credentials?.instanceName ||
                 integration.settings?.instanceName ||
                 integration.credentials?.name ||
                 integration.credentials?.instance ||
                 integration.settings?.name || null;
+            return val ? val.trim() : null;
         }
 
         // If not UUID, assume it's the direct name
-        return integrationId;
+        return integrationId.trim();
     }
 
     // Contact List (Funnel) Methods
