@@ -637,19 +637,16 @@ export class CrmService {
             let campaignFilter = '';
             let campaignParams = {};
             if (matchingCampaignIds.length > 0) {
-                campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (:...matchCampIds) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber)))`;
+                campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl."campaignId" IN (:...matchCampIds) AND (cl."externalId" = contact.externalId OR cl."externalId" = contact.phoneNumber)))`;
                 campaignParams = { matchCampIds: matchingCampaignIds };
             }
 
             // Match both full name, friendly name, AND smart inferred unassigned
             query.andWhere(
-                '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal OR contact.instance = :undefVal)',
+                `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
                 {
                     instance: instanceName,
                     instancePattern: instanceName, // REMOVED WILDCARDS
-                    defVal: 'default',
-                    emptyVal: '',
-                    undefVal: 'undefined',
                     ...campaignParams
                 }
             );
