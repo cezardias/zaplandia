@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Contact, Message } from './entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
+import { Campaign } from '../campaigns/entities/campaign.entity';
 import { N8nService } from '../integrations/n8n.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 
@@ -21,6 +22,8 @@ export class CrmService {
         private messageRepository: Repository<Message>,
         @InjectRepository(CampaignLead)
         private leadRepository: Repository<CampaignLead>,
+        @InjectRepository(Campaign)
+        private campaignRepository: Repository<Campaign>,
         private readonly n8nService: N8nService,
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,

@@ -7,9 +7,11 @@ import { CrmController } from './crm.controller';
 import { UploadController } from './upload.controller';
 import { IntegrationsModule } from '../integrations/integrations.module';
 
+import { Campaign } from '../campaigns/entities/campaign.entity';
+
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Contact, Message, CampaignLead]),
+        TypeOrmModule.forFeature([Contact, Message, CampaignLead, Campaign]),
         IntegrationsModule
     ],
     controllers: [CrmController, UploadController],
