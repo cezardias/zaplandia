@@ -153,7 +153,8 @@ export class CrmService {
                 const matchedIntegration = allIntegrations.find(i => {
                     const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || '';
                     const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    return normalizedName === normalizedFilter || normalizedName.includes(normalizedFilter) || normalizedFilter.includes(normalizedName);
+                    // STRICT EQUALITY ONLY to avoid leaks
+                    return normalizedName === normalizedFilter;
                 });
 
                 if (matchedIntegration) {
@@ -175,14 +176,14 @@ export class CrmService {
                     if (resolvedName) {
                         const rNorm = resolvedName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
                         const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                        if (rNorm === iNorm || rNorm.includes(iNorm) || iNorm.includes(rNorm)) {
+                        if (rNorm === iNorm) {
                             matchingCampaignIds.push(camp.id);
                         }
                     }
                 } else {
                     const cNorm = camp.integrationId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
                     const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    if (cNorm === iNorm || cNorm.includes(iNorm)) {
+                    if (cNorm === iNorm) {
                         matchingCampaignIds.push(camp.id);
                     }
                 }
@@ -191,7 +192,7 @@ export class CrmService {
             let campaignFilter = '';
             let campaignParams = {};
             if (matchingCampaignIds.length > 0) {
-                campaignFilter = ` OR (contact.instance IS NULL AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (:...matchCampIds) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber)))`;
+                campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (:...matchCampIds) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber)))`;
                 campaignParams = { matchCampIds: matchingCampaignIds };
             }
 
@@ -598,7 +599,7 @@ export class CrmService {
                 const matchedIntegration = allIntegrations.find(i => {
                     const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || '';
                     const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    return normalizedName === normalizedFilter || normalizedName.includes(normalizedFilter) || normalizedFilter.includes(normalizedName);
+                    return normalizedName === normalizedFilter;
                 });
 
                 if (matchedIntegration) {
@@ -620,14 +621,14 @@ export class CrmService {
                     if (resolvedName) {
                         const rNorm = resolvedName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
                         const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                        if (rNorm === iNorm || rNorm.includes(iNorm) || iNorm.includes(rNorm)) {
+                        if (rNorm === iNorm) {
                             matchingCampaignIds.push(camp.id);
                         }
                     }
                 } else {
                     const cNorm = camp.integrationId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
                     const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    if (cNorm === iNorm || cNorm.includes(iNorm)) {
+                    if (cNorm === iNorm) {
                         matchingCampaignIds.push(camp.id);
                     }
                 }
@@ -636,7 +637,7 @@ export class CrmService {
             let campaignFilter = '';
             let campaignParams = {};
             if (matchingCampaignIds.length > 0) {
-                campaignFilter = ` OR (contact.instance IS NULL AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (:...matchCampIds) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber)))`;
+                campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (:...matchCampIds) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber)))`;
                 campaignParams = { matchCampIds: matchingCampaignIds };
             }
 
