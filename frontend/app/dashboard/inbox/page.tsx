@@ -301,7 +301,12 @@ export default function OmniInboxPage() {
                 // Update availableInstances local state to keep it in sync
                 setAvailableInstances(prev => prev.map(i =>
                     i.id === selectedInstance
-                        ? { ...i, aiEnabled: data.integration?.aiEnabled ?? !aiEnabled }
+                        ? {
+                            ...i,
+                            aiEnabled: data.integration?.aiEnabled ?? !aiEnabled,
+                            aiPromptId: data.integration?.aiPromptId,
+                            aiModel: data.integration?.aiModel
+                        }
                         : i
                 ));
             }
