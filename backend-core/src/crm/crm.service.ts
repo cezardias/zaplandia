@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository, Like, Brackets } from 'typeorm';
 import { Contact, Message } from './entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { Campaign } from '../campaigns/entities/campaign.entity';
@@ -97,19 +97,33 @@ export class CrmService {
             let campaignFilter = '';
             let campaignParams = {};
             if (matchingCampaignIds.length > 0) {
-                // FIX: Quote column names to prevent Postgres lowercasing them which causes 'column does not exist'
-                campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl."campaignId" IN (:...matchCampIds) AND (cl."externalId" = contact.externalId OR cl."externalId" = contact.phoneNumber)))`;
-                campaignParams = { matchCampIds: matchingCampaignIds };
-            }
+                // REFACTOR: Use TypeORM SubQuery to guarantee correct column mapping
+                const subQuery = this.leadRepository.createQueryBuilder('cl')
+                    .select('1')
+                    .where('cl.campaignId IN (:...matchCampIds)')
+                    .andWhere(new Brackets(qb => {
+                        qb.where('cl.externalId = contact.externalId')
+                            .orWhere('cl.externalId = contact.phoneNumber');
+                    }))
+                    .getQuery();
 
-            query.andWhere(
-                `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
-                {
-                    instance: instanceName,
-                    instancePattern: instanceName, // REMOVED WILDCARDS
-                    ...campaignParams
-                }
-            );
+                query.andWhere(new Brackets(qb => {
+                    qb.where('contact.instance = :instance', { instance: instanceName })
+                        .orWhere('contact.instance ILIKE :instancePattern', { instancePattern: instanceName })
+                        .orWhere(new Brackets(qb2 => {
+                            qb2.where("(contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined')")
+                                .andWhere(`EXISTS (${subQuery})`, { matchCampIds: matchingCampaignIds });
+                        }));
+                }));
+            } else {
+                query.andWhere(
+                    `(contact.instance = :instance OR contact.instance ILIKE :instancePattern)`,
+                    {
+                        instance: instanceName,
+                        instancePattern: instanceName
+                    }
+                );
+            }
         }
 
         if (filters?.campaignId && filters.campaignId !== '') {
@@ -191,35 +205,43 @@ export class CrmService {
 
             let campaignFilter = '';
             let campaignParams = {};
-            if (matchingCampaignIds.length > 0) {
-                campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl."campaignId" IN (:...matchCampIds) AND (cl."externalId" = contact.externalId OR cl."externalId" = contact.phoneNumber)))`;
-                campaignParams = { matchCampIds: matchingCampaignIds };
-            }
-
             if (filters.campaignId && filters.campaignId !== '' && filters.campaignId !== 'null' && filters.campaignId !== 'undefined') {
-                // If filtering by SPECIFIC CAMPAIGN, include contacts that are part of the campaign despite NULL instance
-                // The Inner Join below ensures safety, so we can be permissive about instance here.
-                // Actually, if Campaign Filter is ON, we don't need Smart Inference for Instance, 
-                // because the Campaign Filter itself brings the right leads.
-                // BUT, to be safe, we allow matches.
                 query.andWhere(
                     '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL)',
                     {
                         instance: instanceName,
-                        instancePattern: instanceName // REMOVED WILDCARDS to avoid 'Zaplandia' matching 'Zaplandia Claro'
+                        instancePattern: instanceName
                     }
                 );
             } else {
-                // Strict filtering for general view (No Campaign Selected)
-                // Use Smart Inference to show "unassigned" leads ONLY if they belong to a campaign of this instance
-                query.andWhere(
-                    `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
-                    {
-                        instance: instanceName,
-                        instancePattern: instanceName, // REMOVED WILDCARDS
-                        ...campaignParams
-                    }
-                );
+                if (matchingCampaignIds.length > 0) {
+                    // REFACTOR: Use TypeORM SubQuery
+                    const subQuery = this.leadRepository.createQueryBuilder('cl')
+                        .select('1')
+                        .where('cl.campaignId IN (:...matchCampIds)')
+                        .andWhere(new Brackets(qb => {
+                            qb.where('cl.externalId = contact.externalId')
+                                .orWhere('cl.externalId = contact.phoneNumber');
+                        }))
+                        .getQuery();
+
+                    query.andWhere(new Brackets(qb => {
+                        qb.where('contact.instance = :instance', { instance: instanceName })
+                            .orWhere('contact.instance ILIKE :instancePattern', { instancePattern: instanceName })
+                            .orWhere(new Brackets(qb2 => {
+                                qb2.where("(contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined')")
+                                    .andWhere(`EXISTS (${subQuery})`, { matchCampIds: matchingCampaignIds });
+                            }));
+                    }));
+                } else {
+                    query.andWhere(
+                        `(contact.instance = :instance OR contact.instance ILIKE :instancePattern)`,
+                        {
+                            instance: instanceName,
+                            instancePattern: instanceName
+                        }
+                    );
+                }
             }
         }
 
@@ -637,19 +659,37 @@ export class CrmService {
             let campaignFilter = '';
             let campaignParams = {};
             if (matchingCampaignIds.length > 0) {
-                campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl."campaignId" IN (:...matchCampIds) AND (cl."externalId" = contact.externalId OR cl."externalId" = contact.phoneNumber)))`;
-                campaignParams = { matchCampIds: matchingCampaignIds };
-            }
+                // REFACTOR: Use TypeORM SubQuery
+                const subQuery = this.leadRepository.createQueryBuilder('cl')
+                    .select('1')
+                    .where('cl.campaignId IN (:...matchCampIds)')
+                    .andWhere(new Brackets(qb => {
+                        qb.where('cl.externalId = contact.externalId')
+                            .orWhere('cl.externalId = contact.phoneNumber');
+                    }))
+                    .getQuery();
 
-            // Match both full name, friendly name, AND smart inferred unassigned
-            query.andWhere(
-                `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
-                {
-                    instance: instanceName,
-                    instancePattern: instanceName, // REMOVED WILDCARDS
-                    ...campaignParams
-                }
-            );
+                // Match both full name, friendly name, AND smart inferred unassigned
+                query.andWhere(new Brackets(qb => {
+                    qb.where('contact.instance = :instance', { instance: instanceName })
+                        .orWhere('contact.instance ILIKE :instancePattern', { instancePattern: instanceName })
+                        .orWhere(new Brackets(qb2 => {
+                            qb2.where("(contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined')")
+                                .andWhere(`EXISTS (${subQuery})`, { matchCampIds: matchingCampaignIds });
+                        }));
+                }));
+            } else {
+                query.andWhere(
+                    '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal OR contact.instance = :undefVal)',
+                    {
+                        instance: instanceName,
+                        instancePattern: instanceName,
+                        defVal: 'default',
+                        emptyVal: '',
+                        undefVal: 'undefined'
+                    }
+                );
+            }
         }
 
         if (campaignId && campaignId !== '') {
