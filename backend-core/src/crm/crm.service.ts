@@ -289,9 +289,8 @@ export class CrmService {
             mediaUrl: media?.url,
             mediaType: media?.type,
             mediaMimeType: media?.mimetype,
-            mediaMimeType: media?.mimetype,
             mediaFileName: media?.fileName,
-            instance: null // Will be populated if known, or leave valid default
+            // instance: undefined // Leave undefined if not known
         });
 
         await this.messageRepository.save(message);
