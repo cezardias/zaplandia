@@ -422,9 +422,11 @@ export class WebhooksController {
                                 // Save AI response to database
                                 const aiMessage = this.messageRepository.create({
                                     tenantId,
+                                    contactId: contact.id, // Fixed: Link message to contact
                                     content: aiResponse,
                                     direction: 'outbound',
                                     provider: 'whatsapp',
+                                    status: 'PENDING',
                                     instance: instanceName
                                 });
                                 await this.messageRepository.save(aiMessage);
