@@ -102,14 +102,75 @@ export class CrmService {
                 campaignParams = { matchCampIds: matchingCampaignIds };
             }
 
-            query.andWhere(
-                `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
-                {
-                    instance: instanceName,
-                    instancePattern: `%${instanceName}%`,
-                    ...campaignParams
+            if (filters?.instance && filters.instance !== 'all') {
+                let instanceName = filters.instance;
+
+                // Check if it's a UUID (Integration ID) and resolve to Name
+                if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(instanceName)) {
+                    const integration = await this.integrationsService.findOne(instanceName, tenantId);
+                    if (integration) {
+                        instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || instanceName;
+                    }
+                } else {
+                    // Fuzzy matching for canonical name resolution
+                    const allIntegrations = await this.integrationsService.findAllByTenant(tenantId);
+                    const normalizedFilter = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+                    const matchedIntegration = allIntegrations.find(i => {
+                        const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || '';
+                        const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        return normalizedName === normalizedFilter;
+                    });
+
+                    if (matchedIntegration) {
+                        instanceName = matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
+                    }
                 }
-            );
+
+                // Smart Inference Logic (Replicated)
+                let matchingCampaignIds: string[] = [];
+                const allCampaigns = await this.campaignRepository.find({ where: { tenantId } });
+
+                for (const camp of allCampaigns) {
+                    if (!camp.integrationId) continue;
+                    if (camp.integrationId === instanceName) { matchingCampaignIds.push(camp.id); continue; }
+
+                    if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(camp.integrationId)) {
+                        const integration = await this.integrationsService.findOne(camp.integrationId, tenantId);
+                        const resolvedName = integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name || integration?.credentials?.instance || integration?.settings?.name;
+                        // Use fuzzy comparison here too, just in case
+                        if (resolvedName) {
+                            const rNorm = resolvedName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                            const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                            if (rNorm === iNorm) {
+                                matchingCampaignIds.push(camp.id);
+                            }
+                        }
+                    } else {
+                        const cNorm = camp.integrationId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        if (cNorm === iNorm) {
+                            matchingCampaignIds.push(camp.id);
+                        }
+                    }
+                }
+
+                let campaignFilter = '';
+                let campaignParams = {};
+                if (matchingCampaignIds.length > 0) {
+                    campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (:...matchCampIds) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber)))`;
+                    campaignParams = { matchCampIds: matchingCampaignIds };
+                }
+
+                query.andWhere(
+                    `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
+                    {
+                        instance: instanceName,
+                        instancePattern: instanceName, // REMOVED WILDCARDS
+                        ...campaignParams
+                    }
+                );
+            }
         }
 
         if (filters?.campaignId && filters.campaignId !== '') {
@@ -206,7 +267,7 @@ export class CrmService {
                     '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL)',
                     {
                         instance: instanceName,
-                        instancePattern: `%${instanceName}%`
+                        instancePattern: instanceName // REMOVED WILDCARDS to avoid 'Zaplandia' matching 'Zaplandia Claro'
                     }
                 );
             } else {
@@ -216,7 +277,7 @@ export class CrmService {
                     `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
                     {
                         instance: instanceName,
-                        instancePattern: `%${instanceName}%`,
+                        instancePattern: instanceName, // REMOVED WILDCARDS
                         ...campaignParams
                     }
                 );
@@ -643,10 +704,13 @@ export class CrmService {
 
             // Match both full name, friendly name, AND smart inferred unassigned
             query.andWhere(
-                `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
+                '(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR contact.instance IS NULL OR contact.instance = :defVal OR contact.instance = :emptyVal OR contact.instance = :undefVal)',
                 {
                     instance: instanceName,
-                    instancePattern: `%${instanceName}%`,
+                    instancePattern: instanceName, // REMOVED WILDCARDS
+                    defVal: 'default',
+                    emptyVal: '',
+                    undefVal: 'undefined',
                     ...campaignParams
                 }
             );
