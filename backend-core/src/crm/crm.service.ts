@@ -51,15 +51,15 @@ export class CrmService {
                     instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || instanceName;
                 }
             } else {
-                // If it's NOT a UUID, try to "fuzzy match" it against known integrations to get the Canonical Name.
-                // This handles cases where Frontend sends "zaplandia_claro" (slug) but DB has "Zaplandia Claro" (Name).
+                // Fuzzy matching for canonical name resolution
                 const allIntegrations = await this.integrationsService.findAllByTenant(tenantId);
                 const normalizedFilter = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
                 const matchedIntegration = allIntegrations.find(i => {
                     const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || '';
                     const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    return normalizedName === normalizedFilter || normalizedName.includes(normalizedFilter) || normalizedFilter.includes(normalizedName);
+                    // STRICT EQUALITY ONLY to avoid leaks
+                    return normalizedName === normalizedFilter;
                 });
 
                 if (matchedIntegration) {
@@ -78,18 +78,17 @@ export class CrmService {
                 if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(camp.integrationId)) {
                     const integration = await this.integrationsService.findOne(camp.integrationId, tenantId);
                     const resolvedName = integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name || integration?.credentials?.instance || integration?.settings?.name;
-                    // Use fuzzy comparison here too, just in case
                     if (resolvedName) {
                         const rNorm = resolvedName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
                         const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                        if (rNorm === iNorm || rNorm.includes(iNorm) || iNorm.includes(rNorm)) {
+                        if (rNorm === iNorm) {
                             matchingCampaignIds.push(camp.id);
                         }
                     }
                 } else {
                     const cNorm = camp.integrationId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
                     const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    if (cNorm === iNorm || cNorm.includes(iNorm)) {
+                    if (cNorm === iNorm) {
                         matchingCampaignIds.push(camp.id);
                     }
                 }
@@ -98,79 +97,19 @@ export class CrmService {
             let campaignFilter = '';
             let campaignParams = {};
             if (matchingCampaignIds.length > 0) {
-                campaignFilter = ` OR (contact.instance IS NULL AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (:...matchCampIds) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber)))`;
+                // FIX: Quote column names to prevent Postgres lowercasing them which causes 'column does not exist'
+                campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl."campaignId" IN (:...matchCampIds) AND (cl."externalId" = contact.externalId OR cl."externalId" = contact.phoneNumber)))`;
                 campaignParams = { matchCampIds: matchingCampaignIds };
             }
 
-            if (filters?.instance && filters.instance !== 'all') {
-                let instanceName = filters.instance;
-
-                // Check if it's a UUID (Integration ID) and resolve to Name
-                if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(instanceName)) {
-                    const integration = await this.integrationsService.findOne(instanceName, tenantId);
-                    if (integration) {
-                        instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || instanceName;
-                    }
-                } else {
-                    // Fuzzy matching for canonical name resolution
-                    const allIntegrations = await this.integrationsService.findAllByTenant(tenantId);
-                    const normalizedFilter = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-                    const matchedIntegration = allIntegrations.find(i => {
-                        const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || '';
-                        const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                        return normalizedName === normalizedFilter;
-                    });
-
-                    if (matchedIntegration) {
-                        instanceName = matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
-                    }
+            query.andWhere(
+                `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
+                {
+                    instance: instanceName,
+                    instancePattern: instanceName, // REMOVED WILDCARDS
+                    ...campaignParams
                 }
-
-                // Smart Inference Logic (Replicated)
-                let matchingCampaignIds: string[] = [];
-                const allCampaigns = await this.campaignRepository.find({ where: { tenantId } });
-
-                for (const camp of allCampaigns) {
-                    if (!camp.integrationId) continue;
-                    if (camp.integrationId === instanceName) { matchingCampaignIds.push(camp.id); continue; }
-
-                    if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(camp.integrationId)) {
-                        const integration = await this.integrationsService.findOne(camp.integrationId, tenantId);
-                        const resolvedName = integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name || integration?.credentials?.instance || integration?.settings?.name;
-                        // Use fuzzy comparison here too, just in case
-                        if (resolvedName) {
-                            const rNorm = resolvedName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                            const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                            if (rNorm === iNorm) {
-                                matchingCampaignIds.push(camp.id);
-                            }
-                        }
-                    } else {
-                        const cNorm = camp.integrationId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                        const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                        if (cNorm === iNorm) {
-                            matchingCampaignIds.push(camp.id);
-                        }
-                    }
-                }
-
-                let campaignFilter = '';
-                let campaignParams = {};
-                if (matchingCampaignIds.length > 0) {
-                    campaignFilter = ` OR ((contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined') AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl."campaignId" IN (:...matchCampIds) AND (cl."externalId" = contact.externalId OR cl."externalId" = contact.phoneNumber)))`;
-                    campaignParams = { matchCampIds: matchingCampaignIds };
-                }
-
-                query.andWhere(
-                    `(contact.instance = :instance OR contact.instance ILIKE :instancePattern ${campaignFilter})`,
-                    {
-                        instance: instanceName,
-                        instancePattern: instanceName, // REMOVED WILDCARDS
-                        ...campaignParams
-                    }
-                );
-            }
+            );
         }
 
         if (filters?.campaignId && filters.campaignId !== '') {
