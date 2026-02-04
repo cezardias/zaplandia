@@ -130,7 +130,7 @@ export class CrmService implements OnApplicationBootstrap {
                         .orWhere('contact.instance = :originalInstance', { originalInstance: filters.instance }) // Also match the raw slug/ID
                         .orWhere('contact.instance ILIKE :instancePattern', { instancePattern: instanceName })
                         // REFACTOR: Check Message History
-                        .orWhere(`EXISTS (SELECT 1 FROM messages m WHERE m.contactId = contact.id AND (m.instance = :instance OR m.instance = :originalInstance))`, { instance: instanceName, originalInstance: filters.instance })
+                        .orWhere(`EXISTS (SELECT 1 FROM messages m WHERE m."contactId" = contact.id AND (m.instance = :instance OR m.instance = :originalInstance))`, { instance: instanceName, originalInstance: filters.instance })
                         .orWhere(new Brackets(qb2 => {
                             qb2.where("(contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined')")
                                 .andWhere(`EXISTS (${subQuery})`, { matchCampIds: matchingCampaignIds });
@@ -138,7 +138,7 @@ export class CrmService implements OnApplicationBootstrap {
                 }));
             } else {
                 query.andWhere(
-                    `(contact.instance = :instance OR contact.instance = :originalInstance OR contact.instance ILIKE :instancePattern OR EXISTS (SELECT 1 FROM messages m WHERE m.contactId = contact.id AND (m.instance = :instance OR m.instance = :originalInstance)))`,
+                    `(contact.instance = :instance OR contact.instance = :originalInstance OR contact.instance ILIKE :instancePattern OR EXISTS (SELECT 1 FROM messages m WHERE m."contactId" = contact.id AND (m.instance = :instance OR m.instance = :originalInstance)))`,
                     {
                         instance: instanceName,
                         originalInstance: filters.instance,
@@ -251,7 +251,7 @@ export class CrmService implements OnApplicationBootstrap {
                         qb.where('contact.instance = :instance', { instance: instanceName })
                             .orWhere('contact.instance ILIKE :instancePattern', { instancePattern: instanceName })
                             // REFACTOR: Check Message History
-                            .orWhere(`EXISTS (SELECT 1 FROM messages m WHERE m.contactId = contact.id AND (m.instance = :instance OR m.instance = :instancePattern))`, { instance: instanceName, instancePattern: instanceName })
+                            .orWhere(`EXISTS (SELECT 1 FROM messages m WHERE m."contactId" = contact.id AND (m.instance = :instance OR m.instance = :instancePattern))`, { instance: instanceName, instancePattern: instanceName })
                             .orWhere(new Brackets(qb2 => {
                                 qb2.where("(contact.instance IS NULL OR contact.instance = '' OR contact.instance = 'default' OR contact.instance = 'undefined')")
                                     .andWhere(`EXISTS (${subQuery})`, { matchCampIds: matchingCampaignIds });
@@ -259,13 +259,14 @@ export class CrmService implements OnApplicationBootstrap {
                     }));
                 } else {
                     query.andWhere(
-                        `(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR EXISTS (SELECT 1 FROM messages m WHERE m.contactId = contact.id AND (m.instance = :instance OR m.instance = :instancePattern)))`,
+                        `(contact.instance = :instance OR contact.instance ILIKE :instancePattern OR EXISTS (SELECT 1 FROM messages m WHERE m."contactId" = contact.id AND (m.instance = :instance OR m.instance = :instancePattern)))`,
                         {
                             instance: instanceName,
                             instancePattern: instanceName
                         }
                     );
                 }
+
             }
         }
 
