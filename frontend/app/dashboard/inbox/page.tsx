@@ -66,6 +66,7 @@ export default function OmniInboxPage() {
     const [aiEnabled, setAiEnabled] = useState(false);
     const [aiPrompts, setAiPrompts] = useState<any[]>([]);
     const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+    const [selectedAiModel, setSelectedAiModel] = useState<string>('gemini-2.5-flash-lite');
     const [contactAiEnabled, setContactAiEnabled] = useState<boolean | null>(null);
 
     const fetchInstances = async () => {
@@ -145,10 +146,12 @@ export default function OmniInboxPage() {
             if (inst) {
                 setAiEnabled(inst.aiEnabled || false);
                 setSelectedPromptId(inst.aiPromptId || null);
+                setSelectedAiModel(inst.aiModel || 'gemini-2.5-flash-lite');
             }
         } else {
             setAiEnabled(false);
             setSelectedPromptId(null);
+            setSelectedAiModel('gemini-2.5-flash-lite');
         }
     }, [token, selectedInstance, availableInstances]);
 
@@ -287,7 +290,8 @@ export default function OmniInboxPage() {
                 },
                 body: JSON.stringify({
                     enabled: !aiEnabled,
-                    promptId: selectedPromptId
+                    promptId: selectedPromptId,
+                    aiModel: selectedAiModel
                 })
             });
 
@@ -456,6 +460,44 @@ export default function OmniInboxPage() {
                                             ))}
                                         </select>
                                     )}
+
+                                    {/* Gemini Model Selector */}
+                                    {aiEnabled && (
+                                        <div className="mt-2">
+                                            <label className="text-xs text-gray-400 block mb-1">Modelo de IA</label>
+                                            <select
+                                                value={selectedAiModel}
+                                                onChange={async (e) => {
+                                                    const newModel = e.target.value;
+                                                    setSelectedAiModel(newModel);
+                                                    // Save immediately to backend
+                                                    if (token && selectedInstance !== 'all') {
+                                                        try {
+                                                            await fetch(`/api/ai/integration/${selectedInstance}/toggle`, {
+                                                                method: 'POST',
+                                                                headers: {
+                                                                    'Authorization': `Bearer ${token}`,
+                                                                    'Content-Type': 'application/json'
+                                                                },
+                                                                body: JSON.stringify({
+                                                                    enabled: true,
+                                                                    promptId: selectedPromptId,
+                                                                    aiModel: newModel
+                                                                })
+                                                            });
+                                                        } catch (err) {
+                                                            console.error('Erro ao salvar modelo:', err);
+                                                        }
+                                                    }
+                                                }}
+                                                className="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                            >
+                                                <option value="gemini-2.5-flash-lite">⚡ 2.5 Flash Lite (Rápido)</option>
+                                                <option value="gemini-2.0-flash-exp">🔬 2.0 Flash Experimental</option>
+                                                <option value="gemini-1.5-pro">🚀 1.5 Pro (Avançado)</option>
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -572,10 +614,10 @@ export default function OmniInboxPage() {
                                     <button
                                         onClick={toggleContactAI}
                                         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition ${contactAiEnabled === false
-                                                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                                : contactAiEnabled === true
-                                                    ? 'bg-primary text-white hover:bg-primary/80 shadow-lg shadow-primary/20'
-                                                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                            : contactAiEnabled === true
+                                                ? 'bg-primary text-white hover:bg-primary/80 shadow-lg shadow-primary/20'
+                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                             }`}
                                         title={
                                             contactAiEnabled === false
@@ -714,6 +756,6 @@ export default function OmniInboxPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }
