@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, OnApplicationBootstrap } from '@nestjs/common';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Brackets } from 'typeorm';
@@ -13,7 +13,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 @Injectable()
-export class CrmService {
+export class CrmService implements OnApplicationBootstrap {
     private readonly logger = new Logger(CrmService.name);
     constructor(
         @InjectRepository(Contact)
@@ -28,6 +28,24 @@ export class CrmService {
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
     ) { }
+
+    async onApplicationBootstrap() {
+        this.logger.log('Checking for messages that need instance backfill...');
+        // Auto-fix historical messages that are missing instance data
+        try {
+            await this.messageRepository.query(`
+                UPDATE messages
+                SET instance = c.instance
+                FROM contacts c
+                WHERE messages."contactId" = c.id
+                AND messages.instance IS NULL
+                AND c.instance IS NOT NULL
+            `);
+            this.logger.log('Automatic backfill of message instances completed.');
+        } catch (error) {
+            this.logger.error('Failed to run automatic backfill:', error);
+        }
+    }
 
     async getRecentChats(tenantId: string, role: string, filters?: { stage?: string; campaignId?: string; search?: string; instance?: string }) {
         // If superadmin, can see all messages? No, usually scoped by tenant.
