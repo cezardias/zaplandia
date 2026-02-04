@@ -43,64 +43,61 @@ export class CrmService {
         // 1. Resolve instance name to Integration IDs (UUIDs)
         if (filters?.instance && filters.instance !== 'all') {
             let instanceName = filters.instance;
-            // We need to find campaigns that belong to this instance (via integrationId)
-            // The instanceName passed here could be "zaplandia_claro" or a UUID.
 
-            // Find all campaigns that use an integration which resolves to this instance name
-            // Use fuzzy search on campaigns integrationId? No, integrationId is likely UUID.
-            // A campaign stores 'integrationId'. We need to know if that integrationId maps to 'instanceName'.
-            // This is hard to do in one query without joining Integration table.
+            // Check if it's a UUID (Integration ID) and resolve to Name
+            if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(instanceName)) {
+                const integration = await this.integrationsService.findOne(instanceName, tenantId);
+                if (integration) {
+                    instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || instanceName;
+                }
+            } else {
+                // If it's NOT a UUID, try to "fuzzy match" it against known integrations to get the Canonical Name.
+                // This handles cases where Frontend sends "zaplandia_claro" (slug) but DB has "Zaplandia Claro" (Name).
+                const allIntegrations = await this.integrationsService.findAllByTenant(tenantId);
+                const normalizedFilter = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
-            // Simplified Approach: 
-            // 1. Get all campaigns for this tenant. 
-            // 2. Filter them in memory (safe for reasonable # of campaigns).
-            // 3. Get matching Campaign IDs.
+                const matchedIntegration = allIntegrations.find(i => {
+                    const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || '';
+                    const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    return normalizedName === normalizedFilter || normalizedName.includes(normalizedFilter) || normalizedFilter.includes(normalizedName);
+                });
 
+                if (matchedIntegration) {
+                    instanceName = matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
+                }
+            }
+
+            // Smart Inference Logic (Replicated)
             let matchingCampaignIds: string[] = [];
             const allCampaigns = await this.campaignRepository.find({ where: { tenantId } });
 
             for (const camp of allCampaigns) {
                 if (!camp.integrationId) continue;
-                // We reuse the resolve logic. It's async so we can't map easily.
-                // Optimally we'd cache this or join, but let's be robust first.
-                // Check if this campaign's integrationId resolves to the requested instanceName.
+                if (camp.integrationId === instanceName) { matchingCampaignIds.push(camp.id); continue; }
 
-                // Fast check: direct match?
-                if (camp.integrationId === instanceName) {
-                    matchingCampaignIds.push(camp.id);
-                    continue;
-                }
-
-                // Deep check: resolve name
-                // Note: integrationsService.findOne might refer to integrationId or name. 
-                // camp.integrationId is definitely an ID (UUID) or Name.
                 if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(camp.integrationId)) {
                     const integration = await this.integrationsService.findOne(camp.integrationId, tenantId);
                     const resolvedName = integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name || integration?.credentials?.instance || integration?.settings?.name;
-
-                    // Compare resolvedName with requested instanceName (fuzzy)
-                    if (resolvedName && (resolvedName.toLowerCase() === instanceName.toLowerCase() || resolvedName.toLowerCase().includes(instanceName.toLowerCase()))) {
-                        matchingCampaignIds.push(camp.id);
+                    // Use fuzzy comparison here too, just in case
+                    if (resolvedName) {
+                        const rNorm = resolvedName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        if (rNorm === iNorm || rNorm.includes(iNorm) || iNorm.includes(rNorm)) {
+                            matchingCampaignIds.push(camp.id);
+                        }
                     }
                 } else {
-                    // It's a name directly
-                    if (camp.integrationId.toLowerCase() === instanceName.toLowerCase() || camp.integrationId.toLowerCase().includes(instanceName.toLowerCase())) {
+                    const cNorm = camp.integrationId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    if (cNorm === iNorm || cNorm.includes(iNorm)) {
                         matchingCampaignIds.push(camp.id);
                     }
                 }
             }
 
-            // Construct the query: 
-            // Matches explicit Instance OR (Instance is NULL AND Matches Campaign Association)
-
             let campaignFilter = '';
             let campaignParams = {};
-
             if (matchingCampaignIds.length > 0) {
-                // Subquery to check if contact exists in campaign_leads for these campaigns
-                // "AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (...) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber))"
-                // Note: We put this inside the OR for NULL instances
-
                 campaignFilter = ` OR (contact.instance IS NULL AND EXISTS (SELECT 1 FROM campaign_leads cl WHERE cl.campaignId IN (:...matchCampIds) AND (cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber)))`;
                 campaignParams = { matchCampIds: matchingCampaignIds };
             }
@@ -148,6 +145,20 @@ export class CrmService {
                 if (integration) {
                     instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || instanceName;
                 }
+            } else {
+                // Fuzzy matching for canonical name resolution
+                const allIntegrations = await this.integrationsService.findAllByTenant(tenantId);
+                const normalizedFilter = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+                const matchedIntegration = allIntegrations.find(i => {
+                    const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || '';
+                    const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    return normalizedName === normalizedFilter || normalizedName.includes(normalizedFilter) || normalizedFilter.includes(normalizedName);
+                });
+
+                if (matchedIntegration) {
+                    instanceName = matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
+                }
             }
 
             // Smart Inference Logic (Replicated)
@@ -161,11 +172,17 @@ export class CrmService {
                 if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(camp.integrationId)) {
                     const integration = await this.integrationsService.findOne(camp.integrationId, tenantId);
                     const resolvedName = integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name || integration?.credentials?.instance || integration?.settings?.name;
-                    if (resolvedName && (resolvedName.toLowerCase() === instanceName.toLowerCase() || resolvedName.toLowerCase().includes(instanceName.toLowerCase()))) {
-                        matchingCampaignIds.push(camp.id);
+                    if (resolvedName) {
+                        const rNorm = resolvedName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        if (rNorm === iNorm || rNorm.includes(iNorm) || iNorm.includes(rNorm)) {
+                            matchingCampaignIds.push(camp.id);
+                        }
                     }
                 } else {
-                    if (camp.integrationId.toLowerCase() === instanceName.toLowerCase() || camp.integrationId.toLowerCase().includes(instanceName.toLowerCase())) {
+                    const cNorm = camp.integrationId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    if (cNorm === iNorm || cNorm.includes(iNorm)) {
                         matchingCampaignIds.push(camp.id);
                     }
                 }
@@ -573,6 +590,20 @@ export class CrmService {
                 if (integration) {
                     instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || instanceName;
                 }
+            } else {
+                // Fuzzy matching for canonical name resolution
+                const allIntegrations = await this.integrationsService.findAllByTenant(tenantId);
+                const normalizedFilter = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+                const matchedIntegration = allIntegrations.find(i => {
+                    const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || '';
+                    const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    return normalizedName === normalizedFilter || normalizedName.includes(normalizedFilter) || normalizedFilter.includes(normalizedName);
+                });
+
+                if (matchedIntegration) {
+                    instanceName = matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
+                }
             }
 
             // Smart Inference Logic (Replicated)
@@ -586,11 +617,17 @@ export class CrmService {
                 if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(camp.integrationId)) {
                     const integration = await this.integrationsService.findOne(camp.integrationId, tenantId);
                     const resolvedName = integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name || integration?.credentials?.instance || integration?.settings?.name;
-                    if (resolvedName && (resolvedName.toLowerCase() === instanceName.toLowerCase() || resolvedName.toLowerCase().includes(instanceName.toLowerCase()))) {
-                        matchingCampaignIds.push(camp.id);
+                    if (resolvedName) {
+                        const rNorm = resolvedName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                        if (rNorm === iNorm || rNorm.includes(iNorm) || iNorm.includes(rNorm)) {
+                            matchingCampaignIds.push(camp.id);
+                        }
                     }
                 } else {
-                    if (camp.integrationId.toLowerCase() === instanceName.toLowerCase() || camp.integrationId.toLowerCase().includes(instanceName.toLowerCase())) {
+                    const cNorm = camp.integrationId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    const iNorm = instanceName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    if (cNorm === iNorm || cNorm.includes(iNorm)) {
                         matchingCampaignIds.push(camp.id);
                     }
                 }
