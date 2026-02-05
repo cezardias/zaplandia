@@ -95,7 +95,6 @@ export class IntegrationsController {
 
         if (isSuperAdmin) {
             // SuperAdmin sees ALL instances from ALL tenants
-            this.logger.log('[SUPERADMIN] Fetching ALL instances across all tenants');
             return this.evolutionApiService.listAllInstances();
         } else {
             // Regular user sees only their tenant's instances
