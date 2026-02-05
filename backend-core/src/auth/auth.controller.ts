@@ -16,6 +16,13 @@ export class AuthController {
 
     @Post('register')
     async register(@Body() createUserDto) {
-        return this.authService.register(createUserDto);
+        // ✅ SECURITY: Public registration can ONLY create USER role
+        // This prevents privilege escalation attacks
+        const safeUserData = {
+            ...createUserDto,
+            role: 'user', // Force USER role, ignore any role sent by client
+        };
+
+        return this.authService.register(safeUserData);
     }
 }

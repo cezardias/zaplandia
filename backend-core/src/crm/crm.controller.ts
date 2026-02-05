@@ -1,19 +1,22 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, Query, Delete, Logger } from '@nestjs/common';
 import { CrmService } from './crm.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('crm')
 @UseGuards(JwtAuthGuard)
 export class CrmController {
+    private readonly logger = new Logger(CrmController.name);
     constructor(private readonly crmService: CrmService) { }
 
     @Get('stats')
-    getStats(@Request() req, @Query('campaignId') campaignId?: string, @Query('campaign_id') campaignIdAlt?: string, @Query('globalCampaignId') globId?: string, @Query('instance') instance?: string) {
+    async getDashboardStats(@Request() req, @Query('campaignId') campaignId?: string, @Query('campaign_id') campaignIdAlt?: string, @Query('global_campaign_id') globId?: string, @Query('instance') instance?: string) {
+        this.logger.log(`[SECURITY] User ${req.user.email} (${req.user.role}) accessing stats for tenant ${req.user.tenantId}`);
         return this.crmService.getDashboardStats(req.user.tenantId, campaignId || campaignIdAlt || globId, instance);
     }
 
-    @Get('contacts')
-    getAllContacts(@Request() req, @Query('q') q: string, @Query('campaignId') campaignId: string, @Query('campaign_id') campaignIdAlt: string, @Query('globalCampaignId') globId: string, @Query('instance') instance: string) {
+    @Get()
+    async getContacts(@Request() req, @Query('q') q?: string, @Query('campaignId') campaignId?: string, @Query('campaign_id') campaignIdAlt?: string, @Query('global_campaign_id') globId?: string, @Query('instance') instance?: string) {
+        this.logger.log(`[SECURITY] User ${req.user.email} (${req.user.role}) accessing contacts for tenant ${req.user.tenantId}`);
         return this.crmService.findAllByTenant(req.user.tenantId, { search: q, campaignId: campaignId || campaignIdAlt || globId, instance });
     }
 
@@ -23,7 +26,8 @@ export class CrmController {
     }
 
     @Get('chats')
-    getChats(@Request() req, @Query('instance') instance?: string) {
+    async getChats(@Request() req, @Query('instance') instance?: string) {
+        this.logger.log(`[SECURITY] User ${req.user.email} (${req.user.role}) accessing chats for tenant ${req.user.tenantId}`);
         return this.crmService.getRecentChats(req.user.tenantId, req.user.role, { instance });
     }
 

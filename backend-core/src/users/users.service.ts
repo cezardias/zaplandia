@@ -70,13 +70,10 @@ export class UsersService implements OnModuleInit {
     }
 
     async create(userData: any): Promise<User> {
-        // Ensure every user has a tenant. If none provided, try to find HQ or first available.
+        // ✅ SECURITY FIX: Never fallback to HQ tenant
+        // Each user MUST have their own tenant to prevent data leakage
         if (!userData.tenantId) {
-            const hq = await this.tenantsRepository.findOne({ where: { name: 'Zaplandia HQ' } })
-                || await this.tenantsRepository.findOne({ where: {} });
-            if (hq) {
-                userData.tenantId = hq.id;
-            }
+            throw new Error('SECURITY ERROR: tenantId is required for user creation. Each user must have their own isolated tenant.');
         }
 
         if (userData.password) {
@@ -84,7 +81,10 @@ export class UsersService implements OnModuleInit {
         }
 
         const user = this.usersRepository.create(userData as object);
-        return this.usersRepository.save(user);
+        const savedUser = await this.usersRepository.save(user);
+
+        console.log(`[SECURITY] User created: ${savedUser.email} | TenantId: ${savedUser.tenantId} | Role: ${savedUser.role}`);
+        return savedUser;
     }
 
     async createTenant(tenantData: any): Promise<Tenant> {

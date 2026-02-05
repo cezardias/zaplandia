@@ -55,6 +55,10 @@ export class Integration {
     @Column({ nullable: true })
     aiPromptId: string; // ID of the AI prompt to use
 
+    @Column({ nullable: true, default: 'gemini-2.5-flash-lite' })
+    aiModel: string; // Gemini model to use (e.g., gemini-2.5-flash-lite, gemini-3.0-pro)
+
+
     @ManyToOne(() => Tenant)
     tenant: Tenant;
 

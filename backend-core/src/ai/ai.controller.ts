@@ -21,7 +21,7 @@ export class AiController {
     @Post('integration/:id/toggle')
     async toggleIntegrationAI(
         @Param('id') integrationId: string,
-        @Body() body: { enabled: boolean; promptId?: string },
+        @Body() body: { enabled: boolean; promptId?: string; aiModel?: string },
         @Request() req
     ) {
         const integration = await this.integrationRepository.findOne({
@@ -36,6 +36,9 @@ export class AiController {
         if (body.promptId) {
             integration.aiPromptId = body.promptId;
         }
+        if (body.aiModel) {
+            integration.aiModel = body.aiModel;
+        }
 
         await this.integrationRepository.save(integration);
 
@@ -44,7 +47,8 @@ export class AiController {
             integration: {
                 id: integration.id,
                 aiEnabled: integration.aiEnabled,
-                aiPromptId: integration.aiPromptId
+                aiPromptId: integration.aiPromptId,
+                aiModel: integration.aiModel
             }
         };
     }
