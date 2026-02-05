@@ -128,11 +128,27 @@ export default function CrmPage() {
                         </button>
                     )}
                     <button
-                        onClick={() => router.push('/dashboard/crm/campaigns')}
-                        className="flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2.5 rounded-xl transition font-bold border border-primary/20"
+                        onClick={() => router.push('/dashboard/crm/kanban')}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl text-white font-medium transition-all shadow-lg hover:shadow-xl"
                     >
-                        <BarChart2 className="w-4 h-4" />
-                        <span>Campanhas</span>
+                        <Trello className="w-5 h-5" />
+                        Pipeline
+                    </button>
+
+                    <button
+                        onClick={() => router.push('/dashboard/crm/funnels')}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-xl text-white font-medium transition-all shadow-lg hover:shadow-xl"
+                    >
+                        <Database className="w-5 h-5" />
+                        Funis
+                    </button>
+
+                    <button
+                        onClick={() => router.push('/dashboard/campaigns')}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl text-white font-medium transition-all shadow-lg hover:shadow-xl"
+                    >
+                        <Send className="w-5 h-5" />
+                        Campanhas
                     </button>
                     <button
                         onClick={() => router.push('/dashboard/support')}
