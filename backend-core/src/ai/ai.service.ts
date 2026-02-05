@@ -38,7 +38,12 @@ export class AiService {
     private async getGeminiApiKey(tenantId: string): Promise<string | null> {
         try {
             const apiKey = await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY');
-            return apiKey;
+            if (apiKey) {
+                const trimmedKey = apiKey.trim();
+                this.logger.debug(`[GEMINI_KEY] Retrieved key for tenant ${tenantId}: ${trimmedKey.substring(0, 10)}...${trimmedKey.substring(trimmedKey.length - 4)} (length: ${trimmedKey.length})`);
+                return trimmedKey;
+            }
+            return null;
         } catch (error) {
             this.logger.error(`Failed to get Gemini API key for tenant ${tenantId}: ${error.message}`);
             return null;
@@ -201,6 +206,10 @@ export class AiService {
                     // If success, break the loop
                     break;
                 } catch (error) {
+                    this.logger.error(`[AI_REQUEST_FAILED] Attempt ${retryCount + 1}/${maxRetries + 1}: ${error.message}`);
+                    if (error.response) {
+                        this.logger.error(`[GEMINI_ERROR] Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`);
+                    }
                     const status = error.response?.status;
                     if ((status === 503 || status === 429) && retryCount < maxRetries) {
                         retryCount++;
