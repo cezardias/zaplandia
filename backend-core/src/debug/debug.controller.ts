@@ -1,14 +1,18 @@
-import { Controller, Get, UseGuards, Request, Post } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, Post, Query, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull } from 'typeorm';
 import { Contact, Message } from '../crm/entities/crm.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { Integration } from '../integrations/entities/integration.entity';
 
 @Controller('debug')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.SUPERADMIN) // Only superadmin can access debug tools
 export class DebugController {
     constructor(
         @InjectRepository(Contact)
