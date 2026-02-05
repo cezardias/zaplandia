@@ -19,7 +19,9 @@ import {
     ShoppingBag,
     Store,
     BarChart2,
-    HelpCircle
+    HelpCircle,
+    Trello,
+    Send
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
