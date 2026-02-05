@@ -90,6 +90,63 @@ export class EvolutionApiService {
         }
     }
 
+    // Extract tenantId from instance name (format: tenant_<uuid>_<name>)
+    private extractTenantId(instanceName: string): string | null {
+        const match = instanceName.match(/^tenant_([0-9a-fA-F-]{36})_/);
+        return match ? match[1] : null;
+    }
+
+    // SuperAdmin: List ALL instances from ALL tenants
+    async listAllInstances() {
+        // Use any tenant to get base credentials (they're global now)
+        const baseUrl = await this.getBaseUrl(null as any) || await this.integrationsService.getCredential(null as any, 'EVOLUTION_API_URL');
+        const apiKey = await this.getApiKey(null as any) || await this.integrationsService.getCredential(null as any, 'EVOLUTION_API_KEY');
+
+        if (!baseUrl || !apiKey) {
+            throw new Error('EvolutionAPI não configurada.');
+        }
+
+        try {
+            const response = await axios.get(`${baseUrl}/instance/fetchInstances`, {
+                headers: { 'apikey': apiKey }
+            });
+
+            const allInstances = Array.isArray(response.data) ? response.data : [];
+            this.logger.log(`[SUPERADMIN] Found ${allInstances.length} total instances`);
+
+            // Enrich each instance with tenant/user info
+            const enrichedInstances = await Promise.all(allInstances.map(async (inst: any) => {
+                const name = inst.name || inst.instance?.instanceName || inst.instanceName || '';
+                const tenantId = this.extractTenantId(name);
+
+                // Fetch real-time status
+                try {
+                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}`, {
+                        headers: { 'apikey': apiKey }
+                    });
+
+                    const enriched = {
+                        ...inst,
+                        ...(statusRes.data?.instance || {}),
+                        status: statusRes.data?.instance?.state || inst.status,
+                        tenantId,
+                        instanceName: name
+                    };
+
+                    return enriched;
+                } catch (e) {
+                    this.logger.warn(`Failed to fetch status for ${name}: ${e.message}`);
+                    return { ...inst, tenantId, instanceName: name };
+                }
+            }));
+
+            return enrichedInstances;
+        } catch (error) {
+            this.logger.error(`Erro ao listar todas as instâncias: ${error.message}`);
+            throw error;
+        }
+    }
+
     async getInstanceStatus(tenantId: string, instanceName: string) {
         const baseUrl = await this.getBaseUrl(tenantId);
         const apiKey = await this.getApiKey(tenantId);

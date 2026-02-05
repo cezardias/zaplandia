@@ -15,7 +15,8 @@ import {
     ArrowLeft,
     Phone,
     Link2,
-    Unlink
+    Unlink,
+    Filter
 } from 'lucide-react';
 
 interface WhatsAppInstance {
@@ -25,6 +26,7 @@ interface WhatsAppInstance {
     connectionStatus?: string;
     profileName?: string;
     profilePicture?: string;
+    tenantId?: string;
     instance?: {
         instanceName?: string;
         state?: string;
@@ -43,6 +45,7 @@ export default function WhatsAppInstancesPage() {
     const [qrLoading, setQrLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [selectedTenantFilter, setSelectedTenantFilter] = useState<string>('all');
 
     useEffect(() => {
         if (token) {
@@ -343,10 +346,42 @@ export default function WhatsAppInstancesPage() {
 
                     {/* Instances List */}
                     <div className="bg-surface border border-white/10 rounded-2xl p-6">
-                        <h2 className="text-lg font-bold mb-4 flex items-center space-x-2">
-                            <Phone className="w-5 h-5 text-primary" />
-                            <span>Suas Instâncias ({instances.length})</span>
-                        </h2>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold flex items-center space-x-2">
+                                <Phone className="w-5 h-5 text-primary" />
+                                <span>Suas Instâncias ({instances.filter(inst => {
+                                    if (user?.role !== 'superadmin' || selectedTenantFilter === 'all') return true;
+                                    return inst.tenantId === selectedTenantFilter;
+                                }).length})</span>
+                            </h2>
+
+                            {/* SuperAdmin Filter */}
+                            {user?.role === 'superadmin' && instances.length > 0 && (() => {
+                                // Get unique tenants from instances
+                                const tenants = Array.from(new Set(instances.map(i => i.tenantId).filter(Boolean)));
+
+                                if (tenants.length > 1) {
+                                    return (
+                                        <select
+                                            value={selectedTenantFilter}
+                                            onChange={(e) => setSelectedTenantFilter(e.target.value)}
+                                            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition"
+                                        >
+                                            <option value="all">Todos os Usuários ({instances.length})</option>
+                                            {tenants.map(tenantId => {
+                                                const count = instances.filter(i => i.tenantId === tenantId).length;
+                                                return (
+                                                    <option key={tenantId} value={tenantId || ''}>
+                                                        Tenant: {tenantId?.substring(0, 8)}... ({count})
+                                                    </option>
+                                                );
+                                            })}
+                                        </select>
+                                    );
+                                }
+                                return null;
+                            })()}
+                        </div>
 
                         {isLoading ? (
                             <div className="flex items-center justify-center py-12">

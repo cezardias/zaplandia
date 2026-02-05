@@ -87,11 +87,20 @@ export class IntegrationsController {
         return result;
     }
 
-    // EvolutionAPI Management - List all instances for tenant
+    // EvolutionAPI Management - List all instances for tenant (or ALL for SuperAdmin)
     @UseGuards(JwtAuthGuard)
     @Get('evolution/instances')
     async listEvolutionInstances(@Request() req) {
-        return this.evolutionApiService.listInstances(req.user.tenantId);
+        const isSuperAdmin = req.user.role === 'superadmin';
+
+        if (isSuperAdmin) {
+            // SuperAdmin sees ALL instances from ALL tenants
+            this.logger.log('[SUPERADMIN] Fetching ALL instances across all tenants');
+            return this.evolutionApiService.listAllInstances();
+        } else {
+            // Regular user sees only their tenant's instances
+            return this.evolutionApiService.listInstances(req.user.tenantId);
+        }
     }
 
     // Create instance with custom name
