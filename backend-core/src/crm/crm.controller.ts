@@ -20,6 +20,12 @@ export class CrmController {
         return this.crmService.findAllByTenant(req.user.tenantId, { search: q, campaignId: campaignId || campaignIdAlt || globId, instance });
     }
 
+    @Get('contacts')
+    async getContactsAlias(@Request() req, @Query('q') q?: string, @Query('campaignId') campaignId?: string, @Query('campaign_id') campaignIdAlt?: string, @Query('global_campaign_id') globId?: string, @Query('instance') instance?: string) {
+        this.logger.log(`[SECURITY] User ${req.user.email} (${req.user.role}) accessing contacts (alias) for tenant ${req.user.tenantId}`);
+        return this.crmService.findAllByTenant(req.user.tenantId, { search: q, campaignId: campaignId || campaignIdAlt || globId, instance });
+    }
+
     @Post('contacts')
     createContact(@Request() req, @Body() body: any) {
         return this.crmService.ensureContact(req.user.tenantId, body, { forceStage: 'NOVO' });
