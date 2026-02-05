@@ -275,8 +275,10 @@ export class CrmService implements OnApplicationBootstrap {
         }
 
         if (filters?.campaignId && filters.campaignId !== '' && filters.campaignId !== 'null' && filters.campaignId !== 'undefined') {
-            // Robust join: match externalId OR phoneNumber
-            query.innerJoin('campaign_leads', 'cl', '(cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber) AND cl.campaignId = :campaignId', { campaignId: filters.campaignId });
+            this.logger.debug(`[CAMPAIGN_FILTER] Filtering by campaignId: ${filters.campaignId}`);
+            // LEFT JOIN to match contacts with campaign leads
+            query.leftJoin('campaign_leads', 'cl', '(cl.externalId = contact.externalId OR cl.externalId = contact.phoneNumber) AND cl.campaignId = :campaignId', { campaignId: filters.campaignId })
+                .andWhere('cl.id IS NOT NULL'); // Only include contacts that have matching campaign leads
         }
 
         if (filters?.search) {
