@@ -79,13 +79,12 @@ export default function KanbanPage() {
             });
             if (res.ok) {
                 const data = await res.json();
+                console.log('[KANBAN] Loaded campaigns:', data.length);
                 setCampaigns(data);
-                if (data.length > 0 && !selectedCampaignId) {
-                    setSelectedCampaignId(data[0].id);
-                }
+                // Don't auto-select first campaign - show all contacts by default
             }
         } catch (e) {
-            console.error(e);
+            console.error('[KANBAN] Error loading campaigns:', e);
         }
     }
 
