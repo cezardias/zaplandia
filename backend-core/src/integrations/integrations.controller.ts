@@ -200,8 +200,21 @@ export class IntegrationsController {
             console.error('[SAVE_CRED] FATAL: No tenantId found!');
             throw new Error('Cannot save credentials: user has no associated tenant.');
         }
-        console.log('[SAVE_CRED] Final tenantId:', tenantId, 'Key:', body.name);
-        return this.integrationsService.saveApiCredential(tenantId, body.name, body.value);
+
+        // 🔧 CRITICAL FIX: Evolution API should be GLOBAL for SuperAdmin
+        const isSuperAdmin = req.user.role === 'superadmin';
+        const isEvolutionConfig = body.name === 'EVOLUTION_API_URL' || body.name === 'EVOLUTION_API_KEY';
+
+        let finalTenantId: string | null = tenantId;
+
+        if (isSuperAdmin && isEvolutionConfig) {
+            finalTenantId = null; // Save as GLOBAL
+            console.log(`[SAVE_CRED] ✅ SuperAdmin saving ${body.name} as GLOBAL (tenantId=null)`);
+        } else {
+            console.log('[SAVE_CRED] Final tenantId:', tenantId, 'Key:', body.name);
+        }
+
+        return this.integrationsService.saveApiCredential(finalTenantId, body.name, body.value);
     }
 
     @UseGuards(JwtAuthGuard)
