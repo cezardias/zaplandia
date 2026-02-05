@@ -131,4 +131,26 @@ export class AdminController {
 
         return { message: 'Seeding process finished. Check logs.' };
     }
+
+    // ============================================
+    // GLOBAL CREDENTIALS (Evolution API, etc)
+    // ============================================
+
+    @Get('credentials/global')
+    async getGlobalCredentials(@Request() req) {
+        if (req.user.role !== UserRole.SUPERADMIN) {
+            throw new ForbiddenException('Apenas SuperAdmin pode acessar credenciais globais.');
+        }
+        console.log('[ADMIN_GET_GLOBAL] Fetching global credentials');
+        return this.integrationsService.findAllCredentials(null);
+    }
+
+    @Post('credentials/global')
+    async saveGlobalCredential(@Request() req, @Body() body: { name: string, value: string }) {
+        if (req.user.role !== UserRole.SUPERADMIN) {
+            throw new ForbiddenException('Apenas SuperAdmin pode configurar credenciais globais.');
+        }
+        console.log(`[ADMIN_SAVE_GLOBAL] Saving global credential: ${body.name}`);
+        return this.integrationsService.saveApiCredential(null, body.name, body.value);
+    }
 }
