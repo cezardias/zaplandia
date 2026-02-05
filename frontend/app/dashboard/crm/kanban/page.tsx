@@ -40,20 +40,33 @@ export default function KanbanPage() {
         try {
             const campaignToUse = campaignId !== undefined ? campaignId : selectedCampaignId;
 
+            // Build URL with optional campaign filter
             let url = `/api/crm/contacts`;
-            if (campaignToUse) {
-                url += `?campaignId=${campaignToUse}`;
+            const params = new URLSearchParams();
+
+            if (campaignToUse && campaignToUse !== '') {
+                params.append('campaignId', campaignToUse);
             }
+
+            const queryString = params.toString();
+            if (queryString) {
+                url += `?${queryString}`;
+            }
+
+            console.log('[KANBAN] Fetching contacts:', url);
 
             const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
                 const data = await res.json();
+                console.log('[KANBAN] Received contacts:', data.length);
                 organizeKanban(data);
+            } else {
+                console.error('[KANBAN] Failed to fetch contacts:', res.status);
             }
         } catch (err) {
-            console.error(err);
+            console.error('[KANBAN] Error fetching contacts:', err);
         } finally {
             setIsLoading(false);
         }
