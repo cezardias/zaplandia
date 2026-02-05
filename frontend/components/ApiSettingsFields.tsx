@@ -89,7 +89,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     next.fb_app_secret = parsed.secret || '';
                     next.meta_page_access_token = parsed.pageAccessToken || '';
                     next.meta_instagram_business_id = parsed.instagramBusinessId || '';
-                    next.meta_verify_token = parsed.verifyToken || 'zaplandia_verify_token';
+                    next.meta_verify_token = parsed.verifyToken || '';
                     next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
                     next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
                 } catch (e) { }
