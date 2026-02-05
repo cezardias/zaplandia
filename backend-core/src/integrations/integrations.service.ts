@@ -70,7 +70,7 @@ export class IntegrationsService {
     }
 
     // Global and Tenant specific API Credentials
-    async saveApiCredential(tenantId: string, keyName: string, keyValue: string) {
+    async saveApiCredential(tenantId: string | null, keyName: string, keyValue: string) {
         this.logger.log(`[SAVE_CREDENTIAL] Attempting to save key "${keyName}" for tenant "${tenantId}"`);
 
         if (!tenantId) {
