@@ -360,7 +360,7 @@ export default function WhatsAppInstancesPage() {
                                 // Get unique tenants from instances
                                 const tenants = Array.from(new Set(instances.map(i => i.tenantId).filter(Boolean)));
 
-                                if (tenants.length > 1) {
+                                if (tenants.length > 0) {
                                     return (
                                         <select
                                             value={selectedTenantFilter}
