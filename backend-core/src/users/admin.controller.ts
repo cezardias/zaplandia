@@ -56,6 +56,35 @@ export class AdminController {
         if (req.user.role !== UserRole.SUPERADMIN) {
             throw new ForbiddenException('Acesso negado.');
         }
+
+        console.log('[ADMIN_CREATE] Received userData:', JSON.stringify(userData));
+
+        // ✅ AUTO-CREATE TENANT FOR REGULAR USERS
+        // If creating a regular 'user' without explicit tenantId, create one automatically
+        const role = (userData.role || '').toLowerCase();
+        const hasTenantId = userData.tenantId && userData.tenantId.trim() !== '';
+
+        console.log('[ADMIN_CREATE] Role:', role, 'HasTenantId:', hasTenantId);
+
+        if (role === 'user' && !hasTenantId) {
+            const companyName = userData.companyName || `${userData.name}'s Business`;
+            const baseSlug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const uniqueSlug = `${baseSlug}-${Date.now()}`;
+
+            const trialEndDate = new Date();
+            trialEndDate.setDate(trialEndDate.getDate() + 15);
+
+            const tenant = await this.usersService.createTenant({
+                name: companyName,
+                slug: uniqueSlug,
+                trialEndsAt: trialEndDate,
+            });
+
+            console.log(`[ADMIN_CREATE] ✅ Auto-created tenant for user: ${tenant.name} (ID: ${tenant.id})`);
+            userData.tenantId = tenant.id;
+        }
+
+        console.log('[ADMIN_CREATE] Final userData with tenantId:', userData.tenantId);
         return this.usersService.create(userData);
     }
 

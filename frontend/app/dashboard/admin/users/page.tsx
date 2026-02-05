@@ -47,6 +47,13 @@ export default function UserManagementPage() {
         }
     }, [token]);
 
+    // Clear tenantId when role is 'user' to ensure backend auto-creates tenant
+    useEffect(() => {
+        if (formData.role === 'user') {
+            setFormData(prev => ({ ...prev, tenantId: '' }));
+        }
+    }, [formData.role]);
+
     const fetchUsers = async () => {
         setIsLoading(true);
         try {
@@ -377,19 +384,25 @@ export default function UserManagementPage() {
                                                 <option value="superadmin" className="bg-[#121214]">Super Admin</option>
                                             </select>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Tenant / Organização</label>
-                                            <select
-                                                value={formData.tenantId}
-                                                onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition appearance-none cursor-pointer"
-                                            >
-                                                <option value="" className="bg-[#121214]">Selecionar Tenant...</option>
-                                                {tenants.map(t => (
-                                                    <option key={t.id} value={t.id} className="bg-[#121214]">{t.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                        {/* Only show tenant selection for admin/superadmin roles */}
+                                        {(formData.role === 'admin' || formData.role === 'superadmin') && (
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Tenant / Organização</label>
+                                                <select
+                                                    value={formData.tenantId}
+                                                    onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition appearance-none cursor-pointer"
+                                                >
+                                                    <option value="" className="bg-[#121214]">Selecionar Tenant...</option>
+                                                    {tenants.map(t => (
+                                                        <option key={t.id} value={t.id} className="bg-[#121214]">{t.name}</option>
+                                                    ))}
+                                                </select>
+                                                <p className="text-xs text-gray-500 mt-2">
+                                                    Selecione o tenant para admin. Usuários comuns terão tenant criado automaticamente.
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex space-x-4 pt-4">
