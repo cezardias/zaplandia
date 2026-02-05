@@ -39,9 +39,10 @@ export class EvolutionApiService {
             const tenantInstances = allInstances.filter((inst: any) => {
                 const name = inst.name || inst.instance?.instanceName || inst.instanceName || '';
                 const match = name.startsWith(`tenant_${tenantId}_`);
-                this.logger.log(`Checking instance: ${name}, Match: ${match}`);
                 return match;
             });
+
+            this.logger.log(`[SECURITY] Tenant ${tenantId}: Returning ${tenantInstances.length}/${allInstances.length} instances (filtered by tenant prefix)`);
 
             // Enrich instances with real-time status
             const enrichedInstances = await Promise.all(tenantInstances.map(async (inst: any) => {

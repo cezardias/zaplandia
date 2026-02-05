@@ -15,6 +15,8 @@ export class IntegrationsController {
     @UseGuards(JwtAuthGuard)
     @Get()
     async findAll(@Request() req) {
+        console.log(`[SECURITY] User ${req.user.email} (${req.user.role}) listing integrations for tenant ${req.user.tenantId}`);
+
         // 1. Fetch DB Integrations (Official Meta, Mercado Livre, etc.)
         const dbIntegrations = await this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
 
