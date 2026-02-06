@@ -40,7 +40,10 @@ export class AiService {
             const apiKey = await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY');
             if (apiKey) {
                 const trimmedKey = apiKey.trim();
-                this.logger.debug(`[GEMINI_KEY] Retrieved key for tenant ${tenantId}: ${trimmedKey.substring(0, 10)}...${trimmedKey.substring(trimmedKey.length - 4)} (length: ${trimmedKey.length})`);
+                // DEBUG: Log character codes to find hidden chars
+                const charCodes = trimmedKey.split('').map(c => c.charCodeAt(0)).join(',');
+                this.logger.debug(`[GEMINI_KEY_DEBUG] Key: ${trimmedKey.substring(0, 5)}... (Len: ${trimmedKey.length}) Chars: [${charCodes.substring(0, 20)}...]`);
+
                 return trimmedKey;
             }
             return null;

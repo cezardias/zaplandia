@@ -18,6 +18,8 @@ import { CampaignProcessor } from './queues/campaign.processor';
             name: 'campaign-queue',
         }),
         IntegrationsModule, // Needed for CampaignProcessor
+        AuditModule,
+        UsageModule
     ],
     providers: [CampaignsService, CampaignProcessor],
     controllers: [CampaignsController],

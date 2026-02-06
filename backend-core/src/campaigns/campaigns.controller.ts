@@ -20,7 +20,8 @@ export class CampaignsController {
 
     @Post(':id/start')
     start(@Request() req, @Param('id') id: string) {
-        return this.campaignsService.start(id, req.user.tenantId);
+        // Pass userId (sub) for audit logging
+        return this.campaignsService.start(id, req.user.tenantId, req.user.id || req.user.sub);
     }
 
     @Post('funnels')

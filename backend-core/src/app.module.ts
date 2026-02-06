@@ -13,6 +13,8 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { SupportModule } from './support/support.module';
 import { DebugModule } from './debug/debug.module';
 import { AiModule } from './ai/ai.module';
+import { UsageModule } from './usage/usage.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { AiModule } from './ai/ai.module';
     SupportModule,
     DebugModule,
     AiModule,
+    UsageModule,
+    AuditModule,
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'redis',

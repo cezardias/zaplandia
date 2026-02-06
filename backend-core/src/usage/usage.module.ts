@@ -1,0 +1,11 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsageService } from './usage.service';
+import { DailyUsage } from './entities/daily-usage.entity';
+
+@Module({
+    imports: [TypeOrmModule.forFeature([DailyUsage])],
+    providers: [UsageService],
+    exports: [UsageService]
+})
+export class UsageModule { }
