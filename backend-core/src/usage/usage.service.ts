@@ -19,31 +19,38 @@ export class UsageService {
         return new Date().toISOString().split('T')[0];
     }
 
-    async checkAndReserve(tenantId: string, feature: string, amount: number): Promise<void> {
+    async checkAndReserve(tenantId: string, instanceName: string, feature: string, amount: number): Promise<void> {
         const today = this.getTodayString();
         const limit = this.LIMITS[feature] || 999999;
 
         let usage = await this.usageRepository.findOne({
-            where: { tenantId, day: today, feature }
+            where: { tenantId, instanceName, day: today, feature }
         });
 
         if (!usage) {
             usage = this.usageRepository.create({
                 tenantId,
+                instanceName,
                 day: today,
                 feature,
                 count: 0
             });
         }
 
-        if (usage.count + amount > limit) {
-            this.logger.warn(`[LIMIT_REACHED] Tenant ${tenantId} tried to use ${amount} of ${feature} but has ${usage.count}/${limit}`);
-            throw new BadRequestException(`Limite diário atingido! Você já usou ${usage.count} de ${limit} envios hoje. Tente diminuir o lote ou aguarde até amanhã.`);
+        const newTotal = usage.count + amount;
+        if (newTotal > limit) {
+            this.logger.warn(`[LIMIT_REACHED] Instance ${instanceName} usage: ${usage.count}/${limit}. Attempted: ${amount}`);
+            const remaining = Math.max(0, limit - usage.count);
+            throw new BadRequestException(
+                `Limite diário da instância atingido! Esta instância já enviou ${usage.count} mensagens hoje. ` +
+                `Seu limite restante é de ${remaining} envios, mas você tentou enviar ${amount}. ` +
+                `Tente dividir a campanha ou aguarde até amanhã.`
+            );
         }
 
         usage.count += amount;
         await this.usageRepository.save(usage);
-        this.logger.log(`[USAGE] Tenant ${tenantId} reserved ${amount} ${feature}. New total: ${usage.count}/${limit}`);
+        this.logger.log(`[USAGE] Instance ${instanceName} reserved ${amount} ${feature}. New total: ${usage.count}/${limit}`);
     }
 
     async parseUsage(tenantId: string, feature: string) {

@@ -108,8 +108,8 @@ export class CampaignsService {
 
         if (!leads || leads.length === 0) throw new Error('Não há leads pendentes para iniciar.');
 
-        // 🛡️ SECURITY: CHECK DAILY LIMIT
-        await this.usageService.checkAndReserve(tenantId, 'whatsapp_messages', leads.length);
+        // 🛡️ SECURITY: CHECK DAILY LIMIT (Per Instance)
+        await this.usageService.checkAndReserve(tenantId, instanceName, 'whatsapp_messages', leads.length);
 
         // Update status to RUNNING
         campaign.status = CampaignStatus.RUNNING;

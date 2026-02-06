@@ -1,13 +1,16 @@
 import { Entity, Column, PrimaryGeneratedColumn, Index, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('daily_usage')
-@Index(['tenantId', 'day', 'feature'], { unique: true })
+@Index(['tenantId', 'instanceName', 'day', 'feature'], { unique: true }) // Scoped by Instance
 export class DailyUsage {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
     @Column()
     tenantId: string;
+
+    @Column({ nullable: true }) // Nullable for backward compatibility or global limits
+    instanceName: string;
 
     @Column({ type: 'date' })
     day: string; // YYYY-MM-DD
