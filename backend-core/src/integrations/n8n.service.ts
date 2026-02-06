@@ -10,7 +10,7 @@ export class N8nService {
 
     async triggerWebhook(tenantId: string, payload: any) {
         try {
-            const webhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL');
+            const webhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
 
             if (!webhookUrl) {
                 this.logger.debug(`n8n Webhook não configurado para o tenant ${tenantId}. Pulando.`);

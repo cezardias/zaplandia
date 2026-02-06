@@ -103,7 +103,7 @@ export class IntegrationsService {
         }
     }
 
-    async getCredential(tenantId: string, keyName: string): Promise<string | null> {
+    async getCredential(tenantId: string, keyName: string, isOptional: boolean = false): Promise<string | null> {
         // 1. First try to get tenant-specific credential
         const tenantCred = await this.apiCredentialRepository.findOne({
             where: { tenantId, key_name: keyName }
@@ -122,7 +122,11 @@ export class IntegrationsService {
             return globalCred.key_value;
         }
 
-        this.logger.warn(`[GET_CRED] No credential found for "${keyName}"`);
+        if (isOptional) {
+            this.logger.debug(`[GET_CRED] No credential found for "${keyName}" (Optional).`);
+        } else {
+            this.logger.warn(`[GET_CRED] No credential found for "${keyName}"`);
+        }
         return null;
     }
 

@@ -65,6 +65,12 @@ export class UsageService {
         return Math.max(0, limit - current);
     }
 
+    async resetUsage(tenantId: string, instanceName: string, feature: string) {
+        const today = this.getTodayString();
+        await this.usageRepository.delete({ tenantId, instanceName, day: today, feature });
+        this.logger.log(`[USAGE_RESET] Manual reset for ${instanceName} on ${today}`);
+    }
+
     async parseUsage(tenantId: string, feature: string) {
         const today = this.getTodayString();
         const usage = await this.usageRepository.findOne({
