@@ -416,7 +416,7 @@ export class AiService {
             return [responseStr];
         } catch (error) {
             this.logger.error(`[GEN_VAR_CRITICAL] ${error.message}`);
-            return [`[ERRO SISTEMA] Falha ao processar variações: ${error.message}`];
+            return [baseMessage]; // Fallback to original message instead of sending error to user
         }
     }
 
