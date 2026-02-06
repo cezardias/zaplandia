@@ -80,21 +80,29 @@ export default function CampaignsPage() {
     };
 
     const handleToggleStatus = async (id: string, currentStatus: string) => {
-        const newStatus = currentStatus === 'running' ? 'paused' : 'running';
+        const isRunning = currentStatus === 'running';
+        const endpoint = isRunning ? `/api/campaigns/${id}/pause` : `/api/campaigns/${id}/start`;
+        const method = 'POST';
+
         try {
-            const res = await fetch(`/api/campaigns/${id}/status`, {
-                method: 'PATCH',
+            const res = await fetch(endpoint, {
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status: newStatus })
+                }
             });
+
             if (res.ok) {
                 fetchCampaigns();
+            } else {
+                const errorData = await res.json();
+                alert(`Erro: ${errorData.message}`);
+                console.error('Erro na resposta:', errorData);
             }
         } catch (err) {
             console.error('Erro ao atualizar status:', err);
+            alert('Erro de conexão ou servidor.');
         }
     };
 

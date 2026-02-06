@@ -160,6 +160,16 @@ export class CampaignsService {
         return campaign;
     }
 
+    async pause(id: string, tenantId: string) {
+        const campaign = await this.findOne(id, tenantId);
+        if (!campaign) throw new Error('Campanha não encontrada.');
+
+        campaign.status = CampaignStatus.PAUSED;
+        await this.campaignRepository.save(campaign);
+        this.logger.log(`[MOTOR] Campanha ${id} pausada pelo usuário.`);
+        return campaign;
+    }
+
     async findAllByTenant(tenantId: string) {
         return this.campaignRepository.find({
             where: { tenantId },

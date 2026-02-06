@@ -24,6 +24,11 @@ export class CampaignsController {
         return this.campaignsService.start(id, req.user.tenantId, req.user.id || req.user.sub);
     }
 
+    @Post(':id/pause')
+    pause(@Request() req, @Param('id') id: string) {
+        return this.campaignsService.pause(id, req.user.tenantId);
+    }
+
     @Post('funnels')
     createFunnel(@Request() req, @Body() body: any) {
         return this.campaignsService.createContactList(req.user.tenantId, body.name, body.contacts);
