@@ -183,7 +183,12 @@ export default function NewCampaignPage() {
             });
             if (res.ok) {
                 const data = await res.json();
-                setAiResults(data);
+                if (data.variations && Array.isArray(data.variations)) {
+                    setAiResults(data.variations);
+                } else {
+                    // Fallback if backend returns direct array or other format
+                    setAiResults(Array.isArray(data) ? data : []);
+                }
             } else {
                 alert('Erro ao gerar com IA.');
             }
