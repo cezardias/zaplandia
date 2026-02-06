@@ -9,6 +9,8 @@ import { CrmModule } from '../crm/crm.module';
 import { BullModule } from '@nestjs/bull';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { CampaignProcessor } from './queues/campaign.processor';
+import { AuditModule } from '../audit/audit.module';
+import { UsageModule } from '../usage/usage.module';
 
 @Module({
     imports: [

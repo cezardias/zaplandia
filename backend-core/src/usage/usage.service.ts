@@ -2,7 +2,6 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DailyUsage } from './entities/daily-usage.entity';
-import * as moment from 'moment';
 
 @Injectable()
 export class UsageService {
@@ -16,8 +15,12 @@ export class UsageService {
         private usageRepository: Repository<DailyUsage>,
     ) { }
 
+    private getTodayString(): string {
+        return new Date().toISOString().split('T')[0];
+    }
+
     async checkAndReserve(tenantId: string, feature: string, amount: number): Promise<void> {
-        const today = moment().format('YYYY-MM-DD');
+        const today = this.getTodayString();
         const limit = this.LIMITS[feature] || 999999;
 
         let usage = await this.usageRepository.findOne({
@@ -44,7 +47,7 @@ export class UsageService {
     }
 
     async parseUsage(tenantId: string, feature: string) {
-        const today = moment().format('YYYY-MM-DD');
+        const today = this.getTodayString();
         const usage = await this.usageRepository.findOne({
             where: { tenantId, day: today, feature }
         });

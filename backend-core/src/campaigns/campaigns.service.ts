@@ -29,7 +29,61 @@ export class CampaignsService {
         private auditService: AuditService,
     ) { }
 
-    // ... (keep resolveInstanceName and contact list methods same)
+    private async resolveInstanceName(integrationId: string, tenantId: string): Promise<string | null> {
+        // Check if it's a UUID
+        const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(integrationId);
+
+        if (isUuid) {
+            const integration = await this.integrationsService.findOne(integrationId, tenantId);
+            if (!integration) return null;
+
+            const val = integration.credentials?.instanceName ||
+                integration.settings?.instanceName ||
+                integration.credentials?.name ||
+                integration.credentials?.instance ||
+                integration.settings?.name || null;
+            return val ? val.trim() : null;
+        }
+
+        // If not UUID, assume it's the direct name
+        return integrationId.trim();
+    }
+
+    // Contact List (Funnel) Methods
+    async createContactList(tenantId: string, name: string, contacts: any[]) {
+        const list = this.contactListRepository.create({
+            tenantId,
+            name,
+            contacts
+        });
+        return this.contactListRepository.save(list);
+    }
+
+    async getContactLists(tenantId: string) {
+        return this.contactListRepository.find({
+            where: { tenantId },
+            order: { createdAt: 'DESC' }
+        });
+    }
+
+    async removeContactList(id: string, tenantId: string) {
+        const list = await this.contactListRepository.findOne({ where: { id, tenantId } });
+        if (list) {
+            return this.contactListRepository.remove(list);
+        }
+    }
+
+    async updateContactList(id: string, tenantId: string, data: any) {
+        const list = await this.contactListRepository.findOne({ where: { id, tenantId } });
+        if (list) {
+            list.name = data.name;
+            if (data.contacts) {
+                list.contacts = data.contacts;
+            }
+            return this.contactListRepository.save(list);
+        }
+        return null;
+    }
 
     async start(id: string, tenantId: string, userId?: string) {
         const campaign = await this.findOne(id, tenantId);
