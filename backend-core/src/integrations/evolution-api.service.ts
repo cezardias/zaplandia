@@ -33,7 +33,7 @@ export class EvolutionApiService {
 
             const allInstances = Array.isArray(response.data) ? response.data : [];
 
-            let tenantInstances = [];
+            let tenantInstances: any[] = [];
 
             if (role === 'superadmin') {
                 this.logger.log(`[SECURITY] User is superadmin. Showing ALL instances.`);
