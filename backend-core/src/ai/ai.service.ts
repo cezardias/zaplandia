@@ -320,21 +320,42 @@ export class AiService {
                 return `[ERRO] Chave de API do Gemini não configurada.`;
             }
 
-            // Using v1beta manual call since we already have the logic handled
             const finalModelName = modelName || 'gemini-2.5-flash-lite';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${finalModelName}:generateContent?key=${apiKey}`;
             const systemInstruction = context || "Você é o assistente da Zaplandia.";
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
-            const response = await axios.post(url, {
-                contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    topK: 40,
-                    topP: 0.95,
-                    maxOutputTokens: 2048,
+            let retryCount = 0;
+            const maxRetries = 3;
+            let response: any;
+
+            while (retryCount <= maxRetries) {
+                try {
+                    response = await axios.post(url, {
+                        contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 2048,
+                        }
+                    }, { timeout: 30000 });
+
+                    break; // Success
+                } catch (error) {
+                    const isOverloaded = error.response?.data?.error?.code === 503 || error.response?.status === 503;
+
+                    if (isOverloaded && retryCount < maxRetries) {
+                        retryCount++;
+                        const delay = Math.pow(2, retryCount) * 1000;
+                        this.logger.warn(`[AI_RETRY] Gemini overloaded in getAiResponse. Retrying in ${delay}ms... (Attempt ${retryCount}/${maxRetries})`);
+                        await new Promise(res => setTimeout(res, delay));
+                        continue;
+                    }
+
+                    throw error; // Propagate if not 503 or max retries
                 }
-            }, { timeout: 30000 });
+            }
 
             const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
@@ -346,7 +367,7 @@ export class AiService {
         } catch (error) {
             const errorDetail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
             this.logger.error(`[AI_REQUEST_FAILED] ${errorDetail}`);
-            return `[ERRO CONEXÃO IA] ${errorDetail}`;
+            return null; // Return null instead of error string so callers can fallback
         }
     }
 
@@ -366,9 +387,10 @@ export class AiService {
 
             if (!responseStr) return [baseMessage];
 
-            // 1. If it's a known error/warning prefix
+            // 1. If it's a known error/warning prefix (Deprecated check, keeping just in case)
             if (responseStr.startsWith('[ERRO')) {
-                return [responseStr];
+                this.logger.warn(`[GEN_VAR] Received error string from AI: ${responseStr}. Falling back to original.`);
+                return [baseMessage];
             }
 
             // 2. Try to extract JSON from the response
