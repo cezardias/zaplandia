@@ -7,7 +7,7 @@ import { DailyUsage } from './entities/daily-usage.entity';
 export class UsageService {
     private readonly logger = new Logger(UsageService.name);
     private readonly LIMITS = {
-        'whatsapp_messages': 40 // HARD LIMIT
+        'whatsapp_messages': 1000 // TEMPORARY DEBUG LIMIT (Testing)
     };
 
     constructor(
