@@ -27,8 +27,29 @@ let CampaignsController = class CampaignsController {
     create(req, body) {
         return this.campaignsService.create(req.user.tenantId, body);
     }
+    start(req, id) {
+        return this.campaignsService.start(id, req.user.tenantId, req.user.id || req.user.sub);
+    }
+    pause(req, id) {
+        return this.campaignsService.pause(id, req.user.tenantId);
+    }
+    createFunnel(req, body) {
+        return this.campaignsService.createContactList(req.user.tenantId, body.name, body.contacts);
+    }
+    getFunnels(req) {
+        return this.campaignsService.getContactLists(req.user.tenantId);
+    }
+    deleteFunnel(req, id) {
+        return this.campaignsService.removeContactList(id, req.user.tenantId);
+    }
+    updateFunnel(req, id, body) {
+        return this.campaignsService.updateContactList(id, req.user.tenantId, body);
+    }
     findOne(req, id) {
         return this.campaignsService.findOne(id, req.user.tenantId);
+    }
+    update(req, id, body) {
+        return this.campaignsService.update(id, req.user.tenantId, body);
     }
     updateStatus(req, id, body) {
         return this.campaignsService.updateStatus(id, req.user.tenantId, body.status);
@@ -54,6 +75,54 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CampaignsController.prototype, "create", null);
 __decorate([
+    (0, common_1.Post)(':id/start'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], CampaignsController.prototype, "start", null);
+__decorate([
+    (0, common_1.Post)(':id/pause'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], CampaignsController.prototype, "pause", null);
+__decorate([
+    (0, common_1.Post)('funnels'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], CampaignsController.prototype, "createFunnel", null);
+__decorate([
+    (0, common_1.Get)('funnels'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CampaignsController.prototype, "getFunnels", null);
+__decorate([
+    (0, common_1.Delete)('funnels/:id'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], CampaignsController.prototype, "deleteFunnel", null);
+__decorate([
+    (0, common_1.Patch)('funnels/:id'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], CampaignsController.prototype, "updateFunnel", null);
+__decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
@@ -61,6 +130,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], CampaignsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], CampaignsController.prototype, "update", null);
 __decorate([
     (0, common_1.Patch)(':id/status'),
     __param(0, (0, common_1.Request)()),

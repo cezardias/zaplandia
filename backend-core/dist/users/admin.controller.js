@@ -62,6 +62,25 @@ let AdminController = class AdminController {
         if (req.user.role !== user_entity_1.UserRole.SUPERADMIN) {
             throw new common_1.ForbiddenException('Acesso negado.');
         }
+        console.log('[ADMIN_CREATE] Received userData:', JSON.stringify(userData));
+        const role = (userData.role || '').toLowerCase();
+        const hasTenantId = userData.tenantId && userData.tenantId.trim() !== '';
+        console.log('[ADMIN_CREATE] Role:', role, 'HasTenantId:', hasTenantId);
+        if (role === 'user' && !hasTenantId) {
+            const companyName = userData.companyName || `${userData.name}'s Business`;
+            const baseSlug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const uniqueSlug = `${baseSlug}-${Date.now()}`;
+            const trialEndDate = new Date();
+            trialEndDate.setDate(trialEndDate.getDate() + 15);
+            const tenant = await this.usersService.createTenant({
+                name: companyName,
+                slug: uniqueSlug,
+                trialEndsAt: trialEndDate,
+            });
+            console.log(`[ADMIN_CREATE] ✅ Auto-created tenant for user: ${tenant.name} (ID: ${tenant.id})`);
+            userData.tenantId = tenant.id;
+        }
+        console.log('[ADMIN_CREATE] Final userData with tenantId:', userData.tenantId);
         return this.usersService.create(userData);
     }
     async update(req, id, userData) {
@@ -97,6 +116,20 @@ let AdminController = class AdminController {
             console.error('Support Seed failed', e);
         }
         return { message: 'Seeding process finished. Check logs.' };
+    }
+    async getGlobalCredentials(req) {
+        if (req.user.role !== user_entity_1.UserRole.SUPERADMIN) {
+            throw new common_1.ForbiddenException('Apenas SuperAdmin pode acessar credenciais globais.');
+        }
+        console.log('[ADMIN_GET_GLOBAL] Fetching global credentials');
+        return this.integrationsService.findAllCredentials(null);
+    }
+    async saveGlobalCredential(req, body) {
+        if (req.user.role !== user_entity_1.UserRole.SUPERADMIN) {
+            throw new common_1.ForbiddenException('Apenas SuperAdmin pode configurar credenciais globais.');
+        }
+        console.log(`[ADMIN_SAVE_GLOBAL] Saving global credential: ${body.name}`);
+        return this.integrationsService.saveApiCredential(null, body.name, body.value);
     }
 };
 exports.AdminController = AdminController;
@@ -163,6 +196,21 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "seed", null);
+__decorate([
+    (0, common_1.Get)('credentials/global'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getGlobalCredentials", null);
+__decorate([
+    (0, common_1.Post)('credentials/global'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "saveGlobalCredential", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

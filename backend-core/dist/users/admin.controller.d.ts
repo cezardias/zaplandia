@@ -18,4 +18,9 @@ export declare class AdminController {
     seed(req: any): Promise<{
         message: string;
     }>;
+    getGlobalCredentials(req: any): Promise<any>;
+    saveGlobalCredential(req: any, body: {
+        name: string;
+        value: string;
+    }): Promise<any>;
 }

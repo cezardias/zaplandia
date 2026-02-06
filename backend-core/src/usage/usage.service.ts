@@ -53,6 +53,18 @@ export class UsageService {
         this.logger.log(`[USAGE] Instance ${instanceName} reserved ${amount} ${feature}. New total: ${usage.count}/${limit}`);
     }
 
+    async getRemainingQuota(tenantId: string, instanceName: string, feature: string): Promise<number> {
+        const today = this.getTodayString();
+        const limit = this.LIMITS[feature] || 999999;
+
+        const usage = await this.usageRepository.findOne({
+            where: { tenantId, instanceName, day: today, feature }
+        });
+
+        const current = usage ? usage.count : 0;
+        return Math.max(0, limit - current);
+    }
+
     async parseUsage(tenantId: string, feature: string) {
         const today = this.getTodayString();
         const usage = await this.usageRepository.findOne({

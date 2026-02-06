@@ -18,7 +18,7 @@ export declare class IntegrationsService {
         success: boolean;
         message: string;
     }>;
-    saveApiCredential(tenantId: string, keyName: string, keyValue: string): Promise<any>;
+    saveApiCredential(tenantId: string | null, keyName: string, keyValue: string): Promise<any>;
     getCredential(tenantId: string, keyName: string): Promise<string | null>;
     findAllCredentials(tenantId: string | null): Promise<any>;
 }

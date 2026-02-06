@@ -28,7 +28,11 @@ let AuthController = class AuthController {
         return this.authService.login(user);
     }
     async register(createUserDto) {
-        return this.authService.register(createUserDto);
+        const safeUserData = {
+            ...createUserDto,
+            role: 'user',
+        };
+        return this.authService.register(safeUserData);
     }
 };
 exports.AuthController = AuthController;

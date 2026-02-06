@@ -20,6 +20,12 @@ let Contact = class Contact {
     externalId;
     provider;
     lastMessage;
+    instance;
+    aiEnabled;
+    stage;
+    tags;
+    location;
+    value;
     metadata;
     tenant;
     tenantId;
@@ -57,6 +63,30 @@ __decorate([
     __metadata("design:type", String)
 ], Contact.prototype, "lastMessage", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Contact.prototype, "instance", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', nullable: true }),
+    __metadata("design:type", Object)
+], Contact.prototype, "aiEnabled", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 'LEAD' }),
+    __metadata("design:type", String)
+], Contact.prototype, "stage", void 0);
+__decorate([
+    (0, typeorm_1.Column)('simple-array', { nullable: true }),
+    __metadata("design:type", Array)
+], Contact.prototype, "tags", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Contact.prototype, "location", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Contact.prototype, "value", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
     __metadata("design:type", Object)
 ], Contact.prototype, "metadata", void 0);
@@ -87,12 +117,19 @@ let Message = class Message {
     id;
     content;
     direction;
+    wamid;
+    status;
     provider;
     rawPayload;
+    mediaUrl;
+    mediaType;
+    mediaMimeType;
+    mediaFileName;
     contact;
     contactId;
     tenant;
     tenantId;
+    instance;
     createdAt;
 };
 exports.Message = Message;
@@ -111,11 +148,35 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
+], Message.prototype, "wamid", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, default: 'PENDING' }),
+    __metadata("design:type", String)
+], Message.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
 ], Message.prototype, "provider", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
     __metadata("design:type", Object)
 ], Message.prototype, "rawPayload", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Message.prototype, "mediaUrl", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Message.prototype, "mediaType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Message.prototype, "mediaMimeType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Message.prototype, "mediaFileName", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Contact, (contact) => contact.messages),
     __metadata("design:type", Contact)
@@ -132,6 +193,10 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Message.prototype, "tenantId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Message.prototype, "instance", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const bull_1 = require("@nestjs/bull");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const auth_module_1 = require("./auth/auth.module");
@@ -19,6 +20,10 @@ const webhooks_module_1 = require("./webhooks/webhooks.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
 const campaigns_module_1 = require("./campaigns/campaigns.module");
 const support_module_1 = require("./support/support.module");
+const debug_module_1 = require("./debug/debug.module");
+const ai_module_1 = require("./ai/ai.module");
+const usage_module_1 = require("./usage/usage.module");
+const audit_module_1 = require("./audit/audit.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -33,6 +38,16 @@ exports.AppModule = AppModule = __decorate([
             dashboard_module_1.DashboardModule,
             campaigns_module_1.CampaignsModule,
             support_module_1.SupportModule,
+            debug_module_1.DebugModule,
+            ai_module_1.AiModule,
+            usage_module_1.UsageModule,
+            audit_module_1.AuditModule,
+            bull_1.BullModule.forRoot({
+                redis: {
+                    host: process.env.REDIS_HOST || 'redis',
+                    port: parseInt(process.env.REDIS_PORT || '6379'),
+                },
+            }),
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
                 host: process.env.DB_HOST || 'postgres',

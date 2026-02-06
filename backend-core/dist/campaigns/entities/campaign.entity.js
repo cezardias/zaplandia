@@ -28,6 +28,7 @@ let Campaign = class Campaign {
     channels;
     messageTemplate;
     integrationId;
+    variations;
     tenant;
     tenantId;
     leads;
@@ -60,9 +61,13 @@ __decorate([
     __metadata("design:type", String)
 ], Campaign.prototype, "messageTemplate", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'uuid', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], Campaign.prototype, "integrationId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", Array)
+], Campaign.prototype, "variations", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => tenant_entity_1.Tenant),
     __metadata("design:type", tenant_entity_1.Tenant)
@@ -72,7 +77,7 @@ __decorate([
     __metadata("design:type", String)
 ], Campaign.prototype, "tenantId", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => campaign_lead_entity_1.CampaignLead, (lead) => lead.campaign),
+    (0, typeorm_1.OneToMany)(() => campaign_lead_entity_1.CampaignLead, (lead) => lead.campaign, { onDelete: 'CASCADE' }),
     __metadata("design:type", Array)
 ], Campaign.prototype, "leads", void 0);
 __decorate([

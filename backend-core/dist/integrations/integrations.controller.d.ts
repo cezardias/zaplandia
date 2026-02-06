@@ -14,6 +14,7 @@ export declare class IntegrationsController {
     getEvolutionQrCodeByName(req: any, instanceName: string): Promise<any>;
     getEvolutionQrCode(req: any): Promise<any>;
     getEvolutionInstanceStatus(req: any, instanceName: string): Promise<any>;
+    setEvolutionWebhook(req: any, instanceName: string): Promise<any>;
     deleteEvolutionInstanceByName(req: any, instanceName: string): Promise<any>;
     deleteEvolutionInstance(req: any): Promise<any>;
     handleEvolutionWebhook(payload: any): Promise<{

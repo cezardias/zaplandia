@@ -26,6 +26,9 @@ export declare class Integration {
     status: IntegrationStatus;
     credentials: any;
     settings: any;
+    aiEnabled: boolean;
+    aiPromptId: string;
+    aiModel: string;
     tenant: Tenant;
     tenantId: string;
     createdAt: Date;

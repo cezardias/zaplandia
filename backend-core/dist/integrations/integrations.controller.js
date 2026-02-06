@@ -28,31 +28,71 @@ let IntegrationsController = class IntegrationsController {
         this.n8nService = n8nService;
     }
     async findAll(req) {
+        console.log(`[SECURITY] User ${req.user.email} (${req.user.role}) listing integrations for tenant ${req.user.tenantId}`);
         const dbIntegrations = await this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
         let evolutionInstances = [];
         try {
-            const instances = await this.evolutionApiService.listInstances(req.user.tenantId);
-            evolutionInstances = instances.map((inst) => ({
-                id: inst.name || inst.instance?.instanceName || inst.instanceName,
-                name: inst.name || inst.instance?.instanceName || inst.instanceName,
-                provider: 'evolution',
-                status: inst.status === 'open' || inst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED',
-                integrationId: inst.integrationId || `evo_${inst.name}`,
-                settings: inst
+            const instances = await this.evolutionApiService.listInstances(req.user.tenantId, req.user.role);
+            evolutionInstances = await Promise.all(instances.map(async (inst) => {
+                const rawName = inst.name || inst.instance?.instanceName || inst.instanceName;
+                const friendlyName = rawName.replace(/^tenant_[0-9a-fA-F-]{36}_/, '');
+                const dbIntegration = dbIntegrations.find(i => i.provider === 'evolution' &&
+                    (i.settings?.instanceName === rawName || i.credentials?.instanceName === rawName));
+                if (dbIntegration) {
+                    return null;
+                }
+                return {
+                    id: rawName,
+                    name: friendlyName,
+                    instanceName: rawName,
+                    provider: 'evolution',
+                    status: inst.status === 'open' || inst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED',
+                    integrationId: inst.integrationId || `evo_${rawName}`,
+                    settings: inst
+                };
             }));
+            evolutionInstances = evolutionInstances.filter(inst => inst !== null);
         }
         catch (e) {
             console.error('Failed to fetch evolution instances for list:', e.message);
         }
-        return [...dbIntegrations, ...evolutionInstances];
+        const finalIntegrations = dbIntegrations.map(i => {
+            if (i.provider === 'evolution') {
+                const instanceName = i.credentials?.instanceName || i.settings?.instanceName;
+                const friendlyName = instanceName
+                    ? instanceName.replace(/^tenant_[0-9a-fA-F-]{36}_/, '')
+                    : 'Evolution';
+                return {
+                    ...i,
+                    name: friendlyName,
+                    instanceName: instanceName
+                };
+            }
+            return {
+                ...i,
+                name: i.provider === 'whatsapp' ? 'WhatsApp Oficial' :
+                    i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
+            };
+        });
+        const result = [...finalIntegrations, ...evolutionInstances];
+        console.log('Integrations being returned:', JSON.stringify(result, null, 2));
+        return result;
     }
     async listEvolutionInstances(req) {
-        return this.evolutionApiService.listInstances(req.user.tenantId);
+        const isSuperAdmin = req.user.role === 'superadmin';
+        if (isSuperAdmin) {
+            return this.evolutionApiService.listAllInstances();
+        }
+        else {
+            return this.evolutionApiService.listInstances(req.user.tenantId);
+        }
     }
     async createEvolutionInstance(req, body) {
         const customName = body.instanceName || Date.now().toString();
         const instanceName = `tenant_${req.user.tenantId}_${customName}`;
-        return this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.userId);
+        const evolutionResponse = await this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.userId);
+        const integration = await this.integrationsService.create(req.user.tenantId, 'evolution', { instanceName, evolutionData: evolutionResponse });
+        return { ...evolutionResponse, integrationId: integration.id };
     }
     async getEvolutionQrCodeByName(req, instanceName) {
         return this.evolutionApiService.getQrCode(req.user.tenantId, instanceName);
@@ -63,6 +103,10 @@ let IntegrationsController = class IntegrationsController {
     }
     async getEvolutionInstanceStatus(req, instanceName) {
         return this.evolutionApiService.getInstanceStatus(req.user.tenantId, instanceName);
+    }
+    async setEvolutionWebhook(req, instanceName) {
+        const webhookUrl = `${process.env.API_URL || 'https://api.zaplandia.com.br'}/webhooks/evolution`;
+        return this.evolutionApiService.setWebhook(req.user.tenantId, instanceName, webhookUrl);
     }
     async deleteEvolutionInstanceByName(req, instanceName) {
         return this.evolutionApiService.deleteInstance(req.user.tenantId, instanceName);
@@ -95,8 +139,17 @@ let IntegrationsController = class IntegrationsController {
             console.error('[SAVE_CRED] FATAL: No tenantId found!');
             throw new Error('Cannot save credentials: user has no associated tenant.');
         }
-        console.log('[SAVE_CRED] Final tenantId:', tenantId, 'Key:', body.name);
-        return this.integrationsService.saveApiCredential(tenantId, body.name, body.value);
+        const isSuperAdmin = req.user.role === 'superadmin';
+        const isEvolutionConfig = body.name === 'EVOLUTION_API_URL' || body.name === 'EVOLUTION_API_KEY';
+        let finalTenantId = tenantId;
+        if (isSuperAdmin && isEvolutionConfig) {
+            finalTenantId = null;
+            console.log(`[SAVE_CRED] ✅ SuperAdmin saving ${body.name} as GLOBAL (tenantId=null)`);
+        }
+        else {
+            console.log('[SAVE_CRED] Final tenantId:', tenantId, 'Key:', body.name);
+        }
+        return this.integrationsService.saveApiCredential(finalTenantId, body.name, body.value);
     }
     async getCredentials(req) {
         console.log('[GET_CRED] req.user:', JSON.stringify(req.user));
@@ -169,6 +222,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], IntegrationsController.prototype, "getEvolutionInstanceStatus", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('evolution/webhook/:instanceName'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('instanceName')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], IntegrationsController.prototype, "setEvolutionWebhook", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Delete)('evolution/instance/:instanceName'),

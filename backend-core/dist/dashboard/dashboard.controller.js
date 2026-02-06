@@ -31,6 +31,7 @@ let DashboardController = class DashboardController {
         this.messageRepository = messageRepository;
     }
     async getStats(req) {
+        console.log(`[SECURITY] User ${req.user.email} (${req.user.role}) accessing dashboard stats for tenant ${req.user.tenantId}`);
         const tenantId = req.user.tenantId;
         const role = req.user.role;
         const today = new Date();

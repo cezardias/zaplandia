@@ -17,6 +17,7 @@ var LeadStatus;
     LeadStatus["PENDING"] = "pending";
     LeadStatus["SENT"] = "sent";
     LeadStatus["FAILED"] = "failed";
+    LeadStatus["INVALID"] = "invalid";
 })(LeadStatus || (exports.LeadStatus = LeadStatus = {}));
 let CampaignLead = class CampaignLead {
     id;
@@ -26,6 +27,7 @@ let CampaignLead = class CampaignLead {
     errorReason;
     campaign;
     campaignId;
+    sentAt;
     createdAt;
 };
 exports.CampaignLead = CampaignLead;
@@ -51,7 +53,7 @@ __decorate([
 ], CampaignLead.prototype, "status", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], CampaignLead.prototype, "errorReason", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => campaign_entity_1.Campaign, (campaign) => campaign.leads),
@@ -61,6 +63,10 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], CampaignLead.prototype, "campaignId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], CampaignLead.prototype, "sentAt", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

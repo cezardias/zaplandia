@@ -14,6 +14,7 @@ export declare class Campaign {
     channels: string[];
     messageTemplate: string;
     integrationId: string;
+    variations: string[];
     tenant: Tenant;
     tenantId: string;
     leads: CampaignLead[];

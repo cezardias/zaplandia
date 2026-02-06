@@ -10,19 +10,22 @@ exports.CrmModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const crm_entity_1 = require("./entities/crm.entity");
+const campaign_lead_entity_1 = require("../campaigns/entities/campaign-lead.entity");
 const crm_service_1 = require("./crm.service");
 const crm_controller_1 = require("./crm.controller");
+const upload_controller_1 = require("./upload.controller");
 const integrations_module_1 = require("../integrations/integrations.module");
+const campaign_entity_1 = require("../campaigns/entities/campaign.entity");
 let CrmModule = class CrmModule {
 };
 exports.CrmModule = CrmModule;
 exports.CrmModule = CrmModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([crm_entity_1.Contact, crm_entity_1.Message]),
+            typeorm_1.TypeOrmModule.forFeature([crm_entity_1.Contact, crm_entity_1.Message, campaign_lead_entity_1.CampaignLead, campaign_entity_1.Campaign]),
             integrations_module_1.IntegrationsModule
         ],
-        controllers: [crm_controller_1.CrmController],
+        controllers: [crm_controller_1.CrmController, upload_controller_1.UploadController],
         providers: [crm_service_1.CrmService],
         exports: [crm_service_1.CrmService],
     })

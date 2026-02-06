@@ -41,6 +41,9 @@ let Integration = class Integration {
     status;
     credentials;
     settings;
+    aiEnabled;
+    aiPromptId;
+    aiModel;
     tenant;
     tenantId;
     createdAt;
@@ -74,6 +77,18 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
     __metadata("design:type", Object)
 ], Integration.prototype, "settings", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Integration.prototype, "aiEnabled", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Integration.prototype, "aiPromptId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, default: 'gemini-2.5-flash-lite' }),
+    __metadata("design:type", String)
+], Integration.prototype, "aiModel", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => tenant_entity_1.Tenant),
     __metadata("design:type", tenant_entity_1.Tenant)

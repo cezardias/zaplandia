@@ -11,9 +11,10 @@ const common_1 = require("@nestjs/common");
 const webhooks_controller_1 = require("./webhooks.controller");
 const crm_module_1 = require("../crm/crm.module");
 const integrations_module_1 = require("../integrations/integrations.module");
-const ai_service_1 = require("../integrations/ai.service");
+const ai_module_1 = require("../ai/ai.module");
 const typeorm_1 = require("@nestjs/typeorm");
 const crm_entity_1 = require("../crm/entities/crm.entity");
+const campaign_lead_entity_1 = require("../campaigns/entities/campaign-lead.entity");
 let WebhooksModule = class WebhooksModule {
 };
 exports.WebhooksModule = WebhooksModule;
@@ -22,10 +23,11 @@ exports.WebhooksModule = WebhooksModule = __decorate([
         imports: [
             crm_module_1.CrmModule,
             integrations_module_1.IntegrationsModule,
-            typeorm_1.TypeOrmModule.forFeature([crm_entity_1.Contact, crm_entity_1.Message])
+            ai_module_1.AiModule,
+            typeorm_1.TypeOrmModule.forFeature([crm_entity_1.Contact, crm_entity_1.Message, campaign_lead_entity_1.CampaignLead])
         ],
         controllers: [webhooks_controller_1.WebhooksController],
-        providers: [ai_service_1.AiService],
+        providers: [],
     })
 ], WebhooksModule);
 //# sourceMappingURL=webhooks.module.js.map

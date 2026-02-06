@@ -84,15 +84,21 @@ let AuthService = class AuthService {
     async register(data) {
         const trialEndDate = new Date();
         trialEndDate.setDate(trialEndDate.getDate() + 15);
+        const companyName = data.companyName || `${data.name}'s Business`;
+        const baseSlug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const uniqueSlug = `${baseSlug}-${Date.now()}`;
         const tenant = await this.usersService.createTenant({
-            name: `${data.name}'s Business`,
-            slug: data.name.toLowerCase().replace(/ /g, '-'),
+            name: companyName,
+            slug: uniqueSlug,
             trialEndsAt: trialEndDate,
         });
-        return this.usersService.create({
+        console.log(`[SECURITY] New tenant created: ${tenant.name} | ID: ${tenant.id} | Slug: ${tenant.slug}`);
+        const user = await this.usersService.create({
             ...data,
             tenantId: tenant.id,
         });
+        console.log(`[SECURITY] New user registered: ${user.email} | TenantId: ${user.tenantId}`);
+        return user;
     }
 };
 exports.AuthService = AuthService;

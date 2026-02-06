@@ -1,14 +1,34 @@
 import { Repository } from 'typeorm';
 import { Campaign, CampaignStatus } from './entities/campaign.entity';
+import { ContactList } from './entities/contact-list.entity';
 import { CampaignLead } from './entities/campaign-lead.entity';
 import { CrmService } from '../crm/crm.service';
+import { IntegrationsService } from '../integrations/integrations.service';
+import type { Queue } from 'bull';
+import { AuditService } from '../audit/audit.service';
+import { UsageService } from '../usage/usage.service';
 export declare class CampaignsService {
     private campaignRepository;
     private leadRepository;
+    private contactListRepository;
     private crmService;
+    private integrationsService;
+    private campaignQueue;
+    private usageService;
+    private auditService;
     private readonly logger;
-    constructor(campaignRepository: Repository<Campaign>, leadRepository: Repository<CampaignLead>, crmService: CrmService);
+    constructor(campaignRepository: Repository<Campaign>, leadRepository: Repository<CampaignLead>, contactListRepository: Repository<ContactList>, crmService: CrmService, integrationsService: IntegrationsService, campaignQueue: Queue, usageService: UsageService, auditService: AuditService);
+    private resolveInstanceName;
+    createContactList(tenantId: string, name: string, contacts: any[]): Promise<any>;
+    getContactLists(tenantId: string): Promise<any>;
+    removeContactList(id: string, tenantId: string): Promise<any>;
+    updateContactList(id: string, tenantId: string, data: any): Promise<any>;
+    start(id: string, tenantId: string, userId?: string): Promise<any>;
+    pause(id: string, tenantId: string): Promise<any>;
     findAllByTenant(tenantId: string): Promise<any>;
+    private extractLeadName;
+    private normalizePhoneNumber;
+    private extractPhoneNumber;
     create(tenantId: string, data: any): Promise<{
         id: string;
         name: string;
@@ -18,6 +38,7 @@ export declare class CampaignsService {
         createdAt: Date;
     }>;
     findOne(id: string, tenantId: string): Promise<any>;
-    updateStatus(id: string, tenantId: string, status: CampaignStatus): Promise<Campaign | null>;
+    updateStatus(id: string, tenantId: string, status: CampaignStatus): Promise<any>;
+    update(id: string, tenantId: string, data: any): Promise<any>;
     remove(id: string, tenantId: string): Promise<any>;
 }

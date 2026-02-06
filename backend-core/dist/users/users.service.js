@@ -110,17 +110,15 @@ let UsersService = class UsersService {
     }
     async create(userData) {
         if (!userData.tenantId) {
-            const hq = await this.tenantsRepository.findOne({ where: { name: 'Zaplandia HQ' } })
-                || await this.tenantsRepository.findOne({ where: {} });
-            if (hq) {
-                userData.tenantId = hq.id;
-            }
+            throw new Error('SECURITY ERROR: tenantId is required for user creation. Each user must have their own isolated tenant.');
         }
         if (userData.password) {
             userData.password = await bcrypt.hash(userData.password, 10);
         }
         const user = this.usersRepository.create(userData);
-        return this.usersRepository.save(user);
+        const savedUser = await this.usersRepository.save(user);
+        console.log(`[SECURITY] User created: ${savedUser.email} | TenantId: ${savedUser.tenantId} | Role: ${savedUser.role}`);
+        return savedUser;
     }
     async createTenant(tenantData) {
         const tenant = this.tenantsRepository.create(tenantData);
