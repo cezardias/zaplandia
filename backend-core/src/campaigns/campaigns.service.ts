@@ -100,15 +100,25 @@ export class CampaignsService {
 
         this.logger.log(`[MOTOR] Campanha ${id} resolvida para instância: ${instanceName}`);
 
-        // Fetch PENDING leads
+        // 🛡️ SECURITY: CHECK REMAINING QUOTA BEFORE FETCHING
+        const remainingQuota = await this.usageService.getRemainingQuota(tenantId, instanceName, 'whatsapp_messages');
+
+        if (remainingQuota <= 0) {
+            throw new Error(`Limite diário de 40 envios já atingido para a instância ${instanceName}. Tente novamente amanhã.`);
+        }
+
+        // Fetch PENDING leads (Limited by remaining quota)
+        // If 79 pending and 40 quota => fetch 40. The other 39 stay pending.
         const leads = await this.leadRepository.find({
             where: { campaignId: id, status: LeadStatus.PENDING },
-            take: 10000
+            take: remainingQuota // ✅ AUTO-BATCHING
         });
 
         if (!leads || leads.length === 0) throw new Error('Não há leads pendentes para iniciar.');
 
-        // 🛡️ SECURITY: CHECK DAILY LIMIT (Per Instance)
+        this.logger.log(`[MOTOR] Cota restante: ${remainingQuota}. Leads pendentes encontrados: ${leads.length}. Processando lote...`);
+
+        // Reserve strictly what we fetched
         await this.usageService.checkAndReserve(tenantId, instanceName, 'whatsapp_messages', leads.length);
 
         // Update status to RUNNING
