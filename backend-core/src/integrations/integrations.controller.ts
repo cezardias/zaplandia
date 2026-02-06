@@ -23,7 +23,8 @@ export class IntegrationsController {
         // 2. Fetch EvolutionAPI Instances (WhatsApp)
         let evolutionInstances: any[] = [];
         try {
-            const instances = await this.evolutionApiService.listInstances(req.user.tenantId);
+            // Pass user role to allow superadmin to see all
+            const instances = await this.evolutionApiService.listInstances(req.user.tenantId, req.user.role);
             evolutionInstances = await Promise.all(instances.map(async (inst: any) => {
                 const rawName = inst.name || inst.instance?.instanceName || inst.instanceName;
                 // Clean name: remove technical prefix "tenant_<uuid>_"

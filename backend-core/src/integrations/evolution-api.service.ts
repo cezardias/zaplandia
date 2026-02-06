@@ -16,7 +16,7 @@ export class EvolutionApiService {
         return await this.integrationsService.getCredential(tenantId, 'EVOLUTION_API_KEY');
     }
 
-    async listInstances(tenantId: string) {
+    async listInstances(tenantId: string, role?: string) {
         const baseUrl = await this.getBaseUrl(tenantId);
         const apiKey = await this.getApiKey(tenantId);
 
@@ -31,16 +31,21 @@ export class EvolutionApiService {
 
             this.logger.log(`Raw instances from EvolutionAPI: ${JSON.stringify(response.data)}`);
 
-            // Filter instances that belong to this tenant (prefix: tenant_<tenantId>_)
             const allInstances = Array.isArray(response.data) ? response.data : [];
 
-            this.logger.log(`Filtering for tenantId: ${tenantId}`);
+            let tenantInstances = [];
 
-            const tenantInstances = allInstances.filter((inst: any) => {
-                const name = inst.name || inst.instance?.instanceName || inst.instanceName || '';
-                const match = name.startsWith(`tenant_${tenantId}_`);
-                return match;
-            });
+            if (role === 'superadmin') {
+                this.logger.log(`[SECURITY] User is superadmin. Showing ALL instances.`);
+                tenantInstances = allInstances;
+            } else {
+                this.logger.log(`Filtering for tenantId: ${tenantId}`);
+                tenantInstances = allInstances.filter((inst: any) => {
+                    const name = inst.name || inst.instance?.instanceName || inst.instanceName || '';
+                    const match = name.startsWith(`tenant_${tenantId}_`);
+                    return match;
+                });
+            }
 
             this.logger.log(`[SECURITY] Tenant ${tenantId}: Returning ${tenantInstances.length}/${allInstances.length} instances (filtered by tenant prefix)`);
 
