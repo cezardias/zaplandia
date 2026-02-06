@@ -108,31 +108,38 @@ export default function DashboardPage() {
                         <Zap className="w-4 h-4" />
                         <span>Gerar 10 Abordagens/Funil</span>
                     </button>
-                    <button
-                        onClick={async () => {
-                            if (confirm('ATENÇÃO: Isso apagará TODOS os contatos do CRM. Tem certeza?')) {
-                                try {
-                                    const res = await fetch('/api/crm/contacts/all', {
-                                        method: 'DELETE',
-                                        headers: { 'Authorization': `Bearer ${token}` }
-                                    });
-                                    if (res.ok) {
-                                        alert('Base limpa com sucesso!');
-                                        fetchStats();
-                                    } else {
-                                        const err = await res.json();
-                                        alert(`Erro ao limpar: ${err.message || 'Falha desconhecida'}`);
-                                    }
-                                } catch (e) {
-                                    alert('Erro de conexão ao limpar base.');
-                                }
-                            }
-                        }}
-                        className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-6 py-2 rounded-lg font-bold flex items-center space-x-2 transition"
-                    >
-                        <UserX className="w-4 h-4" />
-                        <span>Limpar Base de Leads (Perigo)</span>
+                    <button className="bg-primary hover:bg-primary-dark transition text-white px-6 py-2 rounded-lg font-bold flex items-center space-x-2">
+                        <Zap className="w-4 h-4" />
+                        <span>Gerar 10 Abordagens/Funil</span>
                     </button>
+                    {user?.role === 'superadmin' && (
+                        <button
+                            onClick={async () => {
+                                if (confirm('ATENÇÃO: Isso apagará TODOS os contatos do CRM. Tem certeza?')) {
+                                    try {
+                                        const res = await fetch('/api/crm/contacts/all', {
+                                            method: 'DELETE',
+                                            headers: { 'Authorization': `Bearer ${token}` }
+                                        });
+                                        if (res.ok) {
+                                            alert('Base limpa com sucesso!');
+                                            fetchStats();
+                                            fetchCampaigns(); // Also refresh campaigns logic
+                                        } else {
+                                            const err = await res.json();
+                                            alert(`Erro ao limpar: ${err.message || 'Falha desconhecida'}`);
+                                        }
+                                    } catch (e) {
+                                        alert('Erro de conexão ao limpar base.');
+                                    }
+                                }
+                            }}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-6 py-2 rounded-lg font-bold flex items-center space-x-2 transition"
+                        >
+                            <UserX className="w-4 h-4" />
+                            <span>Limpar Base de Leads (Perigo)</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
