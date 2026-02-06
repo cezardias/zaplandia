@@ -144,7 +144,8 @@ export class CampaignsService {
                     message: campaign.messageTemplate,
                     instanceName: instanceName,
                     tenantId: tenantId,
-                    variations: campaign.variations
+                    variations: campaign.variations,
+                    isFirst: globalIndex === 0 // ✅ Flag for immediate first send
                 }, {
                     removeOnComplete: true,
                     attempts: 3,

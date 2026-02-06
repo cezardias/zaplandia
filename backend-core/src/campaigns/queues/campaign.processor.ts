@@ -28,6 +28,7 @@ export class CampaignProcessor {
 
     @Process('send-message')
     async handleSendMessage(job: Job) {
+        this.logger.log(`[JOB_RECEIVED] Job ${job.id} recebido pelo processador.`);
         const { leadId, contactId, campaignId, externalId, message, instanceName, tenantId, variations, leadName } = job.data;
 
         // 0. Campaign Status Check (Critical for Pausing)
@@ -89,15 +90,21 @@ export class CampaignProcessor {
             return;
         }
 
-        // 2. Random Delay (Organic Human Staggering: 30s to 5min)
-        // User requested: 30s, 2m, 5m, 1m variations.
-        // We use a wide random spread: 30,000ms to 300,000ms
-        const minDelay = 30 * 1000;
-        const maxDelay = 300 * 1000;
-        const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+        // 2. Random Delay (Organic Human Staggering)
+        // Checks if this is the FIRST message to skip delay for immediate feedback
+        const isFirstMessage = job.data.isFirst === true;
 
-        this.logger.log(`[AGUARDANDO] Intervalo orgânico (Anti-Ban): Esperando ${Math.round(randomDelay / 1000)}s antes do disparo...`);
-        await new Promise(resolve => setTimeout(resolve, randomDelay));
+        if (isFirstMessage) {
+            this.logger.log(`[PRIORIDADE] Este é o primeiro lead da campanha. Enviando IMEDIATAMENTE! 🚀`);
+        } else {
+            // Restore safe anti-ban delay (30s to 5min)
+            const minDelay = 30 * 1000;
+            const maxDelay = 300 * 1000;
+            const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+
+            this.logger.log(`[AGUARDANDO] Intervalo orgânico (Anti-Ban): Esperando ${Math.round(randomDelay / 1000)}s antes do disparo...`);
+            await new Promise(resolve => setTimeout(resolve, randomDelay));
+        }
 
         // 3. AI Variation & Personalization Logic
         let finalMessage = message;
