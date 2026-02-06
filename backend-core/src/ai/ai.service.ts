@@ -305,15 +305,112 @@ export class AiService {
         }
     }
 
-    private async getPromptContent(promptId: string, tenantId: string): Promise<string | null> {
-        try {
-            const prompt = await this.aiPromptRepository.findOne({
-                where: { id: promptId, tenantId }
-            });
-            return prompt?.content || null;
-        } catch (error) {
-            this.logger.error(`Error fetching prompt content for ${promptId}: ${error.message}`);
-            return null;
+}
+
+    // --- RESTORED METHODS FOR FRONTEND MAGIC WAND ---
+
+    async getAiResponse(tenantId: string, prompt: string, provider: string, context ?: string, modelName ?: string) {
+    try {
+        // Fetch the Gemini API Key for this specific tenant (or global fallback)
+        const apiKey = await this.getGeminiApiKey(tenantId);
+
+        if (!apiKey) {
+            this.logger.error(`[AI_REQUEST] No API Key found for Tenant ${tenantId}.`);
+            return `[ERRO] Chave de API do Gemini não configurada.`;
         }
+
+        // Using v1beta manual call since we already have the logic handled
+        const finalModelName = modelName || 'gemini-2.5-flash-lite';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${finalModelName}:generateContent?key=${apiKey}`;
+        const systemInstruction = context || "Você é o assistente da Zaplandia.";
+        const fullPrompt = `${systemInstruction}\n\n${prompt}`;
+
+        const response = await axios.post(url, {
+            contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+            generationConfig: {
+                temperature: 0.7,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 2048,
+            }
+        }, { timeout: 30000 });
+
+        const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!aiResponse) return null;
+
+        this.logger.log(`[AI_RESPONSE] Received ${aiResponse.length} chars from AI Service`);
+        return aiResponse;
+
+    } catch (error) {
+        const errorDetail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+        this.logger.error(`[AI_REQUEST_FAILED] ${errorDetail}`);
+        return `[ERRO CONEXÃO IA] ${errorDetail}`;
     }
+}
+
+    async generateVariations(tenantId: string, baseMessage: string, prompt ?: string, count: number = 3): Promise < string[] > {
+    const systemInstruction = "Você é um especialista em Copywriting para WhatsApp. Sua tarefa é gerar variações de mensagens mantendo o sentido original, mas mudando o tom ou a estrutura para evitar bloqueios de SPAM. Retorne APENAS um array JSON de strings, sem markdown.";
+
+    const userPrompt = `
+        Mensagem Original: "${baseMessage}"
+        Contexto/Instrução Adicional: "${prompt || 'Crie variações amigáveis e persuasivas.'}"
+        Quantidade: ${count}
+        
+        Gere as variações no formato JSON array de strings: ["variação 1", "variação 2", ...]`;
+
+    try {
+        const responseStr = await this.getAiResponse(tenantId, userPrompt, 'gemini', systemInstruction);
+        this.logger.log(`[GEN_VAR] Raw response from service: ${responseStr}`);
+
+        if(!responseStr) return [baseMessage];
+
+        // 1. If it's a known error/warning prefix
+        if(responseStr.startsWith('[ERRO')) {
+    return [responseStr];
+}
+
+// 2. Try to extract JSON from the response
+let cleaned = responseStr.trim();
+// Remove markdown code blocks if present
+cleaned = cleaned.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+
+const jsonMatch = cleaned.match(/\[.*\]/s);
+if (jsonMatch) {
+    cleaned = jsonMatch[0];
+}
+
+try {
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) {
+        return parsed.map(v => String(v).trim());
+    }
+} catch (pErr) {
+    this.logger.warn(`[GEN_VAR] Failed to parse as JSON array: ${cleaned}`);
+}
+
+// 3. Fallback: return it as single item if not JSON
+return [responseStr];
+        } catch (error) {
+    this.logger.error(`[GEN_VAR_CRITICAL] ${error.message}`);
+    return [`[ERRO SISTEMA] Falha ao processar variações: ${error.message}`];
+}
+    }
+
+    // For /api/ai/prompts used in frontend
+    async generatePrompts(tenantId: string, topic: string, count: number = 3): Promise < string[] > {
+    return this.generateVariations(tenantId, topic, "Gere prompts de sistema para IA agir como um atendente.", count);
+}
+
+    private async getPromptContent(promptId: string, tenantId: string): Promise < string | null > {
+    try {
+        const prompt = await this.aiPromptRepository.findOne({
+            where: { id: promptId, tenantId }
+        });
+        return prompt?.content || null;
+    } catch(error) {
+        this.logger.error(`Error fetching prompt content for ${promptId}: ${error.message}`);
+        return null;
+    }
+}
 }

@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { Integration } from '../integrations/entities/integration.entity';
 import { Contact } from '../crm/entities/crm.entity';
 
+import { AiService } from './ai.service';
+
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 export class AiController {
@@ -13,6 +15,7 @@ export class AiController {
         private integrationRepository: Repository<Integration>,
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
+        private aiService: AiService,
     ) { }
 
     /**
@@ -80,5 +83,31 @@ export class AiController {
                 aiEnabled: contact.aiEnabled
             }
         };
+    }
+    @Post('generate-variations')
+    async generateVariations(
+        @Body() body: { baseMessage: string; prompt?: string; count?: number },
+        @Request() req
+    ) {
+        const variations = await this.aiService.generateVariations(
+            req.user.tenantId,
+            body.baseMessage,
+            body.prompt,
+            body.count
+        );
+        return { success: true, variations };
+    }
+
+    @Post('prompts')
+    async generatePrompts(
+        @Body() body: { topic: string; count?: number },
+        @Request() req
+    ) {
+        const prompts = await this.aiService.generatePrompts(
+            req.user.tenantId,
+            body.topic,
+            body.count
+        );
+        return { success: true, prompts };
     }
 }
