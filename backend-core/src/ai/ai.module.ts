@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
@@ -11,7 +11,7 @@ import { AiPrompt } from '../integrations/entities/ai-prompt.entity';
 @Module({
     imports: [
         TypeOrmModule.forFeature([Contact, Message, Integration, AiPrompt]),
-        IntegrationsModule,
+        forwardRef(() => IntegrationsModule),
     ],
     controllers: [AiController],
     providers: [AiService],
