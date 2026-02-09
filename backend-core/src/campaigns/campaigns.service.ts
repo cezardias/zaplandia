@@ -137,7 +137,27 @@ export class CampaignsService {
             take: remainingQuota // ✅ AUTO-BATCHING
         });
 
-        if (!leads || leads.length === 0) throw new Error('Não há leads pendentes para iniciar.');
+        if (!leads || leads.length === 0) {
+            // DIAGNOSTICS: Why are there no leads?
+            const totalLeads = await this.leadRepository.count({ where: { campaignId: id } });
+            const pendingLeads = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.PENDING } });
+
+            if (totalLeads === 0) {
+                throw new Error('A campanha está vazia! Adicione leads antes de iniciar.');
+            }
+
+            if (pendingLeads === 0 && totalLeads > 0) {
+                // Check if we have leads that were maybe skipped or failed?
+                const failed = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.FAILED } });
+                const sent = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.SENT } });
+
+                throw new Error(`Todos os ${totalLeads} leads desta campanha já foram processados (Enviados: ${sent}, Falhas: ${failed}). Para reenviar, você precisa recriar a campanha ou reiniciar os leads.`);
+            }
+
+            // If we are here, it means we have pending leads but query with limit returned 0? Should not happen if limit > 0.
+            // But if remainingQuota is small and somehow logic failed?
+            throw new Error(`Não foi possível buscar leads pendentes (Cota: ${remainingQuota}, Pendentes: ${pendingLeads}).`);
+        }
 
         this.logger.log(`[MOTOR] Cota restante: ${remainingQuota}. Leads pendentes encontrados: ${leads.length}. Processando lote...`);
 
