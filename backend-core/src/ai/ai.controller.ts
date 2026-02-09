@@ -27,7 +27,7 @@ export class AiController {
         @Body() body: { enabled: boolean; promptId?: string; aiModel?: string },
         @Request() req
     ) {
-        let integration: Integration;
+        let integration: Integration | null;
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(integrationId);
 
         if (isUuid) {
