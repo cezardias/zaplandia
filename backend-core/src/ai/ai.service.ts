@@ -49,12 +49,15 @@ export class AiService {
         try {
             const apiKey = await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY');
             if (apiKey) {
-                const trimmedKey = apiKey.trim();
-                // DEBUG: Log character codes to find hidden chars
-                const charCodes = trimmedKey.split('').map(c => c.charCodeAt(0)).join(',');
-                this.logger.debug(`[GEMINI_KEY_DEBUG] Key: ${trimmedKey.substring(0, 5)}... (Len: ${trimmedKey.length}) Chars: [${charCodes.substring(0, 20)}...]`);
+                // AGGRESSIVE SANITIZATION: Remove quotes, newlines, and surrounding whitespace
+                const cleanedKey = apiKey.replace(/["'\n\r]/g, '').trim();
 
-                return trimmedKey;
+                // DEBUG: Log character codes to find hidden chars (redacted for security)
+                if (cleanedKey) {
+                    const charCodes = cleanedKey.split('').map(c => c.charCodeAt(0)).join(',');
+                    this.logger.debug(`[GEMINI_KEY_DEBUG] Key Len: ${cleanedKey.length}, Chars: [${charCodes.substring(0, 20)}...]`);
+                    return cleanedKey;
+                }
             }
             return null;
         } catch (error) {

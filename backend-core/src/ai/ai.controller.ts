@@ -73,7 +73,9 @@ export class AiController {
         }
 
         integration.aiEnabled = body.enabled;
-        if (body.promptId) {
+
+        // CHECK: Explicitly check for undefined to allow setting null/empty
+        if (body.promptId !== undefined) {
             integration.aiPromptId = body.promptId;
         }
         if (body.aiModel) {

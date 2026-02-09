@@ -37,6 +37,13 @@ export class AdminController {
         // FIX: Admin saving Evolution API settings should be GLOBAL
         if (name === 'EVOLUTION_API_URL' || name === 'EVOLUTION_API_KEY') {
             console.log(`[ADMIN_SAVE] 🌍 Saving ${name} as GLOBAL (ignoring tenant ${tenantId})`);
+
+            // CLEANUP: Delete conflicting tenant-specific key
+            if (tenantId) {
+                await this.integrationsService.deleteCredential(tenantId, name);
+                console.log(`[ADMIN_SAVE] 🗑️ Deleted conflicting tenant-specific key for ${tenantId}`);
+            }
+
             return this.integrationsService.saveApiCredential(null, name, value);
         }
 

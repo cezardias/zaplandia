@@ -219,6 +219,12 @@ export class IntegrationsController {
         if (isSuperAdmin && isEvolutionConfig) {
             finalTenantId = null; // Save as GLOBAL
             console.log(`[SAVE_CRED] ✅ SuperAdmin saving ${body.name} as GLOBAL (tenantId=null)`);
+
+            // CLEANUP: Delete any tenant-specific override that might hide this global key
+            if (tenantId) {
+                await this.integrationsService.deleteCredential(tenantId, body.name);
+                console.log(`[SAVE_CRED] 🗑️ Deleted conflicting tenant-specific key for ${tenantId}`);
+            }
         } else {
             console.log('[SAVE_CRED] Final tenantId:', tenantId, 'Key:', body.name);
         }
