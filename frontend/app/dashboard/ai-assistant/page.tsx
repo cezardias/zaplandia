@@ -39,7 +39,7 @@ Sua missão é analisar uma lista de leads e, para cada um, gerar uma mensagem *
     const handleSavePrompt = async () => {
         if (!promptName.trim()) return alert('Digite um nome para o prompt.');
         try {
-            const res = await fetch('/api/ai/prompts', {
+            const res = await fetch('/api/ai/prompts/save', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
