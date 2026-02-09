@@ -2,7 +2,7 @@ import { Controller, Post, Param, Body, UseGuards, Request } from '@nestjs/commo
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Integration } from '../integrations/entities/integration.entity';
+import { Integration, IntegrationProvider, IntegrationStatus } from '../integrations/entities/integration.entity';
 import { Contact } from '../crm/entities/crm.entity';
 
 import { AiService } from './ai.service';
@@ -27,11 +27,48 @@ export class AiController {
         @Body() body: { enabled: boolean; promptId?: string; aiModel?: string },
         @Request() req
     ) {
-        const integration = await this.integrationRepository.findOne({
-            where: { id: integrationId, tenantId: req.user.tenantId }
-        });
+        let integration: Integration;
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(integrationId);
+
+        if (isUuid) {
+            integration = await this.integrationRepository.findOne({
+                where: { id: integrationId, tenantId: req.user.tenantId }
+            });
+        } else {
+            // It's likely an Evolution Instance Name (string) e.g. "tenant_xyz"
+            // Search for existing integration by instanceName in settings or credentials
+            integration = await this.integrationRepository.createQueryBuilder('integration')
+                .where('integration.tenantId = :tenantId', { tenantId: req.user.tenantId })
+                .andWhere(`integration.provider = 'evolution'`)
+                .andWhere(`(integration.settings->>'instanceName' = :instanceName OR integration.credentials->>'instanceName' = :instanceName)`, { instanceName: integrationId })
+                .getOne();
+        }
 
         if (!integration) {
+            // If not found and it looks like a valid evolution instance name, create it
+            if (!isUuid && integrationId.startsWith('tenant_')) {
+                const newIntegration = this.integrationRepository.create({
+                    tenantId: req.user.tenantId,
+                    provider: IntegrationProvider.EVOLUTION,
+                    status: IntegrationStatus.CONNECTED,
+                    settings: { instanceName: integrationId },
+                    aiEnabled: body.enabled,
+                    aiPromptId: body.promptId,
+                    aiModel: body.aiModel
+                });
+                await this.integrationRepository.save(newIntegration);
+
+                return {
+                    success: true,
+                    integration: {
+                        id: newIntegration.id,
+                        aiEnabled: newIntegration.aiEnabled,
+                        aiPromptId: newIntegration.aiPromptId,
+                        aiModel: newIntegration.aiModel
+                    }
+                };
+            }
+
             return { success: false, message: 'Integration not found' };
         }
 

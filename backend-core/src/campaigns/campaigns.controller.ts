@@ -68,4 +68,8 @@ export class CampaignsController {
     remove(@Request() req, @Param('id') id: string) {
         return this.campaignsService.remove(id, req.user.tenantId);
     }
+    @Get('reports/stats')
+    async getReportStats(@Request() req, @Query('campaignId') campaignId?: string) {
+        return this.campaignsService.getReportStats(req.user.tenantId, campaignId);
+    }
 }

@@ -424,4 +424,45 @@ export class CampaignsService {
             return this.campaignRepository.remove(campaign);
         }
     }
+    async getReportStats(tenantId: string, campaignId?: string) {
+        const query = this.leadRepository.createQueryBuilder('lead')
+            .select('lead.status', 'status')
+            .addSelect('COUNT(*)', 'count')
+            .innerJoin('lead.campaign', 'campaign')
+            .where('campaign.tenantId = :tenantId', { tenantId });
+
+        if (campaignId && campaignId !== 'all') {
+            query.andWhere('lead.campaignId = :campaignId', { campaignId });
+        }
+
+        const rawStats = await query.groupBy('lead.status').getRawMany();
+
+        // Transform into friendly format
+        const stats = {
+            total: 0,
+            pending: 0,
+            sent: 0,
+            failed: 0,
+            invalid: 0
+        };
+
+        rawStats.forEach(s => {
+            const count = parseInt(s.count, 10);
+            stats.total += count;
+            const status = s.status.toLowerCase();
+            if (stats[status] !== undefined) {
+                stats[status] += count;
+            } else if (status === 'error' || status === 'unavailable') {
+                stats.failed += count;
+            }
+        });
+
+        // Calculate specific "Added" vs "Sent" vs "Not Sent"
+        return {
+            added: stats.total,
+            sent: stats.sent,
+            notSent: stats.total - stats.sent, // includes pending + failed
+            details: stats
+        };
+    }
 }

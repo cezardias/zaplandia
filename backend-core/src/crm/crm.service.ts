@@ -288,8 +288,35 @@ export class CrmService implements OnApplicationBootstrap {
         return query.orderBy('contact.createdAt', 'DESC').getMany();
     }
 
-    async findOneByExternalId(tenantId: string, externalId: string) {
-        return this.contactRepository.findOne({ where: { tenantId, externalId } });
+    async findOneByExternalId(tenantId: string, externalId: string): Promise<Contact | null> {
+        // 1. Clean the input ID (numbers only)
+        const cleanId = externalId.replace(/\D/g, '');
+        if (!cleanId) return null;
+
+        // 2. Exact match attempt
+        let contact = await this.contactRepository.findOne({
+            where: [
+                { tenantId, externalId: cleanId },
+                { tenantId, phoneNumber: cleanId },
+                { tenantId, externalId: Like(`%${cleanId}%`) } // Loose check
+            ]
+        });
+
+        if (contact) return contact;
+
+        // 3. Fuzzy Logic for 9th digit (Brasilian format)
+        // If length is 12 or 13, try to match suffixes (last 8 digits)
+        if (cleanId.length >= 8) {
+            const suffix = cleanId.slice(-8); // Last 8 digits are usually stable
+            contact = await this.contactRepository.findOne({
+                where: {
+                    tenantId,
+                    externalId: Like(`%${suffix}%`)
+                }
+            });
+        }
+
+        return contact || null;
     }
 
     async getMessages(contactId: string, tenantId: string) {
