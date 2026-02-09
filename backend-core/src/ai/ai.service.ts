@@ -189,8 +189,8 @@ export class AiService {
                 .join('\n');
 
             // 6. Call Gemini API manually with Retry Logic for 503/Overload errors
-            // Get model from integration settings, default to gemini-2.5-flash-lite
-            const modelName = integration.aiModel || 'gemini-2.5-flash-lite';
+            // Get model from integration settings, default to gemini-1.5-flash (STABLE)
+            const modelName = integration.aiModel || 'gemini-1.5-flash';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
             const fullPrompt = `${promptContent}\n\nHistórico da conversa:\n${conversationContext}\n\nCliente: ${userMessage}\n\nVocê:`;
 
@@ -333,7 +333,7 @@ export class AiService {
                 return `[ERRO] Chave de API do Gemini não configurada.`;
             }
 
-            const finalModelName = modelName || 'gemini-2.5-flash-lite';
+            const finalModelName = modelName || 'gemini-1.5-flash';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${finalModelName}:generateContent?key=${apiKey}`;
             const systemInstruction = context || "Você é o assistente da Zaplandia.";
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;

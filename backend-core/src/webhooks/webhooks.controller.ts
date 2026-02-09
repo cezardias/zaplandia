@@ -165,8 +165,14 @@ export class WebhooksController {
         }
 
         if (tenantId === 'default') {
-            this.logger.error(`[CRITICAL] FAILED TO EXTRACT TENANT ID from instance: ${JSON.stringify(instance)} (Type: ${typeof instance}) or sender: ${sender}. Payload Key Keys: ${Object.keys(payload)}`);
+            this.logger.error(`[CRITICAL] FAILED TO EXTRACT TENANT ID from instance: ${JSON.stringify(instance)} (Type: ${typeof instance}) or sender: ${sender}. Defaulting to 'default' which may fail.`);
         } else {
+            // Verify if tenant exists
+            const tenantExists = await this.integrationsService.checkTenantExists(tenantId);
+            if (!tenantExists) {
+                this.logger.warn(`[WEBHOOK] Tenant ${tenantId} does not exist in DB (orphaned instance?). Skipping message.`);
+                return { status: 'skipped_no_tenant' };
+            }
             this.logger.log(`Extracted tenantId: ${tenantId} from instance: ${instanceName}`);
         }
 

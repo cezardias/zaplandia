@@ -18,6 +18,24 @@ export class IntegrationsService {
         private usersRepository: Repository<User>,
     ) { }
 
+    async checkTenantExists(tenantId: string): Promise<boolean> {
+        // QUICK FIX: Since we don't have TenantRepository injected and adding it might require import changes,
+        // we check if there are any Integrations OR ApiCredentials for this tenant.
+        // This is a safe proxy because an active tenant MUST have at least one of these (e.g. Evolution integration).
+        const integrationCount = await this.integrationRepository.count({ where: { tenantId } });
+        if (integrationCount > 0) return true;
+
+        const credCount = await this.apiCredentialRepository.count({ where: { tenantId } });
+        if (credCount > 0) return true;
+
+        // Also check Users
+        const userCount = await this.usersRepository.count({ where: { tenantId } });
+        if (userCount > 0) return true;
+
+        this.logger.warn(`Tenant ${tenantId} not found in Integrations, Credentials, or Users.`);
+        return false;
+    }
+
     async fetchUserTenantId(userId: string): Promise<string | null> {
         const user = await this.usersRepository.findOne({ where: { id: userId } });
         return user?.tenantId || null;
