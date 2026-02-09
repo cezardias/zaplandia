@@ -449,4 +449,32 @@ export class AiService {
             return null;
         }
     }
+
+    // --- MANUAL PROMPT MANAGEMENT (CRUD) ---
+
+    async createPrompt(tenantId: string, name: string, content: string): Promise<AiPromptEntity> {
+        const newPrompt = this.aiPromptRepository.create({
+            tenantId,
+            name,
+            content
+        });
+        return this.aiPromptRepository.save(newPrompt);
+    }
+
+    async updatePrompt(tenantId: string, id: string, data: { name?: string; content?: string }): Promise<AiPromptEntity> {
+        const prompt = await this.aiPromptRepository.findOne({ where: { id, tenantId } });
+        if (!prompt) {
+            throw new Error('Prompt not found');
+        }
+        if (data.name) prompt.name = data.name;
+        if (data.content) prompt.content = data.content;
+        return this.aiPromptRepository.save(prompt);
+    }
+
+    async deletePrompt(tenantId: string, id: string): Promise<void> {
+        const result = await this.aiPromptRepository.delete({ id, tenantId });
+        if (result.affected === 0) {
+            throw new Error('Prompt not found or access denied');
+        }
+    }
 }

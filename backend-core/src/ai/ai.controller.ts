@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, UseGuards, Request, Delete } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -153,5 +153,40 @@ export class AiController {
             body.count
         );
         return { success: true, prompts };
+    }
+
+    // --- MANUAL PROMPT CRUD ---
+
+    @Post('prompts/save')
+    async savePrompt(
+        @Body() body: { id?: string; name: string; content: string },
+        @Request() req
+    ) {
+        try {
+            if (body.id) {
+                // Update
+                const updated = await this.aiService.updatePrompt(req.user.tenantId, body.id, {
+                    name: body.name,
+                    content: body.content
+                });
+                return { success: true, prompt: updated };
+            } else {
+                // Create
+                const created = await this.aiService.createPrompt(req.user.tenantId, body.name, body.content);
+                return { success: true, prompt: created };
+            }
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    @Delete('prompts/:id')
+    async deletePrompt(@Param('id') id: string, @Request() req) {
+        try {
+            await this.aiService.deletePrompt(req.user.tenantId, id);
+            return { success: true };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
     }
 }
