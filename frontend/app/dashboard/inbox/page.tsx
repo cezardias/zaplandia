@@ -497,7 +497,8 @@ export default function OmniInboxPage() {
                                                 }}
                                                 className="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
                                             >
-                                                <option value="gemini-1.5-flash">⚡ 1.5 Flash (Rápido & Estável)</option>
+                                                <option value="gemini-1.5-flash">⚡ 1.5 Flash (Recomendado)</option>
+                                                <option value="gemini-2.5-flash-lite">⚡ 2.5 Flash Lite (Experimental)</option>
                                                 <option value="gemini-1.5-pro">🚀 1.5 Pro (Mais Inteligente)</option>
                                                 <option value="gemini-2.0-flash-exp">🔬 2.0 Flash (Experimental)</option>
                                             </select>
