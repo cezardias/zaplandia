@@ -109,6 +109,11 @@ export class IntegrationsService {
     }
 
     async getCredential(tenantId: string, keyName: string, isOptional: boolean = false): Promise<string | null> {
+        // 1. First try to get tenant-specific credential
+        const tenantCred = await this.apiCredentialRepository.findOne({
+            where: { tenantId, key_name: keyName }
+        });
+
         if (tenantCred?.key_value) {
             this.logger.log(`[GET_CRED] SUCCESS: Found tenant-specific "${keyName}" for tenant ${tenantId}`);
             return tenantCred.key_value;
