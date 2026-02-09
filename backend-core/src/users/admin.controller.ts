@@ -22,7 +22,9 @@ export class AdminController {
             throw new ForbiddenException('Acesso negado.');
         }
         console.log(`[ADMIN_GET] Tenant: ${tenantId}`);
-        return this.integrationsService.findAllCredentials(tenantId);
+        const tenantCreds = await this.integrationsService.findAllCredentials(tenantId);
+        const globalCreds = await this.integrationsService.findAllCredentials(null);
+        return [...globalCreds, ...tenantCreds];
     }
 
     @Post('tenants/:tenantId/credentials')
@@ -31,6 +33,13 @@ export class AdminController {
             throw new ForbiddenException('Acesso negado.');
         }
         const { name, value } = body;
+
+        // FIX: Admin saving Evolution API settings should be GLOBAL
+        if (name === 'EVOLUTION_API_URL' || name === 'EVOLUTION_API_KEY') {
+            console.log(`[ADMIN_SAVE] 🌍 Saving ${name} as GLOBAL (ignoring tenant ${tenantId})`);
+            return this.integrationsService.saveApiCredential(null, name, value);
+        }
+
         console.log(`[ADMIN_SAVE] Tenant: ${tenantId}, Key: ${name}`);
         return this.integrationsService.saveApiCredential(tenantId, name, value);
     }

@@ -238,7 +238,15 @@ export class IntegrationsController {
             console.log('[GET_CRED] Fetched tenantId from DB:', tenantId);
         }
         console.log('[GET_CRED] Final tenantId:', tenantId);
-        return this.integrationsService.findAllCredentials(tenantId);
+
+        const tenantCreds = await this.integrationsService.findAllCredentials(tenantId);
+
+        if (req.user.role === 'superadmin') {
+            const globalCreds = await this.integrationsService.findAllCredentials(null);
+            return [...globalCreds, ...tenantCreds];
+        }
+
+        return tenantCreds;
     }
 
     @UseGuards(JwtAuthGuard)
