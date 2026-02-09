@@ -10,6 +10,7 @@ import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { AuditService } from '../audit/audit.service';
 import { UsageService } from '../usage/usage.service';
+import { IntegrationProvider } from '../integrations/entities/integration.entity';
 
 @Injectable()
 export class CampaignsService {
@@ -90,21 +91,43 @@ export class CampaignsService {
         if (!campaign) throw new Error('Campanha não encontrada.');
         if (campaign.status === CampaignStatus.RUNNING) throw new Error('Campanha já está rodando.');
 
-        // Resolve Integration to get real instance name
-        const instanceName = await this.resolveInstanceName(campaign.integrationId, tenantId);
+        // Resolve Integration to get real instance name & PROVIDER
+        const integration = await this.integrationsService.findOne(campaign.integrationId, tenantId);
 
-        if (!instanceName) {
+        // Default to EVOLUTION limit (safety first)
+        let dailyLimit = 40;
+        let instanceName = 'unknown';
+
+        if (integration) {
+            const provider = integration.provider;
+            // If Unofficial (Evolution) -> 40 limits per day (Anti-Ban)
+            // If Official (WhatsApp Cloud) -> 1000 limits or more
+            if (provider === IntegrationProvider.EVOLUTION) {
+                dailyLimit = 40;
+            } else if (provider === IntegrationProvider.WHATSAPP) {
+                dailyLimit = 1000; // Cloud API Tier 1
+            } else {
+                dailyLimit = 1000; // Other channels
+            }
+
+            instanceName = await this.resolveInstanceName(campaign.integrationId, tenantId) || 'unknown';
+        } else {
+            // Fallback if integration not found but we somehow have ID
+            instanceName = await this.resolveInstanceName(campaign.integrationId, tenantId) || 'unknown';
+        }
+
+        if (!instanceName || instanceName === 'unknown') {
             this.logger.error(`[MOTOR] Falha ao resolver instanceName para campanha ${id}. integrationId: ${campaign.integrationId}`);
             throw new Error('Nome da instância não encontrado na integração.');
         }
 
-        this.logger.log(`[MOTOR] Campanha ${id} resolvida para instância: ${instanceName}`);
+        this.logger.log(`[MOTOR] Campanha ${id} resolvida para instância: ${instanceName}. Limite Diário: ${dailyLimit}`);
 
         // 🛡️ SECURITY: CHECK REMAINING QUOTA BEFORE FETCHING
-        const remainingQuota = await this.usageService.getRemainingQuota(tenantId, instanceName, 'whatsapp_messages');
+        const remainingQuota = await this.usageService.getRemainingQuota(tenantId, instanceName, 'whatsapp_messages', dailyLimit);
 
         if (remainingQuota <= 0) {
-            throw new Error(`Limite diário de 40 envios já atingido para a instância ${instanceName}. Tente novamente amanhã.`);
+            throw new Error(`Limite diário de ${dailyLimit} envios já atingido para a instância ${instanceName}. Tente novamente amanhã.`);
         }
 
         // Fetch PENDING leads (Limited by remaining quota)
@@ -119,7 +142,7 @@ export class CampaignsService {
         this.logger.log(`[MOTOR] Cota restante: ${remainingQuota}. Leads pendentes encontrados: ${leads.length}. Processando lote...`);
 
         // Reserve strictly what we fetched
-        await this.usageService.checkAndReserve(tenantId, instanceName, 'whatsapp_messages', leads.length);
+        await this.usageService.checkAndReserve(tenantId, instanceName, 'whatsapp_messages', leads.length, dailyLimit);
 
         // Update status to RUNNING
         campaign.status = CampaignStatus.RUNNING;
@@ -155,6 +178,7 @@ export class CampaignsService {
                     instanceName: instanceName,
                     tenantId: tenantId,
                     variations: campaign.variations,
+                    dailyLimit: dailyLimit, // ✅ Pass limit to processor
                     isFirst: globalIndex === 0 // ✅ Flag for immediate first send
                 }, {
                     removeOnComplete: true,

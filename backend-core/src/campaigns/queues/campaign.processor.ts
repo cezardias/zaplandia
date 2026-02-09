@@ -29,7 +29,13 @@ export class CampaignProcessor {
     @Process('send-message')
     async handleSendMessage(job: Job) {
         this.logger.log(`[JOB_RECEIVED] Job ${job.id} recebido pelo processador.`);
-        const { leadId, contactId, campaignId, externalId, message, instanceName, tenantId, variations, leadName } = job.data;
+        const { leadId, contactId, campaignId, externalId, message, instanceName, tenantId, variations, leadName, dailyLimit } = job.data;
+
+        // Use passed limit or default to safe 40
+        const limit = dailyLimit || this.MAX_DAILY_LIMIT;
+
+        // ... existing status check code ... (skipped for brevity)
+
 
         // 0. Campaign Status Check (Critical for Pausing)
         if (campaignId) {
@@ -82,9 +88,9 @@ export class CampaignProcessor {
             return;
         }
 
-        // 1. Hard Daily Limit Check (40 Messages)
-        if (!this.checkRateLimit(instanceName)) {
-            this.logger.warn(`[LIMITE] Limite de 40 mensagens atingido em ${instanceName}. Parando disparos por hoje.`);
+        // 1. Hard Daily Limit Check (Dynamic Limit)
+        if (!this.checkRateLimit(instanceName, limit)) {
+            this.logger.warn(`[LIMITE] Limite de ${limit} mensagens atingido em ${instanceName}. Parando disparos por hoje.`);
             // Move to tomorrow (24h)
             await (job as any).moveToDelayed(Date.now() + 24 * 60 * 60 * 1000);
             return;
@@ -178,13 +184,13 @@ export class CampaignProcessor {
         }
     }
 
-    private checkRateLimit(instanceName: string): boolean {
+    private checkRateLimit(instanceName: string, limit: number): boolean {
         const today = new Date().toISOString().split('T')[0];
         if (!this.dailyCounts[instanceName] || this.dailyCounts[instanceName].date !== today) {
             this.dailyCounts[instanceName] = { date: today, count: 0 };
         }
 
-        if (this.dailyCounts[instanceName].count >= this.MAX_DAILY_LIMIT) {
+        if (this.dailyCounts[instanceName].count >= limit) {
             return false;
         }
         return true;
@@ -196,6 +202,6 @@ export class CampaignProcessor {
             this.dailyCounts[instanceName] = { date: today, count: 0 };
         }
         this.dailyCounts[instanceName].count++;
-        this.logger.log(`Daily count for ${instanceName}: ${this.dailyCounts[instanceName].count}/${this.MAX_DAILY_LIMIT}`);
+        this.logger.log(`Daily count for ${instanceName}: ${this.dailyCounts[instanceName].count}`);
     }
 }

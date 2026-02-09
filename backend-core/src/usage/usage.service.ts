@@ -19,9 +19,9 @@ export class UsageService {
         return new Date().toISOString().split('T')[0];
     }
 
-    async checkAndReserve(tenantId: string, instanceName: string, feature: string, amount: number): Promise<void> {
+    async checkAndReserve(tenantId: string, instanceName: string, feature: string, amount: number, limitOverride?: number): Promise<void> {
         const today = this.getTodayString();
-        const limit = this.LIMITS[feature] || 999999;
+        const limit = limitOverride !== undefined ? limitOverride : (this.LIMITS[feature] || 999999);
 
         let usage = await this.usageRepository.findOne({
             where: { tenantId, instanceName, day: today, feature }
@@ -53,9 +53,9 @@ export class UsageService {
         this.logger.log(`[USAGE] Instance ${instanceName} reserved ${amount} ${feature}. New total: ${usage.count}/${limit}`);
     }
 
-    async getRemainingQuota(tenantId: string, instanceName: string, feature: string): Promise<number> {
+    async getRemainingQuota(tenantId: string, instanceName: string, feature: string, limitOverride?: number): Promise<number> {
         const today = this.getTodayString();
-        const limit = this.LIMITS[feature] || 999999;
+        const limit = limitOverride !== undefined ? limitOverride : (this.LIMITS[feature] || 999999);
 
         const usage = await this.usageRepository.findOne({
             where: { tenantId, instanceName, day: today, feature }
