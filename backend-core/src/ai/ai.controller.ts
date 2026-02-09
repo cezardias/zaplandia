@@ -1,4 +1,4 @@
-import { Controller, Post, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -133,6 +133,11 @@ export class AiController {
             body.count
         );
         return { success: true, variations };
+    }
+
+    @Get('prompts')
+    async getPrompts(@Request() req) {
+        return this.aiService.findAll(req.user.tenantId);
     }
 
     @Post('prompts')

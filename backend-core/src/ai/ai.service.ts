@@ -33,6 +33,16 @@ export class AiService {
     ) { }
 
     /**
+     * Get all AI prompts for a tenant
+     */
+    async findAll(tenantId: string): Promise<AiPromptEntity[]> {
+        return this.aiPromptRepository.find({
+            where: { tenantId },
+            order: { createdAt: 'DESC' }
+        });
+    }
+
+    /**
      * Get Gemini API key for tenant from integrations
      */
     private async getGeminiApiKey(tenantId: string): Promise<string | null> {
