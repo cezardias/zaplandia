@@ -229,53 +229,71 @@ export class CampaignsService {
         // 0. Handle raw strings or numbers
         if (typeof l !== 'object') {
             const s = String(l).trim();
-            return (s && s.toLowerCase() !== 'contato') ? s : 'Contato';
+            return (s && s.toLowerCase() !== 'contato' && s.length > 2) ? s : 'Contato';
         }
-
-        const nameKeys = [
-            'title', 'titulo', 'name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome', 'Razão Social', 'razao_social', 'cliente', 'destinatario', 'empresa', 'interessado', 'destinatário', 'título', 'usuário', 'usuario', 'user', 'proprietário', 'proprietario'
-        ];
 
         const keys = Object.keys(l);
+        const values = Object.values(l).map(v => v ? String(v).trim() : '');
 
-        // 1. Precise Match (Case Insensitive + Trim)
-        const foundKey = keys.find(k => nameKeys.some(nk => nk.toLowerCase() === k.toLowerCase().trim()));
-        if (foundKey && l[foundKey] && String(l[foundKey]).trim() !== '' && String(l[foundKey]).trim().toLowerCase() !== 'contato') {
-            return String(l[foundKey]).trim();
-        }
+        // --- TIER 1: Intelligent Key Matching (Whitelist + Blacklist) ---
+        const nameKeywords = [
+            'name', 'nome', 'fullname', 'completo', 'title', 'titulo', 'título',
+            'cliente', 'contato', 'público', 'publico', 'interessado', 'cli',
+            'empresa', 'razão', 'razao', 'raz', 'user', 'usuario', 'usuário'
+        ];
+        const blacklistKeywords = ['id', 'uuid', 'guid', 'key', 'token', 'pass', 'senha', 'email', 'mail', 'phone', 'tel', 'whatsapp', 'created', 'updated', 'deleted'];
 
-        // 2. Loose Key Match (contains any part of common name keys)
         const candidateKey = keys.find(k => {
             const low = k.toLowerCase().trim();
-            const keywords = ['nome', 'name', 'tit', 'raz', 'cli', 'emp', 'des', 'int', 'user'];
-            return keywords.some(kw => low.includes(kw)) && !low.includes('log') && !low.includes('email') && !low.includes('pass');
+            // Must be in whitelist AND NOT in blacklist
+            const isNameLike = nameKeywords.some(kw => low.includes(kw));
+            const isTechnical = blacklistKeywords.some(bk => low.includes(bk));
+            return isNameLike && !isTechnical;
         });
-        if (candidateKey && l[candidateKey] && String(l[candidateKey]).trim() !== '' && String(l[candidateKey]).trim().toLowerCase() !== 'contato') {
-            return String(l[candidateKey]).trim();
+
+        if (candidateKey && l[candidateKey] && String(l[candidateKey]).trim().length > 2) {
+            const val = String(l[candidateKey]).trim();
+            if (val.toLowerCase() !== 'contato') return val;
         }
 
-        // 3. Values Brute Force (Any string that doesn't look like a number, phone, email, or uuid)
-        const values = Object.values(l);
+        // --- TIER 2: Value Heuristics (Deep Analysis) ---
+        // Look for values that look most like a Person's Name
+        let bestCandidate = '';
+        let bestScore = -1;
+
         for (const val of values) {
-            if (!val) continue;
-            const sVal = String(val).trim();
-            // Rules for a "Name":
-            // - Length between 2 and 120
-            // - Does not contain @ (not an email)
-            // - Is not a pure number (not a phone/id)
-            // - Is not a UUID
-            // - Is not "contato"
-            if (sVal.length >= 2 && sVal.length <= 120 &&
-                !sVal.includes('@') &&
-                !/^\+?\d+$/.test(sVal.replace(/[\s\-\+\(\)]/g, '')) &&
-                !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sVal) &&
-                sVal.toLowerCase() !== 'contato'
-            ) {
-                return sVal;
+            if (!val || val.length < 2 || val.length > 100) continue;
+            if (val.toLowerCase() === 'contato') continue;
+
+            let score = 0;
+
+            // Rules for scoring:
+            if (val.includes(' ')) score += 10; // Names usually have spaces
+            if (/^[A-Z][a-z]/.test(val)) score += 5; // CamelCase start
+            if (!/^[0-9a-f-]{8,}$/i.test(val)) score += 5; // Not a hash/UUID
+            if (!/^\+?\d+$/.test(val.replace(/[\s\-\+\(\)]/g, ''))) score += 10; // Not a phone
+            if (!val.includes('@')) score += 10; // Not an email
+            if (!val.includes('/') && !val.includes('\\') && !val.includes('_')) score += 5; // Not a path or snake_case key
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestCandidate = val;
             }
         }
 
-        this.logger.debug(`[DEBUG_NAME] Failed to extract name from object keys: ${keys.join(', ')}. Values: ${JSON.stringify(values)}`);
+        // If we found a decent candidate (at least passed basic filters)
+        if (bestCandidate && bestScore > 20) {
+            return bestCandidate;
+        }
+
+        // --- TIER 3: Last Resort + Diagnostic Logging ---
+        // If we reach here, we are about to return 'Contato'. Let's log why.
+        this.logger.debug(`[DEBUG_NAME_ULTIMATE] Failed to satisfy name criteria. Keys: ${keys.join(', ')}. Candidate: ${bestCandidate} (Score: ${bestScore}). Raw: ${JSON.stringify(l)}`);
+
+        // Check if there is ANY string that isn't technical
+        const fallback = values.find(v => v.length > 2 && !v.includes('@') && !/^\+?\d+$/.test(v.replace(/[\s\-\+\(\)]/g, '')) && v.toLowerCase() !== 'contato');
+        if (fallback) return fallback;
+
         return 'Contato';
     }
 
