@@ -72,4 +72,9 @@ export class CampaignsController {
     async getReportStats(@Request() req, @Query('campaignId') campaignId?: string) {
         return this.campaignsService.getReportStats(req.user.tenantId, campaignId);
     }
+
+    @Post(':id/reset-leads')
+    resetLeads(@Request() req, @Param('id') id: string) {
+        return this.campaignsService.resetLeads(id, req.user.tenantId);
+    }
 }

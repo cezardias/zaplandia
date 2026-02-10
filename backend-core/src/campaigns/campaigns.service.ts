@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like, In } from 'typeorm';
 import { Campaign, CampaignStatus } from './entities/campaign.entity';
 import { ContactList } from './entities/contact-list.entity';
 import { CampaignLead, LeadStatus } from './entities/campaign-lead.entity';
@@ -147,22 +147,15 @@ export class CampaignsService {
             }
 
             if (pendingLeads === 0 && totalLeads > 0) {
-                // Check if we have leads that were maybe skipped or failed?
                 const failed = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.FAILED } });
                 const sent = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.SENT } });
+                const invalid = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.INVALID } });
 
-                throw new Error(`Todos os ${totalLeads} leads desta campanha já foram processados (Enviados: ${sent}, Falhas: ${failed}). Para reenviar, você precisa recriar a campanha ou reiniciar os leads.`);
+                throw new Error(`Todos os ${totalLeads} leads desta campanha já foram processados (Enviados/Pulados: ${sent}, Falhas: ${failed}, Inválidos: ${invalid}). Para enviar novamente para os inválidos ou falhas, você precisa reiniciar os leads desta campanha.`);
             }
 
-            // If we are here, it means we have pending leads but query with limit returned 0? Should not happen if limit > 0.
-            // But if remainingQuota is small and somehow logic failed?
             throw new Error(`Não foi possível buscar leads pendentes (Cota: ${remainingQuota}, Pendentes: ${pendingLeads}).`);
         }
-
-        this.logger.log(`[MOTOR] Cota restante: ${remainingQuota}. Leads pendentes encontrados: ${leads.length}. Processando lote...`);
-
-        // Reserve strictly what we fetched
-        await this.usageService.checkAndReserve(tenantId, instanceName, 'whatsapp_messages', leads.length, dailyLimit);
 
         // Update status to RUNNING
         campaign.status = CampaignStatus.RUNNING;
@@ -180,7 +173,7 @@ export class CampaignsService {
 
         this.logger.log(`[MOTOR] Iniciando campanha ${id} (${campaign.name}). Enfileirando ${leads.length} leads...`);
 
-        const STAGGER_MS = 30 * 1000;
+        const STAGGER_MS = 25 * 1000; // 25s per message to be safe
         const CHUNK_SIZE = 50;
 
         for (let i = 0; i < leads.length; i += CHUNK_SIZE) {
@@ -198,8 +191,8 @@ export class CampaignsService {
                     instanceName: instanceName,
                     tenantId: tenantId,
                     variations: campaign.variations,
-                    dailyLimit: dailyLimit, // ✅ Pass limit to processor
-                    isFirst: globalIndex === 0 // ✅ Flag for immediate first send
+                    dailyLimit: dailyLimit,
+                    isFirst: globalIndex === 0
                 }, {
                     removeOnComplete: true,
                     attempts: 3,
@@ -207,7 +200,6 @@ export class CampaignsService {
                     delay: delay
                 });
             }));
-            this.logger.log(`[QUEUE] Lote ${Math.floor(i / CHUNK_SIZE) + 1} de ${Math.ceil(leads.length / CHUNK_SIZE)} enfileirado.`);
         }
 
         this.logger.log(`[SUCESSO] Campanha ${id} iniciada com sucesso.`);
@@ -231,28 +223,28 @@ export class CampaignsService {
         });
     }
 
-    // Helper to extract name robustly
     private extractLeadName(l: any): string {
         const nameKeys = ['title', 'titulo', 'name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome', 'Razão Social', 'razao_social'];
 
         // 1. Try explicit search with case-insensitivity
         const foundKey = Object.keys(l).find(k => nameKeys.some(nk => nk.toLowerCase() === k.toLowerCase().trim()));
-        if (foundKey && l[foundKey] && String(l[foundKey]).trim().toLowerCase() !== 'contato' && String(l[foundKey]).trim() !== '') {
+        if (foundKey && l[foundKey] && String(l[foundKey]).trim() !== '' && String(l[foundKey]).trim().toLowerCase() !== 'contato') {
             return String(l[foundKey]).trim();
         }
 
-        // 2. Try common fallbacks if no explicit key found or if it was "contato"
-        const fallback = l.name || l.nome || l.Name || l.Nome;
-        if (fallback && String(fallback).trim().toLowerCase() !== 'contato' && String(fallback).trim() !== '') {
-            return String(fallback).trim();
+        // 2. Try any key that contains "nome" or "name" or "tit" but is not "contato"
+        const candidates = Object.keys(l).filter(k => {
+            const low = k.toLowerCase().trim();
+            return low.includes('nome') || low.includes('name') || low.includes('tit') || low.includes('raz');
+        });
+
+        for (const k of candidates) {
+            if (l[k] && String(l[k]).trim() !== '' && String(l[k]).trim().toLowerCase() !== 'contato') {
+                return String(l[k]).trim();
+            }
         }
 
-        // 3. Last resort: any key that contains "nome" or "name"
-        const looseKey = Object.keys(l).find(k => k.toLowerCase().includes('nome') || k.toLowerCase().includes('name'));
-        if (looseKey && l[looseKey] && String(looseKey).trim() !== '') {
-            return String(l[looseKey]).trim();
-        }
-
+        this.logger.debug(`[DEBUG_NAME] Failed to extract name from object: ${JSON.stringify(l)}`);
         return 'Contato';
     }
 
@@ -467,6 +459,22 @@ export class CampaignsService {
             await this.leadRepository.delete({ campaignId: id });
             return this.campaignRepository.remove(campaign);
         }
+    }
+
+    async resetLeads(id: string, tenantId: string, statusToReset: LeadStatus[] = [LeadStatus.FAILED, LeadStatus.INVALID]) {
+        const campaign = await this.findOne(id, tenantId);
+        if (!campaign) throw new Error('Campanha não encontrada.');
+
+        // Use QueryBuilder for robust IN clause with enums
+        await this.leadRepository.createQueryBuilder()
+            .update(CampaignLead)
+            .set({ status: LeadStatus.PENDING, errorReason: null })
+            .where("campaignId = :id", { id })
+            .andWhere("status IN (:...statuses)", { statuses: statusToReset })
+            .execute();
+
+        this.logger.log(`[RESET] Leads da campanha ${id} resetados para PENDING (Status originais: ${statusToReset.join(', ')})`);
+        return { success: true };
     }
     async getReportStats(tenantId: string, campaignId?: string) {
         const query = this.leadRepository.createQueryBuilder('lead')
