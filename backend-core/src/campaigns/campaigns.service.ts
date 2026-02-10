@@ -91,6 +91,11 @@ export class CampaignsService {
         if (!campaign) throw new Error('Campanha não encontrada.');
         if (campaign.status === CampaignStatus.RUNNING) throw new Error('Campanha já está rodando.');
 
+        // 🛡️ CRITICAL: Move status to RUNNING BEFORE enqueuing to avoid race conditions with processor
+        campaign.status = CampaignStatus.RUNNING;
+        await this.campaignRepository.save(campaign);
+        this.logger.log(`[MOTOR] Campanha ${id} marcada como RUNNING. Iniciando processamento...`);
+
         // Resolve Integration to get real instance name & PROVIDER
         const integration = await this.integrationsService.findOne(campaign.integrationId, tenantId);
 
@@ -157,9 +162,6 @@ export class CampaignsService {
             throw new Error(`Não foi possível buscar leads pendentes (Cota: ${remainingQuota}, Pendentes: ${pendingLeads}).`);
         }
 
-        // Update status to RUNNING
-        campaign.status = CampaignStatus.RUNNING;
-        await this.campaignRepository.save(campaign);
 
         // 🛡️ SECURITY: AUDIT LOG
         if (userId) {
@@ -180,7 +182,9 @@ export class CampaignsService {
             const chunk = leads.slice(i, i + CHUNK_SIZE);
             await Promise.all(chunk.map(async (lead, chunkIndex) => {
                 const globalIndex = i + chunkIndex;
-                const delay = globalIndex * STAGGER_MS;
+                const isFirst = globalIndex === 0;
+
+                if (isFirst) this.logger.log(`[MOTOR] Marcando lead ${lead.id} como PRIORIDADE (isFirst: true)`);
 
                 await this.campaignQueue.add('send-message', {
                     leadId: lead.id,
