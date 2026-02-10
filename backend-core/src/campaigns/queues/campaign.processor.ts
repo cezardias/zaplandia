@@ -98,18 +98,17 @@ export class CampaignProcessor {
         }
 
         // 2. Random Delay (Organic Human Staggering)
-        // Checks if this is the FIRST message to skip delay for immediate feedback
         const isFirstMessage = job.data.isFirst === true;
 
         if (isFirstMessage) {
-            this.logger.log(`[PRIORIDADE] Este é o primeiro lead da campanha. Enviando IMEDIATAMENTE! 🚀`);
+            this.logger.log(`[PRIORIDADE] 🚀 Envio de primeira mensagem (Job ${job.id}) disparado IMEDIATAMENTE.`);
         } else {
-            // Restore safe anti-ban delay (30s to 5min)
-            const minDelay = 30 * 1000;
-            const maxDelay = 300 * 1000;
+            // Safe anti-ban delay adjusted for better UX (20s to 1.5min)
+            const minDelay = 20 * 1000;
+            const maxDelay = 90 * 1000;
             const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
 
-            this.logger.log(`[AGUARDANDO] Intervalo orgânico (Anti-Ban): Esperando ${Math.round(randomDelay / 1000)}s antes do disparo...`);
+            this.logger.log(`[AGUARDANDO] Job ${job.id}: Aguardando ${Math.round(randomDelay / 1000)}s (Anti-Ban)...`);
             await new Promise(resolve => setTimeout(resolve, randomDelay));
         }
 

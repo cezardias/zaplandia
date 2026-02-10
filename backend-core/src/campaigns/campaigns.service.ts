@@ -196,8 +196,7 @@ export class CampaignsService {
                 }, {
                     removeOnComplete: true,
                     attempts: 3,
-                    backoff: 5000,
-                    delay: delay
+                    backoff: 5000
                 });
             }));
         }
