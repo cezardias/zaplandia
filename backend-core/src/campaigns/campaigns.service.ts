@@ -100,10 +100,10 @@ export class CampaignsService {
 
         if (integration) {
             const provider = integration.provider;
-            // If Unofficial (Evolution) -> 40 limits per day (Anti-Ban)
+            // If Unofficial (Evolution) -> 100 limits per day (Anti-Ban)
             // If Official (WhatsApp Cloud) -> 1000 limits or more
             if (provider === IntegrationProvider.EVOLUTION) {
-                dailyLimit = 40;
+                dailyLimit = 100;
             } else if (provider === IntegrationProvider.WHATSAPP) {
                 dailyLimit = 1000; // Cloud API Tier 1
             } else {

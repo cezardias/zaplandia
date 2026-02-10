@@ -4,6 +4,7 @@ import type { Job } from 'bull';
 import { EvolutionApiService } from '../../integrations/evolution-api.service';
 import { IntegrationsService } from '../../integrations/integrations.service';
 import { CrmService } from '../../crm/crm.service';
+import { UsageService } from '../../usage/usage.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CampaignLead, LeadStatus } from '../entities/campaign-lead.entity';
 import { Campaign } from '../entities/campaign.entity';
@@ -12,14 +13,13 @@ import { Repository } from 'typeorm';
 @Processor('campaign-queue')
 export class CampaignProcessor {
     private readonly logger = new Logger(CampaignProcessor.name);
-    // Simple in-memory tracker fallback (ideally use Redis)
-    private dailyCounts: Record<string, { date: string, count: number }> = {};
-    private readonly MAX_DAILY_LIMIT = 40;
+    private readonly MAX_DAILY_LIMIT = 100;
 
     constructor(
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
         private readonly crmService: CrmService,
+        private readonly usageService: UsageService,
         @InjectRepository(Campaign)
         private campaignRepository: Repository<Campaign>,
         @InjectRepository(CampaignLead)
@@ -88,8 +88,9 @@ export class CampaignProcessor {
             return;
         }
 
-        // 1. Hard Daily Limit Check (Dynamic Limit)
-        if (!this.checkRateLimit(instanceName, limit)) {
+        // 1. Hard Daily Limit Check (Sync with DB)
+        const remaining = await this.usageService.getRemainingQuota(tenantId, instanceName, 'whatsapp_messages', limit);
+        if (remaining <= 0) {
             this.logger.warn(`[LIMITE] Limite de ${limit} mensagens atingido em ${instanceName}. Parando disparos por hoje.`);
             // Move to tomorrow (24h)
             await (job as any).moveToDelayed(Date.now() + 24 * 60 * 60 * 1000);
@@ -159,8 +160,8 @@ export class CampaignProcessor {
                 this.logger.log(`[CRM] Lead ${cleanRecipient} atualizado para estágio 'CONTACTED' e instância '${instanceName}'`);
             }
 
-            // Increment Counter
-            this.incrementCounter(instanceName);
+            // Increment Counter in DB
+            await this.usageService.increment(tenantId, instanceName, 'whatsapp_messages', 1);
 
             this.logger.log(`[SUCESSO] Mensagem enviada com sucesso para ${cleanRecipient}`);
         } catch (error) {
@@ -184,24 +185,4 @@ export class CampaignProcessor {
         }
     }
 
-    private checkRateLimit(instanceName: string, limit: number): boolean {
-        const today = new Date().toISOString().split('T')[0];
-        if (!this.dailyCounts[instanceName] || this.dailyCounts[instanceName].date !== today) {
-            this.dailyCounts[instanceName] = { date: today, count: 0 };
-        }
-
-        if (this.dailyCounts[instanceName].count >= limit) {
-            return false;
-        }
-        return true;
-    }
-
-    private incrementCounter(instanceName: string) {
-        const today = new Date().toISOString().split('T')[0];
-        if (!this.dailyCounts[instanceName] || this.dailyCounts[instanceName].date !== today) {
-            this.dailyCounts[instanceName] = { date: today, count: 0 };
-        }
-        this.dailyCounts[instanceName].count++;
-        this.logger.log(`Daily count for ${instanceName}: ${this.dailyCounts[instanceName].count}`);
-    }
 }

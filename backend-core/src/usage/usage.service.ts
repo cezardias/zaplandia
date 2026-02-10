@@ -16,7 +16,31 @@ export class UsageService {
     ) { }
 
     private getTodayString(): string {
-        return new Date().toISOString().split('T')[0];
+        // Fix: Use UTC-3 (Brazil) to ensure reset happens at midnight local time
+        const now = new Date();
+        const localTime = new Date(now.getTime() - (3 * 60 * 60 * 1000));
+        return localTime.toISOString().split('T')[0];
+    }
+
+    async increment(tenantId: string, instanceName: string, feature: string, amount: number): Promise<void> {
+        const today = this.getTodayString();
+        let usage = await this.usageRepository.findOne({
+            where: { tenantId, instanceName, day: today, feature }
+        });
+
+        if (!usage) {
+            usage = this.usageRepository.create({
+                tenantId,
+                instanceName,
+                day: today,
+                feature,
+                count: 0
+            });
+        }
+
+        usage.count += amount;
+        await this.usageRepository.save(usage);
+        this.logger.debug(`[USAGE_INC] Instance ${instanceName} incremented by ${amount}. Total: ${usage.count}`);
     }
 
     async checkAndReserve(tenantId: string, instanceName: string, feature: string, amount: number, limitOverride?: number): Promise<void> {
