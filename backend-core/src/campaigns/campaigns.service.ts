@@ -94,7 +94,17 @@ export class CampaignsService {
         // 🛡️ CRITICAL: Move status to RUNNING BEFORE enqueuing to avoid race conditions with processor
         campaign.status = CampaignStatus.RUNNING;
         await this.campaignRepository.save(campaign);
-        this.logger.log(`[MOTOR] Campanha ${id} marcada como RUNNING. Iniciando processamento...`);
+        this.logger.log(`[MOTOR] Campanha ${id} marcada como RUNNING. Limpando fila de segurança...`);
+
+        // 🛡️ SECURITY: Clear any old jobs for THIS campaign just in case
+        try {
+            const jobs = await this.campaignQueue.getJobs(['waiting', 'active', 'delayed']);
+            for (const job of jobs) {
+                if (job.data.campaignId === id) await job.remove();
+            }
+        } catch (e) {
+            this.logger.warn(`Failed to clear old jobs for campaign ${id}: ${e.message}`);
+        }
 
         // Resolve Integration to get real instance name & PROVIDER
         const integration = await this.integrationsService.findOne(campaign.integrationId, tenantId);
@@ -215,7 +225,24 @@ export class CampaignsService {
 
         campaign.status = CampaignStatus.PAUSED;
         await this.campaignRepository.save(campaign);
-        this.logger.log(`[MOTOR] Campanha ${id} pausada pelo usuário.`);
+        this.logger.log(`[MOTOR] Campanha ${id} pausada pelo usuário. Limpando fila...`);
+
+        // 🛡️ SECURITY: Clear jobs from queue to avoid dispatching while paused
+        // and to free up the worker for other campaigns
+        try {
+            const jobs = await this.campaignQueue.getJobs(['waiting', 'active', 'delayed']);
+            let removedCount = 0;
+            for (const job of jobs) {
+                if (job.data.campaignId === id) {
+                    await job.remove();
+                    removedCount++;
+                }
+            }
+            this.logger.log(`[MOTOR] Removidos ${removedCount} jobs da fila para a campanha ${id}`);
+        } catch (err) {
+            this.logger.warn(`[MOTOR] Falha ao limpar fila para campanha ${id}: ${err.message}`);
+        }
+
         return campaign;
     }
 

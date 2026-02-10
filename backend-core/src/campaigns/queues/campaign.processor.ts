@@ -47,11 +47,10 @@ export class CampaignProcessor {
                 return;
             }
 
-            // If paused, wait indefinitely (check every 5 min)
+            // If paused, just return and let Bull mark it as completed.
+            // We clear/re-enqueue on start/pause anyway to keep the queue clean.
             if (campaign.status === 'paused') {
-                const waitTime = 5 * 60 * 1000;
-                this.logger.log(`[PAUSADO] Campanha ${campaignId} em pausa. O envio só continuará quando você der PLAY.`);
-                await (job as any).moveToDelayed(Date.now() + waitTime);
+                this.logger.warn(`[PAUSADO] Job ${job.id} descartado pois a campanha ${campaignId} está pausada.`);
                 return;
             }
         }
