@@ -224,27 +224,58 @@ export class CampaignsService {
     }
 
     private extractLeadName(l: any): string {
-        const nameKeys = ['title', 'titulo', 'name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome', 'Razão Social', 'razao_social'];
+        if (!l) return 'Contato';
 
-        // 1. Try explicit search with case-insensitivity
-        const foundKey = Object.keys(l).find(k => nameKeys.some(nk => nk.toLowerCase() === k.toLowerCase().trim()));
+        // 0. Handle raw strings or numbers
+        if (typeof l !== 'object') {
+            const s = String(l).trim();
+            return (s && s.toLowerCase() !== 'contato') ? s : 'Contato';
+        }
+
+        const nameKeys = [
+            'title', 'titulo', 'name', 'nome', 'fullname', 'nomecompleto', 'nome_completo', 'full_name', 'contato', 'público', 'publico', 'Name', 'Nome', 'Razão Social', 'razao_social', 'cliente', 'destinatario', 'empresa', 'interessado', 'destinatário', 'título', 'usuário', 'usuario', 'user', 'proprietário', 'proprietario'
+        ];
+
+        const keys = Object.keys(l);
+
+        // 1. Precise Match (Case Insensitive + Trim)
+        const foundKey = keys.find(k => nameKeys.some(nk => nk.toLowerCase() === k.toLowerCase().trim()));
         if (foundKey && l[foundKey] && String(l[foundKey]).trim() !== '' && String(l[foundKey]).trim().toLowerCase() !== 'contato') {
             return String(l[foundKey]).trim();
         }
 
-        // 2. Try any key that contains "nome" or "name" or "tit" but is not "contato"
-        const candidates = Object.keys(l).filter(k => {
+        // 2. Loose Key Match (contains any part of common name keys)
+        const candidateKey = keys.find(k => {
             const low = k.toLowerCase().trim();
-            return low.includes('nome') || low.includes('name') || low.includes('tit') || low.includes('raz');
+            const keywords = ['nome', 'name', 'tit', 'raz', 'cli', 'emp', 'des', 'int', 'user'];
+            return keywords.some(kw => low.includes(kw)) && !low.includes('log') && !low.includes('email') && !low.includes('pass');
         });
+        if (candidateKey && l[candidateKey] && String(l[candidateKey]).trim() !== '' && String(l[candidateKey]).trim().toLowerCase() !== 'contato') {
+            return String(l[candidateKey]).trim();
+        }
 
-        for (const k of candidates) {
-            if (l[k] && String(l[k]).trim() !== '' && String(l[k]).trim().toLowerCase() !== 'contato') {
-                return String(l[k]).trim();
+        // 3. Values Brute Force (Any string that doesn't look like a number, phone, email, or uuid)
+        const values = Object.values(l);
+        for (const val of values) {
+            if (!val) continue;
+            const sVal = String(val).trim();
+            // Rules for a "Name":
+            // - Length between 2 and 120
+            // - Does not contain @ (not an email)
+            // - Is not a pure number (not a phone/id)
+            // - Is not a UUID
+            // - Is not "contato"
+            if (sVal.length >= 2 && sVal.length <= 120 &&
+                !sVal.includes('@') &&
+                !/^\+?\d+$/.test(sVal.replace(/[\s\-\+\(\)]/g, '')) &&
+                !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sVal) &&
+                sVal.toLowerCase() !== 'contato'
+            ) {
+                return sVal;
             }
         }
 
-        this.logger.debug(`[DEBUG_NAME] Failed to extract name from object: ${JSON.stringify(l)}`);
+        this.logger.debug(`[DEBUG_NAME] Failed to extract name from object keys: ${keys.join(', ')}. Values: ${JSON.stringify(values)}`);
         return 'Contato';
     }
 
