@@ -221,16 +221,16 @@ export class AiService {
                     const response = await axios.post(url, {
                         model: model,
                         input: fullPrompt,
-                        generationConfig: {
+                        generation_config: {
                             temperature: 0.7,
-                            maxOutputTokens: 1024,
+                            max_output_tokens: 1024,
                         }
                     }, {
                         headers: {
                             'Content-Type': 'application/json',
                             'x-goog-api-key': cleanApiKey
                         },
-                        timeout: 45000 // 45 seconds for interactions
+                        timeout: 30000 // 30 seconds
                     });
 
                     // Parse Interactions API response (outputs array)
@@ -244,15 +244,17 @@ export class AiService {
                     if (aiResponse) {
                         this.logger.log(`[AI_SUCCESS] Generated response with Interactions API using model: ${model}`);
                         break;
+                    } else {
+                        this.logger.warn(`[AI_RETRY] Model ${model} returned no text output. Outputs: ${JSON.stringify(outputs)}`);
                     }
                 } catch (error) {
                     lastError = error;
                     const status = error.response?.status;
-                    const errorMsg = JSON.stringify(error.response?.data?.error || error.message);
+                    const errorMsg = JSON.stringify(error.response?.data || error.message);
 
                     this.logger.warn(`[AI_FAIL] Model ${model} failed on Interactions API: ${status} - ${errorMsg}`);
 
-                    if (status === 404 || status === 400) {
+                    if (status === 404 || status === 400 || status === 403) {
                         continue;
                     }
                 }
@@ -376,23 +378,23 @@ export class AiService {
 
             // Iterate models using the Interactions API
             for (const model of uniqueModels) {
-                // this.logger.debug(`[AI_WAND_ATTEMPT] Trying model: ${model}`);
+                this.logger.debug(`[AI_WAND_ATTEMPT] Trying Interactions API with model: ${model}`);
                 try {
                     const url = `https://generativelanguage.googleapis.com/v1beta/interactions`;
 
                     const response = await axios.post(url, {
                         model: model,
                         input: fullPrompt,
-                        generationConfig: {
+                        generation_config: {
                             temperature: 0.7,
-                            maxOutputTokens: 2048,
+                            max_output_tokens: 2048,
                         }
                     }, {
                         headers: {
                             'Content-Type': 'application/json',
                             'x-goog-api-key': cleanApiKey
                         },
-                        timeout: 45000
+                        timeout: 30000 // 30 seconds
                     });
 
                     const outputs = response.data?.outputs;
@@ -402,13 +404,19 @@ export class AiService {
                     }
 
                     if (aiResponse) {
+                        this.logger.debug(`[AI_WAND_SUCCESS] Model ${model} worked.`);
                         break;
+                    } else {
+                        this.logger.warn(`[AI_WAND_RETRY] Model ${model} returned no text. Outputs: ${JSON.stringify(outputs)}`);
                     }
                 } catch (error) {
                     lastError = error;
                     const status = error.response?.status;
+                    const errorMsg = JSON.stringify(error.response?.data || error.message);
 
-                    if (status === 404 || status === 400) {
+                    this.logger.warn(`[AI_WAND_FAIL] Model ${model} failed: ${status} - ${errorMsg}`);
+
+                    if (status === 404 || status === 400 || status === 403) {
                         continue;
                     }
                 }
