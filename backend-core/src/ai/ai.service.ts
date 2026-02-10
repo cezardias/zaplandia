@@ -193,17 +193,16 @@ export class AiService {
 
             const fullPrompt = `${promptContent}\n\nHistórico da Conversa:\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
-            // 6. Call Gemini API manually with ROBUST Fallback Logic
-            const configuredModel = integration.aiModel || 'gemini-1.5-flash';
-            // Determine the list of models to try. Start with the configured one.
-            // If configured is 'gemini-1.5-flash', we might still want to try others if it fails.
+            // 6. Call Gemini API manually with ROBUST Fallback Logic (using new Interactions API)
+            const configuredModel = integration.aiModel || 'gemini-3-flash-preview';
             const modelsToTry = [
                 configuredModel,
+                'gemini-3-flash-preview',
+                'gemini-3-pro-preview',
+                'gemini-2.5-flash',
+                'gemini-2.5-pro',
                 'gemini-1.5-flash',
-                'gemini-1.5-flash-001',
-                'gemini-1.5-flash-002',
-                'gemini-1.5-pro',
-                'gemini-1.0-pro'
+                'gemini-1.5-pro'
             ];
 
             // Remove duplicates
@@ -213,58 +212,55 @@ export class AiService {
             let aiResponse: string | null = null;
             let lastError: any;
 
-            // Iterate models
+            // Iterate models using the Interactions API
             for (const model of uniqueModels) {
-                this.logger.debug(`[AI_ATTEMPT] Trying model: ${model}`);
+                this.logger.debug(`[AI_ATTEMPT] Trying Interactions API with model: ${model}`);
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanApiKey}`;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/interactions`;
 
                     const response = await axios.post(url, {
-                        contents: [
-                            {
-                                role: 'user',
-                                parts: [
-                                    { text: fullPrompt }
-                                ]
-                            }
-                        ],
+                        model: model,
+                        input: fullPrompt,
                         generationConfig: {
                             temperature: 0.7,
-                            topK: 40,
-                            topP: 0.95,
                             maxOutputTokens: 1024,
                         }
                     }, {
-                        timeout: 30000 // 30 seconds
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-goog-api-key': cleanApiKey
+                        },
+                        timeout: 45000 // 45 seconds for interactions
                     });
 
-                    aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    // Parse Interactions API response (outputs array)
+                    const outputs = response.data?.outputs;
+                    if (Array.isArray(outputs)) {
+                        // Look for text output
+                        const textOutput = outputs.find(o => o.type === 'text');
+                        aiResponse = textOutput?.text || null;
+                    }
+
                     if (aiResponse) {
-                        this.logger.log(`[AI_SUCCESS] Generated response with model: ${model}`);
-                        break; // Success! exit loop
+                        this.logger.log(`[AI_SUCCESS] Generated response with Interactions API using model: ${model}`);
+                        break;
                     }
                 } catch (error) {
                     lastError = error;
                     const status = error.response?.status;
-                    const errorMsg = error.response?.data?.error?.message || error.message;
+                    const errorMsg = JSON.stringify(error.response?.data?.error || error.message);
 
-                    this.logger.warn(`[AI_FAIL] Model ${model} failed: ${status} - ${errorMsg}`);
+                    this.logger.warn(`[AI_FAIL] Model ${model} failed on Interactions API: ${status} - ${errorMsg}`);
 
-                    // If it's a 404/400 (Model not found/Bad Request), continue to next model immediately
                     if (status === 404 || status === 400) {
                         continue;
                     }
-
-                    // If it's a 429/503 (Overload), we might want to wait a bit before trying the *next* model or retrying the *same* model.
-                    // For simplicity in this robust fallback, we just move to the next model which might be on a different cleared quota or shard?
-                    // Actually, let's just continue to next model.
                 }
             }
 
             if (!aiResponse) {
                 if (lastError) {
-                    // If all failed, throw the last error or log it
-                    this.logger.error(`[AI_FATAL] All models failed. Last error: ${lastError.message}`);
+                    this.logger.error(`[AI_FATAL] All models on Interactions API failed. Last error: ${lastError.message}`);
                 }
                 return null;
             }
@@ -360,15 +356,16 @@ export class AiService {
             const systemInstruction = context || "Você é o assistente da Zaplandia.";
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
-            // 6. Call Gemini API manually with ROBUST Fallback Logic
-            const startModel = modelName || 'gemini-1.5-flash';
+            // 6. Call Gemini API manually with ROBUST Fallback Logic (Interactions API)
+            const startModel = modelName || 'gemini-3-flash-preview';
             const modelsToTry = [
                 startModel,
+                'gemini-3-flash-preview',
+                'gemini-3-pro-preview',
+                'gemini-2.5-flash',
+                'gemini-2.5-pro',
                 'gemini-1.5-flash',
-                'gemini-1.5-flash-001',
-                'gemini-1.5-flash-002',
-                'gemini-1.5-pro',
-                'gemini-1.0-pro'
+                'gemini-1.5-pro'
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
@@ -377,44 +374,50 @@ export class AiService {
 
             const cleanApiKey = apiKey.trim();
 
-            // Iterate models
+            // Iterate models using the Interactions API
             for (const model of uniqueModels) {
                 // this.logger.debug(`[AI_WAND_ATTEMPT] Trying model: ${model}`);
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanApiKey}`;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/interactions`;
 
                     const response = await axios.post(url, {
-                        contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+                        model: model,
+                        input: fullPrompt,
                         generationConfig: {
                             temperature: 0.7,
-                            topK: 40,
-                            topP: 0.95,
                             maxOutputTokens: 2048,
                         }
-                    }, { timeout: 30000 });
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-goog-api-key': cleanApiKey
+                        },
+                        timeout: 45000
+                    });
 
-                    aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    const outputs = response.data?.outputs;
+                    if (Array.isArray(outputs)) {
+                        const textOutput = outputs.find(o => o.type === 'text');
+                        aiResponse = textOutput?.text || null;
+                    }
+
                     if (aiResponse) {
-                        // this.logger.log(`[AI_WAND_SUCCESS] Generated response with model: ${model}`);
-                        break; // Success! exit loop
+                        break;
                     }
                 } catch (error) {
                     lastError = error;
                     const status = error.response?.status;
 
-                    // If it's a 404/400 (Model not found/Bad Request), continue to next model immediately
                     if (status === 404 || status === 400) {
                         continue;
                     }
-
-                    // Just continue for now on other errors/overloads to try other models or fail
                 }
             }
 
             if (!aiResponse) {
                 if (lastError) {
                     const errorDetail = lastError.response?.data ? JSON.stringify(lastError.response.data) : lastError.message;
-                    this.logger.error(`[AI_REQUEST_FAILED] All models failed. Last error: ${errorDetail}`);
+                    this.logger.error(`[AI_REQUEST_FAILED] All models on Interactions API failed. Last error: ${errorDetail}`);
                 }
                 return null;
             }
