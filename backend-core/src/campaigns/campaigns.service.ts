@@ -89,21 +89,25 @@ export class CampaignsService {
     async start(id: string, tenantId: string, userId?: string) {
         const campaign = await this.findOne(id, tenantId);
         if (!campaign) throw new Error('Campanha não encontrada.');
-        if (campaign.status === CampaignStatus.RUNNING) throw new Error('Campanha já está rodando.');
-
         // 🛡️ CRITICAL: Move status to RUNNING BEFORE enqueuing to avoid race conditions with processor
         campaign.status = CampaignStatus.RUNNING;
         await this.campaignRepository.save(campaign);
-        this.logger.log(`[MOTOR] Campanha ${id} marcada como RUNNING. Limpando fila de segurança...`);
+        this.logger.log(`[MOTOR] Campanha ${id} marcada como RUNNING. Realizando limpeza geral de fila...`);
 
-        // 🛡️ SECURITY: Clear any old jobs for THIS campaign just in case
+        // 🛡️ SECURITY: Clear ALL jobs for this tenant that are currently in the queue
+        // to prevent old/paused campaigns from blocking the new one.
         try {
             const jobs = await this.campaignQueue.getJobs(['waiting', 'active', 'delayed']);
+            let purgedCount = 0;
             for (const job of jobs) {
-                if (job.data.campaignId === id) await job.remove();
+                if (job.data.tenantId === tenantId) {
+                    await job.remove();
+                    purgedCount++;
+                }
             }
+            if (purgedCount > 0) this.logger.log(`[MOTOR] Purga completa: ${purgedCount} jobs antigos removidos do tenant ${tenantId}`);
         } catch (e) {
-            this.logger.warn(`Failed to clear old jobs for campaign ${id}: ${e.message}`);
+            this.logger.warn(`Failled to purge queue: ${e.message}`);
         }
 
         // Resolve Integration to get real instance name & PROVIDER
@@ -256,10 +260,10 @@ export class CampaignsService {
     private extractLeadName(l: any): string {
         if (!l) return 'Contato';
 
-        const minNameLength = 3; // Anything shorter is likely noise (like "BR")
+        const minNameLength = 3;
         const noiseBlacklist = [
             'BR', 'US', 'PT', 'SP', 'RJ', 'MG', 'BA', 'RS', 'PR', 'SC', 'GO', 'DF', 'ES', 'CE', 'PE', 'MA', 'MS', 'MT', 'PA', 'PB', 'PI', 'RN', 'RO', 'RR', 'TO', 'AC', 'AM', 'AL', 'SE',
-            'bra', 'usa', 'esp', 'mex', 'can'
+            'bra', 'usa', 'esp', 'mex', 'can', 'true', 'false', 'null', 'undefined'
         ];
 
         // 0. Handle raw strings or numbers
@@ -268,68 +272,74 @@ export class CampaignsService {
             const digitCount = (s.match(/\d/g) || []).length;
             const isNoise = noiseBlacklist.some(n => n.toLowerCase() === s.toLowerCase());
 
-            if (digitCount > 6 || s.includes('@') || isNoise || s.length < minNameLength) return 'Contato';
+            if (digitCount > 6 || s.includes('@') || isNoise || s.length < 2) return 'Contato';
             return (s && s.toLowerCase() !== 'contato') ? s : 'Contato';
         }
 
         const keys = Object.keys(l);
-        const values = Object.values(l).map(v => v ? String(v).trim() : '');
 
-        // --- TIER 1: Intelligent Key Matching (Whitelist + Blacklist) ---
+        // --- TIER 1: Intelligent Key Matching (Universal Scraper Support) ---
         const nameKeywords = [
             'name', 'nome', 'fullname', 'completo', 'title', 'titulo', 'título',
-            'cliente', 'público', 'publico', 'interessado', 'cli',
-            'empresa', 'razão', 'razao', 'raz', 'user', 'usuario', 'usuário',
-            'pessoa', 'lead', 'titular', 'destinatario', 'destinatário'
+            'business', 'empresa', 'razon', 'razao', 'fantasia', 'loja', 'store',
+            'place', 'location', 'local', 'cliente', 'customer', 'user', 'usuario',
+            'label', 'display', 'text', 'header', 'cabecalho', 'lead', 'titular'
         ];
         const blacklistKeywords = [
             'id', 'uuid', 'guid', 'key', 'token', 'pass', 'senha', 'email', 'mail',
-            'phone', 'tel', 'whatsapp', 'created', 'updated', 'deleted', 'external', 'chat', 'country', 'pais', 'páis', 'state', 'estado', 'code', 'codigo', 'código'
+            'phone', 'tel', 'whatsapp', 'created', 'updated', 'deleted', 'external', 'chat',
+            'country', 'pais', 'páis', 'state', 'estado', 'code', 'codigo', 'código', 'reviews', 'rating', 'category'
         ];
 
-        const candidateKey = keys.find(k => {
+        // Search for the best matching key
+        let matchedKey = '';
+        for (const k of keys) {
             const low = k.toLowerCase().trim();
-            // Must be in whitelist AND NOT in blacklist
-            const isNameLike = nameKeywords.some(kw => low.includes(kw));
-            const isTechnicalOrLocational = blacklistKeywords.some(bk => low.includes(bk));
-            return isNameLike && !isTechnicalOrLocational;
-        });
+            const hasNameWord = nameKeywords.some(kw => low.includes(kw));
+            const hasBlackWord = blacklistKeywords.some(bw => low.includes(bw));
 
-        if (candidateKey && l[candidateKey]) {
-            const val = String(l[candidateKey]).trim();
-            const valDigits = (val.match(/\d/g) || []).length;
+            if (hasNameWord && !hasBlackWord) {
+                // Check if value is actually present
+                if (l[k] && String(l[k]).trim().length >= 2) {
+                    matchedKey = k;
+                    break;
+                }
+            }
+        }
+
+        if (matchedKey) {
+            const val = String(l[matchedKey]).trim();
             const isNoise = noiseBlacklist.some(n => n.toLowerCase() === val.toLowerCase());
+            const digitCount = (val.match(/\d/g) || []).length;
 
-            if (val.length >= minNameLength && valDigits < 6 && val.toLowerCase() !== 'contato' && !val.includes('@') && !isNoise) {
+            if (!isNoise && digitCount < 6 && !val.includes('@')) {
                 return val;
             }
         }
 
-        // --- TIER 2: Value Heuristics (Tsar Bomba Deep Analysis) ---
+        // --- TIER 2: Value Heuristics (Fallback Brute Force) ---
         let bestCandidate = '';
         let bestScore = -100;
 
-        for (const val of values) {
-            if (!val || val.length < minNameLength || val.length > 100) continue;
-            if (val.toLowerCase() === 'contato') continue;
+        for (const key of keys) {
+            const val = l[key] ? String(l[key]).trim() : '';
+            if (!val || val.length < 2 || val.length > 100) continue;
+
+            // Skip technical looking keys in heuristics
+            const lowKey = key.toLowerCase();
+            if (blacklistKeywords.some(bk => lowKey.includes(bk))) continue;
             if (noiseBlacklist.some(n => n.toLowerCase() === val.toLowerCase())) continue;
 
             let score = 0;
+            if (val.includes(' ')) score += 20;
+            if (/^[A-Z][a-z]/.test(val)) score += 10;
 
-            // Rules for scoring:
-            if (val.includes(' ')) score += 20; // Names usually have spaces
-            if (/^[A-Z][a-z]/.test(val)) score += 10; // CamelCase start
-
-            // Penalties
             const digitCount = (val.match(/\d/g) || []).length;
             if (digitCount > 4) score -= 50;
             if (val.includes('@')) score -= 60;
             if (val.includes('-') && !val.includes(' ')) score -= 15;
             if (/^[0-9a-f-]{8,}$/i.test(val)) score -= 40;
-
-            // Bonus for "clean" strings
             if (!val.includes('/') && !val.includes('\\') && !val.includes('_')) score += 10;
-            if (val.length > 5 && val.length < 40) score += 5;
 
             if (score > bestScore) {
                 bestScore = score;
@@ -337,23 +347,19 @@ export class CampaignsService {
             }
         }
 
-        // If we found a candidate with a significant score
-        if (bestCandidate && bestScore > 15) {
-            this.logger.debug(`[TSAR_BOMBA_NAME] Candidate: ${bestCandidate} (Score: ${bestScore}) from Object: ${JSON.stringify(l)}`);
+        if (bestCandidate && bestScore > 5) {
             return bestCandidate;
         }
 
-        // --- TIER 3: Last Resort ---
-        this.logger.debug(`[BOMBA_STILL_FAILING] Best was: ${bestCandidate} (Score: ${bestScore}). Full Object: ${JSON.stringify(l)}`);
-
-        // Check if there is ANY string that isn't technical and not noise
-        const fallback = values.find(v => {
-            const d = (v.match(/\d/g) || []).length;
-            const isNoise = noiseBlacklist.some(n => n.toLowerCase() === v.toLowerCase());
-            return v.length >= minNameLength && d < 4 && !v.includes('@') && v.toLowerCase() !== 'contato' && !isNoise;
-        });
-
-        if (fallback) return fallback;
+        // --- TIER 3: Last Resort (Any non-null field that isn't blacklisted) ---
+        for (const k of keys) {
+            const v = l[k] ? String(l[k]).trim() : '';
+            const lowK = k.toLowerCase();
+            if (v.length > 2 && !blacklistKeywords.some(bk => lowK.includes(bk)) && !noiseBlacklist.some(n => n.toLowerCase() === v.toLowerCase())) {
+                const d = (v.match(/\d/g) || []).length;
+                if (d < 4) return v;
+            }
+        }
 
         return 'Contato';
     }
