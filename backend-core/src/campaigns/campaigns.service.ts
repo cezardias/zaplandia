@@ -229,6 +229,9 @@ export class CampaignsService {
         // 0. Handle raw strings or numbers
         if (typeof l !== 'object') {
             const s = String(l).trim();
+            const digitCount = (s.match(/\d/g) || []).length;
+            // If it's mostly numbers, it's a phone, not a name
+            if (digitCount > 6 || s.includes('@')) return 'Contato';
             return (s && s.toLowerCase() !== 'contato' && s.length > 2) ? s : 'Contato';
         }
 
@@ -239,9 +242,13 @@ export class CampaignsService {
         const nameKeywords = [
             'name', 'nome', 'fullname', 'completo', 'title', 'titulo', 'título',
             'cliente', 'contato', 'público', 'publico', 'interessado', 'cli',
-            'empresa', 'razão', 'razao', 'raz', 'user', 'usuario', 'usuário'
+            'empresa', 'razão', 'razao', 'raz', 'user', 'usuario', 'usuário',
+            'pessoa', 'lead', 'titular', 'destinatario', 'destinatário', 'social'
         ];
-        const blacklistKeywords = ['id', 'uuid', 'guid', 'key', 'token', 'pass', 'senha', 'email', 'mail', 'phone', 'tel', 'whatsapp', 'created', 'updated', 'deleted'];
+        const blacklistKeywords = [
+            'id', 'uuid', 'guid', 'key', 'token', 'pass', 'senha', 'email', 'mail',
+            'phone', 'tel', 'whatsapp', 'created', 'updated', 'deleted', 'external', 'chat'
+        ];
 
         const candidateKey = keys.find(k => {
             const low = k.toLowerCase().trim();
@@ -252,14 +259,15 @@ export class CampaignsService {
         });
 
         if (candidateKey && l[candidateKey] && String(l[candidateKey]).trim().length > 2) {
-            const val = String(l[candidateKey]).trim();
-            if (val.toLowerCase() !== 'contato') return val;
+            const val = String(candidateKey).toLowerCase().includes('contato') ? 'Contato' : String(l[candidateKey]).trim();
+            // If key matched but value is basically a phone number, reject it
+            const valDigits = (val.match(/\d/g) || []).length;
+            if (valDigits < 6 && val.toLowerCase() !== 'contato' && !val.includes('@')) return val;
         }
 
-        // --- TIER 2: Value Heuristics (Deep Analysis) ---
-        // Look for values that look most like a Person's Name
+        // --- TIER 2: Value Heuristics (Nuclear Deep Analysis) ---
         let bestCandidate = '';
-        let bestScore = -1;
+        let bestScore = -100;
 
         for (const val of values) {
             if (!val || val.length < 2 || val.length > 100) continue;
@@ -268,12 +276,19 @@ export class CampaignsService {
             let score = 0;
 
             // Rules for scoring:
-            if (val.includes(' ')) score += 10; // Names usually have spaces
-            if (/^[A-Z][a-z]/.test(val)) score += 5; // CamelCase start
-            if (!/^[0-9a-f-]{8,}$/i.test(val)) score += 5; // Not a hash/UUID
-            if (!/^\+?\d+$/.test(val.replace(/[\s\-\+\(\)]/g, ''))) score += 10; // Not a phone
-            if (!val.includes('@')) score += 10; // Not an email
-            if (!val.includes('/') && !val.includes('\\') && !val.includes('_')) score += 5; // Not a path or snake_case key
+            if (val.includes(' ')) score += 20; // Names usually have spaces
+            if (/^[A-Z][a-z]/.test(val)) score += 10; // CamelCase start (e.g. "Cezar Dias")
+
+            // Penalties
+            const digitCount = (val.match(/\d/g) || []).length;
+            if (digitCount > 4) score -= 50; // NUCLEAR PENALTY for strings with many numbers (phones/IDs)
+            if (val.includes('@')) score -= 60; // NUCLEAR PENALTY for emails
+            if (val.includes('-') && !val.includes(' ')) score -= 15; // Penalty for kebab-case/hashes
+            if (/^[0-9a-f-]{8,}$/i.test(val)) score -= 40; // Penalty for UUIDs/Hashes
+
+            // Bonus for "clean" strings
+            if (!val.includes('/') && !val.includes('\\') && !val.includes('_')) score += 10;
+            if (val.length > 5 && val.length < 40) score += 5; // Sweet spot for names
 
             if (score > bestScore) {
                 bestScore = score;
@@ -281,17 +296,21 @@ export class CampaignsService {
             }
         }
 
-        // If we found a decent candidate (at least passed basic filters)
-        if (bestCandidate && bestScore > 20) {
+        // If we found a candidate with a positive score
+        if (bestCandidate && bestScore > 0) {
+            this.logger.debug(`[NUCLEAR_NAME] Candidate: ${bestCandidate} (Score: ${bestScore}) from Object: ${JSON.stringify(l)}`);
             return bestCandidate;
         }
 
-        // --- TIER 3: Last Resort + Diagnostic Logging ---
-        // If we reach here, we are about to return 'Contato'. Let's log why.
-        this.logger.debug(`[DEBUG_NAME_ULTIMATE] Failed to satisfy name criteria. Keys: ${keys.join(', ')}. Candidate: ${bestCandidate} (Score: ${bestScore}). Raw: ${JSON.stringify(l)}`);
+        // --- TIER 3: Last Resort ---
+        this.logger.debug(`[STILL_FAILING_NAME] Best was: ${bestCandidate} (Score: ${bestScore}). Raw: ${JSON.stringify(l)}`);
 
-        // Check if there is ANY string that isn't technical
-        const fallback = values.find(v => v.length > 2 && !v.includes('@') && !/^\+?\d+$/.test(v.replace(/[\s\-\+\(\)]/g, '')) && v.toLowerCase() !== 'contato');
+        // Check if there is ANY string that isn't technical and not a phone
+        const fallback = values.find(v => {
+            const d = (v.match(/\d/g) || []).length;
+            return v.length > 2 && d < 5 && !v.includes('@') && v.toLowerCase() !== 'contato';
+        });
+
         if (fallback) return fallback;
 
         return 'Contato';
