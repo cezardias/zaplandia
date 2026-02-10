@@ -122,6 +122,9 @@ export class AiService {
     /**
      * Generate AI response for a message
      */
+    /**
+     * Generate AI response for a message
+     */
     async generateResponse(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
         try {
             // 1. Get tenant's Gemini API key
@@ -188,19 +191,35 @@ export class AiService {
                 .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`)
                 .join('\n');
 
-            // 6. Call Gemini API manually with Retry Logic for 503/Overload errors
-            // Get model from integration settings, default to gemini-1.5-flash (STABLE)
-            const modelName = integration.aiModel || 'gemini-1.5-flash';
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-            const fullPrompt = `${promptContent}\n\nHistórico da conversa:\n${conversationContext}\n\nCliente: ${userMessage}\n\nVocê:`;
+            const fullPrompt = `${promptContent}\n\nHistórico da Conversa:\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
-            let retryCount = 0;
-            const maxRetries = 3;
-            let response: any;
+            // 6. Call Gemini API manually with ROBUST Fallback Logic
+            const configuredModel = integration.aiModel || 'gemini-1.5-flash';
+            // Determine the list of models to try. Start with the configured one.
+            // If configured is 'gemini-1.5-flash', we might still want to try others if it fails.
+            const modelsToTry = [
+                configuredModel,
+                'gemini-1.5-flash',
+                'gemini-1.5-flash-001',
+                'gemini-1.5-flash-002',
+                'gemini-1.5-pro',
+                'gemini-1.0-pro'
+            ];
 
-            while (retryCount <= maxRetries) {
+            // Remove duplicates
+            const uniqueModels = [...new Set(modelsToTry)];
+
+            const cleanApiKey = apiKey.trim();
+            let aiResponse: string | null = null;
+            let lastError: any;
+
+            // Iterate models
+            for (const model of uniqueModels) {
+                this.logger.debug(`[AI_ATTEMPT] Trying model: ${model}`);
                 try {
-                    response = await axios.post(url, {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanApiKey}`;
+
+                    const response = await axios.post(url, {
                         contents: [
                             {
                                 role: 'user',
@@ -219,29 +238,34 @@ export class AiService {
                         timeout: 30000 // 30 seconds
                     });
 
-                    // If success, break the loop
-                    break;
-                } catch (error) {
-                    this.logger.error(`[AI_REQUEST_FAILED] Attempt ${retryCount + 1}/${maxRetries + 1}: ${error.message}`);
-                    if (error.response) {
-                        this.logger.error(`[GEMINI_ERROR] Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`);
+                    aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (aiResponse) {
+                        this.logger.log(`[AI_SUCCESS] Generated response with model: ${model}`);
+                        break; // Success! exit loop
                     }
+                } catch (error) {
+                    lastError = error;
                     const status = error.response?.status;
-                    if ((status === 503 || status === 429) && retryCount < maxRetries) {
-                        retryCount++;
-                        const delay = retryCount * 2000; // 2s, 4s, 6s...
-                        this.logger.warn(`Gemini API returned ${status}. Retrying in ${delay}ms... (Attempt ${retryCount}/${maxRetries})`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
+                    const errorMsg = error.response?.data?.error?.message || error.message;
+
+                    this.logger.warn(`[AI_FAIL] Model ${model} failed: ${status} - ${errorMsg}`);
+
+                    // If it's a 404/400 (Model not found/Bad Request), continue to next model immediately
+                    if (status === 404 || status === 400) {
                         continue;
                     }
-                    throw error; // Rethrow if not a retryable error or max retries reached
+
+                    // If it's a 429/503 (Overload), we might want to wait a bit before trying the *next* model or retrying the *same* model.
+                    // For simplicity in this robust fallback, we just move to the next model which might be on a different cleared quota or shard?
+                    // Actually, let's just continue to next model.
                 }
             }
 
-            const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
             if (!aiResponse) {
-                this.logger.error('Empty response from Gemini API');
+                if (lastError) {
+                    // If all failed, throw the last error or log it
+                    this.logger.error(`[AI_FATAL] All models failed. Last error: ${lastError.message}`);
+                }
                 return null;
             }
 
@@ -333,18 +357,33 @@ export class AiService {
                 return `[ERRO] Chave de API do Gemini não configurada.`;
             }
 
-            const finalModelName = modelName || 'gemini-1.5-flash';
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${finalModelName}:generateContent?key=${apiKey}`;
             const systemInstruction = context || "Você é o assistente da Zaplandia.";
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
-            let retryCount = 0;
-            const maxRetries = 3;
-            let response: any;
+            // 6. Call Gemini API manually with ROBUST Fallback Logic
+            const startModel = modelName || 'gemini-1.5-flash';
+            const modelsToTry = [
+                startModel,
+                'gemini-1.5-flash',
+                'gemini-1.5-flash-001',
+                'gemini-1.5-flash-002',
+                'gemini-1.5-pro',
+                'gemini-1.0-pro'
+            ];
+            const uniqueModels = [...new Set(modelsToTry)];
 
-            while (retryCount <= maxRetries) {
+            let aiResponse: string | null = null;
+            let lastError: any;
+
+            const cleanApiKey = apiKey.trim();
+
+            // Iterate models
+            for (const model of uniqueModels) {
+                // this.logger.debug(`[AI_WAND_ATTEMPT] Trying model: ${model}`);
                 try {
-                    response = await axios.post(url, {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanApiKey}`;
+
+                    const response = await axios.post(url, {
                         contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
                         generationConfig: {
                             temperature: 0.7,
@@ -354,25 +393,31 @@ export class AiService {
                         }
                     }, { timeout: 30000 });
 
-                    break; // Success
+                    aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (aiResponse) {
+                        // this.logger.log(`[AI_WAND_SUCCESS] Generated response with model: ${model}`);
+                        break; // Success! exit loop
+                    }
                 } catch (error) {
-                    const isOverloaded = error.response?.data?.error?.code === 503 || error.response?.status === 503;
+                    lastError = error;
+                    const status = error.response?.status;
 
-                    if (isOverloaded && retryCount < maxRetries) {
-                        retryCount++;
-                        const delay = Math.pow(2, retryCount) * 1000;
-                        this.logger.warn(`[AI_RETRY] Gemini overloaded in getAiResponse. Retrying in ${delay}ms... (Attempt ${retryCount}/${maxRetries})`);
-                        await new Promise(res => setTimeout(res, delay));
+                    // If it's a 404/400 (Model not found/Bad Request), continue to next model immediately
+                    if (status === 404 || status === 400) {
                         continue;
                     }
 
-                    throw error; // Propagate if not 503 or max retries
+                    // Just continue for now on other errors/overloads to try other models or fail
                 }
             }
 
-            const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (!aiResponse) return null;
+            if (!aiResponse) {
+                if (lastError) {
+                    const errorDetail = lastError.response?.data ? JSON.stringify(lastError.response.data) : lastError.message;
+                    this.logger.error(`[AI_REQUEST_FAILED] All models failed. Last error: ${errorDetail}`);
+                }
+                return null;
+            }
 
             this.logger.log(`[AI_RESPONSE] Received ${aiResponse.length} chars from AI Service`);
             return aiResponse;
