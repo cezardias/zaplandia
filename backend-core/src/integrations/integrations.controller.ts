@@ -92,15 +92,10 @@ export class IntegrationsController {
     @UseGuards(JwtAuthGuard)
     @Get('evolution/instances')
     async listEvolutionInstances(@Request() req) {
-        const isSuperAdmin = req.user.role === 'superadmin';
-
-        if (isSuperAdmin) {
-            // SuperAdmin sees ALL instances from ALL tenants
-            return this.evolutionApiService.listAllInstances();
-        } else {
-            // Regular user sees only their tenant's instances
-            return this.evolutionApiService.listInstances(req.user.tenantId);
-        }
+        // Use listInstances for both regular users and superadmins.
+        // It correctly handles showing all instances if the role is superadmin,
+        // while also correctly looking up credentials in the user's tenant context.
+        return this.evolutionApiService.listInstances(req.user.tenantId, req.user.role);
     }
 
     // Create instance with custom name

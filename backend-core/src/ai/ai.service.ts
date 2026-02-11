@@ -225,9 +225,8 @@ export class AiService {
                         }
                     }, {
                         headers: {
-                            'Content-Type': 'application/json'
-                            // Note: Passing key in URL is standard for Google AI, 
-                            // but some environments prefer 'x-goog-api-key' header.
+                            'Content-Type': 'application/json',
+                            'x-goog-api-key': cleanApiKey
                         },
                         timeout: 20000
                     });
@@ -378,7 +377,10 @@ export class AiService {
                             maxOutputTokens: 2048,
                         }
                     }, {
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-goog-api-key': cleanApiKey
+                        },
                         timeout: 20000
                     });
 

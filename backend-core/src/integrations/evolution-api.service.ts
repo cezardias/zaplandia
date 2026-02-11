@@ -57,25 +57,6 @@ export class EvolutionApiService {
                         headers: { 'apikey': apiKey }
                     });
 
-                    // Auto-configure Webhook if connected
-                    if (statusRes.data?.instance?.state === 'open') {
-                        // Use internal URL for webhooks so Evolution can reach backend-core inside docker
-                        // Correct port is 3001 based on main.ts and docker-compose.yml
-                        // Using 'host.docker.internal' as a common alias for the host machine if 'backend-core' fails
-                        const webhookUrl = process.env.INTERNAL_WEBHOOK_URL || 'http://backend-core:3001/webhooks/evolution';
-
-                        this.logger.log(`Auto-configuring webhook for ${name} to ${webhookUrl}`);
-
-                        this.setWebhook(tenantId, name, webhookUrl).catch(err =>
-                            this.logger.warn(`Failed to auto-set webhook for ${name}: ${err.message}. Ensure containers are on the same network or use a public URL.`)
-                        );
-
-                        // Auto-configure Settings (Global Config)
-                        this.setSettings(tenantId, name).catch(err =>
-                            this.logger.warn(`Failed to auto-set settings for ${name}: ${err.message}`)
-                        );
-                    }
-
                     // Merge status into instance object
                     if (statusRes.data && statusRes.data.instance) {
                         // Evolution usually returns { instance: { state: 'open' } }
