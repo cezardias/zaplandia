@@ -117,6 +117,26 @@ export class IntegrationsController {
         // Create instance in Evolution API
         const evolutionResponse = await this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.userId);
 
+        // --- AUTOMATIC WEBHOOK SETUP (ON INSTANCE CREATION ONLY) ---
+        try {
+            let host = process.env.API_URL;
+            if (!host) {
+                const protocol = req.protocol || 'https';
+                const requestHost = req.get('host');
+                if (requestHost) host = `${protocol}://${requestHost}`;
+            }
+
+            if (host) {
+                const webhookUrl = `${host.replace(/\/$/, '')}/webhooks/evolution`;
+                console.log(`[CREATE_INSTANCE_WEBHOOK] Auto-configuring webhook for ${instanceName}: ${webhookUrl}`);
+                await this.evolutionApiService.setWebhook(req.user.tenantId, instanceName, webhookUrl);
+            } else {
+                console.error(`[CREATE_INSTANCE_WEBHOOK] Could not detect API URL. Webhook NOT configured for ${instanceName}`);
+            }
+        } catch (webhookErr) {
+            console.error(`[CREATE_INSTANCE_WEBHOOK_ERROR] Failed to auto-configure webhook for ${instanceName}: ${webhookErr.message}`);
+        }
+
         // Save integration to database
         const integration = await this.integrationsService.create(
             req.user.tenantId,
