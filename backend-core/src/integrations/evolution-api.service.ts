@@ -9,16 +9,21 @@ export class EvolutionApiService {
 
     constructor(private readonly integrationsService: IntegrationsService) { }
 
-    private async getBaseUrl(tenantId: string) {
+    async getBaseUrl(tenantId: string): Promise<string | null> {
         const url = await this.integrationsService.getCredential(tenantId, 'EVOLUTION_API_URL');
-        if (!url) return null;
-        // Clean URL: trim and remove trailing slash
-        return url.trim().replace(/\/$/, '');
+        if (!url) {
+            console.error(`[EVOLUTION_API] No URL found for tenant ${tenantId}`);
+            return null;
+        }
+        return url.replace(/\/$/, '').trim();
     }
 
-    private async getApiKey(tenantId: string) {
+    async getApiKey(tenantId: string): Promise<string | null> {
         const key = await this.integrationsService.getCredential(tenantId, 'EVOLUTION_API_KEY');
-        if (!key) return null;
+        if (!key) {
+            console.error(`[EVOLUTION_API] No API Key found for tenant ${tenantId}`);
+            return null;
+        }
         return key.trim();
     }
 

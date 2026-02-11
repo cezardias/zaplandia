@@ -28,7 +28,7 @@ export class AiService implements OnModuleInit {
         private integrationRepository: Repository<Integration>,
         @InjectRepository(AiPromptEntity)
         private aiPromptRepository: Repository<AiPromptEntity>,
-        private evolutionApiService: EvolutionApiService,
+        public evolutionApiService: EvolutionApiService,
         private integrationsService: IntegrationsService,
     ) { }
 
