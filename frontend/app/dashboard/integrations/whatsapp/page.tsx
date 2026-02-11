@@ -69,9 +69,11 @@ export default function WhatsAppInstancesPage() {
                 const errData = await res.json();
                 const errorMessage = errData.message || 'Erro ao carregar instâncias';
 
-                // Handle "EvolutionAPI not configured" specifically
-                if (errorMessage.includes('EvolutionAPI não configurada') || res.status === 500) {
+                // Handle "EvolutionAPI not configured" vs Server Error
+                if (errorMessage.includes('EvolutionAPI não configurada')) {
                     setError('A EvolutionAPI ainda não foi configurada no sistema.');
+                } else if (res.status === 500) {
+                    setError('Erro no Servidor Evolution: O servidor retornou erro 500. Verifique se a URL e a Chave estão corretas ou se o servidor Evolution está instável.');
                 } else {
                     setError(errorMessage);
                 }
