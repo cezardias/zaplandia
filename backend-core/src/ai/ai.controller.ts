@@ -72,25 +72,14 @@ export class AiController {
             return { success: false, message: 'Integration not found' };
         }
 
-        if (body.enabled) {
-            try {
-                // Ensure webhook is set up correctly when AI is enabled
-                let host = process.env.API_URL;
-                if (!host) {
-                    const protocol = req.protocol || 'https';
-                    const requestHost = req.get('host');
-                    if (requestHost) host = `${protocol}://${requestHost}`;
-                }
+        integration.aiEnabled = body.enabled;
 
-                if (host) {
-                    const webhookUrl = `${host.replace(/\/$/, '')}/webhooks/evolution`;
-                    const instanceName = integration.settings?.instanceName || integration.credentials?.instanceName || integrationId;
-                    console.log(`[AI_WEBHOOK] Re-verifying webhook for ${instanceName}: ${webhookUrl}`);
-                    await this.aiService.evolutionApiService.setWebhook(req.user.tenantId, instanceName, webhookUrl);
-                }
-            } catch (webhookErr) {
-                console.error(`[AI_WEBHOOK_ERROR] Failed to set webhook on AI toggle: ${webhookErr.message}`);
-            }
+        // CHECK: Explicitly check for undefined to allow setting null/empty
+        if (body.promptId !== undefined) {
+            integration.aiPromptId = body.promptId;
+        }
+        if (body.aiModel) {
+            integration.aiModel = body.aiModel;
         }
 
         await this.integrationRepository.save(integration);
