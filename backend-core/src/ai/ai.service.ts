@@ -78,7 +78,7 @@ export class AiService {
             }
         });
 
-        // Match by instanceName in credentials or settings (Flexible match: ends with or starts with)
+        // Match by instanceName in credentials or settings 
         const integration = integrations.find(i => {
             const credInst = i.credentials?.instanceName;
             const settInst = i.settings?.instanceName;
@@ -96,21 +96,23 @@ export class AiService {
             return false;
         }
 
-        // 2. Check if AI is enabled for the instance
-        if (!integration.aiEnabled) {
-            this.logger.log(`AI disabled for instance ${instanceName}`);
-            return false;
-        }
-
-        // 3. Check conversation-level override
-        this.logger.debug(`[AI_CHECK] Contact ${contact.id} aiEnabled status: ${contact.aiEnabled} (Type: ${typeof contact.aiEnabled})`);
-
-        if (contact.aiEnabled === false) {
+        // --- HIERARCHY LOGIC ---
+        // 1. Local Override (Contact Level)
+        // If contact.aiEnabled is true -> Force ON
+        // If contact.aiEnabled is false -> Force OFF
+        if (contact.aiEnabled === true) {
+            this.logger.debug(`[AI_CHECK] Contact ${contact.id} AI is explicitly ON (Override).`);
+        } else if (contact.aiEnabled === false) {
             this.logger.log(`AI disabled for contact ${contact.id} (Explicit Override: OFF)`);
             return false;
         }
+        // 2. Global Level (Instance Level)
+        else if (!integration.aiEnabled) {
+            this.logger.log(`AI disabled globally for instance ${instanceName}`);
+            return false;
+        }
 
-        // 4. Check if prompt is configured
+        // 3. Check if prompt is configured
         if (!integration.aiPromptId) {
             this.logger.warn(`No AI prompt configured for instance ${instanceName}`);
             return false;
@@ -193,76 +195,67 @@ export class AiService {
 
             const fullPrompt = `${promptContent}\n\nHistórico da Conversa:\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
-            // 6. Call Gemini API manually with ROBUST Fallback Logic (using new Interactions API)
-            const configuredModel = integration.aiModel || 'gemini-3-flash-preview';
+            // 6. Call Gemini API manually (v1beta Stable generateContent)
+            const configuredModel = integration.aiModel || 'gemini-1.5-flash';
             const modelsToTry = [
                 configuredModel,
-                'gemini-3-flash-preview',
-                'gemini-3-pro-preview',
-                'gemini-2.5-flash',
-                'gemini-2.5-pro',
                 'gemini-1.5-flash',
+                'gemini-2.0-flash-exp',
                 'gemini-1.5-pro'
             ];
 
-            // Remove duplicates
             const uniqueModels = [...new Set(modelsToTry)];
-
             const cleanApiKey = apiKey.trim();
             let aiResponse: string | null = null;
             let lastError: any;
 
-            // Iterate models using the Interactions API
             for (const model of uniqueModels) {
-                this.logger.debug(`[AI_ATTEMPT] Trying Interactions API with model: ${model}`);
+                this.logger.debug(`[AI_ATTEMPT] Trying official Gemini API with model: ${model}`);
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/interactions`;
+                    // OFFICIAL ENDPOINT
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanApiKey}`;
 
                     const response = await axios.post(url, {
-                        model: model,
-                        input: fullPrompt,
-                        generation_config: {
+                        contents: [{
+                            parts: [{ text: fullPrompt }]
+                        }],
+                        generationConfig: {
                             temperature: 0.7,
-                            max_output_tokens: 1024,
+                            maxOutputTokens: 1024,
                         }
                     }, {
                         headers: {
-                            'Content-Type': 'application/json',
-                            'x-goog-api-key': cleanApiKey
+                            'Content-Type': 'application/json'
+                            // Note: Passing key in URL is standard for Google AI, 
+                            // but some environments prefer 'x-goog-api-key' header.
                         },
-                        timeout: 30000 // 30 seconds
+                        timeout: 20000
                     });
 
-                    // Parse Interactions API response (outputs array)
-                    const outputs = response.data?.outputs;
-                    if (Array.isArray(outputs)) {
-                        // Look for text output
-                        const textOutput = outputs.find(o => o.type === 'text');
-                        aiResponse = textOutput?.text || null;
-                    }
+                    // Parse official response
+                    const candidate = response.data?.candidates?.[0];
+                    aiResponse = candidate?.content?.parts?.[0]?.text || null;
 
                     if (aiResponse) {
-                        this.logger.log(`[AI_SUCCESS] Generated response with Interactions API using model: ${model}`);
+                        this.logger.log(`[AI_SUCCESS] Generated response using model: ${model}`);
                         break;
-                    } else {
-                        this.logger.warn(`[AI_RETRY] Model ${model} returned no text output. Outputs: ${JSON.stringify(outputs)}`);
                     }
                 } catch (error) {
                     lastError = error;
                     const status = error.response?.status;
                     const errorMsg = JSON.stringify(error.response?.data || error.message);
+                    this.logger.warn(`[AI_FAIL] Model ${model} failed: ${status} - ${errorMsg}`);
 
-                    this.logger.warn(`[AI_FAIL] Model ${model} failed on Interactions API: ${status} - ${errorMsg}`);
-
-                    if (status === 404 || status === 400 || status === 403) {
-                        continue;
+                    if (status === 400 && errorMsg.includes('API_KEY_INVALID')) {
+                        this.logger.error(`[AI_FATAL] Invalid API Key detected for Tenant ${tenantId}`);
+                        break; // No point in trying other models if key is invalid
                     }
                 }
             }
 
             if (!aiResponse) {
                 if (lastError) {
-                    this.logger.error(`[AI_FATAL] All models on Interactions API failed. Last error: ${lastError.message}`);
+                    this.logger.error(`[AI_FATAL] All models failed. Last error: ${lastError.message}`);
                 }
                 return null;
             }
@@ -358,67 +351,47 @@ export class AiService {
             const systemInstruction = context || "Você é o assistente da Zaplandia.";
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
-            // 6. Call Gemini API manually with ROBUST Fallback Logic (Interactions API)
-            const startModel = modelName || 'gemini-3-flash-preview';
+            // 6. Call Gemini API manually (generateContent)
+            const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
-                'gemini-3-flash-preview',
-                'gemini-3-pro-preview',
-                'gemini-2.5-flash',
-                'gemini-2.5-pro',
                 'gemini-1.5-flash',
-                'gemini-1.5-pro'
+                'gemini-2.0-flash-exp'
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
             let aiResponse: string | null = null;
             let lastError: any;
-
             const cleanApiKey = apiKey.trim();
 
-            // Iterate models using the Interactions API
             for (const model of uniqueModels) {
-                this.logger.debug(`[AI_WAND_ATTEMPT] Trying Interactions API with model: ${model}`);
+                this.logger.debug(`[AI_WAND_ATTEMPT] Trying official Gemini API with model: ${model}`);
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/interactions`;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanApiKey}`;
 
                     const response = await axios.post(url, {
-                        model: model,
-                        input: fullPrompt,
-                        generation_config: {
+                        contents: [{
+                            parts: [{ text: fullPrompt }]
+                        }],
+                        generationConfig: {
                             temperature: 0.7,
-                            max_output_tokens: 2048,
+                            maxOutputTokens: 2048,
                         }
                     }, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-goog-api-key': cleanApiKey
-                        },
-                        timeout: 30000 // 30 seconds
+                        headers: { 'Content-Type': 'application/json' },
+                        timeout: 20000
                     });
 
-                    const outputs = response.data?.outputs;
-                    if (Array.isArray(outputs)) {
-                        const textOutput = outputs.find(o => o.type === 'text');
-                        aiResponse = textOutput?.text || null;
-                    }
+                    const candidate = response.data?.candidates?.[0];
+                    aiResponse = candidate?.content?.parts?.[0]?.text || null;
 
                     if (aiResponse) {
                         this.logger.debug(`[AI_WAND_SUCCESS] Model ${model} worked.`);
                         break;
-                    } else {
-                        this.logger.warn(`[AI_WAND_RETRY] Model ${model} returned no text. Outputs: ${JSON.stringify(outputs)}`);
                     }
                 } catch (error) {
                     lastError = error;
-                    const status = error.response?.status;
-                    const errorMsg = JSON.stringify(error.response?.data || error.message);
-
-                    this.logger.warn(`[AI_WAND_FAIL] Model ${model} failed: ${status} - ${errorMsg}`);
-
-                    if (status === 404 || status === 400 || status === 403) {
-                        continue;
-                    }
+                    this.logger.warn(`[AI_WAND_FAIL] Model ${model} failed: ${error.message}`);
                 }
             }
 
