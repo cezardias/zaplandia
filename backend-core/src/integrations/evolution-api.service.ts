@@ -25,8 +25,11 @@ export class EvolutionApiService {
         }
 
         try {
-            const response = await axios.get(`${baseUrl}/instance/fetchInstances`, {
-                headers: { 'apikey': apiKey }
+            const response = await axios.get(`${baseUrl}/instance/fetchInstances?key=${apiKey}`, {
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
 
             this.logger.log(`Raw instances from EvolutionAPI: ${JSON.stringify(response.data)}`);
@@ -53,8 +56,11 @@ export class EvolutionApiService {
             const enrichedInstances = await Promise.all(tenantInstances.map(async (inst: any) => {
                 const name = inst.name || inst.instance?.instanceName || inst.instanceName;
                 try {
-                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}`, {
-                        headers: { 'apikey': apiKey }
+                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}?key=${apiKey}`, {
+                        headers: {
+                            'apikey': apiKey,
+                            'Content-Type': 'application/json'
+                        }
                     });
 
                     // Merge status into instance object
@@ -70,8 +76,10 @@ export class EvolutionApiService {
             }));
 
             return enrichedInstances;
-        } catch (error) {
-            this.logger.error(`Erro ao listar instâncias: ${error.message}`);
+        } catch (error: any) {
+            const status = error.response?.status;
+            const data = JSON.stringify(error.response?.data || error.message);
+            this.logger.error(`Erro ao listar instâncias: ${status} - ${data}`);
             throw error;
         }
     }
@@ -93,8 +101,11 @@ export class EvolutionApiService {
         }
 
         try {
-            const response = await axios.get(`${baseUrl}/instance/fetchInstances`, {
-                headers: { 'apikey': apiKey }
+            const response = await axios.get(`${baseUrl}/instance/fetchInstances?key=${apiKey}`, {
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
 
             const allInstances = Array.isArray(response.data) ? response.data : [];
@@ -107,8 +118,11 @@ export class EvolutionApiService {
 
                 // Fetch real-time status
                 try {
-                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}`, {
-                        headers: { 'apikey': apiKey }
+                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}?key=${apiKey}`, {
+                        headers: {
+                            'apikey': apiKey,
+                            'Content-Type': 'application/json'
+                        }
                     });
 
                     const enriched = {
@@ -140,8 +154,11 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            const response = await axios.get(`${baseUrl}/instance/connectionState/${instanceName}`, {
-                headers: { 'apikey': apiKey }
+            const response = await axios.get(`${baseUrl}/instance/connectionState/${instanceName}?key=${apiKey}`, {
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
             return response.data;
         } catch (error) {
@@ -159,13 +176,16 @@ export class EvolutionApiService {
         }
 
         try {
-            const response = await axios.post(`${baseUrl}/instance/create`, {
+            const response = await axios.post(`${baseUrl}/instance/create?key=${apiKey}`, {
                 instanceName,
                 token: instanceName,
                 qrcode: true,
                 integration: "WHATSAPP-BAILEYS"
             }, {
-                headers: { 'apikey': apiKey }
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
 
             this.logger.log(`Instance created successfully: ${JSON.stringify(response.data)}`);
@@ -186,8 +206,11 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            const response = await axios.get(`${baseUrl}/instance/connect/${instanceName}`, {
-                headers: { 'apikey': apiKey }
+            const response = await axios.get(`${baseUrl}/instance/connect/${instanceName}?key=${apiKey}`, {
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
             this.logger.log(`QR Code response for ${instanceName}: ${JSON.stringify(response.data)}`);
             this.logger.log(`QR Code response for ${instanceName}: ${JSON.stringify(response.data)}`);
@@ -205,7 +228,10 @@ export class EvolutionApiService {
                     await new Promise(resolve => setTimeout(resolve, 3000));
 
                     const retryResponse = await axios.get(`${baseUrl}/instance/connect/${instanceName}`, {
-                        headers: { 'apikey': apiKey }
+                        headers: {
+                            'apikey': apiKey,
+                            'Content-Type': 'application/json'
+                        }
                     });
                     this.logger.log(`Retry QR Code response for ${instanceName}: ${JSON.stringify(retryResponse.data)}`);
                     data = retryResponse.data;
@@ -237,7 +263,10 @@ export class EvolutionApiService {
 
         try {
             const response = await axios.delete(`${baseUrl}/instance/logout/${instanceName}`, {
-                headers: { 'apikey': apiKey }
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
             return response.data;
         } catch (error) {
@@ -254,7 +283,10 @@ export class EvolutionApiService {
 
         try {
             const response = await axios.delete(`${baseUrl}/instance/delete/${instanceName}`, {
-                headers: { 'apikey': apiKey }
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
             return response.data;
         } catch (error) {
@@ -287,7 +319,10 @@ export class EvolutionApiService {
             this.logger.log(`Setting webhook for ${instanceName} to ${webhookUrl}. Payload: ${JSON.stringify(payload)}`);
 
             const response = await axios.post(`${baseUrl}/webhook/set/${instanceName}`, payload, {
-                headers: { 'apikey': apiKey }
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
             return response.data;
         } catch (error) {
@@ -315,7 +350,10 @@ export class EvolutionApiService {
             this.logger.log(`Setting settings for ${instanceName}. Payload: ${JSON.stringify(payload)}`);
 
             const response = await axios.post(`${baseUrl}/settings/set/${instanceName}`, payload, {
-                headers: { 'apikey': apiKey }
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
             return response.data;
         } catch (error) {
@@ -352,7 +390,10 @@ export class EvolutionApiService {
             this.logger.log(`Sending message to ${finalNumber} via ${instanceName}. Payload: ${JSON.stringify(payload)}`);
 
             const response = await axios.post(`${baseUrl}/message/sendText/${instanceName}`, payload, {
-                headers: { 'apikey': apiKey }
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
             this.logger.log(`Message sent result: ${JSON.stringify(response.data)}`);
             return response.data;
@@ -436,7 +477,10 @@ export class EvolutionApiService {
             this.logger.log(`Sending MEDIA to ${finalNumber} via ${instanceName}. Type: ${media.type}`);
 
             const response = await axios.post(`${baseUrl}/message/sendMedia/${instanceName}`, payload, {
-                headers: { 'apikey': apiKey }
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
             });
 
             this.logger.log(`Media sent result: ${JSON.stringify(response.data)}`);

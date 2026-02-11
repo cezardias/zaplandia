@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
@@ -16,7 +16,7 @@ export interface AIPrompt {
 }
 
 @Injectable()
-export class AiService {
+export class AiService implements OnModuleInit {
     private readonly logger = new Logger(AiService.name);
 
     constructor(
@@ -31,6 +31,66 @@ export class AiService {
         private evolutionApiService: EvolutionApiService,
         private integrationsService: IntegrationsService,
     ) { }
+
+    async onModuleInit() {
+        this.logger.log('Initializing AiService and seeding special prompts...');
+        try {
+            // Find all tenants (indirectly via integrations or prompts)
+            // or just seed for the system.
+            // Simplified: We'll seed when prompts are requested or on a timer, 
+            // but even better, just ensure the prompt exists for all known tenants.
+            // For now, let's create a method that can be called to ensure basic prompts exist.
+            await this.seedDefaultPrompts();
+        } catch (error) {
+            this.logger.error(`Failed to seed default prompts: ${error.message}`);
+        }
+    }
+
+    private async seedDefaultPrompts() {
+        const testerPromptName = 'Testador de Conversa e Estabilidade';
+        const testerPromptContent = `OBJETIVO: Simular uso humano para validar envio, recebimento, fila e leitura de mensagens em sistema de mensageria.
+
+PERFIL:
+- Técnico, Amigável, Conversa natural, Não robótico, Brasileiro.
+
+FUNÇÃO:
+- Conversar com outro agente simulando interações reais.
+- Variar tempos (mínimo: 10s, máximo: 240s, média: 60s).
+- Às vezes responde rápido, às vezes demora, às vezes responde só depois de 2 mensagens.
+- Simular comportamento: Visualizou mas não respondeu, saiu e voltou, mandou áudio, mandou texto curto, perguntou algo, mudou assunto.
+
+TIPOS DE MENSAGEM: Texto curto, texto médio, pergunta, resposta contextual, reação leve, emoji ocasional.
+
+MEMÓRIA CONTEXTUAL: Retome assuntos antigos e faça perguntas coerentes.
+ASSUNTOS: Sistema, API, Automação, Rotina, Café, Trabalho, Testes, Bugs, Ideias.
+
+VARIAÇÃO DE HUMOR: Normal, Animado, Neutro.
+
+ENCERRAMENTO: "vou voltar pro trampo aqui, depois falamos".
+
+REGRAS: Não enviar spam, não repetir frases, manter comportamento humano.
+
+INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
+
+        // Get all unique tenantIds from integrations
+        const integrations = await this.integrationRepository.find({ select: ['tenantId'] });
+        const tenantIds = [...new Set(integrations.map(i => i.tenantId))];
+
+        for (const tenantId of tenantIds) {
+            const existing = await this.aiPromptRepository.findOne({
+                where: { name: testerPromptName, tenantId }
+            });
+
+            if (!existing) {
+                this.logger.log(`Seeding "${testerPromptName}" for tenant ${tenantId}`);
+                await this.aiPromptRepository.save({
+                    name: testerPromptName,
+                    content: testerPromptContent,
+                    tenantId: tenantId
+                });
+            }
+        }
+    }
 
     /**
      * Get all AI prompts for a tenant
