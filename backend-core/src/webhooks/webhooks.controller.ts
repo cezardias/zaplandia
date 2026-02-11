@@ -142,38 +142,34 @@ export class WebhooksController {
     @Post('evolution')
     @HttpCode(HttpStatus.OK)
     async handleEvolution(@Body() payload: any) {
-        this.logger.log('Received Evolution Payload: ' + JSON.stringify(payload));
+        // --- EMERGENCY DEBUG LOGGING ---
+        this.logger.log(`[EVOLUTION_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
 
-        const { type, event, data, instance, sender } = payload;
-        const eventType = (type || event || '').toUpperCase();
+        const { event: eventType, sender, instance, data } = payload;
 
         // Extract tenantId using multiple strategies
         let tenantId = 'default';
         let instanceName = typeof instance === 'string' ? instance : (instance?.instanceName || instance?.name || '');
 
-        // Strategy 1: Top-level instance field (String or Object prop)
         if (instanceName && instanceName.startsWith('tenant_')) {
             const parts = instanceName.split('_');
-            // tenant_UUID_name
             if (parts.length >= 2) tenantId = parts[1];
-        }
-        // Strategy 2: Check sender field
-        else if (sender && sender.startsWith('tenant_')) {
+        } else if (sender && sender.startsWith('tenant_')) {
             instanceName = sender;
             const parts = sender.split('_');
             if (parts.length >= 2) tenantId = parts[1];
         }
 
+        this.logger.log(`[EVOLUTION_WEBHOOK] Event: ${eventType}, Tenant: ${tenantId}, Instance: ${instanceName}`);
+
         if (tenantId === 'default') {
-            this.logger.error(`[CRITICAL] FAILED TO EXTRACT TENANT ID from instance: ${JSON.stringify(instance)} (Type: ${typeof instance}) or sender: ${sender}. Defaulting to 'default' which may fail.`);
+            this.logger.error(`[CRITICAL] FAILED TO EXTRACT TENANT ID from payload. Key fields: instance=${instanceName}, sender=${sender}`);
         } else {
-            // Verify if tenant exists
             const tenantExists = await this.integrationsService.checkTenantExists(tenantId);
             if (!tenantExists) {
                 this.logger.warn(`[WEBHOOK] Tenant ${tenantId} does not exist in DB (orphaned instance?). Skipping message.`);
                 return { status: 'skipped_no_tenant' };
             }
-            this.logger.log(`Extracted tenantId: ${tenantId} from instance: ${instanceName}`);
         }
 
         if (eventType === 'MESSAGES_UPSERT' || eventType === 'SEND_MESSAGE' || eventType === 'MESSAGES.UPSERT' || eventType === 'SEND.MESSAGE') {
