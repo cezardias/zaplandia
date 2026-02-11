@@ -31,12 +31,11 @@ export class EvolutionApiService {
         }
 
         try {
-            const url = `${baseUrl}/instance/fetchInstances?key=${apiKey}`;
+            const url = `${baseUrl}/instance/fetchInstances`;
             this.logger.debug(`[EvolutionAPI] Calling GET: ${url}`);
             const response = await axios.get(url, {
                 headers: {
                     'apikey': apiKey,
-                    'Content-Type': 'application/json',
                     'User-Agent': 'ZaplandiaCore/1.0'
                 }
             });
@@ -65,10 +64,10 @@ export class EvolutionApiService {
             const enrichedInstances = await Promise.all(tenantInstances.map(async (inst: any) => {
                 const name = inst.name || inst.instance?.instanceName || inst.instanceName;
                 try {
-                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}?key=${apiKey}`, {
+                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}`, {
                         headers: {
                             'apikey': apiKey,
-                            'Content-Type': 'application/json'
+                            'User-Agent': 'ZaplandiaCore/1.0'
                         }
                     });
 
@@ -110,10 +109,12 @@ export class EvolutionApiService {
         }
 
         try {
-            const response = await axios.get(`${baseUrl}/instance/fetchInstances?key=${apiKey}`, {
+            const url = `${baseUrl}/instance/fetchInstances`;
+            this.logger.debug(`[EvolutionAPI] Calling GET: ${url}`);
+            const response = await axios.get(url, {
                 headers: {
                     'apikey': apiKey,
-                    'Content-Type': 'application/json'
+                    'User-Agent': 'ZaplandiaCore/1.0'
                 }
             });
 
@@ -127,10 +128,10 @@ export class EvolutionApiService {
 
                 // Fetch real-time status
                 try {
-                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}?key=${apiKey}`, {
+                    const statusRes = await axios.get(`${baseUrl}/instance/connectionState/${name}`, {
                         headers: {
                             'apikey': apiKey,
-                            'Content-Type': 'application/json'
+                            'User-Agent': 'ZaplandiaCore/1.0'
                         }
                     });
 
@@ -163,12 +164,11 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            const url = `${baseUrl}/instance/connectionState/${instanceName}?key=${apiKey}`;
+            const url = `${baseUrl}/instance/connectionState/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] GET status: ${url}`);
             const response = await axios.get(url, {
                 headers: {
                     'apikey': apiKey,
-                    'Content-Type': 'application/json',
                     'User-Agent': 'ZaplandiaCore/1.0'
                 }
             });
@@ -188,7 +188,7 @@ export class EvolutionApiService {
         }
 
         try {
-            const url = `${baseUrl}/instance/create?key=${apiKey}`;
+            const url = `${baseUrl}/instance/create`;
             this.logger.debug(`[EvolutionAPI] POST create: ${url}`);
             const response = await axios.post(url, {
                 instanceName,
@@ -221,12 +221,11 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            const url = `${baseUrl}/instance/connect/${instanceName}?key=${apiKey}`;
+            const url = `${baseUrl}/instance/connect/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] GET connect/qr: ${url}`);
             const response = await axios.get(url, {
                 headers: {
                     'apikey': apiKey,
-                    'Content-Type': 'application/json',
                     'User-Agent': 'ZaplandiaCore/1.0'
                 }
             });
@@ -239,10 +238,9 @@ export class EvolutionApiService {
 
                 // Try to logout/reset the instance and retry
                 try {
-                    await axios.delete(`${baseUrl}/instance/logout/${instanceName}?key=${apiKey}`, {
+                    await axios.delete(`${baseUrl}/instance/logout/${instanceName}`, {
                         headers: {
                             'apikey': apiKey,
-                            'Content-Type': 'application/json',
                             'User-Agent': 'ZaplandiaCore/1.0'
                         }
                     });
@@ -250,11 +248,10 @@ export class EvolutionApiService {
                     // Wait 3 seconds
                     await new Promise(resolve => setTimeout(resolve, 3000));
 
-                    const retryUrl = `${baseUrl}/instance/connect/${instanceName}?key=${apiKey}`;
+                    const retryUrl = `${baseUrl}/instance/connect/${instanceName}`;
                     const retryResponse = await axios.get(retryUrl, {
                         headers: {
                             'apikey': apiKey,
-                            'Content-Type': 'application/json',
                             'User-Agent': 'ZaplandiaCore/1.0'
                         }
                     });
@@ -287,12 +284,11 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            const url = `${baseUrl}/instance/logout/${instanceName}?key=${apiKey}`;
+            const url = `${baseUrl}/instance/logout/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] DELETE logout: ${url}`);
             const response = await axios.delete(url, {
                 headers: {
                     'apikey': apiKey,
-                    'Content-Type': 'application/json',
                     'User-Agent': 'ZaplandiaCore/1.0'
                 }
             });
@@ -310,12 +306,11 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
         try {
-            const url = `${baseUrl}/instance/delete/${instanceName}?key=${apiKey}`;
+            const url = `${baseUrl}/instance/delete/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] DELETE delete: ${url}`);
             const response = await axios.delete(url, {
                 headers: {
                     'apikey': apiKey,
-                    'Content-Type': 'application/json',
                     'User-Agent': 'ZaplandiaCore/1.0'
                 }
             });
@@ -347,7 +342,7 @@ export class EvolutionApiService {
                     "CALL"
                 ]
             };
-            const url = `${baseUrl}/webhook/set/${instanceName}?key=${apiKey}`;
+            const url = `${baseUrl}/webhook/set/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] POST webhook: ${url}`);
             const response = await axios.post(url, payload, {
                 headers: {
@@ -379,7 +374,7 @@ export class EvolutionApiService {
                 read_status: false,
                 sync_full_history: false
             };
-            const url = `${baseUrl}/settings/set/${instanceName}?key=${apiKey}`;
+            const url = `${baseUrl}/settings/set/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] POST settings: ${url}`);
             const response = await axios.post(url, payload, {
                 headers: {
@@ -414,7 +409,7 @@ export class EvolutionApiService {
                 linkPreview: true
             };
 
-            const url = `${baseUrl}/message/sendText/${instanceName}?key=${apiKey}`;
+            const url = `${baseUrl}/message/sendText/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] POST sendText: ${url}`);
             const response = await axios.post(url, payload, {
                 headers: {
@@ -501,7 +496,7 @@ export class EvolutionApiService {
                 fileName: media.fileName || 'file'
             };
 
-            const url = `${baseUrl}/message/sendMedia/${instanceName}?key=${apiKey}`;
+            const url = `${baseUrl}/message/sendMedia/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] POST sendMedia: ${url}`);
             const response = await axios.post(url, payload, {
                 headers: {
