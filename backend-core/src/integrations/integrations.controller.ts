@@ -119,19 +119,28 @@ export class IntegrationsController {
 
         // --- AUTOMATIC WEBHOOK SETUP (ON INSTANCE CREATION ONLY) ---
         try {
-            let host = process.env.API_URL;
-            if (!host) {
-                const protocol = req.protocol || 'https';
-                const requestHost = req.get('host');
-                if (requestHost) host = `${protocol}://${requestHost}`;
+            // Priority 1: Use INTERNAL_WEBHOOK_URL from docker-compose/environment
+            let webhookUrl = process.env.INTERNAL_WEBHOOK_URL;
+
+            // Priority 2: Construct from API_URL
+            if (!webhookUrl && process.env.API_URL) {
+                webhookUrl = `${process.env.API_URL.replace(/\/$/, '')}/webhooks/evolution`;
             }
 
-            if (host) {
-                const webhookUrl = `${host.replace(/\/$/, '')}/webhooks/evolution`;
+            // Priority 3: Try to detect from request (least reliable)
+            if (!webhookUrl) {
+                const protocol = req.protocol || 'https';
+                const requestHost = req.get('host');
+                if (requestHost) {
+                    webhookUrl = `${protocol}://${requestHost}/webhooks/evolution`;
+                }
+            }
+
+            if (webhookUrl) {
                 console.log(`[CREATE_INSTANCE_WEBHOOK] Auto-configuring webhook for ${instanceName}: ${webhookUrl}`);
                 await this.evolutionApiService.setWebhook(req.user.tenantId, instanceName, webhookUrl);
             } else {
-                console.error(`[CREATE_INSTANCE_WEBHOOK] Could not detect API URL. Webhook NOT configured for ${instanceName}`);
+                console.error(`[CREATE_INSTANCE_WEBHOOK] Could not detect webhook URL. Set INTERNAL_WEBHOOK_URL env var. Instance: ${instanceName}`);
             }
         } catch (webhookErr) {
             console.error(`[CREATE_INSTANCE_WEBHOOK_ERROR] Failed to auto-configure webhook for ${instanceName}: ${webhookErr.message}`);
@@ -173,15 +182,28 @@ export class IntegrationsController {
     @UseGuards(JwtAuthGuard)
     @Post('evolution/webhook/:instanceName')
     async setEvolutionWebhook(@Request() req, @Param('instanceName') instanceName: string) {
-        let host = process.env.API_URL;
-        if (!host) {
-            const protocol = req.protocol || 'https';
-            const requestHost = req.get('host');
-            if (requestHost) host = `${protocol}://${requestHost}`;
+        // [MANUAL_WEBHOOK] Priority 1: Use INTERNAL_WEBHOOK_URL from docker-compose
+        let webhookUrl = process.env.INTERNAL_WEBHOOK_URL;
+
+        // Priority 2: Construct from API_URL
+        if (!webhookUrl && process.env.API_URL) {
+            webhookUrl = `${process.env.API_URL.replace(/\/$/, '')}/webhooks/evolution`;
         }
 
-        const webhookUrl = `${(host || 'https://api.zaplandia.com.br').replace(/\/$/, '')}/webhooks/evolution`;
-        console.log(`[MANUAL_WEBHOOK] Using detected URL: ${webhookUrl}`);
+        // Priority 3: Try to detect from request
+        if (!webhookUrl) {
+            const protocol = req.protocol || 'https';
+            const host = req.get('host');
+            if (host) {
+                webhookUrl = `${protocol}://${host}/webhooks/evolution`;
+            }
+        }
+
+        if (!webhookUrl) {
+            throw new Error('Could not determine webhook URL. Please set INTERNAL_WEBHOOK_URL environment variable.');
+        }
+
+        console.log(`[MANUAL_WEBHOOK] Configuring webhook for ${instanceName}: ${webhookUrl}`);
         return this.evolutionApiService.setWebhook(req.user.tenantId, instanceName, webhookUrl);
     }
 
