@@ -21,11 +21,12 @@ export class IntegrationsController {
         const dbIntegrations = await this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
 
         // 2. Fetch EvolutionAPI Instances (WhatsApp)
+        let liveInstancesRaw: any[] = [];
         let evolutionInstances: any[] = [];
         try {
             // Pass user role to allow superadmin to see all
-            const instances = await this.evolutionApiService.listInstances(req.user.tenantId, req.user.role);
-            evolutionInstances = await Promise.all(instances.map(async (inst: any) => {
+            liveInstancesRaw = await this.evolutionApiService.listInstances(req.user.tenantId, req.user.role);
+            evolutionInstances = await Promise.all(liveInstancesRaw.map(async (inst: any) => {
                 const rawName = inst.name || inst.instance?.instanceName || inst.instanceName;
                 // Clean name: remove technical prefix "tenant_<uuid>_"
                 // We keep everything after the second underscore
@@ -37,7 +38,7 @@ export class IntegrationsController {
                     (i.settings?.instanceName === rawName || i.credentials?.instanceName === rawName)
                 );
 
-                // Skip if already in database
+                // Skip if already in database (we will process it in step 3)
                 if (dbIntegration) {
                     return null;
                 }
@@ -68,10 +69,17 @@ export class IntegrationsController {
                     ? instanceName.replace(/^tenant_[0-9a-fA-F-]{36}_/, '')
                     : 'Evolution';
 
+                // Check if this DB instance actually exists in the live list from API
+                const liveInst = liveInstancesRaw.find(li =>
+                    (li.name || li.instance?.instanceName || li.instanceName) === instanceName
+                );
+
                 return {
                     ...i,
                     name: friendlyName,
-                    instanceName: instanceName
+                    instanceName: instanceName,
+                    // If not found in live API, mark as DISCONNECTED to avoid "ghost" instances
+                    status: liveInst ? (liveInst.status === 'open' || liveInst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED') : 'DISCONNECTED'
                 };
             }
 
