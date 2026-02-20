@@ -176,7 +176,13 @@ export class WebhooksController {
             }
         }
 
-        if (eventType === 'MESSAGES_UPSERT' || eventType === 'SEND_MESSAGE' || eventType === 'MESSAGES.UPSERT' || eventType === 'SEND.MESSAGE') {
+        // Normalize eventType: EvolutionAPI may send 'messages.upsert' or 'MESSAGES_UPSERT'
+        // Normalize to uppercase with underscores for consistent comparison
+        const normalizedEvent = (eventType || '').toUpperCase().replace(/\./g, '_');
+        this.logger.debug(`[EVOLUTION_WEBHOOK] Normalized event: ${normalizedEvent} (original: ${eventType})`);
+
+        if (normalizedEvent === 'MESSAGES_UPSERT' || normalizedEvent === 'SEND_MESSAGE') {
+
             const messageData = data.data || data; // Handle potential structure variations
 
             if (!messageData || !messageData.key) {
@@ -457,7 +463,7 @@ export class WebhooksController {
                 this.logger.error(`Error processing WhatsApp message: ${err.message}`, err.stack);
                 throw err;
             }
-        } else if (eventType === 'MESSAGES_UPDATE' || eventType === 'MESSAGES.UPDATE') {
+        } else if (normalizedEvent === 'MESSAGES_UPDATE') {
             // ACK / READ STATUS UPDATES
             // This is critical for "Learning" LIDs. 
             // If we sent to a Phone Number but get an ACK from a LID, we link them here.
