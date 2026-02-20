@@ -331,7 +331,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     /**
      * Send AI response via Evolution API
      */
-    async sendAIResponse(contact: Contact, aiResponse: string, tenantId: string, instanceNameOverride?: string): Promise<void> {
+    async sendAIResponse(contact: Contact, aiResponse: string, tenantId: string, instanceNameOverride?: string, senderOverride?: string): Promise<void> {
         // Variables needed in catch block for healing
         let targetNumber = '';
         let useContact = contact;
@@ -344,8 +344,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             useInstance = instanceNameOverride || useContact.instance;
 
             // Get target number
-            // PRIORITY: If we have a numeric phoneNumber, use that with @s.whatsapp.net
-            if (useContact.phoneNumber && useContact.phoneNumber.length > 8) {
+            // PRIORITY 1: Caller-supplied override (e.g. payload.sender when remoteJid is @lid)
+            if (senderOverride) {
+                targetNumber = senderOverride;
+                this.logger.debug(`[AI_SEND] Using caller-supplied senderOverride: ${targetNumber}`);
+                // PRIORITY 2: If we have a numeric phoneNumber, use that with @s.whatsapp.net
+            } else if (useContact.phoneNumber && useContact.phoneNumber.length > 8) {
                 targetNumber = `${useContact.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
                 this.logger.debug(`[AI_SEND] Using phone-based JID for stability: ${targetNumber}`);
             } else {
@@ -367,6 +371,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             await this.evolutionApiService.sendText(tenantId, useInstance, targetNumber, aiResponse);
 
             this.logger.log(`AI response sent to ${targetNumber} via ${useInstance}`);
+
         } catch (error) {
             const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
             this.logger.error(`Failed to send AI response: ${errorMsg}`);
