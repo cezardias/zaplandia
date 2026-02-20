@@ -15,8 +15,9 @@ import {
     ArrowLeft,
     Phone,
     Link2,
-    Unlink,
-    Filter
+    Bot,
+    Save,
+    X
 } from 'lucide-react';
 
 interface WhatsAppInstance {
@@ -47,11 +48,94 @@ export default function WhatsAppInstancesPage() {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [selectedTenantFilter, setSelectedTenantFilter] = useState<string>('all');
 
+    // AI Configuration
+    const [aiModalInstance, setAiModalInstance] = useState<string | null>(null);
+    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '' });
+    const [isSavingAI, setIsSavingAI] = useState(false);
+    const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
+    const [dbIntegrations, setDbIntegrations] = useState<any[]>([]); // DB integrations for AI config
+
     useEffect(() => {
         if (token) {
             fetchInstances();
+            fetchPrompts();
+            fetchDbIntegrations();
         }
     }, [token]);
+
+    const fetchPrompts = async () => {
+        try {
+            const res = await fetch('/api/ai/prompts', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) setSavedPrompts(data);
+            }
+        } catch (e) { console.error('Failed to fetch prompts', e); }
+    };
+
+    const fetchDbIntegrations = async () => {
+        try {
+            const res = await fetch('/api/integrations', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) setDbIntegrations(data.filter((i: any) => i.provider === 'evolution'));
+            }
+        } catch (e) { console.error('Failed to fetch db integrations', e); }
+    };
+
+    const openAiModal = (instanceName: string) => {
+        const dbInt = dbIntegrations.find((i: any) =>
+            i.credentials?.instanceName === instanceName ||
+            i.settings?.instanceName === instanceName ||
+            i.instanceName === instanceName
+        );
+        setAiModalInstance(instanceName);
+        setAiConfig({
+            enabled: dbInt?.aiEnabled || false,
+            promptId: dbInt?.aiPromptId || ''
+        });
+    };
+
+    const handleSaveAI = async () => {
+        if (!aiModalInstance) return;
+        setIsSavingAI(true);
+        try {
+            // Find DB integration for this instance to get the integration ID
+            const dbInt = dbIntegrations.find((i: any) =>
+                i.credentials?.instanceName === aiModalInstance ||
+                i.settings?.instanceName === aiModalInstance ||
+                i.instanceName === aiModalInstance
+            );
+
+            // Use the integration ID if found, otherwise use the instanceName (controller will create one)
+            const integrationId = dbInt?.id || aiModalInstance;
+
+            const res = await fetch(`/api/ai/integration/${integrationId}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    enabled: aiConfig.enabled,
+                    promptId: aiConfig.promptId || undefined,
+                })
+            });
+
+            if (res.ok) {
+                setSuccessMessage(`IA ${aiConfig.enabled ? 'ativada' : 'desativada'} com sucesso para esta instância!`);
+                setAiModalInstance(null);
+                await fetchDbIntegrations(); // Refresh to show updated state
+            } else {
+                const err = await res.json();
+                setError(`Erro ao salvar IA: ${err.message || JSON.stringify(err)}`);
+            }
+        } catch (e: any) {
+            setError(`Erro ao salvar IA: ${e.message}`);
+        } finally {
+            setIsSavingAI(false);
+        }
+    };
 
     const fetchInstances = async () => {
         setIsLoading(true);
@@ -435,15 +519,35 @@ export default function WhatsAppInstancesPage() {
                                                         <span>Conectar (QR Code)</span>
                                                     </button>
                                                 )}
-                                                {isConnected && (
-                                                    <button
-                                                        onClick={() => router.push(`/dashboard/crm/campaigns?instance=${instanceName}`)}
-                                                        className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-bold transition border border-white/10"
-                                                    >
-                                                        <Link2 className="w-4 h-4" />
-                                                        <span>Associar a Campanha</span>
-                                                    </button>
-                                                )}
+                                                {isConnected && (() => {
+                                                    const dbInt = dbIntegrations.find((i: any) =>
+                                                        i.credentials?.instanceName === instanceName ||
+                                                        i.settings?.instanceName === instanceName ||
+                                                        i.instanceName === instanceName
+                                                    );
+                                                    const aiIsActive = dbInt?.aiEnabled;
+                                                    return (
+                                                        <>
+                                                            <button
+                                                                onClick={() => router.push(`/dashboard/crm/campaigns?instance=${instanceName}`)}
+                                                                className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-bold transition border border-white/10"
+                                                            >
+                                                                <Link2 className="w-4 h-4" />
+                                                                <span>Associar a Campanha</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => openAiModal(instanceName)}
+                                                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-bold transition border ${aiIsActive
+                                                                    ? 'bg-primary/20 border-primary/40 text-primary'
+                                                                    : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
+                                                                    }`}
+                                                            >
+                                                                <Bot className="w-4 h-4" />
+                                                                <span>{aiIsActive ? 'IA Ativa ✓' : 'Configurar IA'}</span>
+                                                            </button>
+                                                        </>
+                                                    );
+                                                })()}
                                                 <button
                                                     onClick={() => deleteInstance(instanceName)}
                                                     className="flex items-center space-x-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-sm font-bold transition"
@@ -533,6 +637,91 @@ export default function WhatsAppInstancesPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* AI Configuration Modal */}
+                {aiModalInstance && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <div className="bg-surface border border-white/10 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+                            {/* Header */}
+                            <div className="p-6 border-b border-white/5 bg-primary/5 flex justify-between items-center">
+                                <div className="flex items-center space-x-3">
+                                    <div className="p-3 bg-white/5 rounded-2xl">
+                                        <Bot className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black">Agente de IA</h2>
+                                        <p className="text-gray-400 text-xs">{getDisplayName(aiModalInstance)}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setAiModalInstance(null)} className="p-2 hover:bg-white/10 rounded-xl transition">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-6 space-y-5">
+                                {/* Toggle */}
+                                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <div>
+                                        <p className="font-bold">Ativar Automação de IA</p>
+                                        <p className="text-xs text-gray-400">O robô responderá automaticamente às mensagens</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setAiConfig({ ...aiConfig, enabled: !aiConfig.enabled })}
+                                        className={`w-14 h-8 rounded-full transition-all relative ${aiConfig.enabled ? 'bg-primary' : 'bg-gray-600'}`}
+                                    >
+                                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${aiConfig.enabled ? 'left-7' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
+                                {/* Prompt Selector */}
+                                <div className="space-y-3">
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Prompt do Agente</label>
+                                    {savedPrompts.length === 0 ? (
+                                        <p className="text-xs text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
+                                            Nenhum prompt salvo. Crie prompts em <strong>Configurações &gt; Agentes de IA</strong> primeiro.
+                                        </p>
+                                    ) : (
+                                        <select
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl text-sm px-4 py-3 text-white outline-none focus:border-primary transition"
+                                            value={aiConfig.promptId}
+                                            onChange={(e) => setAiConfig({ ...aiConfig, promptId: e.target.value })}
+                                        >
+                                            <option value="">Selecione um prompt...</option>
+                                            {savedPrompts.map(p => (
+                                                <option key={p.id} value={p.id}>{p.name}</option>
+                                            ))}
+                                        </select>
+                                    )}
+                                    {aiConfig.promptId && (() => {
+                                        const p = savedPrompts.find(x => x.id === aiConfig.promptId);
+                                        return p ? (
+                                            <p className="text-xs text-gray-400 bg-white/5 border border-white/10 rounded-xl p-3 line-clamp-3">{p.content}</p>
+                                        ) : null;
+                                    })()}
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-6 bg-white/5 flex space-x-3">
+                                <button
+                                    onClick={() => setAiModalInstance(null)}
+                                    className="flex-1 px-4 py-3 rounded-2xl border border-white/10 font-bold hover:bg-white/5 transition text-sm"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleSaveAI}
+                                    disabled={isSavingAI || (aiConfig.enabled && !aiConfig.promptId)}
+                                    className="flex-[2] bg-primary hover:bg-primary-dark text-white px-4 py-3 rounded-2xl font-black shadow-lg shadow-primary/20 flex items-center justify-center space-x-2 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                >
+                                    {isSavingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    <span>Salvar Configuração</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

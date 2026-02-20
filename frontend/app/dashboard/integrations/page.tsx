@@ -54,7 +54,7 @@ export default function IntegrationsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [connectingId, setConnectingId] = useState<string | null>(null);
     const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
-    const [aiConfig, setAiConfig] = useState({ enabled: false, prompt: '' });
+    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '' });
     const [isSavingAI, setIsSavingAI] = useState(false);
     const [showEvolutionModal, setShowEvolutionModal] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
@@ -62,13 +62,10 @@ export default function IntegrationsPage() {
     useEffect(() => {
         if (token) {
             fetchIntegrations();
-            /*
             fetch('/api/ai/prompts', { headers: { 'Authorization': `Bearer ${token}` } })
                 .then(res => res.json())
-                .then(data => setSavedPrompts(data))
-                .catch(err => console.error(err));
-            */
-            setSavedPrompts([]);
+                .then(data => { if (Array.isArray(data)) setSavedPrompts(data); })
+                .catch(err => console.error('Erro ao buscar prompts:', err));
         }
     }, [token]);
 
@@ -130,8 +127,8 @@ export default function IntegrationsPage() {
     const openAIModal = (integration: any) => {
         setSelectedIntegration(integration);
         setAiConfig({
-            enabled: integration.settings?.aiEnabled || false,
-            prompt: integration.settings?.aiPrompt || ''
+            enabled: integration.aiEnabled || false,
+            promptId: integration.aiPromptId || ''
         });
     };
 
@@ -139,23 +136,25 @@ export default function IntegrationsPage() {
         if (!selectedIntegration) return;
         setIsSavingAI(true);
         try {
-            const res = await fetch(`/api/integrations/${selectedIntegration.id}`, {
-                method: 'PATCH',
+            // Use the correct endpoint that updates aiEnabled and aiPromptId columns directly
+            const integrationId = selectedIntegration.integrationId || selectedIntegration.id;
+            const res = await fetch(`/api/ai/integration/${integrationId}/toggle`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    settings: {
-                        ...selectedIntegration.settings,
-                        aiEnabled: aiConfig.enabled,
-                        aiPrompt: aiConfig.prompt
-                    }
+                    enabled: aiConfig.enabled,
+                    promptId: aiConfig.promptId || undefined,
                 })
             });
             if (res.ok) {
                 fetchIntegrations();
                 setSelectedIntegration(null);
+            } else {
+                const err = await res.json();
+                console.error('Erro ao salvar IA:', err);
             }
         } catch (err) {
             console.error('Erro ao salvar config IA:', err);
@@ -326,30 +325,30 @@ export default function IntegrationsPage() {
                             </div>
 
                             <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Instruções do Agente (Prompt)</label>
-
+                                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Prompt do Agente</label>
+                                {savedPrompts.length === 0 ? (
+                                    <p className="text-xs text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
+                                        Nenhum prompt salvo. Crie prompts em <strong>Configurações &gt; Agentes de IA</strong> primeiro.
+                                    </p>
+                                ) : (
                                     <select
-                                        className="bg-black/40 border border-white/10 rounded-lg text-xs px-2 py-1 text-white outline-none"
-                                        onChange={(e) => {
-                                            const selected = savedPrompts.find(p => p.id === e.target.value);
-                                            if (selected) setAiConfig({ ...aiConfig, prompt: selected.content });
-                                        }}
-                                        defaultValue=""
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl text-sm px-4 py-3 text-white outline-none focus:border-primary transition"
+                                        value={aiConfig.promptId}
+                                        onChange={(e) => setAiConfig({ ...aiConfig, promptId: e.target.value })}
                                     >
-                                        <option value="" disabled>Carregar Prompt Salvo...</option>
+                                        <option value="">Selecione um prompt...</option>
                                         {savedPrompts.map(p => (
                                             <option key={p.id} value={p.id}>{p.name}</option>
                                         ))}
                                     </select>
-                                </div>
-                                <textarea
-                                    value={aiConfig.prompt}
-                                    onChange={(e) => setAiConfig({ ...aiConfig, prompt: e.target.value })}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm h-48 focus:border-primary outline-none transition-all resize-none"
-                                    placeholder="Ex: Você é um vendedor simpático do Mercado Livre. Sempre tente fechar a venda e tire dúvidas técnicas sobre os produtos..."
-                                />
-                                <p className="text-[10px] text-gray-500">Defina a personalidade e as regras de abordagem para este canal específico.</p>
+                                )}
+                                {aiConfig.promptId && (() => {
+                                    const p = savedPrompts.find(x => x.id === aiConfig.promptId);
+                                    return p ? (
+                                        <p className="text-xs text-gray-400 bg-white/5 border border-white/10 rounded-xl p-3 line-clamp-3">{p.content}</p>
+                                    ) : null;
+                                })()}
+                                <p className="text-[10px] text-gray-500">Selecione o prompt salvo que define a personalidade do agente para este canal.</p>
                             </div>
                         </div>
 
