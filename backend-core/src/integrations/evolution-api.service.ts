@@ -408,7 +408,8 @@ export class EvolutionApiService {
             const contacts = response.data;
             const list = Array.isArray(contacts) ? contacts : (contacts?.data || []);
             const match = list.find((c: any) => c.id === lidJid || c.jid === lidJid || c.lid === lidJid);
-            const realJid = match?.jid || match?.id;
+            // 'number' is the documented field from EvolutionAPI findContacts response
+            const realJid = match?.number || match?.jid || match?.id;
             if (realJid && !realJid.includes('@lid')) {
                 this.logger.log(`[LID_RESOLVE] Strategy 1 success: ${lidJid} -> ${realJid}`);
                 return realJid;
@@ -425,8 +426,11 @@ export class EvolutionApiService {
             const contacts = response.data;
             const list = Array.isArray(contacts) ? contacts : (contacts?.data || []);
             const match = list.find((c: any) => c.id === lidJid || c.jid === lidJid);
-            const phone = match?.phoneNumber || match?.remoteJid;
-            const realJid = phone ? `${phone.replace(/\D/g, '')}@s.whatsapp.net` : (match?.jid && !match.jid.includes('@lid') ? match.jid : null);
+            // 'number' is the primary documented field, fallback to other fields
+            const rawJid = match?.number || match?.phoneNumber || match?.remoteJid;
+            const realJid = rawJid
+                ? (rawJid.includes('@') ? rawJid : `${rawJid.replace(/\D/g, '')}@s.whatsapp.net`)
+                : (match?.jid && !match.jid.includes('@lid') ? match.jid : null);
             if (realJid) {
                 this.logger.log(`[LID_RESOLVE] Strategy 2 success: ${lidJid} -> ${realJid}`);
                 return realJid;
@@ -441,7 +445,7 @@ export class EvolutionApiService {
             this.logger.debug(`[LID_RESOLVE] Strategy 3: GET findContact (singular) for ${lidJid}`);
             const response = await axios.get(url, { headers });
             const data = response.data;
-            const realJid = data?.jid || data?.id || data?.remoteJid;
+            const realJid = data?.number || data?.jid || data?.id || data?.remoteJid;
             if (realJid && !realJid.includes('@lid')) {
                 this.logger.log(`[LID_RESOLVE] Strategy 3 success: ${lidJid} -> ${realJid}`);
                 return realJid;
@@ -531,9 +535,12 @@ export class EvolutionApiService {
             const isExistsError = errorString.includes('"exists":false') || errorString.includes('not found');
             const cleanNum = number.replace(/\D/g, '');
 
+            // @lid: do NOT skip silently - log and rethrow so ai.service.ts fallback logic handles it
+            // Some newer Evolution API versions support direct @lid send, so we let it propagate
             if (isExistsError && number.includes('@lid')) {
-                this.logger.warn(`[EvolutionAPI] Cannot send to @lid JID ${number}. LID delivery not supported by Evolution API. Message will be queued for next reply.`);
-                return { status: 'skipped_lid', number };
+                this.logger.warn(`[EvolutionAPI] sendText to @lid ${number} failed (exists:false). If STORE_CONTACTS=true is set in EvolutionAPI .env, resolveLid should have resolved this before reaching here.`);
+                // Rethrow as a clear error for the caller
+                throw new Error(`LID_NOT_RESOLVED: Cannot send to @lid JID ${number}. Enable STORE_CONTACTS=true in EvolutionAPI .env.`);
             }
 
             if (isExistsError && cleanNum.startsWith('55')) {
