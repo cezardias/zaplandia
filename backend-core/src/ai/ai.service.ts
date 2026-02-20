@@ -375,8 +375,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     // Persist resolved JID back to contact so future messages don't re-resolve
                     await this.contactRepository.update(useContact.id, { externalId: resolvedJid });
                 } else {
-                    this.logger.warn(`[AI_SEND] LID ${targetNumber} could not be resolved. Skipping AI send for this message.`);
-                    return;
+                    throw new Error(`LID ${targetNumber} could not be resolved. Requires STORE_CONTACTS=true in EvolutionAPI.`);
                 }
             }
 
