@@ -387,6 +387,60 @@ export class EvolutionApiService {
         }
     }
 
+    /**
+     * Resolve a @lid JID to a real phone @s.whatsapp.net JID.
+     * WhatsApp Multi-Device sends @lid for linked-device contacts.
+     * Returns null if resolution fails.
+     */
+    async resolveLid(tenantId: string, instanceName: string, lidJid: string): Promise<string | null> {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) return null;
+
+        try {
+            // Try fetchProfile endpoint first (works in most EvolutionAPI versions)
+            const url = `${baseUrl}/chat/fetchProfile/${instanceName}`;
+            this.logger.debug(`[LID_RESOLVE] Querying fetchProfile for ${lidJid}`);
+            const response = await axios.post(url,
+                { number: lidJid },
+                { headers: { 'apikey': apiKey, 'Content-Type': 'application/json' } }
+            );
+            const data = response.data;
+            // Response may have id, jid, wid or similar fields with the real JID
+            const realJid = data?.id || data?.jid || data?.wid;
+            if (realJid && !realJid.includes('@lid')) {
+                this.logger.log(`[LID_RESOLVE] Resolved ${lidJid} -> ${realJid}`);
+                return realJid;
+            }
+        } catch (e1) {
+            this.logger.debug(`[LID_RESOLVE] fetchProfile failed: ${e1.message}`);
+        }
+
+        try {
+            // Fallback: try findContacts endpoint
+            const url = `${baseUrl}/chat/findContacts/${instanceName}`;
+            const response = await axios.post(url,
+                { where: { id: lidJid } },
+                { headers: { 'apikey': apiKey, 'Content-Type': 'application/json' } }
+            );
+            const contacts = response.data;
+            const match = Array.isArray(contacts) ? contacts.find((c: any) => c.id === lidJid || c.jid === lidJid) : null;
+            const realJid = match?.phoneNumber ? `${match.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net` : null;
+            if (realJid) {
+                this.logger.log(`[LID_RESOLVE] Resolved via findContacts ${lidJid} -> ${realJid}`);
+                return realJid;
+            }
+        } catch (e2) {
+            this.logger.debug(`[LID_RESOLVE] findContacts failed: ${e2.message}`);
+        }
+
+        this.logger.warn(`[LID_RESOLVE] Could not resolve LID ${lidJid} to phone JID. Will skip AI response for this message.`);
+        return null;
+    }
+
+
+
     async setSettings(tenantId: string, instanceName: string) {
         const baseUrl = await this.getBaseUrl(tenantId);
         const apiKey = await this.getApiKey(tenantId);

@@ -344,7 +344,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             useInstance = instanceNameOverride || useContact.instance;
 
             // Get target number
-            // PRIORITY 1: Caller-supplied override (e.g. payload.sender when remoteJid is @lid)
+            // PRIORITY 1: Caller-supplied override
             if (senderOverride) {
                 targetNumber = senderOverride;
                 this.logger.debug(`[AI_SEND] Using caller-supplied senderOverride: ${targetNumber}`);
@@ -365,12 +365,29 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const cleanNumber = targetNumber.replace(/:[0-9]+/, '');
             targetNumber = cleanNumber.includes('@') ? cleanNumber : `${cleanNumber.replace(/\D/g, '')}@s.whatsapp.net`;
 
+            // LID RESOLUTION: If still @lid, try to resolve to real phone JID via Evolution API
+            if (targetNumber.includes('@lid')) {
+                this.logger.log(`[AI_SEND] Target is @lid — attempting LID resolution for ${targetNumber}`);
+                const resolvedJid = await this.evolutionApiService.resolveLid(tenantId, useInstance, targetNumber);
+                if (resolvedJid) {
+                    this.logger.log(`[AI_SEND] LID resolved: ${targetNumber} -> ${resolvedJid}`);
+                    targetNumber = resolvedJid;
+                    // Persist resolved JID back to contact so future messages don't re-resolve
+                    await this.contactRepository.update(useContact.id, { externalId: resolvedJid });
+                } else {
+                    this.logger.warn(`[AI_SEND] LID ${targetNumber} could not be resolved. Skipping AI send for this message.`);
+                    return;
+                }
+            }
+
             this.logger.log(`Sending AI response to ${targetNumber} via ${useInstance}`);
 
             // Send via Evolution API
             await this.evolutionApiService.sendText(tenantId, useInstance, targetNumber, aiResponse);
 
             this.logger.log(`AI response sent to ${targetNumber} via ${useInstance}`);
+
+
 
         } catch (error) {
             const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
