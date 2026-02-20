@@ -433,11 +433,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const systemInstruction = context || "Você é o assistente da Zaplandia.";
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
-            // 6. Call Gemini API manually (generateContent)
+            // 6. Call Gemini API manually (Resilient Fallback List)
             const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
+                'gemini-2.0-flash',
                 'gemini-1.5-flash',
+                'gemini-1.5-flash-8b',
+                'gemini-1.5-pro',
                 'gemini-2.0-flash-exp'
             ];
             const uniqueModels = [...new Set(modelsToTry)];
