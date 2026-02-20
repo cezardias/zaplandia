@@ -151,13 +151,17 @@ export class WebhooksController {
         let tenantId = 'default';
         let instanceName = typeof instance === 'string' ? instance : (instance?.instanceName || instance?.name || '');
 
-        if (instanceName && instanceName.startsWith('tenant_')) {
-            const parts = instanceName.split('_');
-            if (parts.length >= 2) tenantId = parts[1];
-        } else if (sender && sender.startsWith('tenant_')) {
-            instanceName = sender;
-            const parts = sender.split('_');
-            if (parts.length >= 2) tenantId = parts[1];
+        // Strategy 1: regex to extract UUID from tenant_{UUID}_... format (most reliable)
+        const uuidMatch = instanceName.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+        if (uuidMatch) {
+            tenantId = uuidMatch[1];
+        } else if (sender && typeof sender === 'string') {
+            // Strategy 2: try sender field
+            const senderMatch = sender.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+            if (senderMatch) {
+                tenantId = senderMatch[1];
+                instanceName = sender;
+            }
         }
 
         this.logger.log(`[EVOLUTION_WEBHOOK] Event: ${eventType}, Tenant: ${tenantId}, Instance: ${instanceName}`);

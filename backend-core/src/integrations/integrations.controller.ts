@@ -178,6 +178,13 @@ export class IntegrationsController {
         return this.evolutionApiService.getInstanceStatus(req.user.tenantId, instanceName);
     }
 
+    // Get current webhook configuration for an instance
+    @UseGuards(JwtAuthGuard)
+    @Get('evolution/webhook/:instanceName')
+    async getEvolutionWebhook(@Request() req, @Param('instanceName') instanceName: string) {
+        return this.evolutionApiService.getWebhook(req.user.tenantId, instanceName);
+    }
+
     // Manual Webhook Setup (Force)
     @UseGuards(JwtAuthGuard)
     @Post('evolution/webhook/:instanceName')

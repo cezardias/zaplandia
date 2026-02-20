@@ -364,6 +364,29 @@ export class EvolutionApiService {
         }
     }
 
+    async getWebhook(tenantId: string, instanceName: string) {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+
+        if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
+
+        try {
+            const url = `${baseUrl}/webhook/find/${instanceName}`;
+            this.logger.debug(`[EvolutionAPI] GET webhook info: ${url}`);
+            const response = await axios.get(url, {
+                headers: {
+                    'apikey': apiKey,
+                    'User-Agent': 'ZaplandiaCore/1.0'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            const errorData = error.response?.data || error.message;
+            this.logger.error(`Erro ao buscar webhook no EvolutionAPI: ${JSON.stringify(errorData)}`);
+            throw error;
+        }
+    }
+
     async setSettings(tenantId: string, instanceName: string) {
         const baseUrl = await this.getBaseUrl(tenantId);
         const apiKey = await this.getApiKey(tenantId);
