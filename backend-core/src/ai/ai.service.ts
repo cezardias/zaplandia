@@ -259,12 +259,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const configuredModel = integration.aiModel || 'gemini-1.5-flash';
             const modelsToTry = [
                 configuredModel,
-                'gemini-1.5-flash-latest',
+                'gemini-2.0-flash-lite-preview-02-05',
                 'gemini-2.0-flash',
-                'gemini-1.5-flash-8b',
-                'gemini-1.5-pro-latest',
+                'gemini-1.5-flash-002',
                 'gemini-1.5-flash',
-                'gemini-2.0-flash-exp'
+                'gemini-1.5-flash-8b',
+                'gemini-1.5-pro'
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
@@ -416,12 +416,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
-                'gemini-1.5-flash-latest',
+                'gemini-2.0-flash-lite-preview-02-05',
                 'gemini-2.0-flash',
-                'gemini-1.5-flash-8b',
-                'gemini-1.5-pro-latest',
+                'gemini-1.5-flash-002',
                 'gemini-1.5-flash',
-                'gemini-2.0-flash-exp'
+                'gemini-1.5-flash-8b',
+                'gemini-1.5-pro'
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
@@ -564,13 +564,24 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
         for (const version of versions) {
             try {
-                const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${cleanApiKey}`;
+                // According to docs, we can use just the header or the query param. 
+                // We'll use the header for cleaner URLs.
+                const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent`;
+
                 const response = await axios.post(url, {
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens }
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: maxTokens,
+                        topP: 0.95,
+                        topK: 40
+                    }
                 }, {
-                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cleanApiKey },
-                    timeout: 20000
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': cleanApiKey
+                    },
+                    timeout: 25000
                 });
 
                 const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -578,16 +589,27 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             } catch (error) {
                 lastError = error;
                 const status = error.response?.status;
-                // If 404, try the other version. Otherwise (429, 503) rethrow to outer model loop
+                const errorData = error.response?.data?.error;
+
+                // If 404, the model might be in the other version or doesn't exist.
                 if (status === 404) {
-                    this.logger.debug(`[AI_ROUTING] Model ${model} NOT FOUND in ${version}. Trying next...`);
+                    this.logger.debug(`[AI_ROUTING] Model ${model} NOT FOUND in ${version}.`);
                     continue;
                 }
+
+                // If 429 (Quota) or 503 (Overloaded), we log and rethrow so the outer loop tries the NEXT model.
+                if (status === 429 || status === 503 || status === 500) {
+                    this.logger.warn(`[AI_ROUTING] Model ${model} in ${version} returned ${status}. Trying next model...`);
+                    throw error;
+                }
+
                 throw error;
             }
         }
+
+        // If we exhausted versions and still 404, throw to outer loop
         if (lastError?.response?.status === 404) {
-            throw lastError; // Preserve 404 for the outer loop if both versions failed
+            throw lastError;
         }
         return null;
     }
