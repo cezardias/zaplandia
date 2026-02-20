@@ -460,7 +460,13 @@ export class EvolutionApiService {
             const isExistsError = errorString.includes('"exists":false') || errorString.includes('not found');
             const cleanNum = number.replace(/\D/g, '');
 
+            if (isExistsError && number.includes('@lid')) {
+                this.logger.warn(`[EvolutionAPI] Cannot send to @lid JID ${number}. LID delivery not supported by Evolution API. Message will be queued for next reply.`);
+                return { status: 'skipped_lid', number };
+            }
+
             if (isExistsError && cleanNum.startsWith('55')) {
+
                 let retryNum = '';
 
                 // Case 1: Has 13 digits (55 + 2 DDD + 9 + 8 digits) -> Try REMOVING 9

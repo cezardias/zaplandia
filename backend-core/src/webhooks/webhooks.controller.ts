@@ -443,17 +443,8 @@ export class WebhooksController {
                                 });
                                 await this.messageRepository.save(aiMessage);
 
-                                // Determine destination: prefer real phone sender over @lid
-                                // When remoteJid is @lid, use payload.sender (real @s.whatsapp.net JID)
-                                const senderOverride = (remoteJid.includes('@lid') && sender && !sender.includes('@lid'))
-                                    ? sender  // e.g. 556193754617@s.whatsapp.net
-                                    : undefined;
-                                if (senderOverride) {
-                                    this.logger.log(`[LID_FIX] remoteJid is @lid. Using payload.sender as destination: ${senderOverride}`);
-                                }
-
                                 // Send AI response via Evolution API (passing instanceName to ensure context lock)
-                                await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName, senderOverride);
+                                await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
 
 
                                 this.logger.log(`AI response sent successfully to contact ${contact.id} via ${instanceName}`);
