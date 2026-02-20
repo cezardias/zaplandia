@@ -399,10 +399,28 @@ export class EvolutionApiService {
         if (!baseUrl || !apiKey) return null;
         const headers = { 'apikey': apiKey, 'Content-Type': 'application/json' };
 
-        // Strategy 1: POST /chat/findContacts/{instance} with where filter
+        // Strategy 1: V2 GET /contact/fetchContact/{instance}?number={lid}
+        // According to Evolution v2 docs, this fetches a single contact by number or JID
+        try {
+            const url = `${baseUrl}/contact/fetchContact/${instanceName}?number=${encodeURIComponent(lidJid)}`;
+            this.logger.debug(`[LID_RESOLVE] Strategy 1 (V2): GET fetchContact for ${lidJid}`);
+            const response = await axios.get(url, { headers });
+            const data = response.data;
+            const match = data?.contact || data; // V2 often wraps in 'contact'
+            const realJid = match?.number || match?.jid || match?.id || match?.remoteJid;
+
+            if (realJid && !realJid.includes('@lid')) {
+                this.logger.log(`[LID_RESOLVE] Strategy 1 success: ${lidJid} -> ${realJid}`);
+                return realJid;
+            }
+        } catch (e1) {
+            this.logger.debug(`[LID_RESOLVE] Strategy 1 failed: ${e1.message}`);
+        }
+
+        // Strategy 2: V2 POST /chat/findContacts/{instance} (Search by body)
         try {
             const url = `${baseUrl}/chat/findContacts/${instanceName}`;
-            this.logger.debug(`[LID_RESOLVE] Strategy 1: POST findContacts where.id for ${lidJid}`);
+            this.logger.debug(`[LID_RESOLVE] Strategy 2 (V2): POST findContacts where.id for ${lidJid}`);
             const response = await axios.post(url, { where: { id: lidJid } }, { headers });
             const contacts = response.data;
             const list = Array.isArray(contacts) ? contacts : (contacts?.data || []);
@@ -412,69 +430,61 @@ export class EvolutionApiService {
                 ? (rawJid.includes('@') ? rawJid : `${rawJid.replace(/\D/g, '')}@s.whatsapp.net`)
                 : (match?.jid && !match.jid.includes('@lid') ? match.jid : null);
             if (realJid && !realJid.includes('@lid')) {
-                this.logger.log(`[LID_RESOLVE] Strategy 1 success: ${lidJid} -> ${realJid}`);
+                this.logger.log(`[LID_RESOLVE] Strategy 2 success: ${lidJid} -> ${realJid}`);
                 return realJid;
-            }
-        } catch (e1) {
-            this.logger.debug(`[LID_RESOLVE] Strategy 1 failed: ${e1.message}`);
-        }
-
-        // Strategy 2: GET ALL contacts (no filter) and filter locally
-        // Needed because server-side where filter sometimes doesn't match LIDs
-        try {
-            const url = `${baseUrl}/chat/findContacts/${instanceName}`;
-            this.logger.debug(`[LID_RESOLVE] Strategy 2: GET ALL contacts, filter locally for ${lidJid}`);
-            const response = await axios.get(url, { headers });
-            const contacts = response.data;
-            const list = Array.isArray(contacts) ? contacts : (contacts?.data || []);
-            this.logger.debug(`[LID_RESOLVE] Strategy 2: Total contacts in store: ${list.length}`);
-            if (list.length > 0) {
-                this.logger.debug(`[LID_RESOLVE] Contact schema sample: ${JSON.stringify(Object.keys(list[0]))}`);
-            }
-            const match = list.find((c: any) =>
-                c.id === lidJid || c.jid === lidJid || c.lid === lidJid || c.remoteJid === lidJid
-            );
-            if (match) {
-                this.logger.debug(`[LID_RESOLVE] Strategy 2 match: ${JSON.stringify(match)}`);
-                const rawJid = match?.number || match?.phoneNumber || match?.remoteJid;
-                const realJid = rawJid
-                    ? (rawJid.includes('@') ? rawJid : `${rawJid.replace(/\D/g, '')}@s.whatsapp.net`)
-                    : (match?.jid && !match.jid.includes('@lid') ? match.jid : null);
-                if (realJid && !realJid.includes('@lid')) {
-                    this.logger.log(`[LID_RESOLVE] Strategy 2 success: ${lidJid} -> ${realJid}`);
-                    return realJid;
-                }
-            } else {
-                this.logger.warn(`[LID_RESOLVE] Strategy 2: LID ${lidJid} not found in ${list.length} contacts. STORE_CONTACTS may still be syncing.`);
             }
         } catch (e2) {
             this.logger.debug(`[LID_RESOLVE] Strategy 2 failed: ${e2.message}`);
         }
 
-        // Strategy 3: GET /chat/findMessages and look for remoteJid matching LID
+        // Strategy 3: V2 GET /contact/fetchContacts/{instance} (Global list and filter locally)
         try {
-            const url = `${baseUrl}/chat/findMessages/${instanceName}`;
-            this.logger.debug(`[LID_RESOLVE] Strategy 3: POST findMessages for LID ${lidJid}`);
-            const response = await axios.post(url, {
-                where: { key: { remoteJid: lidJid }, messageType: 'conversation' },
-                limit: 1
-            }, { headers });
-            const data = response.data;
-            // If the message was sent FROM a phone (outbound), keyFromMe=true and remoteJid is the contact
-            const msgs = Array.isArray(data) ? data : (data?.messages || data?.data || []);
-            // Look for any message in this chat that has a participant with real JID
-            for (const msg of msgs) {
-                const participant = msg?.key?.participant || msg?.participant;
-                if (participant && !participant.includes('@lid')) {
-                    this.logger.log(`[LID_RESOLVE] Strategy 3 success via participant: ${lidJid} -> ${participant}`);
-                    return participant;
+            const url = `${baseUrl}/contact/fetchContacts/${instanceName}`;
+            this.logger.debug(`[LID_RESOLVE] Strategy 3 (V2): GET fetchContacts (local filter) for ${lidJid}`);
+            const response = await axios.get(url, { headers });
+            const contacts = response.data;
+            const list = Array.isArray(contacts) ? contacts : (contacts?.data || []);
+
+            const match = list.find((c: any) =>
+                c.id === lidJid || c.jid === lidJid || c.lid === lidJid || c.remoteJid === lidJid
+            );
+
+            if (match) {
+                const rawJid = match?.number || match?.phoneNumber || match?.remoteJid;
+                const realJid = rawJid
+                    ? (rawJid.includes('@') ? rawJid : `${rawJid.replace(/\D/g, '')}@s.whatsapp.net`)
+                    : (match?.jid && !match.jid.includes('@lid') ? match.jid : null);
+                if (realJid && !realJid.includes('@lid')) {
+                    this.logger.log(`[LID_RESOLVE] Strategy 3 success: ${lidJid} -> ${realJid}`);
+                    return realJid;
                 }
             }
         } catch (e3) {
             this.logger.debug(`[LID_RESOLVE] Strategy 3 failed: ${e3.message}`);
         }
 
-        this.logger.warn(`[LID_RESOLVE] All strategies failed for LID ${lidJid}. Contact store may still be syncing — will retry on next message.`);
+        // Strategy 4: POST /message/findMessages (Fallback check via message participant)
+        try {
+            const url = `${baseUrl}/chat/findMessages/${instanceName}`;
+            this.logger.debug(`[LID_RESOLVE] Strategy 4 (V2): POST findMessages for LID ${lidJid}`);
+            const response = await axios.post(url, {
+                where: { key: { remoteJid: lidJid } },
+                limit: 2
+            }, { headers });
+            const data = response.data;
+            const msgs = Array.isArray(data) ? data : (data?.messages || data?.data || []);
+            for (const msg of msgs) {
+                const participant = msg?.key?.participant || msg?.participant;
+                if (participant && !participant.includes('@lid')) {
+                    this.logger.log(`[LID_RESOLVE] Strategy 4 success via participant: ${lidJid} -> ${participant}`);
+                    return participant;
+                }
+            }
+        } catch (e4) {
+            this.logger.debug(`[LID_RESOLVE] Strategy 4 failed: ${e4.message}`);
+        }
+
+        this.logger.warn(`[LID_RESOLVE] All V2 strategies failed for LID ${lidJid}. Keep EvolutionAPI .env STORE_CONTACTS=true to resolve @lid JIDs.`);
         return null;
     }
 
