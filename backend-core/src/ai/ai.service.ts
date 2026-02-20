@@ -259,44 +259,22 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const configuredModel = integration.aiModel || 'gemini-1.5-flash';
             const modelsToTry = [
                 configuredModel,
+                'gemini-1.5-flash-latest',
                 'gemini-2.0-flash',
-                'gemini-1.5-flash',
                 'gemini-1.5-flash-8b',
-                'gemini-1.5-pro',
+                'gemini-1.5-pro-latest',
+                'gemini-1.5-flash',
                 'gemini-2.0-flash-exp'
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
-            const cleanApiKey = apiKey.trim();
             let aiResponse: string | null = null;
             let lastError: any;
 
             for (const model of uniqueModels) {
-                this.logger.debug(`[AI_ATTEMPT] Trying official Gemini API with model: ${model}`);
+                this.logger.debug(`[AI_ATTEMPT] Trying Gemini model: ${model}`);
                 try {
-                    // OFFICIAL ENDPOINT
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanApiKey}`;
-
-                    const response = await axios.post(url, {
-                        contents: [{
-                            parts: [{ text: fullPrompt }]
-                        }],
-                        generationConfig: {
-                            temperature: 0.7,
-                            maxOutputTokens: 1024,
-                        }
-                    }, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-goog-api-key': cleanApiKey
-                        },
-                        timeout: 20000
-                    });
-
-                    // Parse official response
-                    const candidate = response.data?.candidates?.[0];
-                    aiResponse = candidate?.content?.parts?.[0]?.text || null;
-
+                    aiResponse = await this.callGemini(model, fullPrompt, apiKey, 1024);
                     if (aiResponse) {
                         this.logger.log(`[AI_SUCCESS] Generated response using model: ${model}`);
                         break;
@@ -309,8 +287,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     if (status === 400 && errorMsg.includes('API_KEY_INVALID')) {
                         this.logger.error(`[AI_FATAL] Invalid API Key detected for Tenant ${tenantId}`);
-                        break; // No point in trying other models if key is invalid
+                        break;
                     }
+                    // Continue to next model on 404, 429, 503
                 }
             }
 
@@ -437,42 +416,22 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
+                'gemini-1.5-flash-latest',
                 'gemini-2.0-flash',
-                'gemini-1.5-flash',
                 'gemini-1.5-flash-8b',
-                'gemini-1.5-pro',
+                'gemini-1.5-pro-latest',
+                'gemini-1.5-flash',
                 'gemini-2.0-flash-exp'
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
             let aiResponse: string | null = null;
             let lastError: any;
-            const cleanApiKey = apiKey.trim();
 
             for (const model of uniqueModels) {
-                this.logger.debug(`[AI_WAND_ATTEMPT] Trying official Gemini API with model: ${model}`);
+                this.logger.debug(`[AI_WAND_ATTEMPT] Trying Gemini model: ${model}`);
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanApiKey}`;
-
-                    const response = await axios.post(url, {
-                        contents: [{
-                            parts: [{ text: fullPrompt }]
-                        }],
-                        generationConfig: {
-                            temperature: 0.7,
-                            maxOutputTokens: 2048,
-                        }
-                    }, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-goog-api-key': cleanApiKey
-                        },
-                        timeout: 20000
-                    });
-
-                    const candidate = response.data?.candidates?.[0];
-                    aiResponse = candidate?.content?.parts?.[0]?.text || null;
-
+                    aiResponse = await this.callGemini(model, fullPrompt, apiKey, 2048);
                     if (aiResponse) {
                         this.logger.debug(`[AI_WAND_SUCCESS] Model ${model} worked.`);
                         break;
@@ -593,5 +552,43 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         if (result.affected === 0) {
             throw new Error('Prompt not found or access denied');
         }
+    }
+
+    /**
+     * Resilient Gemini API Caller (tries v1 then v1beta)
+     */
+    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number): Promise<string | null> {
+        const versions = ['v1', 'v1beta'];
+        const cleanApiKey = apiKey.trim();
+        let lastError: any;
+
+        for (const version of versions) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${cleanApiKey}`;
+                const response = await axios.post(url, {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens }
+                }, {
+                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cleanApiKey },
+                    timeout: 20000
+                });
+
+                const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) return text;
+            } catch (error) {
+                lastError = error;
+                const status = error.response?.status;
+                // If 404, try the other version. Otherwise (429, 503) rethrow to outer model loop
+                if (status === 404) {
+                    this.logger.debug(`[AI_ROUTING] Model ${model} NOT FOUND in ${version}. Trying next...`);
+                    continue;
+                }
+                throw error;
+            }
+        }
+        if (lastError?.response?.status === 404) {
+            throw lastError; // Preserve 404 for the outer loop if both versions failed
+        }
+        return null;
     }
 }
