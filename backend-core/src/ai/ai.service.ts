@@ -255,13 +255,15 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
             const fullPrompt = `${promptContent}\n\nHistórico da Conversa:\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
-            // 6. Call Gemini API manually (v1beta Stable generateContent)
+            // 6. Call Gemini API manually (Resilient Fallback List)
             const configuredModel = integration.aiModel || 'gemini-1.5-flash';
             const modelsToTry = [
                 configuredModel,
+                'gemini-2.0-flash',
                 'gemini-1.5-flash',
-                'gemini-2.0-flash-exp',
-                'gemini-1.5-pro'
+                'gemini-1.5-flash-8b',
+                'gemini-1.5-pro',
+                'gemini-2.0-flash-exp'
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
