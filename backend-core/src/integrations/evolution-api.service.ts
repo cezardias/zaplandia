@@ -397,47 +397,64 @@ export class EvolutionApiService {
         const apiKey = await this.getApiKey(tenantId);
 
         if (!baseUrl || !apiKey) return null;
+        const headers = { 'apikey': apiKey, 'Content-Type': 'application/json' };
 
+        // Strategy 1: GET /chat/findContacts/{instance}?where[id]={lid}
         try {
-            // Try fetchProfile endpoint first (works in most EvolutionAPI versions)
-            const url = `${baseUrl}/chat/fetchProfile/${instanceName}`;
-            this.logger.debug(`[LID_RESOLVE] Querying fetchProfile for ${lidJid}`);
-            const response = await axios.post(url,
-                { number: lidJid },
-                { headers: { 'apikey': apiKey, 'Content-Type': 'application/json' } }
-            );
-            const data = response.data;
-            // Response may have id, jid, wid or similar fields with the real JID
-            const realJid = data?.id || data?.jid || data?.wid;
+            const lidEncoded = encodeURIComponent(lidJid);
+            const url = `${baseUrl}/chat/findContacts/${instanceName}?where[id]=${lidEncoded}`;
+            this.logger.debug(`[LID_RESOLVE] Strategy 1: GET findContacts for ${lidJid}`);
+            const response = await axios.get(url, { headers });
+            const contacts = response.data;
+            const list = Array.isArray(contacts) ? contacts : (contacts?.data || []);
+            const match = list.find((c: any) => c.id === lidJid || c.jid === lidJid || c.lid === lidJid);
+            const realJid = match?.jid || match?.id;
             if (realJid && !realJid.includes('@lid')) {
-                this.logger.log(`[LID_RESOLVE] Resolved ${lidJid} -> ${realJid}`);
+                this.logger.log(`[LID_RESOLVE] Strategy 1 success: ${lidJid} -> ${realJid}`);
                 return realJid;
             }
         } catch (e1) {
-            this.logger.debug(`[LID_RESOLVE] fetchProfile failed: ${e1.message}`);
+            this.logger.debug(`[LID_RESOLVE] Strategy 1 failed: ${e1.message}`);
         }
 
+        // Strategy 2: POST /chat/findContacts/{instance} with where filter
         try {
-            // Fallback: try findContacts endpoint
             const url = `${baseUrl}/chat/findContacts/${instanceName}`;
-            const response = await axios.post(url,
-                { where: { id: lidJid } },
-                { headers: { 'apikey': apiKey, 'Content-Type': 'application/json' } }
-            );
+            this.logger.debug(`[LID_RESOLVE] Strategy 2: POST findContacts for ${lidJid}`);
+            const response = await axios.post(url, { where: { id: lidJid } }, { headers });
             const contacts = response.data;
-            const match = Array.isArray(contacts) ? contacts.find((c: any) => c.id === lidJid || c.jid === lidJid) : null;
-            const realJid = match?.phoneNumber ? `${match.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net` : null;
+            const list = Array.isArray(contacts) ? contacts : (contacts?.data || []);
+            const match = list.find((c: any) => c.id === lidJid || c.jid === lidJid);
+            const phone = match?.phoneNumber || match?.remoteJid;
+            const realJid = phone ? `${phone.replace(/\D/g, '')}@s.whatsapp.net` : (match?.jid && !match.jid.includes('@lid') ? match.jid : null);
             if (realJid) {
-                this.logger.log(`[LID_RESOLVE] Resolved via findContacts ${lidJid} -> ${realJid}`);
+                this.logger.log(`[LID_RESOLVE] Strategy 2 success: ${lidJid} -> ${realJid}`);
                 return realJid;
             }
         } catch (e2) {
-            this.logger.debug(`[LID_RESOLVE] findContacts failed: ${e2.message}`);
+            this.logger.debug(`[LID_RESOLVE] Strategy 2 failed: ${e2.message}`);
         }
 
-        this.logger.warn(`[LID_RESOLVE] Could not resolve LID ${lidJid} to phone JID. Will skip AI response for this message.`);
+        // Strategy 3: GET /chat/findContact/{instance}?id={lid} (singular endpoint)
+        try {
+            const url = `${baseUrl}/chat/findContact/${instanceName}?id=${encodeURIComponent(lidJid)}`;
+            this.logger.debug(`[LID_RESOLVE] Strategy 3: GET findContact (singular) for ${lidJid}`);
+            const response = await axios.get(url, { headers });
+            const data = response.data;
+            const realJid = data?.jid || data?.id || data?.remoteJid;
+            if (realJid && !realJid.includes('@lid')) {
+                this.logger.log(`[LID_RESOLVE] Strategy 3 success: ${lidJid} -> ${realJid}`);
+                return realJid;
+            }
+        } catch (e3) {
+            this.logger.debug(`[LID_RESOLVE] Strategy 3 failed: ${e3.message}`);
+        }
+
+        this.logger.warn(`[LID_RESOLVE] All strategies failed for LID ${lidJid}. Requires STORE_CONTACTS=true in EvolutionAPI .env to resolve @lid JIDs.`);
         return null;
     }
+
+
 
 
 
