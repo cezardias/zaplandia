@@ -581,6 +581,33 @@ export class EvolutionApiService {
                         this.logger.warn(`[EvolutionAPI] Number ${cleanNum} failed existence check. It looks like a landline, skipping 9-digit retry.`);
                     }
                 }
+                // Case 3: Has 14 digits - common import error with double-digit
+                // Strategy A: remove the 9 right after DDD (position 4)
+                // Strategy B: if A fails, remove the last digit
+                else if (cleanNum.length === 14) {
+                    const strategy_a = cleanNum[4] === '9'
+                        ? cleanNum.slice(0, 4) + cleanNum.slice(5)   // remove 9 after DDD -> 13 digits
+                        : cleanNum.slice(0, 13);                      // remove last digit -> 13 digits
+                    this.logger.log(`[EvolutionAPI] 14-digit number ${cleanNum}. Trying strategy A: ${strategy_a}`);
+                    try {
+                        return await sendRequest(strategy_a);
+                    } catch (e14a: any) {
+                        if (JSON.stringify(e14a.response?.data || '').includes('"exists":false')) {
+                            // Strategy B: the other approach
+                            const strategy_b = cleanNum[4] === '9'
+                                ? cleanNum.slice(0, 13)              // remove last digit
+                                : cleanNum.slice(0, 4) + cleanNum.slice(5); // remove 9 after DDD
+                            this.logger.log(`[EvolutionAPI] Strategy A failed. Trying strategy B: ${strategy_b}`);
+                            try {
+                                return await sendRequest(strategy_b);
+                            } catch (e14b: any) {
+                                this.logger.error(`[EvolutionAPI] Both 14-digit strategies failed for ${cleanNum}`);
+                                throw new Error(`WhatsApp number does not exist: ${cleanNum}`);
+                            }
+                        }
+                        throw e14a;
+                    }
+                }
 
                 if (retryNum) {
                     this.logger.log(`Retrying send with adjusted number: ${retryNum}`);

@@ -191,8 +191,11 @@ export class CampaignProcessor {
      * 
      * Handles common import mistakes:
      * - Missing country code (62981980018 → 5562981980018)
-     * - Old 8-digit number without 9th digit (55629 8198001 → 55629 98198001)
-     * - 14-digit numbers with extra digit (55629819800180 → 5562981980018)
+    /**
+     * Normalize a Brazilian phone number for Evolution API.
+     * - Ensures 55 country code is present
+     * - Adds 9th digit for old 8-digit mobile numbers
+     * - 14-digit retry logic is handled inside sendText
      */
     private normalizePhoneForEvolution(phone: string): string {
         let digits = phone.replace(/\D/g, '');
@@ -202,27 +205,18 @@ export class CampaignProcessor {
             digits = digits.slice(2);
         }
 
-        // digits should now be DDD(2) + number
         const ddd = digits.slice(0, 2);
         let number = digits.slice(2);
 
-        // Max allowed: 9 digits for Brazilian mobile
-        if (number.length > 9) {
-            // Extra 9 was added right after DDD — remove it
-            if (number[0] === '9') {
-                number = number.slice(1);
-            } else {
-                // Fallback: truncate to 9 from start
-                number = number.slice(0, 9);
-            }
-        } else if (number.length === 8) {
-            // Old 8-digit format — add 9th digit prefix for mobile numbers
+        // Old 8-digit format: add 9th digit prefix for mobile numbers (6,7,8,9 start)
+        if (number.length === 8) {
             const firstDigit = number[0];
             if (['6', '7', '8', '9'].includes(firstDigit)) {
                 number = '9' + number;
             }
         }
 
+        // Return with country code — sendText handles 12/13/14 digit retries
         return `55${ddd}${number}`;
     }
 
