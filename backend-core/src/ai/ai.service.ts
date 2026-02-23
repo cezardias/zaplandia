@@ -261,8 +261,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 configuredModel,
                 'gemini-2.0-flash',
                 'gemini-2.0-flash-lite',
-                'gemini-2.0-pro-exp-02-05',
-                'gemini-2.0-flash-exp',
+                'gemini-1.5-flash',
+                'gemini-pro',
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
@@ -416,8 +416,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 startModel,
                 'gemini-2.0-flash',
                 'gemini-2.0-flash-lite',
-                'gemini-2.0-pro-exp-02-05',
-                'gemini-2.0-flash-exp',
+                'gemini-1.5-flash',
+                'gemini-pro',
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
@@ -551,17 +551,23 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
 
     /**
-     * Resilient Gemini API Caller (tries v1 then v1beta, with retry on 429)
+     * Resilient Gemini API Caller
+     * Strategy: for each version (v1, v1beta), try the request.
+     * 404 → continue to next version (model may exist in other version)
+     * 429 → continue to next version first (v1beta may have separate quota),
+     *        if both versions return 429, wait 5s and throw so outer loop tries next model
+     * 503/500 → throw immediately so outer loop tries next model
      */
     private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number): Promise<string | null> {
         const versions = ['v1', 'v1beta'];
         const cleanApiKey = apiKey.trim();
         let lastError: any;
-        let foundRateLimit = false;
+        let rateLimitCount = 0;
 
         for (const version of versions) {
             try {
-                const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent`;
+                // Use query param (?key=) as it's the most universally supported auth method
+                const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${cleanApiKey}`;
 
                 const response = await axios.post(url, {
                     contents: [{ parts: [{ text: prompt }] }],
@@ -572,55 +578,32 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         topK: 40
                     }
                 }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-goog-api-key': cleanApiKey
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     timeout: 30000
                 });
 
                 const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) return text;
+                if (text) {
+                    this.logger.debug(`[AI_ROUTING] Model ${model} succeeded in ${version}.`);
+                    return text;
+                }
             } catch (error) {
                 lastError = error;
                 const status = error.response?.status;
 
-                // 404 = model doesn't exist in this version, try next version
                 if (status === 404) {
+                    // Model doesn't exist in this version, try next version
                     this.logger.debug(`[AI_ROUTING] Model ${model} NOT FOUND in ${version}.`);
                     continue;
                 }
 
-                // 429 = rate limit: wait 4s and retry once on same version before giving up
                 if (status === 429) {
-                    if (!foundRateLimit) {
-                        foundRateLimit = true;
-                        this.logger.warn(`[AI_ROUTING] Model ${model} in ${version} returned 429. Waiting 4s before retry...`);
-                        await new Promise(resolve => setTimeout(resolve, 4000));
-                        // Retry the same version once
-                        try {
-                            const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent`;
-                            const retryResponse = await axios.post(url, {
-                                contents: [{ parts: [{ text: prompt }] }],
-                                generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens, topP: 0.95, topK: 40 }
-                            }, {
-                                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cleanApiKey },
-                                timeout: 30000
-                            });
-                            const retryText = retryResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (retryText) {
-                                this.logger.log(`[AI_ROUTING] Model ${model} succeeded on retry after 429.`);
-                                return retryText;
-                            }
-                        } catch (retryError) {
-                            lastError = retryError;
-                            this.logger.warn(`[AI_ROUTING] Model ${model} retry also failed (${retryError.response?.status}). Moving to next model...`);
-                        }
-                    }
-                    throw lastError;
+                    // Rate limit: continue to next version (v1beta may have separate quota)
+                    rateLimitCount++;
+                    this.logger.warn(`[AI_ROUTING] Model ${model} in ${version} returned 429 (${rateLimitCount}/2 versions hit).`);
+                    continue; // Try v1beta before giving up
                 }
 
-                // 503/500 = server overloaded, move to next model immediately
                 if (status === 503 || status === 500) {
                     this.logger.warn(`[AI_ROUTING] Model ${model} in ${version} returned ${status}. Trying next model...`);
                     throw error;
@@ -630,10 +613,18 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             }
         }
 
-        // Exhausted all versions with 404 → throw so outer loop tries next model
+        // If both versions returned 429, wait 5s then throw so outer loop tries next model
+        if (rateLimitCount > 0) {
+            this.logger.warn(`[AI_ROUTING] Model ${model} hit 429 on all versions. Waiting 5s before next model...`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            throw lastError;
+        }
+
+        // Both versions returned 404 → throw so outer loop tries next model
         if (lastError?.response?.status === 404) {
             throw lastError;
         }
+
         return null;
     }
 }
