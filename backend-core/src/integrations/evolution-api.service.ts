@@ -581,32 +581,39 @@ export class EvolutionApiService {
                         this.logger.warn(`[EvolutionAPI] Number ${cleanNum} failed existence check. It looks like a landline, skipping 9-digit retry.`);
                     }
                 }
-                // Case 3: Has 14 digits - common import error with double-digit
-                // Strategy A: remove the 9 right after DDD (position 4)
-                // Strategy B: if A fails, remove the last digit
+                // Case 3: Has 14 digits - common import error (e.g., extra 9 after DDD + trailing 0)
+                // Example: 55629819800180 → correct is 556281980018 (remove 9@pos4 + last digit)
                 else if (cleanNum.length === 14) {
-                    const strategy_a = cleanNum[4] === '9'
-                        ? cleanNum.slice(0, 4) + cleanNum.slice(5)   // remove 9 after DDD -> 13 digits
-                        : cleanNum.slice(0, 13);                      // remove last digit -> 13 digits
-                    this.logger.log(`[EvolutionAPI] 14-digit number ${cleanNum}. Trying strategy A: ${strategy_a}`);
-                    try {
-                        return await sendRequest(strategy_a);
-                    } catch (e14a: any) {
-                        if (JSON.stringify(e14a.response?.data || '').includes('"exists":false')) {
-                            // Strategy B: the other approach
-                            const strategy_b = cleanNum[4] === '9'
-                                ? cleanNum.slice(0, 13)              // remove last digit
-                                : cleanNum.slice(0, 4) + cleanNum.slice(5); // remove 9 after DDD
-                            this.logger.log(`[EvolutionAPI] Strategy A failed. Trying strategy B: ${strategy_b}`);
-                            try {
-                                return await sendRequest(strategy_b);
-                            } catch (e14b: any) {
-                                this.logger.error(`[EvolutionAPI] Both 14-digit strategies failed for ${cleanNum}`);
-                                throw new Error(`WhatsApp number does not exist: ${cleanNum}`);
-                            }
-                        }
-                        throw e14a;
+                    const isExists = (e: any) => {
+                        const s = JSON.stringify(e?.response?.data || e?.message || '');
+                        return s.includes('"exists":false') || s.includes('not found') || s.includes('does not exist');
+                    };
+
+                    // Strategy A: remove last digit → 13 digits (keep 9 after DDD)
+                    const strategy_a = cleanNum.slice(0, 13);
+                    this.logger.log(`[EvolutionAPI] 14-digit ${cleanNum} → Strategy A (remove last): ${strategy_a}`);
+                    try { return await sendRequest(strategy_a); } catch (e14a: any) {
+                        if (!isExists(e14a)) throw e14a;
                     }
+
+                    // Strategy B: remove 9 after DDD → 13 digits (keep last digit)
+                    if (cleanNum[4] === '9') {
+                        const strategy_b = cleanNum.slice(0, 4) + cleanNum.slice(5);
+                        this.logger.log(`[EvolutionAPI] 14-digit ${cleanNum} → Strategy B (remove 9@DDD): ${strategy_b}`);
+                        try { return await sendRequest(strategy_b); } catch (e14b: any) {
+                            if (!isExists(e14b)) throw e14b;
+                        }
+
+                        // Strategy C: remove 9 after DDD + remove last digit → 12 digits (clean old format)
+                        const strategy_c = cleanNum.slice(0, 4) + cleanNum.slice(5, 13);
+                        this.logger.log(`[EvolutionAPI] 14-digit ${cleanNum} → Strategy C (remove 9@DDD + last): ${strategy_c}`);
+                        try { return await sendRequest(strategy_c); } catch (e14c: any) {
+                            if (!isExists(e14c)) throw e14c;
+                        }
+                    }
+
+                    this.logger.error(`[EvolutionAPI] All 14-digit strategies failed for ${cleanNum}`);
+                    throw new Error(`WhatsApp number does not exist: ${cleanNum}`);
                 }
 
                 if (retryNum) {
