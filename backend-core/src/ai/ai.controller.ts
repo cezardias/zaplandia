@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Integration, IntegrationProvider, IntegrationStatus } from '../integrations/entities/integration.entity';
 import { Contact } from '../crm/entities/crm.entity';
-
+import axios from 'axios';
 import { AiService } from './ai.service';
 
 @Controller('ai')
@@ -17,6 +17,43 @@ export class AiController {
         private contactRepository: Repository<Contact>,
         private aiService: AiService,
     ) { }
+
+    /**
+     * DIAGNOSTIC: List all Gemini models available for this tenant's API key
+     * GET /api/ai/list-models
+     */
+    @Get('list-models')
+    async listModels(@Request() req) {
+        try {
+            // Get API key via aiService (reusing the private method indirectly)
+            const variations = await this.aiService.generateVariations(
+                req.user.tenantId, '__TEST__', undefined, 0
+            );
+            // Actually call ListModels directly
+            const apiKey = await (this.aiService as any).getGeminiApiKey(req.user.tenantId);
+            if (!apiKey) return { error: 'No API key configured' };
+
+            const response = await axios.get(
+                `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.trim()}&pageSize=50`
+            );
+
+            const models = response.data?.models || [];
+            const generateContentModels = models
+                .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+                .map((m: any) => ({ name: m.name, displayName: m.displayName, version: m.version }));
+
+            return {
+                totalModels: models.length,
+                generateContentModels,
+                allModels: models.map((m: any) => m.name)
+            };
+        } catch (error) {
+            return {
+                error: error.response?.data || error.message,
+                status: error.response?.status
+            };
+        }
+    }
 
     /**
      * Toggle AI for an integration (instance)
