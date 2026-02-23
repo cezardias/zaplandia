@@ -208,8 +208,13 @@ export class CampaignProcessor {
 
         // Max allowed: 9 digits for Brazilian mobile
         if (number.length > 9) {
-            // Too many digits — truncate to 9 (keep from the start: 9XXXXXXXX)
-            number = number.slice(0, 9);
+            // Extra 9 was added right after DDD — remove it
+            if (number[0] === '9') {
+                number = number.slice(1);
+            } else {
+                // Fallback: truncate to 9 from start
+                number = number.slice(0, 9);
+            }
         } else if (number.length === 8) {
             // Old 8-digit format — add 9th digit prefix for mobile numbers
             const firstDigit = number[0];
