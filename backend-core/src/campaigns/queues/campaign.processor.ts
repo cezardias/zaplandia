@@ -134,7 +134,9 @@ export class CampaignProcessor {
         }
 
         // 4. Send Message & Metadata Update
-        const cleanRecipient = recipient.replace(/\D/g, '');
+        // Normalize phone number to correct Brazilian WhatsApp format (13 digits)
+        const cleanRecipient = this.normalizePhoneForEvolution(recipient);
+        this.logger.debug(`[CAMPANHA] Phone normalizado: ${recipient} → ${cleanRecipient}`);
 
         try {
             this.logger.log(`[ENVIANDO] Disparando mensagem para ${cleanRecipient}...`);
@@ -181,6 +183,42 @@ export class CampaignProcessor {
 
             throw error;
         }
+    }
+
+    /**
+     * Normalize a Brazilian phone number to the correct WhatsApp/Evolution API format.
+     * Expected output: 13 digits → 55 + DDD (2) + number (9 digits)
+     * 
+     * Handles common import mistakes:
+     * - Missing country code (62981980018 → 5562981980018)
+     * - Old 8-digit number without 9th digit (55629 8198001 → 55629 98198001)
+     * - 14-digit numbers with extra digit (55629819800180 → 5562981980018)
+     */
+    private normalizePhoneForEvolution(phone: string): string {
+        let digits = phone.replace(/\D/g, '');
+
+        // Remove country code to work with local part only
+        if (digits.startsWith('55')) {
+            digits = digits.slice(2);
+        }
+
+        // digits should now be DDD(2) + number
+        const ddd = digits.slice(0, 2);
+        let number = digits.slice(2);
+
+        // Max allowed: 9 digits for Brazilian mobile
+        if (number.length > 9) {
+            // Too many digits — truncate to 9 (keep from the start: 9XXXXXXXX)
+            number = number.slice(0, 9);
+        } else if (number.length === 8) {
+            // Old 8-digit format — add 9th digit prefix for mobile numbers
+            const firstDigit = number[0];
+            if (['6', '7', '8', '9'].includes(firstDigit)) {
+                number = '9' + number;
+            }
+        }
+
+        return `55${ddd}${number}`;
     }
 
 }
