@@ -261,8 +261,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 configuredModel,
                 'gemini-2.0-flash',
                 'gemini-2.0-flash-lite',
-                'gemini-2.5-flash-preview-04-17',
-                'gemini-2.0-flash-thinking-exp',
+                'gemini-2.0-pro-exp-02-05',
+                'gemini-2.0-flash-exp',
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
@@ -416,8 +416,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 startModel,
                 'gemini-2.0-flash',
                 'gemini-2.0-flash-lite',
-                'gemini-2.5-flash-preview-04-17',
-                'gemini-2.0-flash-thinking-exp',
+                'gemini-2.0-pro-exp-02-05',
+                'gemini-2.0-flash-exp',
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
@@ -551,17 +551,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
 
     /**
-     * Resilient Gemini API Caller (tries v1 then v1beta)
+     * Resilient Gemini API Caller (tries v1 then v1beta, with retry on 429)
      */
     private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number): Promise<string | null> {
         const versions = ['v1', 'v1beta'];
         const cleanApiKey = apiKey.trim();
         let lastError: any;
+        let foundRateLimit = false;
 
         for (const version of versions) {
             try {
-                // According to docs, we can use just the header or the query param. 
-                // We'll use the header for cleaner URLs.
                 const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent`;
 
                 const response = await axios.post(url, {
@@ -577,7 +576,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         'Content-Type': 'application/json',
                         'x-goog-api-key': cleanApiKey
                     },
-                    timeout: 25000
+                    timeout: 30000
                 });
 
                 const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -585,16 +584,44 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             } catch (error) {
                 lastError = error;
                 const status = error.response?.status;
-                const errorData = error.response?.data?.error;
 
-                // If 404, the model might be in the other version or doesn't exist.
+                // 404 = model doesn't exist in this version, try next version
                 if (status === 404) {
                     this.logger.debug(`[AI_ROUTING] Model ${model} NOT FOUND in ${version}.`);
                     continue;
                 }
 
-                // If 429 (Quota) or 503 (Overloaded), we log and rethrow so the outer loop tries the NEXT model.
-                if (status === 429 || status === 503 || status === 500) {
+                // 429 = rate limit: wait 4s and retry once on same version before giving up
+                if (status === 429) {
+                    if (!foundRateLimit) {
+                        foundRateLimit = true;
+                        this.logger.warn(`[AI_ROUTING] Model ${model} in ${version} returned 429. Waiting 4s before retry...`);
+                        await new Promise(resolve => setTimeout(resolve, 4000));
+                        // Retry the same version once
+                        try {
+                            const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent`;
+                            const retryResponse = await axios.post(url, {
+                                contents: [{ parts: [{ text: prompt }] }],
+                                generationConfig: { temperature: 0.7, maxOutputTokens: maxTokens, topP: 0.95, topK: 40 }
+                            }, {
+                                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cleanApiKey },
+                                timeout: 30000
+                            });
+                            const retryText = retryResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (retryText) {
+                                this.logger.log(`[AI_ROUTING] Model ${model} succeeded on retry after 429.`);
+                                return retryText;
+                            }
+                        } catch (retryError) {
+                            lastError = retryError;
+                            this.logger.warn(`[AI_ROUTING] Model ${model} retry also failed (${retryError.response?.status}). Moving to next model...`);
+                        }
+                    }
+                    throw lastError;
+                }
+
+                // 503/500 = server overloaded, move to next model immediately
+                if (status === 503 || status === 500) {
                     this.logger.warn(`[AI_ROUTING] Model ${model} in ${version} returned ${status}. Trying next model...`);
                     throw error;
                 }
@@ -603,7 +630,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             }
         }
 
-        // If we exhausted versions and still 404, throw to outer loop
+        // Exhausted all versions with 404 → throw so outer loop tries next model
         if (lastError?.response?.status === 404) {
             throw lastError;
         }
