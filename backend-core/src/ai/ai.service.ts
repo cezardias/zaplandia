@@ -256,15 +256,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const fullPrompt = `${promptContent}\n\nHistórico da Conversa:\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
             // 6. Call Gemini API manually (Resilient Fallback List)
-            const configuredModel = integration.aiModel || 'gemini-1.5-flash';
+            const configuredModel = integration.aiModel || 'gemini-2.0-flash';
             const modelsToTry = [
                 configuredModel,
-                'gemini-2.0-flash-lite-preview-02-05',
                 'gemini-2.0-flash',
-                'gemini-1.5-flash-002',
-                'gemini-1.5-flash',
-                'gemini-1.5-flash-8b',
-                'gemini-1.5-pro'
+                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash-preview-04-17',
+                'gemini-2.0-flash-thinking-exp',
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
@@ -413,15 +411,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
             // 6. Call Gemini API manually (Resilient Fallback List)
-            const startModel = modelName || 'gemini-1.5-flash';
+            const startModel = modelName || 'gemini-2.0-flash';
             const modelsToTry = [
                 startModel,
-                'gemini-2.0-flash-lite-preview-02-05',
                 'gemini-2.0-flash',
-                'gemini-1.5-flash-002',
-                'gemini-1.5-flash',
-                'gemini-1.5-flash-8b',
-                'gemini-1.5-pro'
+                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash-preview-04-17',
+                'gemini-2.0-flash-thinking-exp',
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
