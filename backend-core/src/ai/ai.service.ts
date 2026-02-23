@@ -411,13 +411,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
             // 6. Call Gemini API manually (Resilient Fallback List)
-            const startModel = modelName || 'gemini-2.0-flash';
+            // NOTE: gemini-2.5-flash-lite is confirmed working (seen in inbox AI logs)
+            const startModel = modelName || 'gemini-2.5-flash-lite';
             const modelsToTry = [
                 startModel,
+                'gemini-2.5-flash-lite',
                 'gemini-2.0-flash',
                 'gemini-2.0-flash-lite',
-                'gemini-1.5-flash',
-                'gemini-pro',
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
@@ -467,7 +467,24 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         Gere as variações no formato JSON array de strings: ["variação 1", "variação 2", ...]`;
 
         try {
-            const responseStr = await this.getAiResponse(tenantId, userPrompt, 'gemini', systemInstruction);
+            // Look up the tenant's configured aiModel from their integration
+            // (same logic as generateResponse uses for inbox AI — ensures same working model)
+            let configuredModel: string | undefined;
+            try {
+                const integrations = await this.integrationRepository.find({
+                    where: { tenantId, provider: 'evolution' as any },
+                    take: 10,
+                });
+                const integrationWithModel = integrations.find(i => i.aiModel);
+                if (integrationWithModel?.aiModel) {
+                    configuredModel = integrationWithModel.aiModel;
+                    this.logger.debug(`[GEN_VAR] Using tenant configured model: ${configuredModel}`);
+                }
+            } catch (e) {
+                this.logger.warn(`[GEN_VAR] Could not fetch integration model, using default: ${e.message}`);
+            }
+
+            const responseStr = await this.getAiResponse(tenantId, userPrompt, 'gemini', systemInstruction, configuredModel);
             this.logger.log(`[GEN_VAR] Raw response from service: ${responseStr}`);
 
             if (!responseStr) return [baseMessage];
