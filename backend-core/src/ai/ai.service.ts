@@ -353,8 +353,15 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     targetNumber = resolvedJid;
                     // Persist resolved JID back to contact so future messages don't re-resolve
                     await this.contactRepository.update(useContact.id, { externalId: resolvedJid });
+                } else if (useContact.phoneNumber && useContact.phoneNumber.replace(/\D/g, '').length > 8) {
+                    // LID resolution failed — fallback to contact's phoneNumber
+                    const phoneFallback = `${useContact.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+                    this.logger.warn(`[AI_SEND] LID could not be resolved. Falling back to phoneNumber: ${phoneFallback}`);
+                    targetNumber = phoneFallback;
+                    // Persist fallback JID so future messages use it directly
+                    await this.contactRepository.update(useContact.id, { externalId: phoneFallback });
                 } else {
-                    throw new Error(`LID ${targetNumber} could not be resolved. Requires STORE_CONTACTS=true in EvolutionAPI.`);
+                    throw new Error(`LID ${targetNumber} could not be resolved and no phoneNumber available.`);
                 }
             }
 
