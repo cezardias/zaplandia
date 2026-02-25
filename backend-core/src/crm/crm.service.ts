@@ -654,6 +654,60 @@ export class CrmService implements OnApplicationBootstrap {
         return this.contactRepository.delete({ tenantId });
     }
 
+    /**
+     * Smart Cleanup: Remove contacts that were created for a campaign but never "warmed up".
+     * Conditions for deletion:
+     * 1. Stage is 'NOVO' or 'LEAD'
+     * 2. No message history
+     * 3. Not associated with any other campaign
+     */
+    async cleanupOrphanedContacts(tenantId: string, campaignId: string) {
+        this.logger.log(`[CLEANUP] Starting smart cleanup for campaign ${campaignId} (Tenant: ${tenantId})`);
+
+        // 1. Find all leads for this campaign
+        const leads = await this.leadRepository.find({ where: { campaignId } });
+        if (leads.length === 0) return;
+
+        const externalIds = leads.map(l => l.externalId);
+
+        // 2. Find matching contacts
+        // We chunk the search to avoid parameter overflow in SQL
+        const CHUNK_SIZE = 500;
+        let deletedCount = 0;
+
+        for (let i = 0; i < externalIds.length; i += CHUNK_SIZE) {
+            const chunk = externalIds.slice(i, i + CHUNK_SIZE);
+            const contacts = await this.contactRepository.createQueryBuilder('contact')
+                .where('contact.tenantId = :tenantId', { tenantId })
+                .andWhere('(contact.externalId IN (:...chunk) OR contact.phoneNumber IN (:...chunk))', { chunk })
+                .andWhere('contact.stage IN (:...coldStages)', { coldStages: ['NOVO', 'LEAD'] })
+                .getMany();
+
+            for (const contact of contacts) {
+                const phone = contact.externalId || contact.phoneNumber;
+                if (!phone) continue;
+
+                // Check for message history
+                const messageCount = await this.messageRepository.count({ where: { contactId: contact.id } });
+                if (messageCount > 0) continue; // Keep if there is history
+
+                // Check if in other campaigns
+                const otherCampCount = await this.leadRepository.createQueryBuilder('cl')
+                    .where('cl.externalId = :phone', { phone })
+                    .andWhere('cl.campaignId != :campaignId', { campaignId })
+                    .getCount();
+
+                if (otherCampCount > 0) continue; // Keep if in other campaigns
+
+                // Safe to delete
+                await this.contactRepository.remove(contact);
+                deletedCount++;
+            }
+        }
+
+        this.logger.log(`[CLEANUP] Smart cleanup complete for campaign ${campaignId}. Removed ${deletedCount} orphaned contacts.`);
+    }
+
     async getDashboardStats(tenantId: string, campaignId?: string, instance?: string) {
         this.logger.debug(`[STATS] Tenant: ${tenantId}, Campaign: ${campaignId}, Instance: ${instance}`);
         const query = this.contactRepository.createQueryBuilder('contact')

@@ -583,8 +583,18 @@ export class CampaignsService {
     async remove(id: string, tenantId: string) {
         const campaign = await this.findOne(id, tenantId);
         if (campaign) {
-            // Manually delete leads first to ensure no foreign key issues
+            // 1. Smart cleanup of CRM contacts (remove cold/inactive leads from pipeline)
+            try {
+                await this.crmService.cleanupOrphanedContacts(tenantId, id);
+            } catch (err) {
+                this.logger.warn(`[REMOVE_CAMPAIGN] Smart cleanup failed for ${id}: ${err.message}`);
+                // Continue with deletion anyway
+            }
+
+            // 2. Manually delete leads first to ensure no foreign key issues
             await this.leadRepository.delete({ campaignId: id });
+
+            // 3. Delete the campaign record
             return this.campaignRepository.remove(campaign);
         }
     }
