@@ -74,12 +74,16 @@ export class IntegrationsController {
                     (li.name || li.instance?.instanceName || li.instanceName) === instanceName
                 );
 
+                // --- CRITICAL: If not found in live API, do not return it at all (Filter out ghost instances) ---
+                if (!liveInst) {
+                    return null;
+                }
+
                 return {
                     ...i,
                     name: friendlyName,
                     instanceName: instanceName,
-                    // If not found in live API, mark as DISCONNECTED to avoid "ghost" instances
-                    status: liveInst ? (liveInst.status === 'open' || liveInst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED') : 'DISCONNECTED'
+                    status: liveInst.status === 'open' || liveInst.status === 'connected' ? 'CONNECTED' : 'DISCONNECTED'
                 };
             }
 
@@ -88,7 +92,7 @@ export class IntegrationsController {
                 name: i.provider === 'whatsapp' ? 'WhatsApp Oficial' :
                     i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
             };
-        });
+        }).filter(i => i !== null); // Remove the nulls (ghost instances)
 
 
         const result = [...finalIntegrations, ...evolutionInstances];
@@ -218,7 +222,26 @@ export class IntegrationsController {
     @UseGuards(JwtAuthGuard)
     @Delete('evolution/instance/:instanceName')
     async deleteEvolutionInstanceByName(@Request() req, @Param('instanceName') instanceName: string) {
-        return this.evolutionApiService.deleteInstance(req.user.tenantId, instanceName);
+        // 1. Delete from Evolution API
+        const response = await this.evolutionApiService.deleteInstance(req.user.tenantId, instanceName);
+
+        // 2. Also delete from local database to avoid "ghost" records
+        try {
+            const dbIntegrations = await this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
+            const target = dbIntegrations.find(i =>
+                i.provider === 'evolution' &&
+                (i.credentials?.instanceName === instanceName || i.settings?.instanceName === instanceName)
+            );
+
+            if (target) {
+                console.log(`[DELETE_INSTANCE] Removing integration ${target.id} from DB for instance ${instanceName}`);
+                await this.integrationsService.remove(target.id, req.user.tenantId);
+            }
+        } catch (dbErr) {
+            console.error(`[DELETE_INSTANCE_DB_ERROR] Failed to remove DB record for ${instanceName}: ${dbErr.message}`);
+        }
+
+        return response;
     }
 
     // Legacy: Delete default instance
