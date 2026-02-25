@@ -288,10 +288,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                 name: "get_products",
                                 description: "Busca produtos no ERP Zaplandia. Use para consultar preços, estoque e disponibilidade.",
                                 parameters: {
-                                    type: "object",
+                                    type: "OBJECT",
                                     properties: {
                                         search: {
-                                            type: "string",
+                                            type: "STRING",
                                             description: "Termo de busca para o produto (nome ou código)"
                                         }
                                     },
@@ -632,15 +632,23 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     }
                 };
 
-                if (tools) payload.tools = tools;
+                if (tools) {
+                    payload.tools = tools;
+                    this.logger.debug(`[AI_DEBUG] Sending payload with tools to ${model} (${version})`);
+                }
 
                 const response = await axios.post(url, payload, {
                     headers: { 'Content-Type': 'application/json' },
                     timeout: 30000
                 });
 
+                this.logger.debug(`[AI_DEBUG] Gemini Response Status: ${response.status}`);
                 const candidate = response.data?.candidates?.[0];
                 const part = candidate?.content?.parts?.[0];
+
+                if (part) {
+                    this.logger.debug(`[AI_DEBUG] Part Keys: ${Object.keys(part).join(', ')}`);
+                }
 
                 // Check for Tool Calling (Function Call)
                 if (part?.functionCall) {
