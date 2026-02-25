@@ -114,40 +114,36 @@ export class IntegrationsController {
         const customName = body.instanceName || Date.now().toString();
         const instanceName = `tenant_${req.user.tenantId}_${customName}`;
 
-        // Create instance in Evolution API
-        const evolutionResponse = await this.evolutionApiService.createInstance(req.user.tenantId, instanceName, req.user.userId);
+        // Detect Webhook URL
+        let webhookUrl = process.env.INTERNAL_WEBHOOK_URL;
+        if (!webhookUrl && process.env.API_URL) {
+            webhookUrl = `${process.env.API_URL.replace(/\/$/, '')}/webhooks/evolution`;
+        }
+        if (!webhookUrl) {
+            const protocol = req.protocol || 'https';
+            const requestHost = req.get('host');
+            if (requestHost) {
+                webhookUrl = `${protocol}://${requestHost}/webhooks/evolution`;
+            }
+        }
 
-        // --- AUTOMATIC WEBHOOK SETUP (ON INSTANCE CREATION ONLY) ---
+        // Create instance in Evolution API (Integrated Payload)
+        const evolutionResponse = await this.evolutionApiService.createInstance(
+            req.user.tenantId,
+            instanceName,
+            req.user.userId,
+            webhookUrl
+        );
+
+        // --- AUTOMATIC CONFIG SYNC (HARDENING) ---
         try {
-            // Priority 1: Use INTERNAL_WEBHOOK_URL from docker-compose/environment
-            let webhookUrl = process.env.INTERNAL_WEBHOOK_URL;
-
-            // Priority 2: Construct from API_URL
-            if (!webhookUrl && process.env.API_URL) {
-                webhookUrl = `${process.env.API_URL.replace(/\/$/, '')}/webhooks/evolution`;
-            }
-
-            // Priority 3: Try to detect from request (least reliable)
-            if (!webhookUrl) {
-                const protocol = req.protocol || 'https';
-                const requestHost = req.get('host');
-                if (requestHost) {
-                    webhookUrl = `${protocol}://${requestHost}/webhooks/evolution`;
-                }
-            }
-
             if (webhookUrl) {
-                console.log(`[CREATE_INSTANCE_WEBHOOK] Auto-configuring webhook for ${instanceName}: ${webhookUrl}`);
+                console.log(`[CREATE_INSTANCE_SYNC] Ensuring webhook and settings are synced for ${instanceName}`);
                 await this.evolutionApiService.setWebhook(req.user.tenantId, instanceName, webhookUrl);
-
-                // --- ALSO SET SETTINGS (Reject call, Ignore groups, etc.) ---
-                console.log(`[CREATE_INSTANCE_SETTINGS] Auto-configuring settings for ${instanceName}`);
                 await this.evolutionApiService.setSettings(req.user.tenantId, instanceName);
-            } else {
-                console.error(`[CREATE_INSTANCE_WEBHOOK] Could not detect webhook URL. Set INTERNAL_WEBHOOK_URL env var. Instance: ${instanceName}`);
             }
         } catch (webhookErr) {
-            console.error(`[CREATE_INSTANCE_WEBHOOK_ERROR] Failed to auto-configure webhook for ${instanceName}: ${webhookErr.message}`);
+            console.warn(`[CREATE_INSTANCE_SYNC_WARNING] Optional config sync skipped: ${webhookErr.message}`);
         }
 
         // Save integration to database

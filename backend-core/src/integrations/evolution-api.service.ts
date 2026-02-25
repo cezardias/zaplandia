@@ -184,7 +184,7 @@ export class EvolutionApiService {
         }
     }
 
-    async createInstance(tenantId: string, instanceName: string, userId: string) {
+    async createInstance(tenantId: string, instanceName: string, userId: string, webhookUrl?: string) {
         const baseUrl = await this.getBaseUrl(tenantId);
         const apiKey = await this.getApiKey(tenantId);
 
@@ -195,12 +195,52 @@ export class EvolutionApiService {
         try {
             const url = `${baseUrl}/instance/create`;
             this.logger.debug(`[EvolutionAPI] POST create: ${url}`);
-            const response = await axios.post(url, {
+
+            const payload: any = {
                 instanceName,
                 token: instanceName,
                 qrcode: true,
-                integration: "WHATSAPP-BAILEYS"
-            }, {
+                integration: "WHATSAPP-BAILEYS",
+                // --- INTEGRATED V2 PAYLOAD ---
+                settings: {
+                    reject_call: false,
+                    groups_ignore: true,
+                    always_online: true,
+                    read_messages: false,
+                    read_status: false,
+                    sync_full_history: false,
+                    webhook_base64: true
+                }
+            };
+
+            if (webhookUrl) {
+                payload.webhook = {
+                    url: webhookUrl,
+                    enabled: true,
+                    webhook_by_events: true,
+                    webhook_base64: true,
+                    events: [
+                        "MESSAGES_UPSERT",
+                        "MESSAGES_UPDATE",
+                        "MESSAGES_DELETE",
+                        "SEND_MESSAGE",
+                        "CONNECTION_UPDATE",
+                        "CALL",
+                        "PRESENCE_UPDATE",
+                        "QRCODE_UPDATED",
+                        "CHATS_UPSERT",
+                        "CHATS_UPDATE",
+                        "CHATS_DELETE",
+                        "CONTACTS_UPSERT",
+                        "CONTACTS_UPDATE",
+                        "GROUP_PARTICIPANTS_UPDATE",
+                        "GROUP_UPDATE",
+                        "GROUPS_UPSERT"
+                    ]
+                };
+            }
+
+            const response = await axios.post(url, payload, {
                 headers: {
                     'apikey': apiKey,
                     'Content-Type': 'application/json',
@@ -332,33 +372,34 @@ export class EvolutionApiService {
 
         if (!baseUrl || !apiKey) throw new Error('EvolutionAPI não configurada.');
 
+        const payload = {
+            url: webhookUrl,
+            enabled: true,
+            webhook_by_events: true,
+            webhook_base64: true,
+            events: [
+                "MESSAGES_UPSERT",
+                "MESSAGES_UPDATE",
+                "MESSAGES_DELETE",
+                "SEND_MESSAGE",
+                "CONNECTION_UPDATE",
+                "CALL",
+                "PRESENCE_UPDATE",
+                "QRCODE_UPDATED",
+                "CHATS_UPSERT",
+                "CHATS_UPDATE",
+                "CHATS_DELETE",
+                "CONTACTS_UPSERT",
+                "CONTACTS_UPDATE",
+                "GROUP_PARTICIPANTS_UPDATE",
+                "GROUP_UPDATE",
+                "GROUPS_UPSERT"
+            ]
+        };
+
         try {
-            const payload = {
-                url: webhookUrl,
-                enabled: true,
-                webhook_by_events: true,
-                webhook_base64: true,
-                events: [
-                    "MESSAGES_UPSERT",
-                    "MESSAGES_UPDATE",
-                    "MESSAGES_DELETE",
-                    "SEND_MESSAGE",
-                    "CONNECTION_UPDATE",
-                    "CALL",
-                    "PRESENCE_UPDATE",
-                    "QRCODE_UPDATED",
-                    "CHATS_UPSERT",
-                    "CHATS_UPDATE",
-                    "CHATS_DELETE",
-                    "CONTACTS_UPSERT",
-                    "CONTACTS_UPDATE",
-                    "GROUP_PARTICIPANTS_UPDATE",
-                    "GROUP_UPDATE",
-                    "GROUPS_UPSERT"
-                ]
-            };
-            const url = `${baseUrl}/webhook/set/${instanceName}`;
-            this.logger.debug(`[EvolutionAPI] POST webhook: ${url}`);
+            const url = `${baseUrl}/webhook/instance/${instanceName}`;
+            this.logger.debug(`[EvolutionAPI] POST webhook (V2): ${url}`);
             const response = await axios.post(url, payload, {
                 headers: {
                     'apikey': apiKey,
@@ -368,9 +409,24 @@ export class EvolutionApiService {
             });
             return response.data;
         } catch (error) {
-            const errorData = error.response?.data || error.message;
-            this.logger.error(`Erro ao configurar webhook no EvolutionAPI: ${JSON.stringify(errorData)}`);
-            throw error;
+            // Fallback for older versions just in case
+            try {
+                const legacyUrl = `${baseUrl}/webhook/set/${instanceName}`;
+                this.logger.debug(`[EvolutionAPI] Retrying with legacy webhook URL: ${legacyUrl}`);
+                const payloadLegacy = { ...payload, webhook_by_events: false, webhook_by_instance: false };
+                const response = await axios.post(legacyUrl, payloadLegacy, {
+                    headers: {
+                        'apikey': apiKey,
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'ZaplandiaCore/1.0'
+                    }
+                });
+                return response.data;
+            } catch (legacyError) {
+                const errorData = error.response?.data || error.message;
+                this.logger.error(`Erro ao configurar webhook no EvolutionAPI: ${JSON.stringify(errorData)}`);
+                throw error;
+            }
         }
     }
 
