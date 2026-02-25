@@ -119,10 +119,10 @@ export class CampaignsService {
 
         if (integration) {
             const provider = integration.provider;
-            // If Unofficial (Evolution) -> 100 limits per day (Anti-Ban)
+            // If Unofficial (Evolution) -> 40 limits per day (Safe Anti-Ban)
             // If Official (WhatsApp Cloud) -> 1000 limits or more
             if (provider === IntegrationProvider.EVOLUTION) {
-                dailyLimit = 100;
+                dailyLimit = 40;
             } else if (provider === IntegrationProvider.WHATSAPP) {
                 dailyLimit = 1000; // Cloud API Tier 1
             } else {
@@ -150,14 +150,13 @@ export class CampaignsService {
         }
 
         // Fetch PENDING leads (Limited by remaining quota)
-        // If 79 pending and 40 quota => fetch 40. The other 39 stay pending.
         const leads = await this.leadRepository.find({
             where: { campaignId: id, status: LeadStatus.PENDING },
             take: remainingQuota // ✅ AUTO-BATCHING
         });
 
         if (!leads || leads.length === 0) {
-            // DIAGNOSTICS: Why are there no leads?
+            // ... existing diagnostics ...
             const totalLeads = await this.leadRepository.count({ where: { campaignId: id } });
             const pendingLeads = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.PENDING } });
 
@@ -170,10 +169,10 @@ export class CampaignsService {
                 const sent = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.SENT } });
                 const invalid = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.INVALID } });
 
-                throw new Error(`Todos os ${totalLeads} leads desta campanha já foram processados (Enviados/Pulados: ${sent}, Falhas: ${failed}, Inválidos: ${invalid}). Para enviar novamente para os inválidos ou falhas, você precisa reiniciar os leads desta campanha.`);
+                throw new Error(`Todos os ${totalLeads} leads desta campanha já foram processados (Enviados/Pulados: ${sent}, Falhas: ${failed}, Inválidos: ${invalid}).`);
             }
 
-            throw new Error(`Não foi possível buscar leads pendentes (Cota: ${remainingQuota}, Pendentes: ${pendingLeads}).`);
+            throw new Error(`Não foi possível buscar leads pendentes.`);
         }
 
 
@@ -187,18 +186,30 @@ export class CampaignsService {
             });
         }
 
-        this.logger.log(`[MOTOR] Iniciando campanha ${id} (${campaign.name}). Enfileirando ${leads.length} leads...`);
+        this.logger.log(`[MOTOR] Iniciando campanha ${id} (${campaign.name}). Enfileirando ${leads.length} leads com atrasos randômicos (1-15min)...`);
 
-        const STAGGER_MS = 25 * 1000; // 25s per message to be safe
+        let cumulativeDelay = 0;
         const CHUNK_SIZE = 50;
 
         for (let i = 0; i < leads.length; i += CHUNK_SIZE) {
             const chunk = leads.slice(i, i + CHUNK_SIZE);
-            await Promise.all(chunk.map(async (lead, chunkIndex) => {
-                const globalIndex = i + chunkIndex;
+
+            // Sequential processing within chunk to maintain cumulativeDelay correctly
+            for (let j = 0; j < chunk.length; j++) {
+                const lead = chunk[j];
+                const globalIndex = i + j;
                 const isFirst = globalIndex === 0;
 
-                if (isFirst) this.logger.log(`[MOTOR] Marcando lead ${lead.id} como PRIORIDADE (isFirst: true)`);
+                if (isFirst) {
+                    cumulativeDelay = 0; // Immediate
+                    this.logger.log(`[MOTOR] Marcando lead ${lead.id} como PRIORIDADE (delay: 0)`);
+                } else {
+                    // Random interval between 1 and 15 minutes (60k to 900k ms)
+                    const minInterval = 1 * 60 * 1000;
+                    const maxInterval = 15 * 60 * 1000;
+                    const interval = Math.floor(Math.random() * (maxInterval - minInterval + 1)) + minInterval;
+                    cumulativeDelay += interval;
+                }
 
                 await this.campaignQueue.add('send-message', {
                     leadId: lead.id,
@@ -210,13 +221,14 @@ export class CampaignsService {
                     tenantId: tenantId,
                     variations: campaign.variations,
                     dailyLimit: dailyLimit,
-                    isFirst: globalIndex === 0
+                    isFirst: isFirst
                 }, {
+                    delay: cumulativeDelay, // Bull schedules the job!
                     removeOnComplete: true,
                     attempts: 3,
                     backoff: 5000
                 });
-            }));
+            }
         }
 
         this.logger.log(`[SUCESSO] Campanha ${id} iniciada com sucesso.`);

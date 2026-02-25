@@ -96,19 +96,13 @@ export class CampaignProcessor {
             return;
         }
 
-        // 2. Random Delay (Organic Human Staggering)
-        const isFirstMessage = job.data.isFirst === true;
-
-        if (isFirstMessage) {
-            this.logger.log(`[PRIORIDADE] 🚀 Envio de primeira mensagem (Job ${job.id}) disparado IMEDIATAMENTE.`);
+        // 2. Delay Strategy
+        // Bull handles the scheduling delay (1-15 min) configured in CampaignsService.
+        // The processor only handles the immediate execution when activated.
+        if (job.data.isFirst === true) {
+            this.logger.log(`[PRIORIDADE] 🚀 Executando disparo prioritário IMEDIATAMENTE (Job ${job.id}).`);
         } else {
-            // Safe anti-ban delay adjusted for better UX (20s to 1.5min)
-            const minDelay = 20 * 1000;
-            const maxDelay = 90 * 1000;
-            const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
-
-            this.logger.log(`[AGUARDANDO] Job ${job.id}: Aguardando ${Math.round(randomDelay / 1000)}s (Anti-Ban)...`);
-            await new Promise(resolve => setTimeout(resolve, randomDelay));
+            this.logger.log(`[PROCESSANDO] 📥 Job ${job.id} ativado pela fila. Iniciando disparo orgânico.`);
         }
 
         // 3. AI Variation & Personalization Logic
