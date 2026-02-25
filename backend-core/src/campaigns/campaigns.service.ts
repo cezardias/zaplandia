@@ -70,6 +70,14 @@ export class CampaignsService {
     async removeContactList(id: string, tenantId: string) {
         const list = await this.contactListRepository.findOne({ where: { id, tenantId } });
         if (list) {
+            // 1. Clean up potential orphaned contacts that were imported for this list
+            try {
+                await this.crmService.cleanupGlobalOrphanedContacts(tenantId);
+            } catch (err) {
+                this.logger.warn(`[REMOVE_FUNNEL] Cleanup failed: ${err.message}`);
+            }
+
+            // 2. Remove the list
             return this.contactListRepository.remove(list);
         }
     }

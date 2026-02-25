@@ -664,48 +664,56 @@ export class CrmService implements OnApplicationBootstrap {
     async cleanupOrphanedContacts(tenantId: string, campaignId: string) {
         this.logger.log(`[CLEANUP] Starting smart cleanup for campaign ${campaignId} (Tenant: ${tenantId})`);
 
-        // 1. Find all leads for this campaign
-        const leads = await this.leadRepository.find({ where: { campaignId } });
-        if (leads.length === 0) return;
+        // To be safe and clean up everything (including leftovers from prev versions), 
+        // we run the global cleanup which covers this campaign's leads and any other orphans.
+        return this.cleanupGlobalOrphanedContacts(tenantId);
+    }
 
-        const externalIds = leads.map(l => l.externalId);
+    /**
+     * Global Orphan Cleanup: Remove ANY contact that is:
+     * 1. Stage is 'NOVO' or 'LEAD'
+     * 2. No message history
+     * 3. Not associated with ANY existing campaign lead in the tenant
+     */
+    async cleanupGlobalOrphanedContacts(tenantId: string) {
+        this.logger.log(`[CLEANUP] Starting global pipeline cleanup for tenant ${tenantId}`);
 
-        // 2. Find matching contacts
-        // We chunk the search to avoid parameter overflow in SQL
-        const CHUNK_SIZE = 500;
+        // 1. Get all existing leads across ALL campaigns to know who to keep
+        const allActiveLeads = await this.leadRepository.createQueryBuilder('cl')
+            .innerJoin('cl.campaign', 'campaign')
+            .where('campaign.tenantId = :tenantId', { tenantId })
+            .select('DISTINCT cl.externalId', 'externalId')
+            .getRawMany();
+
+        const activeIdsSet = new Set(allActiveLeads.map(l => l.externalId));
+
+        // 2. Find all "cold" contacts for this tenant
+        const coldContacts = await this.contactRepository.createQueryBuilder('contact')
+            .where('contact.tenantId = :tenantId', { tenantId })
+            .andWhere('contact.stage IN (:...coldStages)', { coldStages: ['NOVO', 'LEAD'] })
+            .getMany();
+
+        if (coldContacts.length === 0) return 0;
+
         let deletedCount = 0;
 
-        for (let i = 0; i < externalIds.length; i += CHUNK_SIZE) {
-            const chunk = externalIds.slice(i, i + CHUNK_SIZE);
-            const contacts = await this.contactRepository.createQueryBuilder('contact')
-                .where('contact.tenantId = :tenantId', { tenantId })
-                .andWhere('(contact.externalId IN (:...chunk) OR contact.phoneNumber IN (:...chunk))', { chunk })
-                .andWhere('contact.stage IN (:...coldStages)', { coldStages: ['NOVO', 'LEAD'] })
-                .getMany();
+        for (const contact of coldContacts) {
+            const phone = contact.externalId || contact.phoneNumber;
 
-            for (const contact of contacts) {
-                const phone = contact.externalId || contact.phoneNumber;
-                if (!phone) continue;
+            // Check if ID is in any active campaign
+            if (phone && activeIdsSet.has(phone)) continue;
 
-                // Check for message history
-                const messageCount = await this.messageRepository.count({ where: { contactId: contact.id } });
-                if (messageCount > 0) continue; // Keep if there is history
+            // Check for message history (Safety Layer)
+            const messageCount = await this.messageRepository.count({ where: { contactId: contact.id } });
+            if (messageCount > 0) continue;
 
-                // Check if in other campaigns
-                const otherCampCount = await this.leadRepository.createQueryBuilder('cl')
-                    .where('cl.externalId = :phone', { phone })
-                    .andWhere('cl.campaignId != :campaignId', { campaignId })
-                    .getCount();
-
-                if (otherCampCount > 0) continue; // Keep if in other campaigns
-
-                // Safe to delete
-                await this.contactRepository.remove(contact);
-                deletedCount++;
-            }
+            // Orphaned and inactive -> Remove
+            await this.contactRepository.remove(contact);
+            deletedCount++;
         }
 
-        this.logger.log(`[CLEANUP] Smart cleanup complete for campaign ${campaignId}. Removed ${deletedCount} orphaned contacts.`);
+        this.logger.log(`[CLEANUP] Global pipeline cleanup complete. Removed ${deletedCount} abandoned contacts.`);
+        return deletedCount;
     }
 
     async getDashboardStats(tenantId: string, campaignId?: string, instance?: string) {

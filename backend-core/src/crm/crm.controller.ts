@@ -56,4 +56,10 @@ export class CrmController {
     deleteAllContacts(@Request() req) {
         return this.crmService.removeAllContacts(req.user.tenantId);
     }
+
+    @Delete('contacts/cleanup-orphans')
+    async cleanupOrphans(@Request() req) {
+        const deletedCount = await this.crmService.cleanupGlobalOrphanedContacts(req.user.tenantId);
+        return { success: true, message: `Limpeza concluída. ${deletedCount} contatos órfãos removidos.`, deletedCount };
+    }
 }
