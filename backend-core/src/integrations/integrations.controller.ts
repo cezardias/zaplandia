@@ -139,6 +139,10 @@ export class IntegrationsController {
             if (webhookUrl) {
                 console.log(`[CREATE_INSTANCE_WEBHOOK] Auto-configuring webhook for ${instanceName}: ${webhookUrl}`);
                 await this.evolutionApiService.setWebhook(req.user.tenantId, instanceName, webhookUrl);
+
+                // --- ALSO SET SETTINGS (Reject call, Ignore groups, etc.) ---
+                console.log(`[CREATE_INSTANCE_SETTINGS] Auto-configuring settings for ${instanceName}`);
+                await this.evolutionApiService.setSettings(req.user.tenantId, instanceName);
             } else {
                 console.error(`[CREATE_INSTANCE_WEBHOOK] Could not detect webhook URL. Set INTERNAL_WEBHOOK_URL env var. Instance: ${instanceName}`);
             }

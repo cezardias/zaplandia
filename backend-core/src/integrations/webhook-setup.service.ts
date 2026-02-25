@@ -75,7 +75,14 @@ export class WebhookSetupService implements OnApplicationBootstrap {
                         instanceName,
                         webhookUrl
                     );
-                    this.logger.log(`[WEBHOOK_SETUP] ✅ Webhook configured for: ${instanceName} → ${webhookUrl}`);
+
+                    // Also ensure settings are correct (webhook_base64, etc.)
+                    await this.evolutionApiService.setSettings(
+                        credTenantId || integration.tenantId,
+                        instanceName
+                    );
+
+                    this.logger.log(`[WEBHOOK_SETUP] ✅ Webhook and Settings configured for: ${instanceName}`);
                 } catch (err) {
                     this.logger.error(`[WEBHOOK_SETUP] ❌ Failed for ${instanceName}: ${err.message}`);
                 }

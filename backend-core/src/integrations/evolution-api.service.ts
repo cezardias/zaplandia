@@ -336,15 +336,25 @@ export class EvolutionApiService {
             const payload = {
                 url: webhookUrl,
                 enabled: true,
-                webhook_by_events: false,
-                webhook_by_instance: false,
+                webhook_by_events: true,
+                webhook_base64: true,
                 events: [
                     "MESSAGES_UPSERT",
                     "MESSAGES_UPDATE",
                     "MESSAGES_DELETE",
                     "SEND_MESSAGE",
                     "CONNECTION_UPDATE",
-                    "CALL"
+                    "CALL",
+                    "PRESENCE_UPDATE",
+                    "QRCODE_UPDATED",
+                    "CHATS_UPSERT",
+                    "CHATS_UPDATE",
+                    "CHATS_DELETE",
+                    "CONTACTS_UPSERT",
+                    "CONTACTS_UPDATE",
+                    "GROUP_PARTICIPANTS_UPDATE",
+                    "GROUP_UPDATE",
+                    "GROUPS_UPSERT"
                 ]
             };
             const url = `${baseUrl}/webhook/set/${instanceName}`;
@@ -492,7 +502,8 @@ export class EvolutionApiService {
                 always_online: true,
                 read_messages: false,
                 read_status: false,
-                sync_full_history: false
+                sync_full_history: false,
+                webhook_base64: true
             };
             const url = `${baseUrl}/settings/set/${instanceName}`;
             this.logger.debug(`[EvolutionAPI] POST settings: ${url}`);
