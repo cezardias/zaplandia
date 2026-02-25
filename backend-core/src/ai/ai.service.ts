@@ -642,7 +642,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     timeout: 30000
                 });
 
-                this.logger.debug(`[AI_DEBUG] Gemini Response Status: ${response.status}`);
+                this.logger.debug(`[AI_DEBUG] Model ${model} responded. Status: ${response.status}`);
+                this.logger.debug(`[AI_TRACE] Response Body: ${JSON.stringify(response.data)}`);
                 const candidate = response.data?.candidates?.[0];
                 const part = candidate?.content?.parts?.[0];
 
