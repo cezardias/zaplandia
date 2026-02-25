@@ -274,10 +274,15 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             for (const model of uniqueModels) {
                 this.logger.debug(`[AI_ATTEMPT] Trying Gemini model: ${model}`);
                 try {
-                    // CHECK FOR ERP TOOLS
+                    // 6.1 CHECK FOR ERP TOOLS & AUTO-INJECT INSTRUCTION
                     let tools: any[] | undefined;
                     const erpKey = await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true);
+
+                    let finalPrompt = fullPrompt;
                     if (erpKey) {
+                        // Auto-inject capability instruction so the user doesn't have to manually edit every prompt
+                        finalPrompt += `\n\n[CAPACIDADE]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente perguntar por preços, estoque ou produtos, use esta ferramenta obrigatoriamente para obter dados reais antes de responder.`;
+
                         tools = [{
                             function_declarations: [{
                                 name: "get_products",
@@ -289,13 +294,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                             type: "string",
                                             description: "Termo de busca para o produto (nome ou código)"
                                         }
-                                    }
+                                    },
+                                    required: ["search"]
                                 }
                             }]
                         }];
                     }
 
-                    aiResponse = await this.callGemini(model, fullPrompt, apiKey, 1024, tools, tenantId);
+                    aiResponse = await this.callGemini(model, finalPrompt, apiKey, 1024, tools, tenantId);
                     if (aiResponse) {
                         this.logger.log(`[AI_SUCCESS] Generated response using model: ${model}`);
                         break;
@@ -606,7 +612,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
      * 503/500 → throw immediately so outer loop tries next model
      */
     private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string): Promise<string | null> {
-        const versions = ['v1', 'v1beta'];
+        // 🔧 FIX: If tools are present, use v1beta as it has better support for function calling
+        const versions = tools ? ['v1beta', 'v1'] : ['v1', 'v1beta'];
         const cleanApiKey = apiKey.trim();
         let lastError: any;
         let rateLimitCount = 0;
