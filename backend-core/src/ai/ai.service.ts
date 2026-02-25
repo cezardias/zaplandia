@@ -447,12 +447,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
             // 6. Call Gemini API manually (Resilient Fallback List)
             // NOTE: gemini-2.5-flash-lite is confirmed working (seen in inbox AI logs)
-            const startModel = modelName || 'gemini-2.5-flash-lite';
+            const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
-                'gemini-2.5-flash-lite',
                 'gemini-2.0-flash',
-                'gemini-2.0-flash-lite',
+                'gemini-1.5-flash',
+                'gemini-1.5-pro',
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
@@ -622,9 +622,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${cleanApiKey}`;
 
                 const payload: any = {
-                    contents: [{ parts: [{ text: prompt }] }],
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
                     generationConfig: {
-                        temperature: 0.7,
+                        temperature: 0.1, // Lower temperature for more reliable tool use
                         maxOutputTokens: maxTokens,
                         topP: 0.95,
                         topK: 40
@@ -715,8 +715,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 const errorData = error.response?.data;
 
                 // 🔧 CRITICAL FIX: If model doesn't support tools, retry WITHOUT tools
-                if (status === 400 && tools && JSON.stringify(errorData).includes('tools')) {
-                    this.logger.warn(`[AI_ROUTING] Model ${model} rejected tools payload. Retrying WITHOUT tools...`);
+                if (status === 400 && tools && JSON.stringify(errorData).toLowerCase().includes('tool')) {
+                    this.logger.warn(`[AI_ROUTING] Model ${model} rejected tools payload. Reason: ${JSON.stringify(errorData)}. Retrying WITHOUT tools...`);
                     return this.callGemini(model, prompt, apiKey, maxTokens, undefined, tenantId);
                 }
 
