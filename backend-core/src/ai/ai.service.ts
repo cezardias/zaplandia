@@ -650,11 +650,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     this.logger.debug(`[AI_DEBUG] Part Keys: ${Object.keys(part).join(', ')}`);
                 }
 
-                // Check for Tool Calling (Function Call)
-                if (part?.functionCall) {
-                    const funcCall = part.functionCall;
-                    const funcName = funcCall.name;
-                    const args = funcCall.args;
+                // Check for Tool Calling (Function Call) - Handle both camelCase and snake_case
+                const functionCall = part?.functionCall || part?.function_call;
+
+                if (functionCall) {
+                    const funcName = functionCall.name;
+                    const args = functionCall.args;
 
                     this.logger.log(`[AI_TOOL] Gemini requested tool: ${funcName} with args: ${JSON.stringify(args)}`);
 
@@ -667,15 +668,20 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     this.logger.log(`[AI_TOOL] Tool ${funcName} result received. Re-sending to Gemini...`);
 
-                    // Re-send to Gemini with functionResponse
+                    // Re-send to Gemini with functionResponse - Provide both for compatibility
                     const followUpPayload = {
                         contents: [
                             { role: 'user', parts: [{ text: prompt }] },
-                            { role: 'model', parts: [{ functionCall: funcCall }] },
+                            { role: 'model', parts: [part] }, // Use exactly what Gemini sent (contains functionCall/function_call)
                             {
                                 role: 'function',
                                 parts: [{
                                     functionResponse: {
+                                        name: funcName,
+                                        response: { content: toolResult }
+                                    },
+                                    // Some versions use snake_case
+                                    function_response: {
                                         name: funcName,
                                         response: { content: toolResult }
                                     }
@@ -690,7 +696,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         timeout: 30000
                     });
 
-                    const finalText = followUpResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    const finalCandidate = followUpResponse.data?.candidates?.[0];
+                    const finalText = finalCandidate?.content?.parts?.[0]?.text;
                     if (finalText) {
                         this.logger.debug(`[AI_ROUTING] Tool call + Follow-up successful with model ${model}.`);
                         return finalText;
