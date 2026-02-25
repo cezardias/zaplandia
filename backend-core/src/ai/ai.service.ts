@@ -284,14 +284,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         finalPrompt += `\n\n[CAPACIDADE]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente perguntar por preços, estoque ou produtos, use esta ferramenta obrigatoriamente para obter dados reais antes de responder.`;
 
                         tools = [{
-                            function_declarations: [{
+                            functionDeclarations: [{
                                 name: "get_products",
                                 description: "Busca produtos no ERP Zaplandia. Use para consultar preços, estoque e disponibilidade.",
                                 parameters: {
-                                    type: "OBJECT",
+                                    type: "object",
                                     properties: {
                                         search: {
-                                            type: "STRING",
+                                            type: "string",
                                             description: "Termo de busca para o produto (nome ou código)"
                                         }
                                     },
