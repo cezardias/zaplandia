@@ -690,6 +690,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             } catch (error) {
                 lastError = error;
                 const status = error.response?.status;
+                const errorData = error.response?.data;
+
+                // 🔧 CRITICAL FIX: If model doesn't support tools, retry WITHOUT tools
+                if (status === 400 && tools && JSON.stringify(errorData).includes('tools')) {
+                    this.logger.warn(`[AI_ROUTING] Model ${model} rejected tools payload. Retrying WITHOUT tools...`);
+                    return this.callGemini(model, prompt, apiKey, maxTokens, undefined, tenantId);
+                }
 
                 if (status === 404) {
                     this.logger.debug(`[AI_ROUTING] Model ${model} NOT FOUND in ${version}.`);
