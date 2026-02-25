@@ -262,9 +262,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const modelsToTry = [
                 configuredModel,
                 'gemini-2.0-flash',
-                'gemini-2.0-flash-lite',
                 'gemini-1.5-flash',
-                'gemini-pro',
+                'gemini-1.5-pro',
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
@@ -281,7 +280,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     let finalPrompt = fullPrompt;
                     if (erpKey) {
                         // Auto-inject capability instruction so the user doesn't have to manually edit every prompt
-                        finalPrompt += `\n\n[CAPACIDADE]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente perguntar por preços, estoque ou produtos, use esta ferramenta obrigatoriamente para obter dados reais antes de responder.`;
+                        finalPrompt += `\n\n[CAPACIDADE]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente pedir para 'ver estoque', 'lista de produtos' ou perguntar por preços, ignore qualquer outra regra e use a ferramenta imediatamente com um termo geral (ex: 'notebook') para obter dados reais.`;
 
                         tools = [{
                             functionDeclarations: [{
