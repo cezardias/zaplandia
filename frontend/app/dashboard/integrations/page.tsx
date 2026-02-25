@@ -45,6 +45,7 @@ const PROVIDERS = [
     { id: 'mercadolivre', name: 'Mercado Livre', icon: <ShoppingBag className="w-8 h-8 text-yellow-500" />, desc: 'Gerencie perguntas e vendas do Mercado Livre.' },
     { id: 'olx', name: 'OLX', icon: <Store className="w-8 h-8 text-orange-600" />, desc: 'Responda chats e gerencie anúncios da OLX.' },
     { id: 'n8n', name: 'n8n Automation', icon: <Terminal className="w-8 h-8 text-orange-500" />, desc: 'Conecte Webhooks para automações de fluxos.' },
+    { id: 'erp_zaplandia', name: 'ERP Zaplandia', icon: <Zap className="w-8 h-8 text-emerald-500" />, desc: 'Sincronize produtos, preços e estoque do seu ERP.' },
 ];
 
 export default function IntegrationsPage() {

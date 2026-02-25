@@ -46,6 +46,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         evolution_api_url: '',
         evolution_api_key: '',
         n8n_webhook_url: '',
+        erp_zaplandia_key: '',
     });
 
     useEffect(() => {
@@ -122,6 +123,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             if (item.key_name === 'N8N_WEBHOOK_URL') next.n8n_webhook_url = item.key_value;
             if (item.key_name === 'EVOLUTION_API_URL') next.evolution_api_url = item.key_value;
             if (item.key_name === 'EVOLUTION_API_KEY') next.evolution_api_key = item.key_value;
+            if (item.key_name === 'ERP_ZAPLANDIA_KEY') next.erp_zaplandia_key = item.key_value;
         });
         setKeys(next);
     };
@@ -491,6 +493,35 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         <span>Salvar OLX</span>
                     </button>
+                </div>
+            </section>
+
+            {/* ERP Zaplandia Section */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Zap className="w-5 h-5 text-emerald-500" />
+                    <span>ERP Zaplandia</span>
+                </h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-xs text-white/60 mb-2 block uppercase tracking-widest font-black">Chave da API (X-API-Key)</label>
+                        <input
+                            type="password"
+                            value={keys.erp_zaplandia_key}
+                            onChange={(e) => setKeys({ ...keys, erp_zaplandia_key: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary transition"
+                            placeholder="Insira a API Key gerada no ERP"
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleSave('ERP_ZAPLANDIA_KEY', keys.erp_zaplandia_key)}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-3 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar ERP Zaplandia</span>
+                    </button>
+                    <p className="text-[10px] text-gray-500 text-center">Acesse Sistema &gt; API Keys no seu ERP para gerar esta chave.</p>
                 </div>
             </section>
         </div>

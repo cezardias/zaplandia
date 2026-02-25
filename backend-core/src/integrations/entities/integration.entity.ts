@@ -15,6 +15,7 @@ export enum IntegrationProvider {
     OLX = 'olx',
     N8N = 'n8n',
     EVOLUTION = 'evolution',
+    ERP_ZAPLANDIA = 'erp_zaplandia',
 }
 
 export enum IntegrationStatus {

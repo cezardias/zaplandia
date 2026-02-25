@@ -7,6 +7,7 @@ import { Integration } from '../integrations/entities/integration.entity';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { AiPrompt as AiPromptEntity } from '../integrations/entities/ai-prompt.entity';
+import { ErpZaplandiaService } from '../integrations/erp-zaplandia.service';
 
 export interface AIPrompt {
     id: string;
@@ -30,6 +31,7 @@ export class AiService implements OnModuleInit {
         private aiPromptRepository: Repository<AiPromptEntity>,
         public evolutionApiService: EvolutionApiService,
         private integrationsService: IntegrationsService,
+        private erpZaplandiaService: ErpZaplandiaService,
     ) { }
 
     async onModuleInit() {
@@ -272,7 +274,28 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             for (const model of uniqueModels) {
                 this.logger.debug(`[AI_ATTEMPT] Trying Gemini model: ${model}`);
                 try {
-                    aiResponse = await this.callGemini(model, fullPrompt, apiKey, 1024);
+                    // CHECK FOR ERP TOOLS
+                    let tools: any[] | undefined;
+                    const erpKey = await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true);
+                    if (erpKey) {
+                        tools = [{
+                            function_declarations: [{
+                                name: "get_products",
+                                description: "Busca produtos no ERP Zaplandia. Use para consultar preços, estoque e disponibilidade.",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        search: {
+                                            type: "string",
+                                            description: "Termo de busca para o produto (nome ou código)"
+                                        }
+                                    }
+                                }
+                            }]
+                        }];
+                    }
+
+                    aiResponse = await this.callGemini(model, fullPrompt, apiKey, 1024, tools, tenantId);
                     if (aiResponse) {
                         this.logger.log(`[AI_SUCCESS] Generated response using model: ${model}`);
                         break;
@@ -582,7 +605,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
      *        if both versions return 429, wait 5s and throw so outer loop tries next model
      * 503/500 → throw immediately so outer loop tries next model
      */
-    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number): Promise<string | null> {
+    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string): Promise<string | null> {
         const versions = ['v1', 'v1beta'];
         const cleanApiKey = apiKey.trim();
         let lastError: any;
@@ -590,10 +613,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
         for (const version of versions) {
             try {
-                // Use query param (?key=) as it's the most universally supported auth method
                 const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${cleanApiKey}`;
 
-                const response = await axios.post(url, {
+                const payload: any = {
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
                         temperature: 0.7,
@@ -601,12 +623,66 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         topP: 0.95,
                         topK: 40
                     }
-                }, {
+                };
+
+                if (tools) payload.tools = tools;
+
+                const response = await axios.post(url, payload, {
                     headers: { 'Content-Type': 'application/json' },
                     timeout: 30000
                 });
 
-                const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                const candidate = response.data?.candidates?.[0];
+                const part = candidate?.content?.parts?.[0];
+
+                // Check for Tool Calling (Function Call)
+                if (part?.functionCall) {
+                    const funcCall = part.functionCall;
+                    const funcName = funcCall.name;
+                    const args = funcCall.args;
+
+                    this.logger.log(`[AI_TOOL] Gemini requested tool: ${funcName} with args: ${JSON.stringify(args)}`);
+
+                    let toolResult: any;
+                    if (funcName === 'get_products' && tenantId) {
+                        toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
+                    } else {
+                        toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
+                    }
+
+                    this.logger.log(`[AI_TOOL] Tool ${funcName} result received. Re-sending to Gemini...`);
+
+                    // Re-send to Gemini with functionResponse
+                    const followUpPayload = {
+                        contents: [
+                            { role: 'user', parts: [{ text: prompt }] },
+                            { role: 'model', parts: [{ functionCall: funcCall }] },
+                            {
+                                role: 'function',
+                                parts: [{
+                                    functionResponse: {
+                                        name: funcName,
+                                        response: { content: toolResult }
+                                    }
+                                }]
+                            }
+                        ],
+                        generationConfig: payload.generationConfig
+                    };
+
+                    const followUpResponse = await axios.post(url, followUpPayload, {
+                        headers: { 'Content-Type': 'application/json' },
+                        timeout: 30000
+                    });
+
+                    const finalText = followUpResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (finalText) {
+                        this.logger.debug(`[AI_ROUTING] Tool call + Follow-up successful with model ${model}.`);
+                        return finalText;
+                    }
+                }
+
+                const text = part?.text;
                 if (text) {
                     this.logger.debug(`[AI_ROUTING] Model ${model} succeeded in ${version}.`);
                     return text;
@@ -616,16 +692,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 const status = error.response?.status;
 
                 if (status === 404) {
-                    // Model doesn't exist in this version, try next version
                     this.logger.debug(`[AI_ROUTING] Model ${model} NOT FOUND in ${version}.`);
                     continue;
                 }
 
                 if (status === 429) {
-                    // Rate limit: continue to next version (v1beta may have separate quota)
                     rateLimitCount++;
                     this.logger.warn(`[AI_ROUTING] Model ${model} in ${version} returned 429 (${rateLimitCount}/2 versions hit).`);
-                    continue; // Try v1beta before giving up
+                    continue;
                 }
 
                 if (status === 503 || status === 500) {
@@ -637,14 +711,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             }
         }
 
-        // If both versions returned 429, wait 5s then throw so outer loop tries next model
         if (rateLimitCount > 0) {
             this.logger.warn(`[AI_ROUTING] Model ${model} hit 429 on all versions. Waiting 5s before next model...`);
             await new Promise(resolve => setTimeout(resolve, 5000));
             throw lastError;
         }
 
-        // Both versions returned 404 → throw so outer loop tries next model
         if (lastError?.response?.status === 404) {
             throw lastError;
         }

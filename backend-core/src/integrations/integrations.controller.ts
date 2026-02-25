@@ -90,7 +90,8 @@ export class IntegrationsController {
             return {
                 ...i,
                 name: i.provider === 'whatsapp' ? 'WhatsApp Oficial' :
-                    i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
+                    i.provider === 'erp_zaplandia' ? 'ERP Zaplandia' :
+                        i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
             };
         }).filter(i => i !== null); // Remove the nulls (ghost instances)
 
