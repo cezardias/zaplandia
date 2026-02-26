@@ -611,8 +611,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
      * 503/500 → throw immediately so outer loop tries next model
      */
     private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string): Promise<string | null> {
-        // 🔧 FIX: If tools are present, use v1beta as it has better support for function calling
-        const versions = tools ? ['v1beta', 'v1'] : ['v1', 'v1beta'];
+        // 🔧 FIX: Tool calling MUST use v1beta. v1 often doesn't support the 'tools' field.
+        const versions = tools ? ['v1beta'] : ['v1', 'v1beta'];
         const cleanApiKey = apiKey.trim();
         let lastError: any;
         let rateLimitCount = 0;
@@ -678,7 +678,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                 parts: [{
                                     functionResponse: {
                                         name: funcName,
-                                        response: { name: funcName, content: toolResult }
+                                        response: { content: toolResult }
                                     }
                                 }]
                             }
