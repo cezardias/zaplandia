@@ -50,7 +50,7 @@ export default function WhatsAppInstancesPage() {
 
     // AI Configuration
     const [aiModalInstance, setAiModalInstance] = useState<string | null>(null);
-    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '' });
+    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-2.5-flash-lite' });
     const [isSavingAI, setIsSavingAI] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
     const [dbIntegrations, setDbIntegrations] = useState<any[]>([]); // DB integrations for AI config
@@ -92,7 +92,8 @@ export default function WhatsAppInstancesPage() {
         setAiModalInstance(instanceName);
         setAiConfig({
             enabled: dbInt?.aiEnabled || false,
-            promptId: dbInt?.aiPromptId || ''
+            promptId: dbInt?.aiPromptId || '',
+            aiModel: dbInt?.aiModel || 'gemini-2.5-flash-lite'
         });
     };
 
@@ -119,6 +120,7 @@ export default function WhatsAppInstancesPage() {
                 body: JSON.stringify({
                     enabled: aiConfig.enabled,
                     promptId: aiConfig.promptId || undefined,
+                    aiModel: aiConfig.aiModel
                 })
             });
 
@@ -699,6 +701,22 @@ export default function WhatsAppInstancesPage() {
                                             <p className="text-xs text-gray-400 bg-white/5 border border-white/10 rounded-xl p-3 line-clamp-3">{p.content}</p>
                                         ) : null;
                                     })()}
+                                </div>
+
+                                {/* Gemini Model Selector */}
+                                <div className="space-y-3">
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Modelo de IA</label>
+                                    <select
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl text-sm px-4 py-3 text-white outline-none focus:border-primary transition"
+                                        value={aiConfig.aiModel}
+                                        onChange={(e) => setAiConfig({ ...aiConfig, aiModel: e.target.value })}
+                                    >
+                                        <option value="gemini-2.5-flash-lite">⭐ 2.5 Flash Lite (Mais Novo)</option>
+                                        <option value="gemini-1.5-flash">⚡ 1.5 Flash (Recomendado)</option>
+                                        <option value="gemini-1.5-pro">🚀 1.5 Pro (Mais Inteligente)</option>
+                                        <option value="gemini-2.0-flash-exp">🔬 2.0 Flash (Experimental)</option>
+                                    </select>
+                                    <p className="text-[10px] text-gray-500">Escolha a versão do motor Gemini.</p>
                                 </div>
                             </div>
 

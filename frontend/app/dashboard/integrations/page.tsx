@@ -55,7 +55,7 @@ export default function IntegrationsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [connectingId, setConnectingId] = useState<string | null>(null);
     const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
-    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '' });
+    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-2.5-flash-lite' });
     const [isSavingAI, setIsSavingAI] = useState(false);
     const [showEvolutionModal, setShowEvolutionModal] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
@@ -129,7 +129,8 @@ export default function IntegrationsPage() {
         setSelectedIntegration(integration);
         setAiConfig({
             enabled: integration.aiEnabled || false,
-            promptId: integration.aiPromptId || ''
+            promptId: integration.aiPromptId || '',
+            aiModel: integration.aiModel || 'gemini-2.5-flash-lite'
         });
     };
 
@@ -148,6 +149,7 @@ export default function IntegrationsPage() {
                 body: JSON.stringify({
                     enabled: aiConfig.enabled,
                     promptId: aiConfig.promptId || undefined,
+                    aiModel: aiConfig.aiModel
                 })
             });
             if (res.ok) {
@@ -350,6 +352,22 @@ export default function IntegrationsPage() {
                                     ) : null;
                                 })()}
                                 <p className="text-[10px] text-gray-500">Selecione o prompt salvo que define a personalidade do agente para este canal.</p>
+                            </div>
+
+                            {/* Gemini Model Selector */}
+                            <div className="space-y-3">
+                                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Modelo de IA</label>
+                                <select
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl text-sm px-4 py-3 text-white outline-none focus:border-primary transition"
+                                    value={aiConfig.aiModel}
+                                    onChange={(e) => setAiConfig({ ...aiConfig, aiModel: e.target.value })}
+                                >
+                                    <option value="gemini-2.5-flash-lite">⭐ 2.5 Flash Lite (Mais Novo)</option>
+                                    <option value="gemini-1.5-flash">⚡ 1.5 Flash (Recomendado)</option>
+                                    <option value="gemini-1.5-pro">🚀 1.5 Pro (Mais Inteligente)</option>
+                                    <option value="gemini-2.0-flash-exp">🔬 2.0 Flash (Experimental)</option>
+                                </select>
+                                <p className="text-[10px] text-gray-500">Escolha a versão do motor Gemini para processar as mensagens.</p>
                             </div>
                         </div>
 
