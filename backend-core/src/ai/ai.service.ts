@@ -668,22 +668,17 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     this.logger.log(`[AI_TOOL] Tool ${funcName} result received. Re-sending to Gemini...`);
 
-                    // Re-send to Gemini with functionResponse - Provide both for compatibility
+                    // Re-send to Gemini with functionResponse
                     const followUpPayload = {
                         contents: [
                             { role: 'user', parts: [{ text: prompt }] },
-                            { role: 'model', parts: [part] }, // Use exactly what Gemini sent (contains functionCall/function_call)
+                            { role: 'model', parts: [part] }, // Maintain conversation flow
                             {
                                 role: 'function',
                                 parts: [{
                                     functionResponse: {
                                         name: funcName,
-                                        response: { content: toolResult }
-                                    },
-                                    // Some versions use snake_case
-                                    function_response: {
-                                        name: funcName,
-                                        response: { content: toolResult }
+                                        response: { name: funcName, content: toolResult }
                                     }
                                 }]
                             }
