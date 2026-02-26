@@ -261,9 +261,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const configuredModel = integration.aiModel || 'gemini-2.0-flash';
             const modelsToTry = [
                 configuredModel,
+                'gemini-2.5-flash-lite',
                 'gemini-2.0-flash',
                 'gemini-1.5-flash',
-                'gemini-1.5-pro',
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
