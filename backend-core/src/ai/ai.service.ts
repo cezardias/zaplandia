@@ -670,18 +670,29 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const choice = response.data?.choices?.[0];
             const message = choice?.message;
 
-            if (message?.tool_calls) {
-                const toolCall = message.tool_calls[0].function;
-                const funcName = toolCall.name;
-                const args = JSON.parse(toolCall.arguments);
+            if (message?.tool_calls && message.tool_calls.length > 0) {
+                this.logger.log(`[AI_TOOL] OpenRouter requested ${message.tool_calls.length} tools`);
 
-                this.logger.log(`[AI_TOOL] OpenRouter requested tool: ${funcName} with args: ${JSON.stringify(args)}`);
+                const toolResponses: any[] = [];
+                for (const toolCall of message.tool_calls) {
+                    const funcName = toolCall.function.name;
+                    const args = JSON.parse(toolCall.function.arguments);
 
-                let toolResult: any;
-                if (funcName === 'get_products' && tenantId) {
-                    toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
-                } else {
-                    toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
+                    this.logger.log(`[AI_TOOL] Calling ${funcName} with args: ${JSON.stringify(args)}`);
+
+                    let toolResult: any;
+                    if (funcName === 'get_products' && tenantId) {
+                        toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
+                    } else {
+                        toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
+                    }
+
+                    toolResponses.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        name: funcName,
+                        content: JSON.stringify(toolResult)
+                    });
                 }
 
                 // Follow up
@@ -689,20 +700,20 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     ...payload,
                     messages: [
                         ...payload.messages,
-                        message,
                         {
-                            role: 'tool',
-                            tool_call_id: message.tool_calls[0].id,
-                            name: funcName,
-                            content: JSON.stringify(toolResult)
-                        }
+                            role: 'assistant',
+                            tool_calls: message.tool_calls
+                        },
+                        ...toolResponses
                     ]
                 };
 
                 const followUpResponse = await axios.post(url, followUpPayload, {
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
+                        'Authorization': `Bearer ${apiKey}`,
+                        'HTTP-Referer': 'https://zaplandia.com.br',
+                        'X-OpenRouter-Title': 'Zaplandia'
                     },
                     timeout: 30000
                 });
