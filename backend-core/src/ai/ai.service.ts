@@ -261,10 +261,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const configuredModel = integration.aiModel || 'gemini-1.5-flash';
             const modelsToTry = [
                 configuredModel,
-                'gemini-2.0-flash-lite-preview-02-05',
-                'gemini-1.5-flash',
-                'gemini-1.5-flash-8b',
                 'gemini-2.0-flash',
+                'gemini-2.0-flash-exp',
+                'gemini-1.5-flash',
+                'gemini-1.5-flash-latest',
+                'gemini-1.5-flash-8b',
+                'gemini-1.5-pro',
+                'gemini-2.0-flash-lite-preview-02-05',
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
@@ -450,11 +453,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
-                'gemini-2.0-flash-lite-preview-02-05',
-                'gemini-1.5-flash',
-                'gemini-1.5-flash-8b',
                 'gemini-2.0-flash',
+                'gemini-2.0-flash-exp',
+                'gemini-1.5-flash',
+                'gemini-1.5-flash-latest',
+                'gemini-1.5-flash-8b',
                 'gemini-1.5-pro',
+                'gemini-2.0-flash-lite-preview-02-05',
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
@@ -623,6 +628,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         for (const version of versions) {
             try {
                 const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${cleanApiKey}`;
+                this.logger.debug(`[AI_ROUTING] Calling Gemini URL: https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=HIDDEN`);
 
                 const payload: any = {
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
