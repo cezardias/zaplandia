@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
+import AiModelSelector from '@/components/AiModelSelector';
 
 interface Contact {
     id: string;
@@ -467,44 +468,33 @@ export default function OmniInboxPage() {
                                     )}
 
                                     {/* Gemini Model Selector */}
-                                    {aiEnabled && (
-                                        <div className="mt-2">
-                                            <label className="text-xs text-gray-400 block mb-1">Modelo de IA</label>
-                                            <select
-                                                value={selectedAiModel}
-                                                onChange={async (e) => {
-                                                    const newModel = e.target.value;
-                                                    setSelectedAiModel(newModel);
-                                                    // Save immediately to backend
-                                                    if (token && selectedInstance !== 'all') {
-                                                        try {
-                                                            await fetch(`/api/ai/integration/${selectedInstance}/toggle`, {
-                                                                method: 'POST',
-                                                                headers: {
-                                                                    'Authorization': `Bearer ${token}`,
-                                                                    'Content-Type': 'application/json'
-                                                                },
-                                                                body: JSON.stringify({
-                                                                    enabled: true,
-                                                                    promptId: selectedPromptId,
-                                                                    aiModel: newModel
-                                                                })
-                                                            });
-                                                        } catch (err) {
-                                                            console.error('Erro ao salvar modelo:', err);
-                                                        }
-                                                    }
-                                                }}
-                                                className="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
-                                            >
-                                                <option value="gemini-2.0-flash-lite-preview-02-05">⭐ 2.0 Flash Lite (Ecobômico)</option>
-                                                <option value="gemini-1.5-flash">⚡ 1.5 Flash (Recomendado)</option>
-                                                <option value="gemini-1.5-flash-8b">🍃 1.5 Flash 8B (Mais Rápido)</option>
-                                                <option value="gemini-2.0-flash">🚀 2.0 Flash (Mais Novo)</option>
-                                                <option value="gemini-1.5-pro">🧠 1.5 Pro (Mais Inteligente)</option>
-                                            </select>
-                                        </div>
-                                    )}
+                                    {aiEnabled && <div className="space-y-3">
+                                        <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest">Modelo do Motor</label>
+                                        <AiModelSelector
+                                            value={selectedAiModel}
+                                            token={token || ''}
+                                            className="w-full text-white py-3 border-white/5"
+                                            onChange={async (newModel) => {
+                                                setSelectedAiModel(newModel);
+                                                // Save immediately to backend
+                                                if (token && selectedInstance !== 'all') {
+                                                    await fetch(`/api/ai/integration/${selectedInstance}/toggle`, {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'Authorization': `Bearer ${token}`
+                                                        },
+                                                        body: JSON.stringify({
+                                                            enabled: aiEnabled,
+                                                            promptId: selectedPromptId,
+                                                            aiModel: newModel
+                                                        })
+                                                    });
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    }
                                 </div>
                             )}
                         </div>

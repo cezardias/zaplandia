@@ -18,6 +18,18 @@ export class AiController {
         private aiService: AiService,
     ) { }
 
+    @Get('openrouter/models')
+    async listOpenRouterModels() {
+        return this.aiService.getOpenRouterModels();
+    }
+
+    @Get('openrouter/credits')
+    async getOpenRouterCredits(@Request() req) {
+        const apiKey = await (this.aiService as any).getOpenRouterApiKey(req.user.tenantId);
+        if (!apiKey) return { error: 'No OpenRouter API key configured' };
+        return this.aiService.getOpenRouterCredits(apiKey);
+    }
+
     /**
      * DIAGNOSTIC: List all Gemini models available for this tenant's API key
      * GET /api/ai/list-models

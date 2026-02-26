@@ -19,6 +19,7 @@ import {
     Save,
     X
 } from 'lucide-react';
+import AiModelSelector from '@/components/AiModelSelector';
 
 interface WhatsAppInstance {
     instanceName: string;
@@ -706,18 +707,13 @@ export default function WhatsAppInstancesPage() {
                                 {/* Gemini Model Selector */}
                                 <div className="space-y-3">
                                     <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Modelo de IA</label>
-                                    <select
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl text-sm px-4 py-3 text-white outline-none focus:border-primary transition"
+                                    <AiModelSelector
                                         value={aiConfig.aiModel}
-                                        onChange={(e) => setAiConfig({ ...aiConfig, aiModel: e.target.value })}
-                                    >
-                                        <option value="gemini-2.0-flash-lite-preview-02-05">⭐ 2.0 Flash Lite (Ecobômico)</option>
-                                        <option value="gemini-1.5-flash">⚡ 1.5 Flash (Recomendado)</option>
-                                        <option value="gemini-1.5-flash-8b">🍃 1.5 Flash 8B (Mais Rápido)</option>
-                                        <option value="gemini-2.0-flash">🚀 2.0 Flash (Mais Novo)</option>
-                                        <option value="gemini-1.5-pro">🧠 1.5 Pro (Mais Inteligente)</option>
-                                    </select>
-                                    <p className="text-[10px] text-gray-500">Escolha a versão do motor Gemini.</p>
+                                        token={token || ''}
+                                        className="w-full"
+                                        onChange={(newModel) => setAiConfig({ ...aiConfig, aiModel: newModel })}
+                                    />
+                                    <p className="text-[10px] text-gray-500">Escolha o modelo de IA (Gemini ou OpenRouter).</p>
                                 </div>
                             </div>
 

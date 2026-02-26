@@ -129,6 +129,19 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
 
     /**
+     * Get OpenRouter API key for tenant
+     */
+    private async getOpenRouterApiKey(tenantId: string): Promise<string | null> {
+        try {
+            const apiKey = await this.integrationsService.getCredential(tenantId, 'OPENROUTER_API_KEY');
+            return apiKey?.trim() || null;
+        } catch (error) {
+            this.logger.error(`Failed to get OpenRouter API key for tenant ${tenantId}: ${error.message}`);
+            return null;
+        }
+    }
+
+    /**
      * Check if AI should respond to this message
      */
     async shouldRespond(contact: Contact, instanceName: string, tenantId: string): Promise<boolean> {
@@ -191,10 +204,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
      */
     async generateResponse(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
         try {
-            // 1. Get tenant's Gemini API key
-            const apiKey = await this.getGeminiApiKey(tenantId);
-            if (!apiKey) {
-                this.logger.error(`No Gemini API key configured for tenant ${tenantId}`);
+            // 1. Determine provider and get API key
+            const geminiKey = await this.getGeminiApiKey(tenantId);
+            const openRouterKey = await this.getOpenRouterApiKey(tenantId);
+
+            if (!geminiKey && !openRouterKey) {
+                this.logger.error(`No AI API key configured for tenant ${tenantId}`);
                 return null;
             }
 
@@ -304,7 +319,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         }];
                     }
 
-                    aiResponse = await this.callGemini(model, finalPrompt, apiKey, 1024, tools, tenantId);
+                    // ROUTING LOGIC
+                    if (model.includes('/') && openRouterKey) {
+                        this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
+                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId);
+                    } else if (geminiKey) {
+                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId);
+                    }
+
                     if (aiResponse) {
                         this.logger.log(`[AI_SUCCESS] Generated response using model: ${model}`);
                         break;
@@ -617,6 +639,107 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
      *        if both versions return 429, wait 5s and throw so outer loop tries next model
      * 503/500 → throw immediately so outer loop tries next model
      */
+    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string): Promise<string | null> {
+        try {
+            const url = 'https://openrouter.ai/api/v1/chat/completions';
+            const payload: any = {
+                model: model,
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: maxTokens,
+                temperature: 0.1,
+            };
+
+            if (tools) {
+                // OpenRouter uses OpenAI-compatible tool format
+                payload.tools = tools.map(t => ({
+                    type: 'function',
+                    function: t.function_declarations[0]
+                }));
+            }
+
+            const response = await axios.post(url, payload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://zaplandia.com.br',
+                    'X-OpenRouter-Title': 'Zaplandia'
+                },
+                timeout: 30000
+            });
+
+            const choice = response.data?.choices?.[0];
+            const message = choice?.message;
+
+            if (message?.tool_calls) {
+                const toolCall = message.tool_calls[0].function;
+                const funcName = toolCall.name;
+                const args = JSON.parse(toolCall.arguments);
+
+                this.logger.log(`[AI_TOOL] OpenRouter requested tool: ${funcName} with args: ${JSON.stringify(args)}`);
+
+                let toolResult: any;
+                if (funcName === 'get_products' && tenantId) {
+                    toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
+                } else {
+                    toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
+                }
+
+                // Follow up
+                const followUpPayload = {
+                    ...payload,
+                    messages: [
+                        ...payload.messages,
+                        message,
+                        {
+                            role: 'tool',
+                            tool_call_id: message.tool_calls[0].id,
+                            name: funcName,
+                            content: JSON.stringify(toolResult)
+                        }
+                    ]
+                };
+
+                const followUpResponse = await axios.post(url, followUpPayload, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    timeout: 30000
+                });
+
+                return followUpResponse.data?.choices?.[0]?.message?.content;
+            }
+
+            return message?.content;
+        } catch (error) {
+            this.logger.error(`[AI_FAIL] OpenRouter failed: ${error.response?.status} - ${JSON.stringify(error.response?.data || error.message)}`);
+            throw error;
+        }
+    }
+
+    async getOpenRouterModels(): Promise<any[]> {
+        try {
+            const response = await axios.get('https://openrouter.ai/api/v1/models', { timeout: 10000 });
+            return response.data?.data || [];
+        } catch (error) {
+            this.logger.error(`Failed to fetch OpenRouter models: ${error.message}`);
+            return [];
+        }
+    }
+
+    async getOpenRouterCredits(apiKey: string): Promise<any> {
+        try {
+            const response = await axios.get('https://openrouter.ai/api/v1/credits', {
+                headers: { 'Authorization': `Bearer ${apiKey}` },
+                timeout: 5000
+            });
+            return response.data?.data || null;
+        } catch (error) {
+            this.logger.error(`Failed to fetch OpenRouter credits: ${error.message}`);
+            return null;
+        }
+    }
+
     private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string): Promise<string | null> {
         // 🔧 FIX: Tool calling MUST use v1beta. v1 often doesn't support the 'tools' field.
         // However, if tools fail or model is not found in v1beta, we can try v1 as fallback for text.

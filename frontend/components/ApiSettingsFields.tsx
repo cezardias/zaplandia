@@ -11,7 +11,8 @@ import {
     Linkedin,
     ShoppingBag,
     Store,
-    AlertCircle
+    AlertCircle,
+    Coins
 } from 'lucide-react';
 
 interface ApiSettingsFieldsProps {
@@ -47,7 +48,10 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         evolution_api_key: '',
         n8n_webhook_url: '',
         erp_zaplandia_key: '',
+        openrouter_key: '',
     });
+
+    const [openrouterCredits, setOpenrouterCredits] = useState<{ total_credits: number, total_usage: number } | null>(null);
 
     useEffect(() => {
         if (token) fetchExistingKeys();
@@ -124,8 +128,27 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             if (item.key_name === 'EVOLUTION_API_URL') next.evolution_api_url = item.key_value;
             if (item.key_name === 'EVOLUTION_API_KEY') next.evolution_api_key = item.key_value;
             if (item.key_name === 'ERP_ZAPLANDIA_KEY') next.erp_zaplandia_key = item.key_value;
+            if (item.key_name === 'OPENROUTER_API_KEY') next.openrouter_key = item.key_value;
         });
         setKeys(next);
+
+        // If OpenRouter key exists, fetch credits
+        const orKey = data.find((i: any) => i.key_name === 'OPENROUTER_API_KEY')?.key_value;
+        if (orKey) fetchOpenRouterCredits();
+    };
+
+    const fetchOpenRouterCredits = async () => {
+        try {
+            const res = await fetch('/api/ai/openrouter/credits', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setOpenrouterCredits(data);
+            }
+        } catch (e) {
+            console.error('Erro ao buscar créditos OpenRouter:', e);
+        }
     };
 
     const handleSave = async (name: string, value: string) => {
@@ -278,6 +301,47 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         <span>Salvar Gemini</span>
                     </button>
+                </div>
+            </section>
+
+            {/* AI Section (OpenRouter) */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Zap className="w-5 h-5 text-cyan-500" />
+                    <span>OpenRouter AI (DeepSeek, GPT-4, Llama)</span>
+                </h2>
+                <div className="space-y-4">
+                    <input
+                        type="password"
+                        value={keys.openrouter_key}
+                        onChange={(e) => setKeys({ ...keys, openrouter_key: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-cyan-500"
+                        placeholder="OpenRouter API Key (sk-or-v1-...)"
+                    />
+
+                    {openrouterCredits && (
+                        <div className="flex items-center space-x-4 p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
+                            <Coins className="w-5 h-5 text-cyan-400" />
+                            <div>
+                                <p className="text-[10px] text-cyan-300 uppercase font-black">Saldo OpenRouter</p>
+                                <p className="text-sm font-bold text-white">
+                                    ${(openrouterCredits.total_credits - openrouterCredits.total_usage).toFixed(4)} USD
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => handleSave('OPENROUTER_API_KEY', keys.openrouter_key)}
+                        disabled={isLoading}
+                        className="w-full bg-cyan-600 hover:bg-cyan-700 py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar OpenRouter</span>
+                    </button>
+                    <p className="text-[10px] text-gray-500 text-center">
+                        Crie sua chave em <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" className="text-cyan-400 hover:underline">openrouter.ai/keys</a>
+                    </p>
                 </div>
             </section>
 
