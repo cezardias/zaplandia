@@ -258,12 +258,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const fullPrompt = `${promptContent}\n\nHistórico da Conversa:\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
             // 6. Call Gemini API manually (Resilient Fallback List)
-            const configuredModel = integration.aiModel || 'gemini-2.0-flash';
+            const configuredModel = integration.aiModel || 'gemini-1.5-flash';
             const modelsToTry = [
                 configuredModel,
-                'gemini-2.5-flash-lite',
-                'gemini-2.0-flash',
+                'gemini-2.0-flash-lite-preview-02-05',
                 'gemini-1.5-flash',
+                'gemini-1.5-flash-8b',
+                'gemini-2.0-flash',
             ];
 
             const uniqueModels = [...new Set(modelsToTry)];
@@ -446,13 +447,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
             // 6. Call Gemini API manually (Resilient Fallback List)
-            // NOTE: gemini-2.5-flash-lite is confirmed working (seen in inbox AI logs)
             const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
-                'gemini-2.5-flash-lite',
-                'gemini-2.0-flash',
+                'gemini-2.0-flash-lite-preview-02-05',
                 'gemini-1.5-flash',
+                'gemini-1.5-flash-8b',
+                'gemini-2.0-flash',
                 'gemini-1.5-pro',
             ];
             const uniqueModels = [...new Set(modelsToTry)];
@@ -613,7 +614,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
      */
     private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string): Promise<string | null> {
         // 🔧 FIX: Tool calling MUST use v1beta. v1 often doesn't support the 'tools' field.
-        const versions = tools ? ['v1beta'] : ['v1', 'v1beta'];
+        // However, if tools fail or model is not found in v1beta, we can try v1 as fallback for text.
+        const versions = tools ? ['v1beta', 'v1'] : ['v1', 'v1beta'];
         const cleanApiKey = apiKey.trim();
         let lastError: any;
         let rateLimitCount = 0;

@@ -146,12 +146,12 @@ export default function OmniInboxPage() {
             if (inst) {
                 setAiEnabled(inst.aiEnabled || false);
                 setSelectedPromptId(inst.aiPromptId || null);
-                setSelectedAiModel(inst.aiModel || 'gemini-2.5-flash-lite');
+                setSelectedAiModel(inst.aiModel || 'gemini-1.5-flash');
             }
         } else {
             setAiEnabled(false);
             setSelectedPromptId(null);
-            setSelectedAiModel('gemini-2.5-flash-lite');
+            setSelectedAiModel('gemini-1.5-flash');
         }
     }, [token, selectedInstance, availableInstances]);
 
@@ -497,10 +497,11 @@ export default function OmniInboxPage() {
                                                 }}
                                                 className="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
                                             >
-                                                <option value="gemini-2.5-flash-lite">⭐ 2.5 Flash Lite (Mais Novo)</option>
+                                                <option value="gemini-2.0-flash-lite-preview-02-05">⭐ 2.0 Flash Lite (Ecobômico)</option>
                                                 <option value="gemini-1.5-flash">⚡ 1.5 Flash (Recomendado)</option>
-                                                <option value="gemini-1.5-pro">🚀 1.5 Pro (Mais Inteligente)</option>
-                                                <option value="gemini-2.0-flash-exp">🔬 2.0 Flash (Experimental)</option>
+                                                <option value="gemini-1.5-flash-8b">🍃 1.5 Flash 8B (Mais Rápido)</option>
+                                                <option value="gemini-2.0-flash">🚀 2.0 Flash (Mais Novo)</option>
+                                                <option value="gemini-1.5-pro">🧠 1.5 Pro (Mais Inteligente)</option>
                                             </select>
                                         </div>
                                     )}

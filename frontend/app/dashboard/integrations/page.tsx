@@ -55,7 +55,7 @@ export default function IntegrationsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [connectingId, setConnectingId] = useState<string | null>(null);
     const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
-    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-2.5-flash-lite' });
+    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-1.5-flash' });
     const [isSavingAI, setIsSavingAI] = useState(false);
     const [showEvolutionModal, setShowEvolutionModal] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
@@ -130,7 +130,7 @@ export default function IntegrationsPage() {
         setAiConfig({
             enabled: integration.aiEnabled || false,
             promptId: integration.aiPromptId || '',
-            aiModel: integration.aiModel || 'gemini-2.5-flash-lite'
+            aiModel: integration.aiModel || 'gemini-1.5-flash'
         });
     };
 
@@ -362,10 +362,11 @@ export default function IntegrationsPage() {
                                     value={aiConfig.aiModel}
                                     onChange={(e) => setAiConfig({ ...aiConfig, aiModel: e.target.value })}
                                 >
-                                    <option value="gemini-2.5-flash-lite">⭐ 2.5 Flash Lite (Mais Novo)</option>
+                                    <option value="gemini-2.0-flash-lite-preview-02-05">⭐ 2.0 Flash Lite (Ecobômico)</option>
                                     <option value="gemini-1.5-flash">⚡ 1.5 Flash (Recomendado)</option>
-                                    <option value="gemini-1.5-pro">🚀 1.5 Pro (Mais Inteligente)</option>
-                                    <option value="gemini-2.0-flash-exp">🔬 2.0 Flash (Experimental)</option>
+                                    <option value="gemini-1.5-flash-8b">🍃 1.5 Flash 8B (Mais Rápido)</option>
+                                    <option value="gemini-2.0-flash">🚀 2.0 Flash (Mais Novo)</option>
+                                    <option value="gemini-1.5-pro">🧠 1.5 Pro (Mais Inteligente)</option>
                                 </select>
                                 <p className="text-[10px] text-gray-500">Escolha a versão do motor Gemini para processar as mensagens.</p>
                             </div>

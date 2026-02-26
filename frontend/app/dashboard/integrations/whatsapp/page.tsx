@@ -50,7 +50,7 @@ export default function WhatsAppInstancesPage() {
 
     // AI Configuration
     const [aiModalInstance, setAiModalInstance] = useState<string | null>(null);
-    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-2.5-flash-lite' });
+    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-1.5-flash' });
     const [isSavingAI, setIsSavingAI] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
     const [dbIntegrations, setDbIntegrations] = useState<any[]>([]); // DB integrations for AI config
@@ -93,7 +93,7 @@ export default function WhatsAppInstancesPage() {
         setAiConfig({
             enabled: dbInt?.aiEnabled || false,
             promptId: dbInt?.aiPromptId || '',
-            aiModel: dbInt?.aiModel || 'gemini-2.5-flash-lite'
+            aiModel: dbInt?.aiModel || 'gemini-1.5-flash'
         });
     };
 
@@ -711,10 +711,11 @@ export default function WhatsAppInstancesPage() {
                                         value={aiConfig.aiModel}
                                         onChange={(e) => setAiConfig({ ...aiConfig, aiModel: e.target.value })}
                                     >
-                                        <option value="gemini-2.5-flash-lite">⭐ 2.5 Flash Lite (Mais Novo)</option>
+                                        <option value="gemini-2.0-flash-lite-preview-02-05">⭐ 2.0 Flash Lite (Ecobômico)</option>
                                         <option value="gemini-1.5-flash">⚡ 1.5 Flash (Recomendado)</option>
-                                        <option value="gemini-1.5-pro">🚀 1.5 Pro (Mais Inteligente)</option>
-                                        <option value="gemini-2.0-flash-exp">🔬 2.0 Flash (Experimental)</option>
+                                        <option value="gemini-1.5-flash-8b">🍃 1.5 Flash 8B (Mais Rápido)</option>
+                                        <option value="gemini-2.0-flash">🚀 2.0 Flash (Mais Novo)</option>
+                                        <option value="gemini-1.5-pro">🧠 1.5 Pro (Mais Inteligente)</option>
                                     </select>
                                     <p className="text-[10px] text-gray-500">Escolha a versão do motor Gemini.</p>
                                 </div>
