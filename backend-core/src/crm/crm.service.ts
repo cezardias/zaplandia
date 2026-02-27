@@ -1,4 +1,6 @@
 import { Injectable, Logger, BadRequestException, OnApplicationBootstrap } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import type { Queue } from 'bull';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Brackets } from 'typeorm';
@@ -27,6 +29,7 @@ export class CrmService implements OnApplicationBootstrap {
         private readonly n8nService: N8nService,
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
+        @InjectQueue('campaign-queue') private readonly campaignQueue: Queue,
     ) { }
 
     async onApplicationBootstrap() {
@@ -866,6 +869,41 @@ export class CrmService implements OnApplicationBootstrap {
             count: parseInt(d.count, 10)
         }));
 
+        // 7. Next Send Time (from Queue)
+        let nextSendTime: Date | null = null;
+        if (campaignId && campaignId !== '') {
+            const delayedJobs = await this.campaignQueue.getJobs(['delayed']);
+            const campaignJobs = delayedJobs.filter(j => j.data.campaignId === campaignId);
+            if (campaignJobs.length > 0) {
+                // Find the earliest delay
+                const earliest = campaignJobs.reduce((min, job) =>
+                    (!min || (job.timestamp + (job.opts.delay || 0) < min)) ? (job.timestamp + (job.opts.delay || 0)) : min, 0);
+
+                if (earliest > 0) {
+                    nextSendTime = new Date(earliest);
+                }
+            }
+        }
+
+        // 8. Daily Limit & Reset Time
+        let limitRemaining = 40; // Default
+        const resetTime = new Date();
+        resetTime.setHours(24, 0, 0, 0); // Next midnight UTC-0
+        // Adjust for Brazil (UTC-3)
+        const limitResetTime = new Date(resetTime.getTime() + (3 * 60 * 60 * 1000));
+
+        if (instance && instance !== 'all') {
+            const limit = 40; // Hardcoded for now based on previous context
+            const usage = await this.messageRepository.createQueryBuilder('m')
+                .where('m.tenantId = :tenantId', { tenantId })
+                .andWhere('m.instance = :instance', { instance })
+                .andWhere('m.direction = :dir', { dir: 'outbound' })
+                .andWhere("m.createdAt >= DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC-3')")
+                .getCount();
+
+            limitRemaining = Math.max(0, limit - usage);
+        }
+
         return {
             total,
             trabalhadlos,
@@ -874,7 +912,10 @@ export class CrmService implements OnApplicationBootstrap {
             perdidos,
             conversao,
             funnelData,
-            sendChartData
+            sendChartData,
+            nextSendTime,
+            limitRemaining,
+            limitResetTime
         };
     }
 }

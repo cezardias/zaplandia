@@ -61,12 +61,13 @@ export default function DashboardPage() {
         }
     }, [selectedCampaignId, token]);
 
-    const handleStartCampaign = async () => {
+    const handleStartCampaign = async (force: boolean = false) => {
         if (!selectedCampaignId) return alert('Selecione uma campanha!');
-        if (!confirm('Deseja iniciar os disparos para esta campanha?')) return;
+        if (!force && !confirm('Deseja iniciar os disparos para esta campanha?')) return;
 
         try {
-            const res = await fetch(`/api/campaigns/${selectedCampaignId}/start`, {
+            const url = `/api/campaigns/${selectedCampaignId}/start${force ? '?force=true' : ''}`;
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -129,6 +130,42 @@ export default function DashboardPage() {
     ];
 
     if (isLoading) return <div className="p-8 text-white">Carregando dashboard...</div>;
+
+    const Countdown = ({ targetDate, label }: { targetDate: string | Date | null, label: string }) => {
+        const [timeLeft, setTimeLeft] = useState<string>('');
+
+        useEffect(() => {
+            if (!targetDate) return;
+            const timer = setInterval(() => {
+                const now = new Date().getTime();
+                const target = new Date(targetDate).getTime();
+                const diff = target - now;
+
+                if (diff <= 0) {
+                    setTimeLeft('Agora');
+                    clearInterval(timer);
+                    return;
+                }
+
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                setTimeLeft(`${hours > 0 ? hours + 'h ' : ''}${minutes}m ${seconds}s`);
+            }, 1000);
+
+            return () => clearInterval(timer);
+        }, [targetDate]);
+
+        if (!targetDate) return null;
+
+        return (
+            <div className="flex items-center space-x-2 text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full animate-pulse">
+                <Activity className="w-3 h-3" />
+                <span>{label}: {timeLeft}</span>
+            </div>
+        );
+    };
 
     const CustomXAxis = (props: any) => {
         const { x, y, stroke, payload } = props;
@@ -226,6 +263,19 @@ export default function DashboardPage() {
 
                     {selectedCampaign ? (
                         <div className="flex-1 space-y-4 flex flex-col">
+                            <div className="flex justify-between items-center px-1">
+                                <div className="flex space-x-2">
+                                    <Countdown targetDate={stats?.nextSendTime} label="Próximo envio" />
+                                    {stats?.limitRemaining === 0 && (
+                                        <Countdown targetDate={stats?.limitResetTime} label="Reset do Limite" />
+                                    )}
+                                </div>
+                                {stats?.limitRemaining !== undefined && (
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${stats.limitRemaining > 5 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}`}>
+                                        Cota: {stats.limitRemaining}/40
+                                    </span>
+                                )}
+                            </div>
                             <div className="grid grid-cols-3 gap-2 text-center">
                                 <div className="p-3 bg-white/5 rounded-lg">
                                     <div className="text-xs text-gray-400">Status</div>
@@ -328,15 +378,23 @@ export default function DashboardPage() {
                 )}
                 <div className="flex space-x-2">
                     <button
-                        onClick={handleStartCampaign}
-                        disabled={!selectedCampaign || selectedCampaign.status === 'running'}
-                        className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center space-x-2 transition ${!selectedCampaign || selectedCampaign.status === 'running'
+                        onClick={async () => {
+                            if (stats?.limitRemaining === 0) {
+                                if (confirm('O limite diário de 40 envios foi atingido. Deseja forçar o reinício da cota para continuar agora?')) {
+                                    handleStartCampaign(true);
+                                }
+                            } else {
+                                handleStartCampaign();
+                            }
+                        }}
+                        disabled={!selectedCampaign || (selectedCampaign.status === 'running' && stats?.limitRemaining > 0)}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center space-x-2 transition ${!selectedCampaign || (selectedCampaign.status === 'running' && stats?.limitRemaining > 0)
                             ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                            : 'bg-primary hover:bg-primary-dark text-white'
+                            : stats?.limitRemaining === 0 ? 'bg-orange-500 hover:bg-orange-600 text-white animate-bounce' : 'bg-primary hover:bg-primary-dark text-white'
                             }`}
                     >
                         <PlayCircle className="w-4 h-4" />
-                        <span>Iniciar Campanha</span>
+                        <span>{stats?.limitRemaining === 0 ? 'Forçar Retomada' : 'Iniciar Campanha'}</span>
                     </button>
                     <button
                         onClick={handlePauseCampaign}

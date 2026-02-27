@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Contact, Message } from './entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
@@ -12,7 +13,10 @@ import { Campaign } from '../campaigns/entities/campaign.entity';
 @Module({
     imports: [
         TypeOrmModule.forFeature([Contact, Message, CampaignLead, Campaign]),
-        IntegrationsModule
+        IntegrationsModule,
+        BullModule.registerQueue({
+            name: 'campaign-queue',
+        }),
     ],
     controllers: [CrmController, UploadController],
     providers: [CrmService],
