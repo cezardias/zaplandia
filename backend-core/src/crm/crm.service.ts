@@ -716,6 +716,16 @@ export class CrmService implements OnApplicationBootstrap {
         return deletedCount;
     }
 
+    async getCampaignLogs(tenantId: string, campaignId: string) {
+        return this.leadRepository.createQueryBuilder('lead')
+            .innerJoin('lead.campaign', 'campaign')
+            .where('campaign.tenantId = :tenantId', { tenantId })
+            .andWhere('lead.campaignId = :campaignId', { campaignId })
+            .orderBy('lead.sentAt', 'DESC')
+            .take(50)
+            .getMany();
+    }
+
     async getDashboardStats(tenantId: string, campaignId?: string, instance?: string) {
         this.logger.debug(`[STATS] Tenant: ${tenantId}, Campaign: ${campaignId}, Instance: ${instance}`);
         const query = this.contactRepository.createQueryBuilder('contact')
@@ -832,6 +842,30 @@ export class CrmService implements OnApplicationBootstrap {
             { name: 'Convertido', value: contacts.filter(c => c.stage === 'CONVERTIDO').length, fill: '#8884d8' },
         ].filter(d => d.value > 0);
 
+        // 6. Send Chart Data (Last 24h by Hour)
+        const yesterday = new Date();
+        yesterday.setHours(yesterday.getHours() - 24);
+
+        const chartQuery = this.leadRepository.createQueryBuilder('lead')
+            .select("DATE_TRUNC('hour', lead.sentAt)", 'hour')
+            .addSelect('COUNT(*)', 'count')
+            .where('lead.status = :status', { status: 'sent' })
+            .andWhere('lead.sentAt >= :yesterday', { yesterday });
+
+        if (campaignId && campaignId !== '') {
+            chartQuery.andWhere('lead.campaignId = :campaignId', { campaignId });
+        }
+
+        const rawChartData = await chartQuery
+            .groupBy('hour')
+            .orderBy('hour', 'ASC')
+            .getRawMany();
+
+        const sendChartData = rawChartData.map(d => ({
+            hour: new Date(d.hour).getHours() + ':00',
+            count: parseInt(d.count, 10)
+        }));
+
         return {
             total,
             trabalhadlos,
@@ -839,7 +873,8 @@ export class CrmService implements OnApplicationBootstrap {
             ganhos,
             perdidos,
             conversao,
-            funnelData
+            funnelData,
+            sendChartData
         };
     }
 }

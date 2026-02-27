@@ -6,7 +6,7 @@ import {
     Users, PlayCircle, PauseCircle, Activity,
     DollarSign, UserX, BarChart3, Zap, Copy, FileText
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function DashboardPage() {
     const { user, token } = useAuth();
@@ -82,6 +82,41 @@ export default function DashboardPage() {
         }
     }
 
+    const [showLogs, setShowLogs] = useState(false);
+    const [logs, setLogs] = useState<any[]>([]);
+
+    const fetchLogs = async () => {
+        if (!selectedCampaignId) return;
+        try {
+            const res = await fetch(`/api/crm/campaign-logs/${selectedCampaignId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setLogs(data);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const handlePauseCampaign = async () => {
+        if (!selectedCampaignId) return;
+        if (!confirm('Deseja pausar os disparos desta campanha?')) return;
+
+        try {
+            const res = await fetch(`/api/campaigns/${selectedCampaignId}/pause`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                alert('Campanha pausada com sucesso!');
+                fetchCampaigns();
+            } else {
+                const err = await res.json();
+                alert(`Erro ao pausar: ${err.message}`);
+            }
+        } catch (e) { alert('Erro de conexão.'); }
+    };
+
     const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
 
     const kpiCards = [
@@ -95,8 +130,19 @@ export default function DashboardPage() {
 
     if (isLoading) return <div className="p-8 text-white">Carregando dashboard...</div>;
 
+    const CustomXAxis = (props: any) => {
+        const { x, y, stroke, payload } = props;
+        return (
+            <g transform={`translate(${x},${y})`}>
+                <text x={0} y={0} dy={16} textAnchor="end" fill="#666" transform="rotate(-35)" fontSize={10}>
+                    {payload.value}
+                </text>
+            </g>
+        );
+    };
+
     return (
-        <div className="p-8 space-y-6 text-white h-full overflow-y-auto">
+        <div className="p-8 space-y-6 text-white h-full overflow-y-auto relative">
             {/* Global Actions */}
             <div className="bg-surface border border-white/10 rounded-2xl p-6">
                 <div className="mb-4">
@@ -179,7 +225,7 @@ export default function DashboardPage() {
                     </div>
 
                     {selectedCampaign ? (
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 space-y-4 flex flex-col">
                             <div className="grid grid-cols-3 gap-2 text-center">
                                 <div className="p-3 bg-white/5 rounded-lg">
                                     <div className="text-xs text-gray-400">Status</div>
@@ -200,8 +246,25 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex-1 flex items-center justify-center text-gray-500 border-2 border-dashed border-white/5 rounded-xl h-40">
-                                Gráfico de Envios (Em Breve)
+                            <div className="flex-1 min-h-0 bg-white/5 rounded-xl p-4">
+                                {stats?.sendChartData?.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={stats.sendChartData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                            <XAxis dataKey="hour" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#1a1a1a', border: 'none', borderRadius: '8px' }}
+                                                itemStyle={{ color: '#fff' }}
+                                            />
+                                            <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-gray-500 text-sm italic">
+                                        Nenhum envio registrado nas últimas 24h.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -275,15 +338,89 @@ export default function DashboardPage() {
                         <PlayCircle className="w-4 h-4" />
                         <span>Iniciar Campanha</span>
                     </button>
-                    <button className="bg-red-500/20 hover:bg-red-500/30 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg font-bold text-sm flex items-center space-x-2">
+                    <button
+                        onClick={handlePauseCampaign}
+                        disabled={!selectedCampaign || selectedCampaign.status !== 'running'}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center space-x-2 transition ${!selectedCampaign || selectedCampaign.status !== 'running'
+                            ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                            : 'bg-red-500 hover:bg-red-600 text-white'
+                            }`}
+                    >
                         <PauseCircle className="w-4 h-4" />
                         <span>Parar Campanha</span>
                     </button>
-                    <button className="bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-4 py-2 rounded-lg font-bold text-sm">
+                    <button
+                        onClick={() => {
+                            fetchLogs();
+                            setShowLogs(true);
+                        }}
+                        className="bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-4 py-2 rounded-lg font-bold text-sm"
+                    >
                         Ver Detalhes e Logs
                     </button>
                 </div>
             </div>
+
+            {/* Logs Modal */}
+            {showLogs && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-surface border border-white/10 rounded-3xl w-full max-w-4xl max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xl font-bold">Logs de Envio</h3>
+                                <p className="text-sm text-gray-400">Últimos 50 eventos da campanha.</p>
+                            </div>
+                            <button
+                                onClick={() => setShowLogs(false)}
+                                className="p-2 hover:bg-white/5 rounded-xl text-gray-400 transition"
+                            >
+                                <Zap className="w-6 h-6 rotate-45" /> {/* Close button icon */}
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <table className="w-full text-left">
+                                <thead className="text-xs uppercase text-gray-500 border-b border-white/5">
+                                    <tr>
+                                        <th className="pb-3 px-2">Data/Hora</th>
+                                        <th className="pb-3 px-2">Lead</th>
+                                        <th className="pb-3 px-2">ID Externo</th>
+                                        <th className="pb-3 px-2">Status</th>
+                                        <th className="pb-3 px-2">Erro</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-sm divide-y divide-white/5">
+                                    {logs.length > 0 ? logs.map((log) => (
+                                        <tr key={log.id} className="hover:bg-white/5 transition">
+                                            <td className="py-4 px-2 text-gray-400">
+                                                {log.sentAt ? new Date(log.sentAt).toLocaleString() : 'Pendente'}
+                                            </td>
+                                            <td className="py-4 px-2 font-bold">{log.name}</td>
+                                            <td className="py-4 px-2 text-primary font-mono text-xs">{log.externalId}</td>
+                                            <td className="py-4 px-2">
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-black ${log.status === 'sent' ? 'bg-green-500/20 text-green-400' :
+                                                    log.status === 'failed' ? 'bg-red-500/20 text-red-500' :
+                                                        'bg-yellow-500/20 text-yellow-500'
+                                                    }`}>
+                                                    {log.status}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-2 text-red-400 text-xs italic truncate max-w-[200px]" title={log.errorReason}>
+                                                {log.errorReason || '-'}
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} className="py-20 text-center text-gray-500 italic">
+                                                Nenhum log encontrado para esta campanha.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

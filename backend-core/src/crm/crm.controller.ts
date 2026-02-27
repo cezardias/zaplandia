@@ -52,6 +52,11 @@ export class CrmController {
         return this.crmService.updateContact(req.user.tenantId, contactId, body);
     }
 
+    @Get('campaign-logs/:campaignId')
+    async getCampaignLogs(@Request() req, @Param('campaignId') campaignId: string) {
+        return this.crmService.getCampaignLogs(req.user.tenantId, campaignId);
+    }
+
     @Delete('contacts/all')
     deleteAllContacts(@Request() req) {
         return this.crmService.removeAllContacts(req.user.tenantId);
