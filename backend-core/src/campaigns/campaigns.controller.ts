@@ -19,9 +19,9 @@ export class CampaignsController {
     }
 
     @Post(':id/start')
-    start(@Request() req, @Param('id') id: string) {
+    start(@Request() req, @Param('id') id: string, @Query('force') force?: string) {
         // Pass userId (sub) for audit logging
-        return this.campaignsService.start(id, req.user.tenantId, req.user.id || req.user.sub);
+        return this.campaignsService.start(id, req.user.tenantId, req.user.id || req.user.sub, force === 'true');
     }
 
     @Post(':id/pause')

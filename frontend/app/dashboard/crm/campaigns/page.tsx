@@ -79,9 +79,9 @@ export default function CampaignsPage() {
         }
     };
 
-    const handleToggleStatus = async (id: string, currentStatus: string) => {
-        const isRunning = currentStatus === 'running';
-        const endpoint = isRunning ? `/api/campaigns/${id}/pause` : `/api/campaigns/${id}/start`;
+    const handleToggleStatus = async (id: string, currentStatus: string, force: boolean = false) => {
+        const isRunning = currentStatus === 'running' && !force;
+        const endpoint = isRunning ? `/api/campaigns/${id}/pause` : `/api/campaigns/${id}/start${force ? '?force=true' : ''}`;
         const method = 'POST';
 
         try {
@@ -97,7 +97,18 @@ export default function CampaignsPage() {
                 fetchCampaigns();
             } else {
                 const errorData = await res.json();
-                alert(`Erro: ${errorData.message}`);
+
+                if (errorData.message === 'DAILY_LIMIT_REACHED') {
+                    const confirmForce = confirm(
+                        'O limite diário de 40 envios para esta instância foi atingido.\n\n' +
+                        'Deseja forçar o envio de mais 40 mensagens agora?'
+                    );
+                    if (confirmForce) {
+                        handleToggleStatus(id, currentStatus, true);
+                    }
+                } else {
+                    alert(`Erro: ${errorData.message}`);
+                }
                 console.error('Erro na resposta:', errorData);
             }
         } catch (err) {

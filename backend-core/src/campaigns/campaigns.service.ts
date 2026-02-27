@@ -94,7 +94,7 @@ export class CampaignsService {
         return null;
     }
 
-    async start(id: string, tenantId: string, userId?: string) {
+    async start(id: string, tenantId: string, userId?: string, force: boolean = false) {
         const campaign = await this.findOne(id, tenantId);
         if (!campaign) throw new Error('Campanha não encontrada.');
         // 🛡️ CRITICAL: Move status to RUNNING BEFORE enqueuing to avoid race conditions with processor
@@ -149,98 +149,112 @@ export class CampaignsService {
         }
 
         this.logger.log(`[MOTOR] Campanha ${id} resolvida para instância: ${instanceName}. Limite Diário: ${dailyLimit}`);
-
         // 🛡️ SECURITY: CHECK REMAINING QUOTA BEFORE FETCHING
         const remainingQuota = await this.usageService.getRemainingQuota(tenantId, instanceName, 'whatsapp_messages', dailyLimit);
 
         if (remainingQuota <= 0) {
-            throw new Error(`Limite diário de ${dailyLimit} envios já atingido para a instância ${instanceName}. Tente novamente amanhã.`);
+            if (force) {
+                this.logger.log(`[MOTOR] Forçando reinício de cota para ${instanceName} no tenant ${tenantId}`);
+                await this.usageService.resetUsage(tenantId, instanceName, 'whatsapp_messages');
+            } else {
+                // Return specific error for frontend to handle
+                throw new Error('DAILY_LIMIT_REACHED');
+            }
         }
 
-        // Fetch PENDING leads (Limited by remaining quota)
-        const leads = await this.leadRepository.find({
-            where: { campaignId: id, status: LeadStatus.PENDING },
-            take: remainingQuota // ✅ AUTO-BATCHING
-        });
-
-        if (!leads || leads.length === 0) {
-            // ... existing diagnostics ...
-            const totalLeads = await this.leadRepository.count({ where: { campaignId: id } });
-            const pendingLeads = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.PENDING } });
-
-            if (totalLeads === 0) {
-                throw new Error('A campanha está vazia! Adicione leads antes de iniciar.');
-            }
-
-            if (pendingLeads === 0 && totalLeads > 0) {
-                const failed = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.FAILED } });
-                const sent = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.SENT } });
-                const invalid = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.INVALID } });
-
-                throw new Error(`Todos os ${totalLeads} leads desta campanha já foram processados (Enviados/Pulados: ${sent}, Falhas: ${failed}, Inválidos: ${invalid}).`);
-            }
-
-            throw new Error(`Não foi possível buscar leads pendentes.`);
-        }
-
-
-        // 🛡️ SECURITY: AUDIT LOG
-        if (userId) {
-            await this.auditService.log(tenantId, userId, 'CAMPAIGN_START', {
-                campaignId: id,
-                campaignName: campaign.name,
-                leadsCount: leads.length,
-                instanceName
+        try {
+            // Fetch PENDING leads (Limited by remaining quota or default chunk if forced)
+            const leads = await this.leadRepository.find({
+                where: { campaignId: id, status: LeadStatus.PENDING },
+                take: force ? dailyLimit : remainingQuota // ✅ AUTO-BATCHING
             });
-        }
 
-        this.logger.log(`[MOTOR] Iniciando campanha ${id} (${campaign.name}). Enfileirando ${leads.length} leads com atrasos randômicos (1-15min)...`);
 
-        let cumulativeDelay = 0;
-        const CHUNK_SIZE = 50;
+            if (!leads || leads.length === 0) {
+                // ... existing diagnostics ...
+                const totalLeads = await this.leadRepository.count({ where: { campaignId: id } });
+                const pendingLeads = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.PENDING } });
 
-        for (let i = 0; i < leads.length; i += CHUNK_SIZE) {
-            const chunk = leads.slice(i, i + CHUNK_SIZE);
-
-            // Sequential processing within chunk to maintain cumulativeDelay correctly
-            for (let j = 0; j < chunk.length; j++) {
-                const lead = chunk[j];
-                const globalIndex = i + j;
-                const isFirst = globalIndex === 0;
-
-                if (isFirst) {
-                    cumulativeDelay = 0; // Immediate
-                    this.logger.log(`[MOTOR] Marcando lead ${lead.id} como PRIORIDADE (delay: 0)`);
-                } else {
-                    // Random interval between 1 and 15 minutes (60k to 900k ms)
-                    const minInterval = 1 * 60 * 1000;
-                    const maxInterval = 15 * 60 * 1000;
-                    const interval = Math.floor(Math.random() * (maxInterval - minInterval + 1)) + minInterval;
-                    cumulativeDelay += interval;
+                if (totalLeads === 0) {
+                    throw new Error('A campanha está vazia! Adicione leads antes de iniciar.');
                 }
 
-                await this.campaignQueue.add('send-message', {
-                    leadId: lead.id,
-                    leadName: lead.name,
+                if (pendingLeads === 0 && totalLeads > 0) {
+                    const failed = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.FAILED } });
+                    const sent = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.SENT } });
+                    const invalid = await this.leadRepository.count({ where: { campaignId: id, status: LeadStatus.INVALID } });
+
+                    throw new Error(`Todos os ${totalLeads} leads desta campanha já foram processados (Enviados/Pulados: ${sent}, Falhas: ${failed}, Inválidos: ${invalid}).`);
+                }
+
+                throw new Error(`Não foi possível buscar leads pendentes.`);
+            }
+
+
+            // 🛡️ SECURITY: AUDIT LOG
+            if (userId) {
+                await this.auditService.log(tenantId, userId, 'CAMPAIGN_START', {
                     campaignId: id,
-                    externalId: lead.externalId,
-                    message: campaign.messageTemplate,
-                    instanceName: instanceName,
-                    tenantId: tenantId,
-                    variations: campaign.variations,
-                    dailyLimit: dailyLimit,
-                    isFirst: isFirst
-                }, {
-                    delay: cumulativeDelay, // Bull schedules the job!
-                    removeOnComplete: true,
-                    attempts: 3,
-                    backoff: 5000
+                    campaignName: campaign.name,
+                    leadsCount: leads.length,
+                    instanceName
                 });
             }
-        }
 
-        this.logger.log(`[SUCESSO] Campanha ${id} iniciada com sucesso.`);
-        return campaign;
+            this.logger.log(`[MOTOR] Iniciando campanha ${id} (${campaign.name}). Enfileirando ${leads.length} leads com atrasos randômicos (1-15min)...`);
+
+            let cumulativeDelay = 0;
+            const CHUNK_SIZE = 50;
+
+            for (let i = 0; i < leads.length; i += CHUNK_SIZE) {
+                const chunk = leads.slice(i, i + CHUNK_SIZE);
+
+                // Sequential processing within chunk to maintain cumulativeDelay correctly
+                for (let j = 0; j < chunk.length; j++) {
+                    const lead = chunk[j];
+                    const globalIndex = i + j;
+                    const isFirst = globalIndex === 0;
+
+                    if (isFirst) {
+                        cumulativeDelay = 0; // Immediate
+                        this.logger.log(`[MOTOR] Marcando lead ${lead.id} como PRIORIDADE (delay: 0)`);
+                    } else {
+                        // Random interval between 1 and 15 minutes (60k to 900k ms)
+                        const minInterval = 1 * 60 * 1000;
+                        const maxInterval = 15 * 60 * 1000;
+                        const interval = Math.floor(Math.random() * (maxInterval - minInterval + 1)) + minInterval;
+                        cumulativeDelay += interval;
+                    }
+
+                    await this.campaignQueue.add('send-message', {
+                        leadId: lead.id,
+                        leadName: lead.name,
+                        campaignId: id,
+                        externalId: lead.externalId,
+                        message: campaign.messageTemplate,
+                        instanceName: instanceName,
+                        tenantId: tenantId,
+                        variations: campaign.variations,
+                        dailyLimit: dailyLimit,
+                        isFirst: isFirst
+                    }, {
+                        delay: cumulativeDelay, // Bull schedules the job!
+                        removeOnComplete: true,
+                        attempts: 3,
+                        backoff: 5000
+                    });
+                }
+            }
+
+            this.logger.log(`[SUCESSO] Campanha ${id} iniciada com sucesso.`);
+            return campaign;
+        } catch (error) {
+            // 🛡️ CRITICAL: Reset status to PAUSED if anything fails during enqueuing
+            campaign.status = CampaignStatus.PAUSED;
+            await this.campaignRepository.save(campaign);
+            this.logger.error(`[MOTOR] Erro ao iniciar campanha ${id}. Status revertido para PAUSED: ${error.message}`);
+            throw error;
+        }
     }
 
     async pause(id: string, tenantId: string) {
