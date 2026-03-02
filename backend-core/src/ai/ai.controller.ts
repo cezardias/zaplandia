@@ -90,6 +90,7 @@ export class AiController {
                 .where('integration.tenantId = :tenantId', { tenantId: req.user.tenantId })
                 .andWhere(`integration.provider = 'evolution'`)
                 .andWhere(`(integration.settings->>'instanceName' = :instanceName OR integration.credentials->>'instanceName' = :instanceName)`, { instanceName: integrationId })
+                .orderBy('integration.updatedAt', 'DESC')
                 .getOne();
         }
 

@@ -96,8 +96,22 @@ export class IntegrationsController {
         }).filter(i => i !== null); // Remove the nulls (ghost instances)
 
 
-        const result = [...finalIntegrations, ...evolutionInstances];
-        console.log('Integrations being returned:', JSON.stringify(result, null, 2));
+        const rawResult = [...finalIntegrations, ...evolutionInstances];
+
+        // --- DEDUPLICATION LOGIC ---
+        // If multiple integrations exist for the same instanceName, keep only the latest one (by updatedAt)
+        const dedupedMap = new Map<string, any>();
+        rawResult.forEach(item => {
+            if (!item) return;
+            const key = item.instanceName || item.id;
+            const existing = dedupedMap.get(key);
+            if (!existing || (item.updatedAt && existing.updatedAt && new Date(item.updatedAt) > new Date(existing.updatedAt))) {
+                dedupedMap.set(key, item);
+            }
+        });
+
+        const result = Array.from(dedupedMap.values());
+        console.log('Integrations being returned (DEDUPED):', JSON.stringify(result, null, 2));
         return result;
     }
 

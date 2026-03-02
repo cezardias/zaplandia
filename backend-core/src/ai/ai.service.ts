@@ -150,7 +150,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             where: {
                 tenantId,
                 provider: 'evolution' as any,
-            }
+            },
+            order: { updatedAt: 'DESC' }
         });
 
         // Match by instanceName in credentials or settings 
@@ -218,7 +219,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 where: {
                     tenantId,
                     provider: 'evolution' as any,
-                }
+                },
+                order: { updatedAt: 'DESC' }
             });
 
             // Match by instanceName (contact.instance or provided)
