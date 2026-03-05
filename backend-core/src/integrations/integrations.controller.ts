@@ -3,6 +3,7 @@ import { IntegrationsService } from './integrations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EvolutionApiService } from './evolution-api.service';
 import { N8nService } from './n8n.service';
+import { RifaApiService } from './rifa-api.service';
 
 @Controller('integrations')
 export class IntegrationsController {
@@ -10,6 +11,7 @@ export class IntegrationsController {
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
         private readonly n8nService: N8nService,
+        private readonly rifaApiService: RifaApiService,
     ) { }
 
     @UseGuards(JwtAuthGuard)
@@ -91,7 +93,8 @@ export class IntegrationsController {
                 ...i,
                 name: i.provider === 'whatsapp' ? 'WhatsApp Oficial' :
                     i.provider === 'erp_zaplandia' ? 'ERP Zaplandia' :
-                        i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
+                        i.provider === 'rifa' ? 'Rifa API' :
+                            i.provider.charAt(0).toUpperCase() + i.provider.slice(1)
             };
         }).filter(i => i !== null); // Remove the nulls (ghost instances)
 

@@ -12,7 +12,8 @@ import {
     ShoppingBag,
     Store,
     AlertCircle,
-    Coins
+    Coins,
+    Smartphone
 } from 'lucide-react';
 
 interface ApiSettingsFieldsProps {
@@ -49,6 +50,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         n8n_webhook_url: '',
         erp_zaplandia_key: '',
         openrouter_key: '',
+        rifa_api_key: '',
     });
 
     const [openrouterCredits, setOpenrouterCredits] = useState<{ total_credits: number, total_usage: number } | null>(null);
@@ -129,6 +131,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             if (item.key_name === 'EVOLUTION_API_KEY') next.evolution_api_key = item.key_value;
             if (item.key_name === 'ERP_ZAPLANDIA_KEY') next.erp_zaplandia_key = item.key_value;
             if (item.key_name === 'OPENROUTER_API_KEY') next.openrouter_key = item.key_value;
+            if (item.key_name === 'RIFA_API_KEY') next.rifa_api_key = item.key_value;
         });
         setKeys(next);
 
@@ -586,6 +589,35 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                         <span>Salvar ERP Zaplandia</span>
                     </button>
                     <p className="text-[10px] text-gray-500 text-center">Acesse Sistema &gt; API Keys no seu ERP para gerar esta chave.</p>
+                </div>
+            </section>
+
+            {/* Rifa API Section */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Smartphone className="w-5 h-5 text-indigo-500" />
+                    <span>Rifa API Integration</span>
+                </h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-xs text-white/60 mb-2 block uppercase tracking-widest font-black">Chave da API (X-API-Key)</label>
+                        <input
+                            type="password"
+                            value={keys.rifa_api_key}
+                            onChange={(e) => setKeys({ ...keys, rifa_api_key: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary transition"
+                            placeholder="Insira a sua chave da Rifa API"
+                        />
+                    </div>
+                    <button
+                        onClick={() => handleSave('RIFA_API_KEY', keys.rifa_api_key)}
+                        disabled={isLoading}
+                        className="w-full bg-primary hover:bg-primary-dark py-3 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Salvar Rifa API</span>
+                    </button>
+                    <p className="text-[10px] text-gray-500 text-center">Utilize a chave gerada no painel de rifas para esta integração.</p>
                 </div>
             </section>
         </div>
