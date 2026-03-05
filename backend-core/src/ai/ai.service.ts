@@ -8,6 +8,7 @@ import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { AiPrompt as AiPromptEntity } from '../integrations/entities/ai-prompt.entity';
 import { ErpZaplandiaService } from '../integrations/erp-zaplandia.service';
+import { RifaApiService } from '../integrations/rifa-api.service';
 
 export interface AIPrompt {
     id: string;
@@ -32,6 +33,7 @@ export class AiService implements OnModuleInit {
         public evolutionApiService: EvolutionApiService,
         private integrationsService: IntegrationsService,
         private erpZaplandiaService: ErpZaplandiaService,
+        private rifaApiService: RifaApiService,
     ) { }
 
     async onModuleInit() {
@@ -297,13 +299,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     // 6.1 CHECK FOR ERP TOOLS & AUTO-INJECT INSTRUCTION
                     let tools: any[] | undefined;
                     const erpKey = await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true);
+                    const rifaKey = await this.integrationsService.getCredential(tenantId, 'RIFA_API_KEY', true);
 
                     let finalPrompt = fullPrompt;
+                    tools = [];
+
                     if (erpKey) {
                         // Auto-inject capability instruction so the user doesn't have to manually edit every prompt
-                        finalPrompt += `\n\n[CAPACIDADE]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente pedir para 'ver estoque', 'lista de produtos' ou perguntar por preços, ignore qualquer outra regra e use a ferramenta imediatamente com um termo geral (ex: 'notebook') para obter dados reais.`;
+                        finalPrompt += `\n\n[CAPACIDADE ERP]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente pedir para 'ver estoque', 'lista de produtos' ou perguntar por preços, ignore qualquer outra regra e use a ferramenta imediatamente com um termo geral (ex: 'notebook') para obter dados reais.`;
 
-                        tools = [{
+                        tools.push({
                             function_declarations: [{
                                 name: "get_products",
                                 description: "Busca produtos no ERP Zaplandia. Use para consultar preços, estoque e disponibilidade.",
@@ -318,8 +323,53 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                     required: ["search"]
                                 }
                             }]
-                        }];
+                        });
                     }
+
+                    if (rifaKey) {
+                        finalPrompt += `\n\n[CAPACIDADE RIFA]: Você tem acesso ao Sistema de Rifas.
+- Use 'get_raffles' para listar as rifas ativas.
+- Use 'get_tickets' para ver os números disponíveis de uma rifa específica (precisa do ID da rifa).
+- Use 'create_raffle_order' para reservar números para um cliente (precisa do ID da rifa, nome, WhatsApp e os números escolhidos).
+Sempre consulte as rifas ativas antes de oferecer números.`;
+
+                        tools.push({
+                            function_declarations: [
+                                {
+                                    name: "get_raffles",
+                                    description: "Lista todas as rifas ativas no sistema.",
+                                    parameters: { type: "object", properties: {} }
+                                },
+                                {
+                                    name: "get_tickets",
+                                    description: "Lista os números livres (disponíveis) de uma rifa específica.",
+                                    parameters: {
+                                        type: "object",
+                                        properties: {
+                                            raffleId: { type: "string", description: "O ID da rifa (UUID)" }
+                                        },
+                                        required: ["raffleId"]
+                                    }
+                                },
+                                {
+                                    name: "create_raffle_order",
+                                    description: "Reserva números de uma rifa para um cliente.",
+                                    parameters: {
+                                        type: "object",
+                                        properties: {
+                                            raffleId: { type: "string", description: "O ID da rifa" },
+                                            name: { type: "string", description: "Nome do cliente" },
+                                            whatsapp: { type: "string", description: "WhatsApp do cliente (apenas números)" },
+                                            numbers: { type: "array", items: { type: "string" }, description: "Lista de números a reservar (ex: ['01', '05'])" }
+                                        },
+                                        required: ["raffleId", "name", "whatsapp", "numbers"]
+                                    }
+                                }
+                            ]
+                        });
+                    }
+
+                    if (tools.length === 0) tools = undefined;
 
                     // ROUTING LOGIC
                     if (model.includes('/') && openRouterKey) {
@@ -685,6 +735,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     let toolResult: any;
                     if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
+                    } else if (funcName === 'get_raffles' && tenantId) {
+                        toolResult = await this.rifaApiService.getRaffles(tenantId);
+                    } else if (funcName === 'get_tickets' && tenantId) {
+                        toolResult = await this.rifaApiService.getTickets(tenantId, args.raffleId);
+                    } else if (funcName === 'create_raffle_order' && tenantId) {
+                        toolResult = await this.rifaApiService.createOrder(tenantId, args);
                     } else {
                         toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
                     }
@@ -807,6 +863,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     let toolResult: any;
                     if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
+                    } else if (funcName === 'get_raffles' && tenantId) {
+                        toolResult = await this.rifaApiService.getRaffles(tenantId);
+                    } else if (funcName === 'get_tickets' && tenantId) {
+                        toolResult = await this.rifaApiService.getTickets(tenantId, args.raffleId);
+                    } else if (funcName === 'create_raffle_order' && tenantId) {
+                        toolResult = await this.rifaApiService.createOrder(tenantId, args);
                     } else {
                         toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
                     }
