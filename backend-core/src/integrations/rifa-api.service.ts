@@ -20,10 +20,17 @@ export class RifaApiService {
      * Get Base URL for tenant
      */
     private async getBaseUrl(tenantId: string): Promise<string> {
-        const configuredUrl = await this.integrationsService.getCredential(tenantId, 'RIFA_API_URL');
+        let configuredUrl = await this.integrationsService.getCredential(tenantId, 'RIFA_API_URL');
         if (configuredUrl) {
-            // Ensure no trailing slash
-            return configuredUrl.replace(/\/$/, '');
+            // Clean up: trim whitespace and remove trailing slash
+            let url = configuredUrl.trim().replace(/\/$/, '');
+
+            // RESILIENCE: If the user pasted the full endpoint (e.g. .../api/external/raffles), strip the API path
+            // We want to keep only the base domain/path
+            url = url.replace(/\/api\/external\/.*$/, '');
+            url = url.replace(/\/api\/external$/, '');
+
+            return url;
         }
         return this.defaultBaseUrl;
     }
