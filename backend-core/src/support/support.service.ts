@@ -163,6 +163,35 @@ export class SupportService implements OnModuleInit {
    - Se você tiver múltiplas conexões (ex: uma Oficial e uma EvolutionAPI), você deve selecionar qual delas deve realizar o disparo desta campanha específica.
    - Isso permite separar disparos de marketing de disparos de suporte, por exemplo.
 4. **Finalização**: Siga os passos de Público e Mensagem para concluir a criação.`,
+            },
+            {
+                title: 'Integração Rifa API: Configuração e Uso',
+                category: 'Integrações',
+                content: `Conecte seu sistema de rifas externo ao Zaplandia:
+
+1. **Obtenha sua Chave**: No seu painel de rifas, gere uma **API Key**.
+2. **Configuração no Zaplandia**:
+   - Vá em **Configurações > API**.
+   - Localize a seção **Rifa API Integration**.
+   - Insira sua chave no campo **Rifa API Key** e clique em **SALVAR**.
+3. **Ativação**:
+   - Vá no menu lateral **Integrações**.
+   - Localize o card **Rifa API** e clique em **Conectar**.
+   - O status mudará para **CONECTADO**.
+4. **Uso**: Agora o sistema pode consultar suas rifas e números diretamente para automações.`,
+            },
+            {
+                title: 'IA: Automação para Venda de Rifas',
+                category: 'IA',
+                content: `Como o Agente de IA ajuda você a vender mais rifas:
+
+O Agente de IA do Zaplandia possui ferramentas nativas para interagir com sua Rifa API:
+
+- **Consulta Automática**: Se um cliente perguntar "Quais rifas estão abertas?", a IA usa a ferramenta \`get_raffles\` para listar as opções reais.
+- **Verificação de Números**: Quando o cliente escolhe uma rifa, a IA pode listar os números disponíveis usando \`get_tickets\`.
+- **Reserva de Pedidos**: A IA pode coletar o nome e WhatsApp do cliente e reservar os números escolhidos via \`create_raffle_order\`.
+
+**Dica**: Você não precisa configurar nada no prompt. Basta ter a **Rifa API Key** configurada e o Agente de IA ativo no canal desejado.`,
             }
         ];
 
