@@ -51,6 +51,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         erp_zaplandia_key: '',
         openrouter_key: '',
         rifa_api_key: '',
+        rifa_api_url: '',
     });
 
     const [openrouterCredits, setOpenrouterCredits] = useState<{ total_credits: number, total_usage: number } | null>(null);
@@ -132,6 +133,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             if (item.key_name === 'ERP_ZAPLANDIA_KEY') next.erp_zaplandia_key = item.key_value;
             if (item.key_name === 'OPENROUTER_API_KEY') next.openrouter_key = item.key_value;
             if (item.key_name === 'RIFA_API_KEY') next.rifa_api_key = item.key_value;
+            if (item.key_name === 'RIFA_API_URL') next.rifa_api_url = item.key_value;
         });
         setKeys(next);
 
@@ -600,6 +602,14 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                 </h2>
                 <div className="space-y-4">
                     <div>
+                        <label className="text-xs text-white/60 mb-2 block uppercase tracking-widest font-black">URL da API (Ex: https://rifas.meudominio.com)</label>
+                        <input
+                            type="text"
+                            value={keys.rifa_api_url}
+                            onChange={(e) => setKeys({ ...keys, rifa_api_url: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary transition mb-4"
+                            placeholder="https://rifas.zaplandia.com.br"
+                        />
                         <label className="text-xs text-white/60 mb-2 block uppercase tracking-widest font-black">Chave da API (X-API-Key)</label>
                         <input
                             type="password"
@@ -610,7 +620,10 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                         />
                     </div>
                     <button
-                        onClick={() => handleSave('RIFA_API_KEY', keys.rifa_api_key)}
+                        onClick={async () => {
+                            await handleSave('RIFA_API_URL', keys.rifa_api_url);
+                            await handleSave('RIFA_API_KEY', keys.rifa_api_key);
+                        }}
                         disabled={isLoading}
                         className="w-full bg-primary hover:bg-primary-dark py-3 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
                     >

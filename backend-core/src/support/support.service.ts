@@ -169,11 +169,12 @@ export class SupportService implements OnModuleInit {
                 category: 'Integrações',
                 content: `Conecte seu sistema de rifas externo ao Zaplandia:
 
-1. **Obtenha sua Chave**: No seu painel de rifas, gere uma **API Key**.
+1. **Obtenha seus dados**: No seu painel de rifas, obtenha a **URL da API** (ex: https://rifas.meudominio.com) e gere uma **API Key**.
 2. **Configuração no Zaplandia**:
    - Vá em **Configurações > API**.
    - Localize a seção **Rifa API Integration**.
-   - Insira sua chave no campo **Rifa API Key** e clique em **SALVAR**.
+   - Insira a **URL da API** e sua **Chave** nos campos correspondentes.
+   - Clique em **SALVAR**.
 3. **Ativação**:
    - Vá no menu lateral **Integrações**.
    - Localize o card **Rifa API** e clique em **Conectar**.
