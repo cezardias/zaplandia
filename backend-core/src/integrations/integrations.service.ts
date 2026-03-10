@@ -161,4 +161,21 @@ export class IntegrationsService {
         this.logger.log(`[FIND_ALL] Found ${results.length} credentials for tenant ${tenantId}`);
         return results;
     }
+
+    async resolveInstance(tenantId: string, instanceNameOrId: string): Promise<Integration | null> {
+        // 1. Try by ID (UUID)
+        if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(instanceNameOrId)) {
+            return this.integrationRepository.findOne({ where: { id: instanceNameOrId, tenantId } });
+        }
+
+        // 2. Try by Name in Credentials/Settings
+        const integrations = await this.findAllByTenant(tenantId);
+        const normalizedInput = instanceNameOrId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+        return integrations.find(i => {
+            const name = i.credentials?.instanceName || i.settings?.instanceName || i.credentials?.name || i.credentials?.instance || '';
+            const normalizedName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            return normalizedName === normalizedInput;
+        }) || null;
+    }
 }

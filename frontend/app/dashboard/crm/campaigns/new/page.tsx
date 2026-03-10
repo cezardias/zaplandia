@@ -37,6 +37,9 @@ export default function NewCampaignPage() {
         message: '',
         variations: [] as string[]
     });
+    const [metaTemplates, setMetaTemplates] = useState<any[]>([]);
+    const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+    const [selectedMetaIntegration, setSelectedMetaIntegration] = useState<any | null>(null);
 
     useEffect(() => {
         if (token) {
@@ -160,6 +163,23 @@ export default function NewCampaignPage() {
         }
     };
 
+    const fetchMetaTemplates = async (integrationId: string) => {
+        setIsLoadingTemplates(true);
+        try {
+            const res = await fetch('/api/integrations/meta/templates', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setMetaTemplates(data);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar templates Meta:', err);
+        } finally {
+            setIsLoadingTemplates(false);
+        }
+    };
+
     // AI Logic
     const [aiModalOpen, setAiModalOpen] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
@@ -280,7 +300,16 @@ export default function NewCampaignPage() {
                                     waIntegrations.map((integration: any) => (
                                         <button
                                             key={integration.id}
-                                            onClick={() => setFormData({ ...formData, integrationId: integration.id })}
+                                            onClick={() => {
+                                                setFormData({ ...formData, integrationId: integration.id });
+                                                if (integration.provider === 'whatsapp') {
+                                                    setSelectedMetaIntegration(integration);
+                                                    fetchMetaTemplates(integration.id);
+                                                } else {
+                                                    setSelectedMetaIntegration(null);
+                                                    setMetaTemplates([]);
+                                                }
+                                            }}
                                             className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${formData.integrationId === integration.id ? 'bg-primary/10 border-primary' : 'bg-white/5 border-white/5'}`}
                                         >
                                             <div className="flex items-center space-x-3">
@@ -289,6 +318,9 @@ export default function NewCampaignPage() {
                                                     <p className="font-bold text-sm">
                                                         {integration.name || (integration.provider === 'evolution' ? 'WhatsApp' : 'WhatsApp Official')}
                                                     </p>
+                                                    {integration.provider === 'whatsapp' && (
+                                                        <p className="text-[10px] text-green-500/60 uppercase font-black tracking-tighter">Conexão Oficial</p>
+                                                    )}
                                                 </div>
                                             </div>
                                             {formData.integrationId === integration.id && <CheckCircle2 className="w-5 h-5 text-primary" />}
@@ -449,14 +481,64 @@ export default function NewCampaignPage() {
                                 <span>Gerar com IA</span>
                             </button>
                         </div>
-                        <div className="bg-surface border border-white/10 rounded-3xl p-6">
-                            <textarea
-                                value={formData.message}
-                                onChange={e => setFormData({ ...formData, message: e.target.value })}
-                                className="w-full bg-transparent border-none outline-none text-gray-200 min-h-[200px] resize-none text-lg"
-                                placeholder="Olá {{name}}, temos uma oferta especial para você..."
-                            />
-                        </div>
+                        {selectedMetaIntegration ? (
+                            <div className="space-y-4">
+                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-3xl flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <Zap className="w-5 h-5 text-primary" />
+                                        <div>
+                                            <p className="font-bold text-sm">Templates Oficiais Meta</p>
+                                            <p className="text-xs text-gray-500">Selecione um template aprovado para disparar na conexão oficial.</p>
+                                        </div>
+                                    </div>
+                                    {isLoadingTemplates && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                                </div>
+
+                                {metaTemplates.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {metaTemplates.filter(t => t.status === 'APPROVED').map((template: any) => (
+                                            <button
+                                                key={template.id}
+                                                onClick={() => setFormData({ ...formData, message: `${template.name}:${template.language}` })}
+                                                className={`p-4 rounded-2xl border text-left transition-all ${formData.message === `${template.name}:${template.language}` ? 'bg-primary/10 border-primary' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
+                                            >
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-xs font-black uppercase text-primary">{template.category}</span>
+                                                    <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gray-400">{template.language}</span>
+                                                </div>
+                                                <p className="font-bold text-sm mb-1">{template.name}</p>
+                                                <p className="text-[10px] text-gray-500 line-clamp-2 italic">
+                                                    {template.components.find((c: any) => c.type === 'BODY')?.text}
+                                                </p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : !isLoadingTemplates && (
+                                    <div className="p-8 text-center bg-white/5 rounded-3xl border border-dashed border-white/10">
+                                        <p className="text-gray-500 text-sm">Nenhum template aprovado encontrado nesta WABA.</p>
+                                    </div>
+                                )}
+
+                                <div className="bg-surface border border-white/10 rounded-3xl p-6">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-2 block tracking-widest">Identificador do Template</label>
+                                    <textarea
+                                        readOnly
+                                        value={formData.message}
+                                        className="w-full bg-transparent border-none outline-none text-primary font-mono min-h-[40px] resize-none text-sm"
+                                        placeholder="Selecione um template acima..."
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-surface border border-white/10 rounded-3xl p-6">
+                                <textarea
+                                    value={formData.message}
+                                    onChange={e => setFormData({ ...formData, message: e.target.value })}
+                                    className="w-full bg-transparent border-none outline-none text-gray-200 min-h-[200px] resize-none text-lg"
+                                    placeholder="Olá {{name}}, temos uma oferta especial para você..."
+                                />
+                            </div>
+                        )}
                         {formData.variations.length > 0 && (
                             <div className="bg-surface border border-white/10 rounded-3xl p-6">
                                 <h3 className="font-bold mb-4 flex items-center space-x-2">

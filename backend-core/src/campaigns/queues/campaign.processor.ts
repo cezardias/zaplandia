@@ -2,6 +2,7 @@ import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
 import { EvolutionApiService } from '../../integrations/evolution-api.service';
+import { MetaApiService } from '../../integrations/meta-api.service';
 import { IntegrationsService } from '../../integrations/integrations.service';
 import { CrmService } from '../../crm/crm.service';
 import { UsageService } from '../../usage/usage.service';
@@ -18,6 +19,7 @@ export class CampaignProcessor {
     constructor(
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
+        private readonly metaApiService: MetaApiService,
         private readonly crmService: CrmService,
         private readonly usageService: UsageService,
         @InjectRepository(Campaign)
@@ -133,6 +135,30 @@ export class CampaignProcessor {
         this.logger.debug(`[CAMPANHA] Phone normalizado: ${recipient} → ${cleanRecipient}`);
 
         try {
+            // --- NEW: META API INTEGRATION FOR CAMPAIGNS ---
+            const integration = await this.integrationsService.resolveInstance(tenantId, instanceName);
+            if (integration?.provider === 'whatsapp' && integration.credentials?.META_ACCESS_TOKEN) {
+                this.logger.log(`[ENVIANDO] Disparando Template Meta para ${recipient}...`);
+                // Use the message as the template name for official Meta campaigns
+                // We split by language if formatted as "template_name:en_US", default to pt_BR
+                let templateName = finalMessage;
+                let languageCode = 'pt_BR';
+
+                if (finalMessage.includes(':')) {
+                    [templateName, languageCode] = finalMessage.split(':');
+                }
+
+                await this.metaApiService.sendTemplateMessage(tenantId, recipient, templateName, languageCode);
+
+                // Update Lead Status
+                if (leadId) {
+                    await this.leadRepository.update(leadId, { status: LeadStatus.SENT, sentAt: new Date(), errorReason: null });
+                }
+
+                await this.usageService.increment(tenantId, instanceName, 'whatsapp_messages', 1);
+                return;
+            }
+
             this.logger.log(`[ENVIANDO] Disparando mensagem para ${cleanRecipient}...`);
             await this.evolutionApiService.sendText(tenantId, instanceName, cleanRecipient, finalMessage);
 

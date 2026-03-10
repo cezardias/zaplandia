@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EvolutionApiService } from './evolution-api.service';
 import { N8nService } from './n8n.service';
 import { RifaApiService } from './rifa-api.service';
+import { MetaApiService } from './meta-api.service';
 
 @Controller('integrations')
 export class IntegrationsController {
@@ -12,6 +13,7 @@ export class IntegrationsController {
         private readonly evolutionApiService: EvolutionApiService,
         private readonly n8nService: N8nService,
         private readonly rifaApiService: RifaApiService,
+        private readonly metaApiService: MetaApiService,
     ) { }
 
     @UseGuards(JwtAuthGuard)
@@ -366,5 +368,31 @@ export class IntegrationsController {
     @Patch(':id')
     updateSettings(@Request() req, @Param('id') id: string, @Body() body: { settings: any }) {
         return this.integrationsService.updateSettings(id, req.user.tenantId, body.settings);
+    }
+
+    // --- META API ENDPOINTS ---
+
+    @UseGuards(JwtAuthGuard)
+    @Get('meta/templates')
+    async getMetaTemplates(@Request() req) {
+        return this.metaApiService.getTemplates(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('meta/profile')
+    async getMetaProfile(@Request() req) {
+        return this.metaApiService.getBusinessAccount(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('meta/phone-numbers')
+    async getMetaPhoneNumbers(@Request() req) {
+        return this.metaApiService.getPhoneNumbers(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('meta/test')
+    async testMetaConnection(@Request() req) {
+        return this.metaApiService.testConnection(req.user.tenantId);
     }
 }

@@ -11,6 +11,7 @@ import { N8nService } from '../integrations/n8n.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 
 import { EvolutionApiService } from '../integrations/evolution-api.service';
+import { MetaApiService } from '../integrations/meta-api.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -29,6 +30,7 @@ export class CrmService implements OnApplicationBootstrap {
         private readonly n8nService: N8nService,
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
+        private readonly metaApiService: MetaApiService,
         @InjectQueue('campaign-queue') private readonly campaignQueue: Queue,
     ) { }
 
@@ -490,6 +492,21 @@ export class CrmService implements OnApplicationBootstrap {
 
                     if (activeInstance) {
                         const instanceName = activeInstance.name || activeInstance.instance?.instanceName || activeInstance.instanceName;
+
+                        // --- NEW: META API CHECK ---
+                        if (activeInstance.provider === 'whatsapp' && activeInstance.credentials?.META_ACCESS_TOKEN) {
+                            this.logger.log(`Sending Official WhatsApp message to ${targetNumber} via Meta API`);
+                            // For manual CRM messages through Meta, we send as regular text if within window,
+                            // or fallback to a template if needed. For now, assuming standard text sending.
+                            // Note: Meta Cloud API allows text messages to be sent if the user contacted first (< 24h).
+                            const response = await this.metaApiService.sendTextMessage(tenantId, targetNumber, content);
+                            if (response?.messages?.[0]?.id) {
+                                message.wamid = response.messages[0].id;
+                                message.status = 'SENT';
+                                await this.messageRepository.save(message);
+                            }
+                            return message;
+                        }
 
                         if (media && media.url) {
                             // MEDIA SENDING LOGIC

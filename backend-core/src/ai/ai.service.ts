@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import axios from 'axios';
 import { Contact, Message } from '../crm/entities/crm.entity';
 import { Integration } from '../integrations/entities/integration.entity';
@@ -9,6 +9,7 @@ import { IntegrationsService } from '../integrations/integrations.service';
 import { AiPrompt as AiPromptEntity } from '../integrations/entities/ai-prompt.entity';
 import { ErpZaplandiaService } from '../integrations/erp-zaplandia.service';
 import { RifaApiService } from '../integrations/rifa-api.service';
+import { MetaApiService } from '../integrations/meta-api.service';
 
 export interface AIPrompt {
     id: string;
@@ -34,6 +35,7 @@ export class AiService implements OnModuleInit {
         private integrationsService: IntegrationsService,
         private erpZaplandiaService: ErpZaplandiaService,
         private rifaApiService: RifaApiService,
+        private metaApiService: MetaApiService,
     ) { }
 
     async onModuleInit() {
@@ -151,7 +153,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         const integrations = await this.integrationRepository.find({
             where: {
                 tenantId,
-                provider: 'evolution' as any,
             },
             order: { updatedAt: 'DESC' }
         });
@@ -220,7 +221,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const integrations = await this.integrationRepository.find({
                 where: {
                     tenantId,
-                    provider: 'evolution' as any,
+                    provider: In(['evolution', 'meta']), // Include Meta integrations
                 },
                 order: { updatedAt: 'DESC' }
             });
@@ -473,8 +474,16 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
 
             this.logger.log(`Sending AI response to ${targetNumber} via ${useInstance}`);
 
-            // Send via Evolution API
-            await this.evolutionApiService.sendText(tenantId, useInstance, targetNumber, aiResponse);
+            // Find integration to determine provider
+            const integration = await this.integrationsService.resolveInstance(tenantId, useInstance);
+
+            if (integration?.provider === 'whatsapp' && integration.credentials?.META_ACCESS_TOKEN) {
+                // Official Meta Sending
+                await this.metaApiService.sendTextMessage(tenantId, targetNumber, aiResponse);
+            } else {
+                // Evolution API Sending (Default Fallback)
+                await this.evolutionApiService.sendText(tenantId, useInstance, targetNumber, aiResponse);
+            }
 
             this.logger.log(`AI response sent to ${targetNumber} via ${useInstance}`);
 

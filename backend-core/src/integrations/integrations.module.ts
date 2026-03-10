@@ -11,6 +11,7 @@ import { EvolutionApiService } from './evolution-api.service';
 import { WebhookSetupService } from './webhook-setup.service';
 import { ErpZaplandiaService } from './erp-zaplandia.service';
 import { RifaApiService } from './rifa-api.service';
+import { MetaApiService } from './meta-api.service';
 import { AiPrompt } from './entities/ai-prompt.entity';
 import { AiModule } from '../ai/ai.module';
 import { forwardRef } from '@nestjs/common';
@@ -26,7 +27,7 @@ import { forwardRef } from '@nestjs/common';
         forwardRef(() => AiModule),
     ],
     controllers: [IntegrationsController],
-    providers: [IntegrationsService, N8nService, EvolutionApiService, WebhookSetupService, ErpZaplandiaService, RifaApiService],
-    exports: [IntegrationsService, N8nService, EvolutionApiService, ErpZaplandiaService, RifaApiService],
+    providers: [IntegrationsService, N8nService, EvolutionApiService, WebhookSetupService, ErpZaplandiaService, RifaApiService, MetaApiService],
+    exports: [IntegrationsService, N8nService, EvolutionApiService, ErpZaplandiaService, RifaApiService, MetaApiService],
 })
 export class IntegrationsModule { }

@@ -4,6 +4,7 @@ import { AiService } from '../ai/ai.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { N8nService } from '../integrations/n8n.service';
 import { Repository, Like } from 'typeorm';
+import { Integration } from '../integrations/entities/integration.entity';
 import { Contact, Message } from '../crm/entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -23,6 +24,8 @@ export class WebhooksController {
         private messageRepository: Repository<Message>,
         @InjectRepository(CampaignLead)
         private leadRepository: Repository<CampaignLead>,
+        @InjectRepository(Integration)
+        private integrationRepository: Repository<Integration>,
     ) { }
 
     // Meta (Face/Insta/WhatsApp) Webhook verification
@@ -53,9 +56,149 @@ export class WebhooksController {
     async handleMeta(@Body() payload: any) {
         this.logger.debug('Received Meta Payload: ' + JSON.stringify(payload));
 
-        if (payload.object !== 'instagram') {
+        if (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account') {
             this.logger.warn(`Unsupported Meta object: ${payload.object}`);
             return { status: 'skipped' };
+        }
+
+        // --- WHATSAPP OFFICIAL HANDLER ---
+        if (payload.object === 'whatsapp_business_account') {
+            try {
+                for (const entry of payload.entry) {
+                    const wabaId = entry.id;
+                    const changes = entry.changes || [];
+
+                    for (const change of changes) {
+                        if (change.field !== 'messages') continue;
+
+                        const value = change.value;
+                        if (!value) continue;
+
+                        const phoneNumberId = value.metadata?.phone_number_id;
+
+                        // 1. Resolve Tenant by WABA ID or Phone ID
+                        // This bit is tricky; we'll look for an integration that matches this WABA ID
+                        const integration = await this.integrationRepository.createQueryBuilder('i')
+                            .where("i.credentials->>'META_WABA_ID' = :wabaId", { wabaId })
+                            .orWhere("i.credentials->>'META_PHONE_NUMBER_ID' = :phoneId", { phoneId: phoneNumberId })
+                            .getOne();
+
+                        if (!integration) {
+                            this.logger.warn(`No integration found for WABA ${wabaId} or PhoneID ${phoneNumberId}`);
+                            continue;
+                        }
+
+                        const tenantId = integration.tenantId;
+                        const instanceName = integration.credentials?.instanceName || integration.credentials?.name || phoneNumberId;
+
+                        // 2. Process Status Updates (Delivery Receipts)
+                        if (value.statuses) {
+                            for (const statusObj of value.statuses) {
+                                const wamid = statusObj.id;
+                                const status = statusObj.status.toUpperCase(); // DELIVERED, READ, SENT, FAILED
+
+                                const message = await this.messageRepository.findOne({ where: { wamid } });
+                                if (message) {
+                                    message.status = status;
+                                    await this.messageRepository.save(message);
+                                    // Also update campaign lead if it was a campaign message
+                                    // Removed invalid 'lastStatus' column update
+                                }
+                            }
+                        }
+
+                        // 3. Process Inbound Messages
+                        if (value.messages) {
+                            for (const msg of value.messages) {
+                                const from = msg.from; // Phone number
+                                const wamid = msg.id;
+                                let content = '';
+
+                                if (msg.type === 'text') content = msg.text.body;
+                                else if (msg.type === 'button') content = msg.button.text;
+                                else if (msg.type === 'interactive') {
+                                    content = msg.interactive.button_reply?.title || msg.interactive.list_reply?.title || 'Interactive Message';
+                                } else {
+                                    content = `[${msg.type.toUpperCase()}]`;
+                                }
+
+                                if (!content) continue;
+
+                                // Find/Create Contact
+                                let contact = await this.contactRepository.findOne({
+                                    where: { externalId: from, tenantId }
+                                });
+
+                                if (!contact) {
+                                    contact = this.contactRepository.create({
+                                        tenantId,
+                                        externalId: from,
+                                        phoneNumber: from,
+                                        name: value.contacts?.[0]?.profile?.name || `WhatsApp Official ${from.slice(-4)}`,
+                                        provider: 'whatsapp',
+                                        instance: instanceName,
+                                        stage: 'NOVO'
+                                    });
+                                    await this.contactRepository.save(contact);
+                                }
+
+                                // Deduplicate
+                                const exists = await this.messageRepository.findOne({ where: { wamid } });
+                                if (exists) continue;
+
+                                // Save Message
+                                const message = this.messageRepository.create({
+                                    tenantId,
+                                    contactId: contact.id,
+                                    content,
+                                    direction: 'inbound',
+                                    provider: 'whatsapp',
+                                    instance: instanceName,
+                                    wamid
+                                });
+                                await this.messageRepository.save(message);
+
+                                contact.lastMessage = content;
+                                contact.updatedAt = new Date();
+                                await this.contactRepository.save(contact);
+
+                                // Trigger n8n
+                                await this.n8nService.triggerWebhook(tenantId, {
+                                    type: 'whatsapp.message',
+                                    sender: from,
+                                    content,
+                                    contact_id: contact.id,
+                                    name: contact.name,
+                                    message_id: message.id,
+                                    official: true
+                                });
+
+                                // AI Auto-Response
+                                const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+                                if (shouldRespond) {
+                                    const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
+                                    if (aiResponse) {
+                                        const aiMsg = this.messageRepository.create({
+                                            tenantId,
+                                            contactId: contact.id,
+                                            content: aiResponse,
+                                            direction: 'outbound',
+                                            provider: 'whatsapp',
+                                            instance: instanceName,
+                                            status: 'PENDING'
+                                        });
+                                        await this.messageRepository.save(aiMsg);
+                                        await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                this.logger.error('Error processing WhatsApp Official Webhook', error.stack);
+            }
+            return { status: 'received' };
         }
 
         try {
