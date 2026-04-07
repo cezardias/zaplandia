@@ -46,7 +46,7 @@ import { AuditModule } from './audit/audit.module';
       password: (process.env.DB_PASS || 'zaplandia_secret') as string,
       database: (process.env.DB_NAME || 'zaplandia_db') as string,
       autoLoadEntities: true,
-      synchronize: false,
+      synchronize: true,
     }),
   ],
   controllers: [AppController],
