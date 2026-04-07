@@ -34,10 +34,10 @@ export class Contact {
     n8nEnabled: boolean | null; // null = use instance default, true/false = override
 
     @Column({ nullable: true })
-    assignedTeamId: string;
+    assignedTeamId: string | null;
 
     @Column({ nullable: true })
-    assignedUserId: string;
+    assignedUserId: string | null;
 
     @Column({ default: 'LEAD' })
     stage: string; // NOVO, CONTACTED, NEGOTIATION, INTERESTED, CONVERTIDO, NOT_INTERESTED

@@ -36,10 +36,10 @@ export class User {
     team: Team | null;
 
     @Column({ nullable: true })
-    teamId: string;
+    teamId: string | null;
 
     @Column({ nullable: true })
-    tenantId: string;
+    tenantId: string | null;
 
     @CreateDateColumn()
     createdAt: Date;
