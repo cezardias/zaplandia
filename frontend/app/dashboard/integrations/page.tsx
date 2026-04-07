@@ -131,6 +131,7 @@ export default function IntegrationsPage() {
         setSelectedIntegration(integration);
         setAiConfig({
             enabled: integration.aiEnabled || false,
+            promptId: integration.aiPromptId || '',
             aiModel: integration.aiModel || 'gemini-1.5-flash',
             n8nEnabled: integration.n8nEnabled || false
         });
