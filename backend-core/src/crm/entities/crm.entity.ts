@@ -30,6 +30,15 @@ export class Contact {
     @Column({ type: 'boolean', nullable: true })
     aiEnabled: boolean | null; // null = use instance default, true/false = override
 
+    @Column({ type: 'boolean', nullable: true })
+    n8nEnabled: boolean | null; // null = use instance default, true/false = override
+
+    @Column({ nullable: true })
+    assignedTeamId: string;
+
+    @Column({ nullable: true })
+    assignedUserId: string;
+
     @Column({ default: 'LEAD' })
     stage: string; // NOVO, CONTACTED, NEGOTIATION, INTERESTED, CONVERTIDO, NOT_INTERESTED
 

@@ -40,6 +40,7 @@ export default function DashboardLayout({
         { name: 'WhatsApp Manager', icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp' },
         { name: 'Meta API', icon: <Facebook size={20} />, path: '/dashboard/integrations/meta' },
         { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm' },
+        { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams' },
         { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban' },
         { name: 'Integrações', icon: <Settings size={20} />, path: '/dashboard/integrations' },
         { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api' },

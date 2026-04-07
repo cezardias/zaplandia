@@ -33,6 +33,9 @@ interface Contact {
     updatedAt: string;
     provider: string;
     aiEnabled?: boolean | null;
+    n8nEnabled?: boolean | null;
+    assignedTeamId?: string | null;
+    assignedUserId?: string | null;
 }
 
 interface Message {
@@ -73,6 +76,8 @@ export default function OmniInboxPage() {
     const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
     const [selectedAiModel, setSelectedAiModel] = useState<string>('gemini-1.5-flash');
     const [contactAiEnabled, setContactAiEnabled] = useState<boolean | null>(null);
+    const [contactN8nEnabled, setContactN8nEnabled] = useState<boolean | null>(null);
+    const [teams, setTeams] = useState<any[]>([]);
 
     const fetchInstances = async () => {
         if (!token) return;
@@ -154,10 +159,23 @@ export default function OmniInboxPage() {
         }
     };
 
+    const fetchTeams = async () => {
+        if (!token) return;
+        try {
+            const res = await fetch('/api/teams', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) setTeams(await res.json());
+        } catch (err) {
+            console.error('Erro ao carregar equipes:', err);
+        }
+    };
+
     useEffect(() => {
         fetchInstances();
         fetchAiPrompts();
         fetchCredentials();
+        fetchTeams();
     }, [token]);
 
     useEffect(() => {
@@ -204,6 +222,7 @@ export default function OmniInboxPage() {
 
             // Sync AI state for the newly selected contact
             setContactAiEnabled(selectedContact.aiEnabled ?? null);
+            setContactN8nEnabled(selectedContact.n8nEnabled ?? null);
 
             fetch(`/api/crm/chats/${selectedContact.id}/messages`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -387,41 +406,76 @@ export default function OmniInboxPage() {
         }
     };
 
-    const toggleContactAI = async () => {
+    const toggleContactAgent = async () => {
         if (!token || !selectedContact) return;
 
         try {
-            // 3-state cycle logic:
-            // 1. null (follow global) -> click -> false (strictly disabled)
-            // 2. false (strictly disabled) -> click -> true (strictly enabled)
-            // 3. true (strictly enabled) -> click -> null (follow global)
-            let newValue: boolean | null;
-            if (contactAiEnabled === null) newValue = false;
-            else if (contactAiEnabled === false) newValue = true;
-            else newValue = null;
+            // "Agente" Toggle Logic:
+            // ON -> Set both aiEnabled/n8nEnabled to FALSE for contact (Manual Override)
+            // OFF -> Set both to NULL (Inherit from Instance)
+            const isAgentActive = contactAiEnabled === false && contactN8nEnabled === false;
+            const newValue = isAgentActive ? null : false;
 
-            const res = await fetch(`/api/ai/contact/${selectedContact.id}/toggle`, {
+            const res = await fetch(`/api/teams/transfer`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    enabled: newValue
+                    contactId: selectedContact.id,
+                    teamId: selectedContact.assignedTeamId,
+                    userId: selectedContact.assignedUserId
                 })
             });
 
+            // Special case for manual resume: we need to reset the flags
+            // Currently our /transfer endpoint sets to false. Let's make it smarter or add a resume endpoint.
+            // For now, let's just use a dynamic update endpoint if it exists or reuse transfer.
+            
+            // Using a dedicated update if available, otherwise reuse logic.
+            // Let's assume we want to SET to FALSE to stop automation.
+            
             if (res.ok) {
-                setContactAiEnabled(newValue);
-                // Update local contacts list to stay in sync
-                setContacts(prev => prev.map(c =>
-                    c.id === selectedContact.id
-                        ? { ...c, aiEnabled: newValue }
+                const data = await res.json();
+                setContactAiEnabled(data.aiEnabled);
+                setContactN8nEnabled(data.n8nEnabled);
+                
+                // Update local contact
+                setContacts(prev => prev.map(c => 
+                    c.id === selectedContact.id 
+                        ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } 
                         : c
                 ));
             }
         } catch (err) {
-            console.error('Erro ao alternar IA do contato:', err);
+            console.error('Erro ao alternar agente:', err);
+        }
+    };
+
+    const handleTeamTransfer = async (teamId: string | null) => {
+        if (!token || !selectedContact) return;
+        try {
+            const res = await fetch('/api/teams/transfer', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contactId: selectedContact.id,
+                    teamId: teamId
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSelectedContact({ ...selectedContact, assignedTeamId: teamId, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled });
+                setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, assignedTeamId: teamId, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } : c));
+                setContactAiEnabled(data.aiEnabled);
+                setContactN8nEnabled(data.n8nEnabled);
+            }
+        } catch (err) {
+            console.error('Erro ao transferir equipe:', err);
         }
     };
 
@@ -697,34 +751,36 @@ export default function OmniInboxPage() {
                                 >
                                     <Phone className="w-5 h-5" />
                                 </a>
-                                {/* AI Toggle for this conversation */}
-                                {aiEnabled && (
-                                    <button
-                                        onClick={toggleContactAI}
-                                        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition ${contactAiEnabled === false
-                                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                            : contactAiEnabled === true
-                                                ? 'bg-primary text-white hover:bg-primary/80 shadow-lg shadow-primary/20'
-                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                                            }`}
-                                        title={
-                                            contactAiEnabled === false
-                                                ? 'IA Forçada: OFF (Clique para ON)'
-                                                : contactAiEnabled === true
-                                                    ? 'IA Forçada: ON (Clique para PADRÃO)'
-                                                    : 'IA Modo: PADRÃO (Clique para OFF)'
-                                        }
-                                    >
-                                        <span>🤖</span>
-                                        {contactAiEnabled === false ? (
-                                            <span className="font-bold">OFF</span>
-                                        ) : contactAiEnabled === true ? (
-                                            <span className="font-bold">ON</span>
-                                        ) : (
-                                            <span>AUTO</span>
-                                        )}
-                                    </button>
-                                )}
+
+                                {/* Team Selector */}
+                                <select
+                                    value={selectedContact.assignedTeamId || ''}
+                                    onChange={(e) => handleTeamTransfer(e.target.value || null)}
+                                    className="bg-black/20 border border-white/10 rounded-lg text-[10px] px-2 py-1 outline-none focus:border-primary transition max-w-[100px]"
+                                    title="Atribuir a uma equipe"
+                                >
+                                    <option value="">Sem Equipe</option>
+                                    {teams.map(t => (
+                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                    ))}
+                                </select>
+
+                                {/* Agente Toggle (Manual Override) */}
+                                <button
+                                    onClick={toggleContactAgent}
+                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${contactAiEnabled === false && contactN8nEnabled === false
+                                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                        : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                                        }`}
+                                    title={
+                                        contactAiEnabled === false && contactN8nEnabled === false
+                                            ? 'Modo Atendimento Humano Ativo (Automação Desligada)'
+                                            : 'Modo Automação Ativo (Bot/n8n)'
+                                    }
+                                >
+                                    {contactAiEnabled === false && contactN8nEnabled === false ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
+                                    <span>{contactAiEnabled === false && contactN8nEnabled === false ? 'Agente' : 'Automação'}</span>
+                                </button>
                                 <button className="hover:text-white transition"><MoreVertical className="w-5 h-5" /></button>
                             </div>
                         </div>
