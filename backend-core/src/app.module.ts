@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { HealthDebugController } from './app.health.controller';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { IntegrationsModule } from './integrations/integrations.module';
@@ -50,7 +49,7 @@ import { TeamsModule } from './teams/teams.module';
       synchronize: true,
     }),
   ],
-  controllers: [AppController, HealthDebugController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule { }
