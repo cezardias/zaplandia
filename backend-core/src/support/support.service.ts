@@ -134,30 +134,7 @@ export class SupportService implements OnModuleInit {
 
 - **Personalidade**: Defina como a IA deve falar (formal, amigável, técnico).
 - **Base de Conhecimento**: A IA lê seus manuais e informações da empresa para responder dúvidas dos clientes.
-- **Transferência**: Se a IA não souber responder ou o cliente pedir falar com humano, a conversa é marcada como prioritária no Omni Inbox.
-- **Botão Agente**: Na Omni Inbox, você pode usar o botão "Agente" no cabeçalho do chat para desligar a IA instantaneamente para um contato específico e assumir o atendimento manual.`,
-            },
-            {
-                title: 'Gestão de Equipes e Atendentes: Como Configurar',
-                category: 'Equipes',
-                content: `Organize seu atendimento por departamentos e escalas:
-
-1. **Criar Equipe**:
-   - Vá ao menu lateral **Equipes**.
-   - Digite o nome da equipe (ex: Vendas) e clique em **Criar**.
-   - Cada equipe possui um **ID de Integração** único exibido abaixo do nome.
-
-2. **Atribuir Atendentes**:
-   - No painel lateral da página de Equipes, você verá a lista de usuários do sistema.
-   - Selecione a equipe desejada no dropdown ao lado de cada usuário para vinculá-lo.
-   - Novos atendentes devem ser cadastrados primeiro em **Gestão de Usuários** (SuperAdmin).
-
-3. **Transferência na Omni Inbox**:
-   - Ao abrir uma conversa, você pode selecionar a equipe no dropdown do cabeçalho para transferir o atendimento.
-   - Ativar o modo **Agente** silencia automaticamente as automações (IA/n8n) para que o humano possa falar sem interrupções.
-
-4. **Automação via n8n (REST)**:
-   - Use o ID da equipe para rotear conversas automaticamente via n8n enviando um POST para \`/api/teams/transfer\`.`,
+- **Transferência**: Se a IA não souber responder ou o cliente pedir falar com humano, a conversa é marcada como prioritária no Omni Inbox.`,
             },
             {
                 title: 'WhatsApp Não Oficial: Conexão EvolutionAPI (QR Code)',
