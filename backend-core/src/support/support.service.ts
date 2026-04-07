@@ -14,6 +14,7 @@ export class SupportService implements OnModuleInit {
 
     async onModuleInit() {
         try {
+            this.logger.log('onModuleInit: Triggering initial seed...');
             await this.seedInitialArticles();
         } catch (error) {
             this.logger.error('Failed to auto-seed support articles:', error.message);
@@ -25,9 +26,11 @@ export class SupportService implements OnModuleInit {
         if (category) {
             where.category = category;
         }
+        
+        let results;
         if (query) {
-            // Use ILike for PostgreSQL case-insensitive search
-            return this.articleRepository.find({
+            this.logger.log(`findAll: searching with query "${query}"`);
+            results = await this.articleRepository.find({
                 where: [
                     { title: ILike(`%${query}%`), ...where },
                     { content: ILike(`%${query}%`), ...where },
@@ -35,11 +38,16 @@ export class SupportService implements OnModuleInit {
                 ],
                 order: { updatedAt: 'DESC' },
             });
+        } else {
+            this.logger.log(`findAll: fetching all articles`);
+            results = await this.articleRepository.find({
+                where,
+                order: { updatedAt: 'DESC' },
+            });
         }
-        return this.articleRepository.find({
-            where,
-            order: { updatedAt: 'DESC' },
-        });
+        
+        this.logger.log(`findAll: found ${results.length} articles`);
+        return results;
     }
 
     async findOne(id: string) {
@@ -220,14 +228,18 @@ O Agente de IA do Zaplandia possui ferramentas nativas para interagir com sua Ri
         ];
 
         for (const article of articles) {
-            const existing = await this.articleRepository.findOne({ where: { title: article.title } });
-            if (existing) {
-                Object.assign(existing, article);
-                await this.articleRepository.save(existing);
-            } else {
-                await this.create(article);
+            try {
+                const existing = await this.articleRepository.findOne({ where: { title: article.title } });
+                if (existing) {
+                    Object.assign(existing, article);
+                    await this.articleRepository.save(existing);
+                } else {
+                    await this.create(article);
+                }
+            } catch (err) {
+                this.logger.error(`Error seeding article "${article.title}":`, err.message);
             }
         }
-        this.logger.log('Seeding completed.');
+        this.logger.log('Seeding completed sucessfully.');
     }
 }
