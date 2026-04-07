@@ -117,7 +117,7 @@ export default function OmniInboxPage() {
             });
             if (res.ok) {
                 const creds = await res.json();
-                const hasUrl = creds.some((c: any) => c.name === 'N8N_WEBHOOK_URL' && c.value);
+                const hasUrl = creds.some((c: any) => c.key_name === 'N8N_WEBHOOK_URL' && c.key_value);
                 setHasN8nWebhook(hasUrl);
             }
         } catch (err) {

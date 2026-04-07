@@ -48,7 +48,7 @@ export default function WhatsAppInstanceManager({ token, onClose, onSuccess }: W
 
             if (credRes.ok) {
                 const creds = await credRes.json();
-                const hasUrl = creds.some((c: any) => c.name === 'N8N_WEBHOOK_URL' && c.value);
+                const hasUrl = creds.some((c: any) => c.key_name === 'N8N_WEBHOOK_URL' && c.key_value);
                 setHasN8nWebhook(hasUrl);
             }
         } catch (err) {

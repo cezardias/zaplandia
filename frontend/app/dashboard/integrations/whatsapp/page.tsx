@@ -17,7 +17,9 @@ import {
     Link2,
     Bot,
     Save,
-    X
+    X,
+    Terminal,
+    Settings
 } from 'lucide-react';
 import AiModelSelector from '@/components/AiModelSelector';
 
@@ -51,8 +53,10 @@ export default function WhatsAppInstancesPage() {
 
     // AI Configuration
     const [aiModalInstance, setAiModalInstance] = useState<string | null>(null);
-    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-1.5-flash' });
+    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-1.5-flash', n8nEnabled: false });
     const [isSavingAI, setIsSavingAI] = useState(false);
+    const [isToggling, setIsToggling] = useState<string | null>(null);
+    const [hasN8nWebhook, setHasN8nWebhook] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
     const [dbIntegrations, setDbIntegrations] = useState<any[]>([]); // DB integrations for AI config
 
@@ -61,8 +65,24 @@ export default function WhatsAppInstancesPage() {
             fetchInstances();
             fetchPrompts();
             fetchDbIntegrations();
+            fetchCredentials();
         }
     }, [token]);
+
+    const fetchCredentials = async () => {
+        try {
+            const res = await fetch('/api/integrations/credentials', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const creds = await res.json();
+                const hasUrl = creds.some((c: any) => c.key_name === 'N8N_WEBHOOK_URL' && c.key_value);
+                setHasN8nWebhook(hasUrl);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar credenciais:', err);
+        }
+    };
 
     const fetchPrompts = async () => {
         try {
@@ -94,7 +114,8 @@ export default function WhatsAppInstancesPage() {
         setAiConfig({
             enabled: dbInt?.aiEnabled || false,
             promptId: dbInt?.aiPromptId || '',
-            aiModel: dbInt?.aiModel || 'gemini-1.5-flash'
+            aiModel: dbInt?.aiModel || 'gemini-1.5-flash',
+            n8nEnabled: dbInt?.n8nEnabled || false
         });
     };
 
@@ -120,23 +141,68 @@ export default function WhatsAppInstancesPage() {
                 },
                 body: JSON.stringify({
                     enabled: aiConfig.enabled,
+                    n8nEnabled: aiConfig.n8nEnabled,
                     promptId: aiConfig.promptId || undefined,
                     aiModel: aiConfig.aiModel
                 })
             });
 
             if (res.ok) {
-                setSuccessMessage(`IA ${aiConfig.enabled ? 'ativada' : 'desativada'} com sucesso para esta instância!`);
+                setSuccessMessage(`Configuração de automação salva com sucesso!`);
                 setAiModalInstance(null);
                 await fetchDbIntegrations(); // Refresh to show updated state
             } else {
                 const err = await res.json();
-                setError(`Erro ao salvar IA: ${err.message || JSON.stringify(err)}`);
+                setError(`Erro ao salvar automação: ${err.message || JSON.stringify(err)}`);
             }
         } catch (e: any) {
-            setError(`Erro ao salvar IA: ${e.message}`);
+            setError(`Erro ao salvar automação: ${e.message}`);
         } finally {
             setIsSavingAI(false);
+        }
+    };
+
+    const toggleAutomation = async (instanceName: string, type: 'ai' | 'n8n', currentState: boolean) => {
+        if (type === 'n8n' && !hasN8nWebhook) {
+            if (confirm('Webhook do n8n não configurado. Deseja ir para as configurações agora?')) {
+                router.push('/dashboard/settings/api');
+            }
+            return;
+        }
+
+        setIsToggling(instanceName + type);
+        try {
+            const dbInt = dbIntegrations.find((i: any) =>
+                i.credentials?.instanceName === instanceName ||
+                i.settings?.instanceName === instanceName ||
+                i.instanceName === instanceName
+            );
+
+            if (!dbInt) throw new Error('Integração não encontrada no banco de dados.');
+
+            const res = await fetch(`/api/ai/integration/${dbInt.id}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    enabled: type === 'ai' ? !currentState : false,
+                    n8nEnabled: type === 'n8n' ? !currentState : false,
+                    promptId: dbInt.aiPromptId,
+                    aiModel: dbInt.aiModel
+                })
+            });
+
+            if (res.ok) {
+                await fetchDbIntegrations();
+            } else {
+                setError('Erro ao alternar automação');
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsToggling(null);
         }
     };
 
@@ -529,6 +595,8 @@ export default function WhatsAppInstancesPage() {
                                                         i.instanceName === instanceName
                                                     );
                                                     const aiIsActive = dbInt?.aiEnabled;
+                                                    const n8nIsActive = dbInt?.n8nEnabled;
+
                                                     return (
                                                         <>
                                                             <button
@@ -538,15 +606,38 @@ export default function WhatsAppInstancesPage() {
                                                                 <Link2 className="w-4 h-4" />
                                                                 <span>Associar a Campanha</span>
                                                             </button>
+
+                                                            {/* quick automation toggles */}
+                                                            <div className="flex items-center bg-black/20 rounded-lg p-1 border border-white/5 space-x-1">
+                                                                <button
+                                                                    title={aiIsActive ? "Desativar IA" : "Ativar IA"}
+                                                                    disabled={isToggling !== null}
+                                                                    onClick={() => toggleAutomation(instanceName, 'ai', aiIsActive)}
+                                                                    className={`p-1.5 rounded-md transition-all flex items-center space-x-1 ${aiIsActive ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-white/5 text-gray-500 opacity-60'}`}
+                                                                >
+                                                                    <Bot className="w-4 h-4" />
+                                                                    <span className="text-[10px] font-bold">IA</span>
+                                                                </button>
+                                                                <button
+                                                                    title={n8nIsActive ? "Desativar n8n" : "Ativar n8n"}
+                                                                    disabled={isToggling !== null}
+                                                                    onClick={() => toggleAutomation(instanceName, 'n8n', n8nIsActive)}
+                                                                    className={`p-1.5 rounded-md transition-all flex items-center space-x-1 ${n8nIsActive ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' : 'bg-white/5 text-gray-500 opacity-60'}`}
+                                                                >
+                                                                    <Terminal className="w-4 h-4" />
+                                                                    <span className="text-[10px] font-bold">n8n</span>
+                                                                </button>
+                                                            </div>
+
                                                             <button
                                                                 onClick={() => openAiModal(instanceName)}
-                                                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-bold transition border ${aiIsActive
+                                                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-bold transition border ${aiIsActive || n8nIsActive
                                                                     ? 'bg-primary/20 border-primary/40 text-primary'
                                                                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
                                                                     }`}
                                                             >
-                                                                <Bot className="w-4 h-4" />
-                                                                <span>{aiIsActive ? 'IA Ativa ✓' : 'Configurar IA'}</span>
+                                                                <Settings className="w-4 h-4" />
+                                                                <span>Configurar</span>
                                                             </button>
                                                         </>
                                                     );
@@ -670,11 +761,39 @@ export default function WhatsAppInstancesPage() {
                                         <p className="text-xs text-gray-400">O robô responderá automaticamente às mensagens</p>
                                     </div>
                                     <button
-                                        onClick={() => setAiConfig({ ...aiConfig, enabled: !aiConfig.enabled })}
+                                        onClick={() => setAiConfig({ ...aiConfig, enabled: !aiConfig.enabled, n8nEnabled: false })}
                                         className={`w-14 h-8 rounded-full transition-all relative ${aiConfig.enabled ? 'bg-primary' : 'bg-gray-600'}`}
                                     >
                                         <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${aiConfig.enabled ? 'left-7' : 'left-1'}`} />
                                     </button>
+                                </div>
+
+                                {/* n8n Toggle in Modal */}
+                                <div className={`flex flex-col p-4 rounded-2xl border transition-all ${aiConfig.n8nEnabled ? 'bg-orange-500/10 border-orange-500/40' : 'bg-white/5 border-white/5 opacity-60'}`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <Terminal className={`w-5 h-5 ${aiConfig.n8nEnabled ? 'text-orange-500' : 'text-gray-500'}`} />
+                                            <div>
+                                                <p className="font-bold">Automação via n8n</p>
+                                                <p className="text-[10px] text-gray-400">Fluxos externos e webhooks</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            title="Ativar/Desativar n8n"
+                                            onClick={() => {
+                                                if (!hasN8nWebhook && !aiConfig.n8nEnabled) {
+                                                    if (confirm('Webhook do n8n não configurado. Deseja ir para as configurações agora?')) {
+                                                        router.push('/dashboard/settings/api');
+                                                    }
+                                                    return;
+                                                }
+                                                setAiConfig({ ...aiConfig, n8nEnabled: !aiConfig.n8nEnabled, enabled: false });
+                                            }}
+                                            className={`w-12 h-6 rounded-full transition-all relative ${aiConfig.n8nEnabled ? 'bg-orange-500' : 'bg-gray-600'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${aiConfig.n8nEnabled ? 'left-7' : 'left-1'}`} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Prompt Selector */}
