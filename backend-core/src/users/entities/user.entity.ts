@@ -1,6 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne } from 'typeorm';
 import { Tenant } from './tenant.entity';
-import { Team } from '../../teams/entities/team.entity';
 
 export enum UserRole {
     SUPERADMIN = 'superadmin',
@@ -31,12 +30,6 @@ export class User {
 
     @ManyToOne(() => Tenant, { nullable: true })
     tenant: Tenant;
-
-    @ManyToOne(() => Team, (team) => team.members, { nullable: true })
-    team: Team | null;
-
-    @Column({ nullable: true })
-    teamId: string | null;
 
     @Column({ nullable: true })
     tenantId: string | null;

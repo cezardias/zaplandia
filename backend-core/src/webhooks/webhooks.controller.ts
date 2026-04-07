@@ -169,20 +169,12 @@ export class WebhooksController {
                                     content,
                                     contact_id: contact.id,
                                     name: contact.name,
-                                    message_id: message.id,
-                                    official: true,
-                                    assignedTeamId: contact.assignedTeamId,
-                                    assignedUserId: contact.assignedUserId
+                                    message_id: message.id
                                 }, integration);
 
                                 // 1. AI Auto-Response (Check if n8n is NOT enabled)
-                                const isN8nEnabled = contact.n8nEnabled ?? integration.n8nEnabled;
-                                const isAiEnabled = contact.aiEnabled ?? integration.aiEnabled; // Assuming aiEnabled might exist on integration too, though it's usually dynamic
-
-                                if (isN8nEnabled) {
-                                    this.logger.log(`n8n is enabled for contact ${contact.id} or instance ${instanceName}. Skipping internal AI.`);
-                                } else if (contact.aiEnabled === false) {
-                                    this.logger.log(`AI is explicitly disabled for contact ${contact.id}. Skipping.`);
+                                if (integration.n8nEnabled) {
+                                    this.logger.log(`n8n is enabled for instance ${instanceName}. Skipping internal AI.`);
                                 } else {
                                     const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
                                     if (shouldRespond) {
@@ -570,9 +562,7 @@ export class WebhooksController {
                         content,
                         contact_id: contact.id,
                         name: pushName,
-                        message_id: message.id,
-                        assignedTeamId: contact.assignedTeamId,
-                        assignedUserId: contact.assignedUserId
+                        message_id: message.id
                     }, integration);
                     this.logger.log('Triggered n8n webhook');
                 } catch (n8nError) {
@@ -583,12 +573,10 @@ export class WebhooksController {
                 // Check if AI should respond to this message (INBOUND ONLY)
                 if (!isOutbound) {
                     try {
-                        const isN8nEnabled = contact.n8nEnabled ?? integration?.n8nEnabled ?? false;
+                        const isN8nEnabled = integration?.n8nEnabled ?? false;
 
                         if (isN8nEnabled) {
-                            this.logger.log(`n8n is enabled for contact ${contact.id} or instance ${instanceName}. Skipping internal AI auto-response.`);
-                        } else if (contact.aiEnabled === false) {
-                            this.logger.log(`AI is explicitly disabled for contact ${contact.id}. Skipping.`);
+                            this.logger.log(`n8n is enabled for instance ${instanceName}. Skipping internal AI auto-response.`);
                         } else {
                             const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
 

@@ -27,18 +27,6 @@ export class Contact {
     @Column({ nullable: true })
     instance: string; // The Evolution API instance (e.g. "zaplandia_01")
 
-    @Column({ type: 'boolean', nullable: true })
-    aiEnabled: boolean | null; // null = use instance default, true/false = override
-
-    @Column({ type: 'boolean', nullable: true })
-    n8nEnabled: boolean | null; // null = use instance default, true/false = override
-
-    @Column({ nullable: true })
-    assignedTeamId: string | null;
-
-    @Column({ nullable: true })
-    assignedUserId: string | null;
-
     @Column({ default: 'LEAD' })
     stage: string; // NOVO, CONTACTED, NEGOTIATION, INTERESTED, CONVERTIDO, NOT_INTERESTED
 
