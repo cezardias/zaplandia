@@ -16,7 +16,9 @@ import {
     Database,
     Loader2,
     ShoppingBag,
-    Store
+    Store,
+    Bot,
+    Terminal
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
@@ -63,8 +65,10 @@ export default function OmniInboxPage() {
     const [selectedInstance, setSelectedInstance] = useState<string>('all');
     const [availableInstances, setAvailableInstances] = useState<any[]>([]);
 
-    // AI Agent State
+    // AI & n8n Agent State
     const [aiEnabled, setAiEnabled] = useState(false);
+    const [n8nEnabled, setN8nEnabled] = useState(false);
+    const [hasN8nWebhook, setHasN8nWebhook] = useState(false);
     const [aiPrompts, setAiPrompts] = useState<any[]>([]);
     const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
     const [selectedAiModel, setSelectedAiModel] = useState<string>('gemini-1.5-flash');
@@ -105,6 +109,22 @@ export default function OmniInboxPage() {
         }
     };
 
+    const fetchCredentials = async () => {
+        if (!token) return;
+        try {
+            const res = await fetch('/api/integrations/credentials', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const creds = await res.json();
+                const hasUrl = creds.some((c: any) => c.name === 'N8N_WEBHOOK_URL' && c.value);
+                setHasN8nWebhook(hasUrl);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar credenciais:', err);
+        }
+    };
+
     const fetchChats = async () => {
         if (!token) return;
         try {
@@ -137,6 +157,7 @@ export default function OmniInboxPage() {
     useEffect(() => {
         fetchInstances();
         fetchAiPrompts();
+        fetchCredentials();
     }, [token]);
 
     useEffect(() => {
@@ -146,11 +167,13 @@ export default function OmniInboxPage() {
             const inst = availableInstances.find(i => i.id === selectedInstance);
             if (inst) {
                 setAiEnabled(inst.aiEnabled || false);
+                setN8nEnabled(inst.n8nEnabled || false);
                 setSelectedPromptId(inst.aiPromptId || null);
                 setSelectedAiModel(inst.aiModel || 'gemini-1.5-flash');
             }
         } else {
             setAiEnabled(false);
+            setN8nEnabled(false);
             setSelectedPromptId(null);
             setSelectedAiModel('gemini-1.5-flash');
         }
@@ -291,6 +314,7 @@ export default function OmniInboxPage() {
                 },
                 body: JSON.stringify({
                     enabled: !aiEnabled,
+                    n8nEnabled: false, // Mutual exclusivity
                     promptId: selectedPromptId,
                     aiModel: selectedAiModel
                 })
@@ -299,12 +323,14 @@ export default function OmniInboxPage() {
             if (res.ok) {
                 const data = await res.json();
                 setAiEnabled(data.integration?.aiEnabled ?? !aiEnabled);
+                setN8nEnabled(false);
                 // Update availableInstances local state to keep it in sync
                 setAvailableInstances(prev => prev.map(i =>
                     i.id === selectedInstance
                         ? {
                             ...i,
                             aiEnabled: data.integration?.aiEnabled ?? !aiEnabled,
+                            n8nEnabled: false,
                             aiPromptId: data.integration?.aiPromptId,
                             aiModel: data.integration?.aiModel
                         }
@@ -313,6 +339,51 @@ export default function OmniInboxPage() {
             }
         } catch (err) {
             console.error('Erro ao alternar IA:', err);
+        }
+    };
+
+    const toggleN8n = async () => {
+        if (!token || selectedInstance === 'all') return;
+
+        if (!hasN8nWebhook) {
+            if (confirm('Webhook do n8n não configurado. Deseja ir para as configurações agora?')) {
+                router.push('/dashboard/settings/api');
+            }
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/ai/integration/${selectedInstance}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    enabled: false, // Mutual exclusivity
+                    n8nEnabled: !n8nEnabled,
+                    promptId: selectedPromptId,
+                    aiModel: selectedAiModel
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setN8nEnabled(data.integration?.n8nEnabled ?? !n8nEnabled);
+                setAiEnabled(false);
+                // Update availableInstances local state to keep it in sync
+                setAvailableInstances(prev => prev.map(i =>
+                    i.id === selectedInstance
+                        ? {
+                            ...i,
+                            n8nEnabled: data.integration?.n8nEnabled ?? !n8nEnabled,
+                            aiEnabled: false
+                        }
+                        : i
+                ));
+            }
+        } catch (err) {
+            console.error('Erro ao alternar n8n:', err);
         }
     };
 
@@ -417,15 +488,35 @@ export default function OmniInboxPage() {
                                 <div className="mt-3 p-3 bg-black/20 rounded-lg border border-white/10 space-y-2">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium">🤖 IA Ativa</span>
+                                            <Bot className="w-4 h-4 text-primary" />
+                                            <span className="text-sm font-medium">IA do Agente</span>
                                         </div>
                                         <button
+                                            title={aiEnabled ? "Desativar IA" : "Ativar IA"}
                                             onClick={toggleAI}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${aiEnabled ? 'bg-primary' : 'bg-gray-600'
+                                            className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${aiEnabled ? 'bg-primary' : 'bg-gray-600'
                                                 }`}
                                         >
                                             <span
-                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${aiEnabled ? 'translate-x-6' : 'translate-x-1'
+                                                className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${aiEnabled ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Terminal className="w-4 h-4 text-orange-500" />
+                                            <span className="text-sm font-medium">Fluxo n8n</span>
+                                        </div>
+                                        <button
+                                            title={n8nEnabled ? "Desativar n8n" : "Ativar n8n"}
+                                            onClick={toggleN8n}
+                                            className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${n8nEnabled ? 'bg-orange-500' : 'bg-gray-600'
+                                                }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${n8nEnabled ? 'translate-x-6' : 'translate-x-1'
                                                     }`}
                                             />
                                         </button>

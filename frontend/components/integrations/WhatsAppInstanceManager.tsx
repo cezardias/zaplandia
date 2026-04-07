@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, QrCode, Trash2, CheckCircle2, RefreshCw, Plus, Smartphone, XCircle, X } from 'lucide-react';
+import { Loader2, QrCode, Trash2, CheckCircle2, RefreshCw, Plus, Smartphone, XCircle, X, Bot, Terminal } from 'lucide-react';
 
 interface WhatsAppInstance {
     instanceName: string;
@@ -22,13 +22,39 @@ export default function WhatsAppInstanceManager({ token, onClose, onSuccess }: W
     const [isCreating, setIsCreating] = useState(false);
     const [newInstanceName, setNewInstanceName] = useState('');
     const [selectedInstance, setSelectedInstance] = useState<string | null>(null);
+    const [integrations, setIntegrations] = useState<any[]>([]);
+    const [hasN8nWebhook, setHasN8nWebhook] = useState(false);
+    const [isToggling, setIsToggling] = useState<string | null>(null);
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [qrLoading, setQrLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchInstances();
+        fetchIntegrationsAndCredentials();
     }, []);
+
+    const fetchIntegrationsAndCredentials = async () => {
+        try {
+            const [intRes, credRes] = await Promise.all([
+                fetch('/api/integrations', { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch('/api/integrations/credentials', { headers: { 'Authorization': `Bearer ${token}` } })
+            ]);
+
+            if (intRes.ok) {
+                const data = await intRes.json();
+                setIntegrations(data);
+            }
+
+            if (credRes.ok) {
+                const creds = await credRes.json();
+                const hasUrl = creds.some((c: any) => c.name === 'N8N_WEBHOOK_URL' && c.value);
+                setHasN8nWebhook(hasUrl);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar dados complementares:', err);
+        }
+    };
 
     const fetchInstances = async () => {
         setIsLoading(true);
@@ -137,6 +163,47 @@ export default function WhatsAppInstanceManager({ token, onClose, onSuccess }: W
         }
     };
 
+    const toggleAutomation = async (instanceName: string, type: 'ai' | 'n8n', currentState: boolean) => {
+        if (type === 'n8n' && !hasN8nWebhook) {
+            if (confirm('Webhook do n8n não configurado. Deseja ir para as configurações agora?')) {
+                window.location.href = '/dashboard/settings/api';
+            }
+            return;
+        }
+
+        setIsToggling(instanceName + type);
+        try {
+            const integration = integrations.find(i =>
+                i.provider === 'evolution' &&
+                (i.credentials?.instanceName === instanceName || i.settings?.instanceName === instanceName)
+            );
+
+            if (!integration) throw new Error('Integração não encontrada no banco de dados.');
+
+            const res = await fetch(`/api/ai/integration/${integration.id}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    enabled: type === 'ai' ? !currentState : false,
+                    n8nEnabled: type === 'n8n' ? !currentState : false
+                })
+            });
+
+            if (res.ok) {
+                await fetchIntegrationsAndCredentials();
+            } else {
+                setError('Erro ao alternar automação');
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsToggling(null);
+        }
+    };
+
     const getStatusBadge = (instance: WhatsAppInstance) => {
         const status = instance.status || 'unknown';
         if (status === 'open' || status === 'connected') {
@@ -176,7 +243,7 @@ export default function WhatsAppInstanceManager({ token, onClose, onSuccess }: W
                             <p className="text-gray-400 text-sm">Crie e conecte suas instâncias via QR Code</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition">
+                    <button title="Fechar" onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -231,17 +298,18 @@ export default function WhatsAppInstanceManager({ token, onClose, onSuccess }: W
                                     <div
                                         key={instance.instanceName}
                                         className={`p-4 border rounded-xl transition cursor-pointer ${selectedInstance === instance.instanceName
-                                                ? 'border-primary bg-primary/10'
-                                                : 'border-white/10 bg-white/5 hover:border-white/20'
+                                            ? 'border-primary bg-primary/10'
+                                            : 'border-white/10 bg-white/5 hover:border-white/20'
                                             }`}
                                         onClick={() => fetchQrCode(instance.instanceName)}
                                     >
-                                        <div className="flex justify-between items-start">
+                                        <div className="flex justify-between items-start mb-3">
                                             <div>
                                                 <p className="font-bold text-sm">{instance.instanceName.split('_').slice(2).join('_') || instance.instanceName}</p>
                                                 {getStatusBadge(instance)}
                                             </div>
                                             <button
+                                                title="Excluir Instância"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     deleteInstance(instance.instanceName);
@@ -250,6 +318,49 @@ export default function WhatsAppInstanceManager({ token, onClose, onSuccess }: W
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
+                                        </div>
+
+                                        {/* Automation Controls */}
+                                        <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+                                            {(() => {
+                                                const integration = integrations.find(i =>
+                                                    i.provider === 'evolution' &&
+                                                    (i.credentials?.instanceName === instance.instanceName || i.settings?.instanceName === instance.instanceName)
+                                                );
+
+                                                if (!integration) return null;
+
+                                                const aiActive = integration.aiEnabled;
+                                                const n8nActive = integration.n8nEnabled;
+
+                                                return (
+                                                    <div className="flex w-full justify-between items-center bg-black/20 rounded-lg p-2">
+                                                        <div className="flex items-center space-x-2">
+                                                            <button
+                                                                title={aiActive ? "Desativar IA" : "Ativar IA"}
+                                                                disabled={isToggling !== null}
+                                                                onClick={() => toggleAutomation(instance.instanceName, 'ai', aiActive)}
+                                                                className={`p-1.5 rounded-md transition-all flex items-center space-x-1 ${aiActive ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-white/5 text-gray-500 opacity-60'}`}
+                                                            >
+                                                                <Bot className="w-3 h-3" />
+                                                                <span className="text-[9px] font-bold">IA</span>
+                                                            </button>
+                                                            <button
+                                                                title={n8nActive ? "Desativar n8n" : "Ativar n8n"}
+                                                                disabled={isToggling !== null}
+                                                                onClick={() => toggleAutomation(instance.instanceName, 'n8n', n8nActive)}
+                                                                className={`p-1.5 rounded-md transition-all flex items-center space-x-1 ${n8nActive ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' : 'bg-white/5 text-gray-500 opacity-60'}`}
+                                                            >
+                                                                <Terminal className="w-3 h-3" />
+                                                                <span className="text-[9px] font-bold">n8n</span>
+                                                            </button>
+                                                        </div>
+                                                        <div className="text-[9px] text-gray-500 italic">
+                                                            {isToggling === instance.instanceName + 'ai' || isToggling === instance.instanceName + 'n8n' ? 'Processando...' : (aiActive ? 'Agente OK' : n8nActive ? 'Fluxo OK' : 'Manual')}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 ))
@@ -273,6 +384,7 @@ export default function WhatsAppInstanceManager({ token, onClose, onSuccess }: W
                                         <p className="text-gray-400 text-xs">WhatsApp {'>'} Aparelhos Conectados</p>
                                     </div>
                                     <button
+                                        title="Atualizar QR Code"
                                         onClick={() => selectedInstance && fetchQrCode(selectedInstance)}
                                         className="text-primary text-sm flex items-center space-x-1 mx-auto hover:underline"
                                     >
@@ -298,6 +410,7 @@ export default function WhatsAppInstanceManager({ token, onClose, onSuccess }: W
                 {/* Footer */}
                 <div className="p-6 bg-white/5 shrink-0 flex justify-between">
                     <button
+                        title="Atualizar Lista de Instâncias"
                         onClick={fetchInstances}
                         className="px-6 py-3 rounded-xl border border-white/10 font-bold hover:bg-white/5 transition flex items-center space-x-2"
                     >
