@@ -14,8 +14,8 @@ export class SupportService implements OnModuleInit {
 
     async onModuleInit() {
         try {
-            this.logger.log('onModuleInit: Triggering initial seed...');
-            await this.seedInitialArticles();
+            this.logger.log('onModuleInit: Seeding is temporarily disabled for debugging.');
+            // await this.seedInitialArticles();
         } catch (error) {
             this.logger.error('Failed to auto-seed support articles:', error.message);
         }
