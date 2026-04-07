@@ -161,34 +161,6 @@ export class AiController {
         };
     }
 
-    /**
-     * Toggle AI for a specific contact (conversation)
-     */
-    @Post('contact/:id/toggle')
-    async toggleContactAI(
-        @Param('id') contactId: string,
-        @Body() body: { enabled: boolean | null },
-        @Request() req
-    ) {
-        const contact = await this.contactRepository.findOne({
-            where: { id: contactId, tenantId: req.user.tenantId }
-        });
-
-        if (!contact) {
-            return { success: false, message: 'Contact not found' };
-        }
-
-        contact.aiEnabled = body.enabled as boolean | null;
-        await this.contactRepository.save(contact);
-
-        return {
-            success: true,
-            contact: {
-                id: contact.id,
-                aiEnabled: contact.aiEnabled
-            }
-        };
-    }
     @Post('generate-variations')
     async generateVariations(
         @Body() body: { baseMessage: string; prompt?: string; count?: number },

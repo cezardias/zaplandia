@@ -176,17 +176,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
 
         // --- HIERARCHY LOGIC ---
-        // 1. Local Override (Contact Level)
-        // If contact.aiEnabled is true -> Force ON
-        // If contact.aiEnabled is false -> Force OFF
-        if (contact.aiEnabled === true) {
-            this.logger.debug(`[AI_CHECK] Contact ${contact.id} AI is explicitly ON (Override).`);
-        } else if (contact.aiEnabled === false) {
-            this.logger.log(`AI disabled for contact ${contact.id} (Explicit Override: OFF)`);
-            return false;
-        }
-        // 2. Global Level (Instance Level)
-        else if (!integration.aiEnabled) {
+        // Global Level (Instance Level)
+        if (!integration.aiEnabled) {
             this.logger.log(`AI disabled globally for instance ${instanceName}`);
             return false;
         }
