@@ -60,6 +60,9 @@ export class Integration {
     @Column({ nullable: true, default: 'gemini-2.5-flash-lite' })
     aiModel: string; // Gemini model to use (e.g., gemini-2.5-flash-lite, gemini-3.0-pro)
 
+    @Column({ default: false })
+    n8nEnabled: boolean; // Enable n8n automation for this instance
+
 
     @ManyToOne(() => Tenant)
     tenant: Tenant;

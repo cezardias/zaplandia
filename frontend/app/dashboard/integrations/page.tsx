@@ -57,7 +57,7 @@ export default function IntegrationsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [connectingId, setConnectingId] = useState<string | null>(null);
     const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
-    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-1.5-flash' });
+    const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-1.5-flash', n8nEnabled: false });
     const [isSavingAI, setIsSavingAI] = useState(false);
     const [showEvolutionModal, setShowEvolutionModal] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
@@ -131,8 +131,8 @@ export default function IntegrationsPage() {
         setSelectedIntegration(integration);
         setAiConfig({
             enabled: integration.aiEnabled || false,
-            promptId: integration.aiPromptId || '',
-            aiModel: integration.aiModel || 'gemini-1.5-flash'
+            aiModel: integration.aiModel || 'gemini-1.5-flash',
+            n8nEnabled: integration.n8nEnabled || false
         });
     };
 
@@ -151,7 +151,8 @@ export default function IntegrationsPage() {
                 body: JSON.stringify({
                     enabled: aiConfig.enabled,
                     promptId: aiConfig.promptId || undefined,
-                    aiModel: aiConfig.aiModel
+                    aiModel: aiConfig.aiModel,
+                    n8nEnabled: aiConfig.n8nEnabled
                 })
             });
             if (res.ok) {
@@ -304,67 +305,111 @@ export default function IntegrationsPage() {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-surface border border-white/10 w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
                         <div className="p-8 border-b border-white/5 bg-primary/5">
-                            <div className="flex items-center space-x-4 mb-2">
-                                <div className="p-3 bg-white/5 rounded-2xl">
-                                    <Bot className="w-8 h-8 text-primary" />
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-white/5 rounded-2xl">
+                                        <Bot className="w-8 h-8 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-black">Automação do Canal</h2>
+                                        <p className="text-gray-400 text-sm">{selectedIntegration.provider.toUpperCase()}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 className="text-2xl font-black">Agente de IA</h2>
-                                    <p className="text-gray-400 text-sm">{selectedIntegration.provider.toUpperCase()}</p>
-                                </div>
+                                <button title="Fechar" onClick={() => setSelectedIntegration(null)} className="text-gray-500 hover:text-white transition">
+                                    <XCircle className="w-6 h-6" />
+                                </button>
                             </div>
                         </div>
 
-                        <div className="p-8 space-y-6">
-                            <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                                <div>
-                                    <p className="font-bold">Ativar Automação</p>
-                                    <p className="text-xs text-gray-400">O robô responderá automaticamente</p>
+                        <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                            <div className="grid grid-cols-1 gap-4">
+                                {/* AI Toggle */}
+                                <div className={`flex flex-col p-5 rounded-2xl border transition-all ${aiConfig.enabled ? 'bg-primary/10 border-primary/40' : 'bg-white/5 border-white/5 opacity-60'}`}>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center space-x-3">
+                                            <Zap className={`w-5 h-5 ${aiConfig.enabled ? 'text-primary' : 'text-gray-500'}`} />
+                                            <div>
+                                                <p className="font-bold">Agente de IA (Gemini)</p>
+                                                <p className="text-[10px] text-gray-400">Processamento interno via Zaplandia</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            title="Ativar/Desativar IA"
+                                            onClick={() => setAiConfig({ ...aiConfig, enabled: !aiConfig.enabled, n8nEnabled: false })}
+                                            className={`w-12 h-6 rounded-full transition-all relative ${aiConfig.enabled ? 'bg-primary' : 'bg-gray-600'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${aiConfig.enabled ? 'left-7' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+
+                                    {aiConfig.enabled && (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="space-y-2">
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Prompt do Agente</label>
+                                                {savedPrompts.length === 0 ? (
+                                                    <p className="text-xs text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
+                                                        Nenhum prompt salvo. Crie prompts em <strong>Configurações &gt; Agentes de IA</strong> primeiro.
+                                                    </p>
+                                                ) : (
+                                                    <select
+                                                        className="w-full bg-black/20 border border-white/10 rounded-xl text-sm px-4 py-3 text-white outline-none focus:border-primary transition"
+                                                        value={aiConfig.promptId}
+                                                        onChange={(e) => setAiConfig({ ...aiConfig, promptId: e.target.value })}
+                                                    >
+                                                        <option value="">Selecione um prompt...</option>
+                                                        {savedPrompts.map(p => (
+                                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                                        ))}
+                                                    </select>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Modelo</label>
+                                                <AiModelSelector
+                                                    value={aiConfig.aiModel}
+                                                    token={token || ''}
+                                                    className="w-full bg-black/20 border-white/10"
+                                                    onChange={(newModel) => setAiConfig({ ...aiConfig, aiModel: newModel })}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                                <button
-                                    onClick={() => setAiConfig({ ...aiConfig, enabled: !aiConfig.enabled })}
-                                    className={`w-14 h-8 rounded-full transition-all relative ${aiConfig.enabled ? 'bg-primary' : 'bg-gray-600'}`}
-                                >
-                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${aiConfig.enabled ? 'left-7' : 'left-1'}`} />
-                                </button>
-                            </div>
 
-                            <div className="space-y-3">
-                                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Prompt do Agente</label>
-                                {savedPrompts.length === 0 ? (
-                                    <p className="text-xs text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
-                                        Nenhum prompt salvo. Crie prompts em <strong>Configurações &gt; Agentes de IA</strong> primeiro.
-                                    </p>
-                                ) : (
-                                    <select
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl text-sm px-4 py-3 text-white outline-none focus:border-primary transition"
-                                        value={aiConfig.promptId}
-                                        onChange={(e) => setAiConfig({ ...aiConfig, promptId: e.target.value })}
-                                    >
-                                        <option value="">Selecione um prompt...</option>
-                                        {savedPrompts.map(p => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                        ))}
-                                    </select>
-                                )}
-                                {aiConfig.promptId && (() => {
-                                    const p = savedPrompts.find(x => x.id === aiConfig.promptId);
-                                    return p ? (
-                                        <p className="text-xs text-gray-400 bg-white/5 border border-white/10 rounded-xl p-3 line-clamp-3">{p.content}</p>
-                                    ) : null;
-                                })()}
-                                <p className="text-[10px] text-gray-500">Selecione o prompt salvo que define a personalidade do agente para este canal.</p>
-                            </div>
-
-                            {/* Gemini Model Selector */}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-2">Modelo de IA</label>
-                                <AiModelSelector
-                                    value={aiConfig.aiModel}
-                                    token={token || ''}
-                                    className="w-full"
-                                    onChange={(newModel) => setAiConfig({ ...aiConfig, aiModel: newModel })}
-                                />
+                                {/* n8n Toggle */}
+                                <div className={`flex flex-col p-5 rounded-2xl border transition-all ${aiConfig.n8nEnabled ? 'bg-orange-500/10 border-orange-500/40' : 'bg-white/5 border-white/5 opacity-60'}`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <Terminal className={`w-5 h-5 ${aiConfig.n8nEnabled ? 'text-orange-500' : 'text-gray-500'}`} />
+                                            <div>
+                                                <p className="font-bold">Automação via n8n</p>
+                                                <p className="text-[10px] text-gray-400">Fluxos externos e webhooks</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            title="Ativar/Desativar n8n"
+                                            onClick={() => setAiConfig({ ...aiConfig, n8nEnabled: !aiConfig.n8nEnabled, enabled: false })}
+                                            className={`w-12 h-6 rounded-full transition-all relative ${aiConfig.n8nEnabled ? 'bg-orange-500' : 'bg-gray-600'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${aiConfig.n8nEnabled ? 'left-7' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+                                    {aiConfig.n8nEnabled && (
+                                        <div className="mt-4 p-3 bg-black/20 rounded-xl border border-white/5 animate-in fade-in slide-in-from-top-2">
+                                            <p className="text-[10px] text-gray-400 leading-relaxed">
+                                                Com n8n ativo, as mensagens recebidas serão enviadas para seu webhook global. 
+                                                A IA interna será desativada para este canal.
+                                            </p>
+                                            <button 
+                                                onClick={() => router.push('/dashboard/settings/api')}
+                                                className="mt-3 text-[10px] text-orange-500 hover:underline font-bold"
+                                            >
+                                                Configurar Webhook URL &rarr;
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

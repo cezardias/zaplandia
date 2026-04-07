@@ -8,7 +8,7 @@ export class N8nService {
 
     constructor(private readonly integrationsService: IntegrationsService) { }
 
-    async triggerWebhook(tenantId: string, payload: any) {
+    async triggerWebhook(tenantId: string, payload: any, integration?: any) {
         try {
             const webhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
 
@@ -22,6 +22,9 @@ export class N8nService {
             // Send async to not block the main flow
             axios.post(webhookUrl, {
                 ...payload,
+                tenantId,
+                integrationId: integration?.id,
+                instanceName: integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name,
                 timestamp: new Date().toISOString(),
                 platform: 'zaplandia'
             }).catch(err => {

@@ -171,24 +171,28 @@ export class WebhooksController {
                                     name: contact.name,
                                     message_id: message.id,
                                     official: true
-                                });
+                                }, integration);
 
-                                // AI Auto-Response
-                                const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
-                                if (shouldRespond) {
-                                    const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
-                                    if (aiResponse) {
-                                        const aiMsg = this.messageRepository.create({
-                                            tenantId,
-                                            contactId: contact.id,
-                                            content: aiResponse,
-                                            direction: 'outbound',
-                                            provider: 'whatsapp',
-                                            instance: instanceName,
-                                            status: 'PENDING'
-                                        });
-                                        await this.messageRepository.save(aiMsg);
-                                        await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
+                                // 1. AI Auto-Response (Check if n8n is NOT enabled)
+                                if (integration.n8nEnabled) {
+                                    this.logger.log(`n8n is enabled for instance ${instanceName}. Skipping internal AI.`);
+                                } else {
+                                    const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+                                    if (shouldRespond) {
+                                        const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
+                                        if (aiResponse) {
+                                            const aiMsg = this.messageRepository.create({
+                                                tenantId,
+                                                contactId: contact.id,
+                                                content: aiResponse,
+                                                direction: 'outbound',
+                                                provider: 'whatsapp',
+                                                instance: instanceName,
+                                                status: 'PENDING'
+                                            });
+                                            await this.messageRepository.save(aiMsg);
+                                            await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
+                                        }
                                     }
                                 }
                             }
@@ -318,6 +322,12 @@ export class WebhooksController {
                 return { status: 'skipped_no_tenant' };
             }
         }
+
+        // Fetch integration detail to check for n8n/AI config
+        const integration = await this.integrationRepository.createQueryBuilder('i')
+            .where('i.tenantId = :tenantId', { tenantId })
+            .andWhere(`(i.settings->>'instanceName' = :instanceName OR i.credentials->>'instanceName' = :instanceName OR i.credentials->>'name' = :instanceName)`, { instanceName })
+            .getOne();
 
         // Normalize eventType: EvolutionAPI may send 'messages.upsert' or 'MESSAGES_UPSERT'
         // Normalize to uppercase with underscores for consistent comparison
@@ -554,7 +564,7 @@ export class WebhooksController {
                         contact_id: contact.id,
                         name: pushName,
                         message_id: message.id
-                    });
+                    }, integration);
                     this.logger.log('Triggered n8n webhook');
                 } catch (n8nError) {
                     this.logger.error(`Failed to trigger n8n: ${n8nError.message}`);
@@ -564,38 +574,44 @@ export class WebhooksController {
                 // Check if AI should respond to this message (INBOUND ONLY)
                 if (!isOutbound) {
                     try {
-                        const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+                        const isN8nEnabled = integration?.n8nEnabled === true;
 
-                        if (shouldRespond) {
-                            this.logger.log(`AI enabled for contact ${contact.id} on instance ${instanceName}. Generating response...`);
-
-                            // Generate AI response
-                            const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
-
-                            if (aiResponse) {
-                                this.logger.log(`AI generated response for ${contact.id}: ${aiResponse.substring(0, 50)}...`);
-                                // Save AI response to database
-                                const aiMessage = this.messageRepository.create({
-                                    tenantId,
-                                    contactId: contact.id, // Fixed: Link message to contact
-                                    content: aiResponse,
-                                    direction: 'outbound',
-                                    provider: 'whatsapp',
-                                    status: 'PENDING',
-                                    instance: instanceName
-                                });
-                                await this.messageRepository.save(aiMessage);
-
-                                // Send AI response via Evolution API (passing instanceName to ensure context lock)
-                                await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
-
-
-                                this.logger.log(`AI response sent successfully to contact ${contact.id} via ${instanceName}`);
-                            } else {
-                                this.logger.warn(`AI failed to generate response for contact ${contact.id} (Check Gemini API Key and Prompt Configuration)`);
-                            }
+                        if (isN8nEnabled) {
+                            this.logger.log(`n8n is enabled for instance ${instanceName}. Skipping internal AI auto-response.`);
                         } else {
-                            this.logger.debug(`AI should not respond to contact ${contact.id} on instance ${instanceName}`);
+                            const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+
+                            if (shouldRespond) {
+                                this.logger.log(`AI enabled for contact ${contact.id} on instance ${instanceName}. Generating response...`);
+
+                                // Generate AI response
+                                const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
+
+                                if (aiResponse) {
+                                    this.logger.log(`AI generated response for ${contact.id}: ${aiResponse.substring(0, 50)}...`);
+                                    // Save AI response to database
+                                    const aiMessage = this.messageRepository.create({
+                                        tenantId,
+                                        contactId: contact.id, // Fixed: Link message to contact
+                                        content: aiResponse,
+                                        direction: 'outbound',
+                                        provider: 'whatsapp',
+                                        status: 'PENDING',
+                                        instance: instanceName
+                                    });
+                                    await this.messageRepository.save(aiMessage);
+
+                                    // Send AI response via Evolution API (passing instanceName to ensure context lock)
+                                    await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
+
+
+                                    this.logger.log(`AI response sent successfully to contact ${contact.id} via ${instanceName}`);
+                                } else {
+                                    this.logger.warn(`AI failed to generate response for contact ${contact.id} (Check Gemini API Key and Prompt Configuration)`);
+                                }
+                            } else {
+                                this.logger.debug(`AI should not respond to contact ${contact.id} on instance ${instanceName}`);
+                            }
                         }
                     } catch (aiError) {
                         this.logger.error(`AI auto-response error: ${aiError.message}`);
@@ -656,5 +672,46 @@ export class WebhooksController {
         }
 
         return { status: 'received' };
+    }
+
+    @Post('n8n/response')
+    @HttpCode(HttpStatus.OK)
+    async handleN8nResponse(@Body() payload: { tenantId: string; contactId: string; content: string; instanceName?: string }) {
+        const { tenantId, contactId, content, instanceName } = payload;
+        this.logger.log(`[N8N_RESPONSE] Received response for contact ${contactId} in tenant ${tenantId}`);
+
+        try {
+            const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
+            if (!contact) {
+                this.logger.error(`[N8N_RESPONSE] Contact ${contactId} not found for tenant ${tenantId}`);
+                return { success: false, error: 'Contact not found' };
+            }
+
+            const useInstance = instanceName || contact.instance;
+            if (!useInstance) {
+                this.logger.error(`[N8N_RESPONSE] No instance found or provided for contact ${contactId}`);
+                return { success: false, error: 'Instance not found' };
+            }
+
+            // Save outbound message
+            const message = this.messageRepository.create({
+                tenantId,
+                contactId: contact.id,
+                content,
+                direction: 'outbound',
+                provider: contact.provider as any || 'whatsapp',
+                instance: useInstance,
+                status: 'PENDING'
+            });
+            await this.messageRepository.save(message);
+
+            // Send via AI service (it handles both Evolution and Meta)
+            await this.aiService.sendAIResponse(contact, content, tenantId, useInstance);
+
+            return { success: true, messageId: message.id };
+        } catch (error) {
+            this.logger.error(`[N8N_RESPONSE] Error sending n8n response: ${error.message}`);
+            return { success: false, error: error.message };
+        }
     }
 }

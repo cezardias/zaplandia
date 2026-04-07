@@ -73,7 +73,7 @@ export class AiController {
     @Post('integration/:id/toggle')
     async toggleIntegrationAI(
         @Param('id') integrationId: string,
-        @Body() body: { enabled: boolean; promptId?: string; aiModel?: string },
+        @Body() body: { enabled: boolean; promptId?: string; aiModel?: string; n8nEnabled?: boolean },
         @Request() req
     ) {
         let integration: Integration | null;
@@ -104,7 +104,8 @@ export class AiController {
                     settings: { instanceName: integrationId },
                     aiEnabled: body.enabled,
                     aiPromptId: body.promptId,
-                    aiModel: body.aiModel
+                    aiModel: body.aiModel,
+                    n8nEnabled: body.n8nEnabled || false
                 });
                 await this.integrationRepository.save(newIntegration);
 
@@ -114,7 +115,8 @@ export class AiController {
                         id: newIntegration.id,
                         aiEnabled: newIntegration.aiEnabled,
                         aiPromptId: newIntegration.aiPromptId,
-                        aiModel: newIntegration.aiModel
+                        aiModel: newIntegration.aiModel,
+                        n8nEnabled: newIntegration.n8nEnabled
                     }
                 };
             }
@@ -123,6 +125,19 @@ export class AiController {
         }
 
         integration.aiEnabled = body.enabled;
+
+        // If n8n is explicitly enabled, disable AI
+        if (body.n8nEnabled) {
+            integration.n8nEnabled = true;
+            integration.aiEnabled = false;
+        } else if (body.n8nEnabled === false) {
+            integration.n8nEnabled = false;
+        }
+
+        // If AI is enabled, disable n8n (unless n8n was just enabled above)
+        if (body.enabled && !body.n8nEnabled) {
+            integration.n8nEnabled = false;
+        }
 
         // CHECK: Explicitly check for undefined to allow setting null/empty
         if (body.promptId !== undefined) {
@@ -140,7 +155,8 @@ export class AiController {
                 id: integration.id,
                 aiEnabled: integration.aiEnabled,
                 aiPromptId: integration.aiPromptId,
-                aiModel: integration.aiModel
+                aiModel: integration.aiModel,
+                n8nEnabled: integration.n8nEnabled
             }
         };
     }
