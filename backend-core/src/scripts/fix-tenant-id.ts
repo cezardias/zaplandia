@@ -60,12 +60,24 @@ async function bootstrap() {
     await integrationRepo.query(`UPDATE integrations SET "tenantId" = $1 WHERE "tenantId" = $2`, [OLD_ID, currentTenantId]);
     await integrationRepo.query(`UPDATE api_credentials SET "tenantId" = $1 WHERE "tenantId" = $2`, [OLD_ID, currentTenantId]);
 
-    // PASSO 4: Limpeza
-    console.log('📝 PASSO 4: Removendo Tenant temporário...');
+    // PASSO 4: Restaurar URL do n8n (caso esteja nula como observado no debug)
+    const n8nUrl = 'https://auto.zaplandia.com.br/webhook/a5e8286b-73a4-498c-8433-7d995aa28373';
+    console.log(`📝 PASSO 4: Garantindo URL do n8n: ${n8nUrl}`);
+    
+    // Deletar duplicatas globais/de outros tenants para essa chave para evitar conflito
+    await integrationRepo.query(`DELETE FROM api_credentials WHERE key_name = 'N8N_WEBHOOK_URL' AND "tenantId" = $1`, [OLD_ID]);
+    
+    await integrationRepo.query(`
+        INSERT INTO api_credentials (id, key_name, key_value, "tenantId", "createdAt")
+        VALUES (gen_random_uuid(), 'N8N_WEBHOOK_URL', $1, $2, NOW())
+    `, [n8nUrl, OLD_ID]);
+
+    // PASSO 5: Limpeza
+    console.log('📝 PASSO 5: Removendo Tenant temporário...');
     await tenantRepo.query(`DELETE FROM tenants WHERE id = $1`, [currentTenantId]);
 
     console.log('\n✅ RESTAURAÇÃO CONCLUÍDA!');
-    console.log('O sistema agora deve reconhecer os Webhooks da Evolution API.');
+    console.log('O sistema agora está alinhado com a Evolution API e o n8n.');
 
     await app.close();
 }

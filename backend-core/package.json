@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "fix-crm": "ts-node -r tsconfig-paths/register src/scripts/fix-crm-data.ts"
+    "fix-crm": "ts-node -r tsconfig-paths/register src/scripts/fix-crm-data.ts",
+    "fix-tenant-id": "ts-node -r tsconfig-paths/register src/scripts/fix-tenant-id.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
