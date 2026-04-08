@@ -27,4 +27,13 @@ export class DebugAuditController {
             timestamp: new Date().toISOString()
         };
     }
+
+    @Get('detail')
+    async getDetail() {
+        return {
+            users: await this.userRepo.find({ select: ['id', 'email', 'tenantId'], take: 5 }),
+            integrations: await this.integrationRepo.find({ select: ['id', 'tenantId', 'provider'], take: 5 }),
+            credentials: await this.integrationRepo.manager.query('SELECT key, "tenantId" FROM api_credentials LIMIT 10')
+        };
+    }
 }

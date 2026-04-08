@@ -24,17 +24,31 @@ export class UsersService implements OnModuleInit {
 
     async seedSuperAdmin() {
         const adminEmail = 'cezar.dias@gmail.com';
+        const OLD_ID = '3ac9368c-af7c-4183-9816-b90513368f53'; // RESTORED FROM LOGS
 
-        // 1. Ensure a default HQ tenant exists
-        let hqTenant = await this.tenantsRepository.findOne({ where: { slug: 'zaplandia-hq' } });
+        // 1. Ensure a default HQ tenant exists with the ORIGINAL ID
+        let hqTenant = await this.tenantsRepository.findOne({ where: { id: OLD_ID } });
         if (!hqTenant) {
+            // Check if there is a 'mistaken' tenant from the reset and migrate it
+            const currentMistake = await this.tenantsRepository.findOne({ where: { slug: 'zaplandia-hq' } });
+            
             hqTenant = this.tenantsRepository.create({
+                id: OLD_ID,
                 name: 'Zaplandia HQ',
                 slug: 'zaplandia-hq',
-                trialEndsAt: new Date('2099-12-31'), // Forever for HQ
+                trialEndsAt: new Date('2099-12-31'),
             });
             await this.tenantsRepository.save(hqTenant);
-            console.log('HQ Tenant created');
+            console.log(`[RESTORE] Created HQ Tenant with original ID: ${OLD_ID}`);
+
+            if (currentMistake && currentMistake.id !== OLD_ID) {
+                // If the user already Logged In with the wrong ID, we need to move them
+                await this.usersRepository.query('UPDATE users SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
+                await this.usersRepository.query('UPDATE integrations SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
+                await this.usersRepository.query('UPDATE api_credentials SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
+                await this.tenantsRepository.delete(currentMistake.id);
+                console.log(`[RESTORE] Migrated data from ${currentMistake.id} to ${OLD_ID}`);
+            }
         }
 
         const adminExists = await this.usersRepository.findOne({ where: { email: adminEmail } });
@@ -50,11 +64,10 @@ export class UsersService implements OnModuleInit {
             });
             await this.usersRepository.save(superAdmin);
             console.log('Super Admin cezar.dias@gmail.com criado com sucesso!');
-        } else if (!adminExists.tenantId) {
-            // Fix existing admin missing tenantId
+        } else if (adminExists.tenantId !== hqTenant.id) {
             adminExists.tenantId = hqTenant.id;
             await this.usersRepository.save(adminExists);
-            console.log('Existing Super Admin updated with HQ TenantId');
+            console.log('Existing Super Admin alinhado com HQ Tenant ID original');
         }
     }
 

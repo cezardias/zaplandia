@@ -198,7 +198,14 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="bg-background border-t border-white/5 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500">
-          <p>© 2026 Zaplandia. Todos os direitos reservados. www.zaplandia.com.br</p>
+          <p className="mb-4">© 2026 Zaplandia. Todos os direitos reservados. www.zaplandia.com.br</p>
+          <p className="text-sm font-medium text-gray-400 mb-6">
+            CEZAR AUGUSTO SOARES DIAS | CNPJ: 00.589.372.181
+          </p>
+          <div className="flex justify-center space-x-6 text-xs">
+            <Link href="/privacy" className="hover:text-primary transition">Política de Privacidade</Link>
+            <Link href="/terms" className="hover:text-primary transition">Termos de Uso</Link>
+          </div>
         </div>
       </footer>
     </div>
