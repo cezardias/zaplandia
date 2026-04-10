@@ -33,7 +33,7 @@ export class DebugAuditController {
         return {
             users: await this.userRepo.find({ select: ['id', 'email', 'tenantId'], take: 5 }),
             integrations: await this.integrationRepo.find({ select: ['id', 'tenantId', 'provider'], take: 5 }),
-            credentials: await this.integrationRepo.manager.query('SELECT key, "tenantId" FROM api_credentials LIMIT 10')
+            credentials: await this.integrationRepo.manager.query('SELECT key_name, "tenantId" FROM api_credentials LIMIT 10')
         };
     }
 }
