@@ -35,7 +35,7 @@ export class WebhooksController {
     async verifyMeta(@Query('hub.mode') mode: string, @Query('hub.verify_token') token: string, @Query('hub.challenge') challenge: string) {
         this.logger.log('Verifying Meta Webhook...');
         // Default verify token or could fetch from DB
-        const metaConfig = await this.integrationsService.getCredential('null', 'META_APP_CONFIG');
+        const metaConfig = await this.integrationsService.getCredential(null, 'META_APP_CONFIG', true);
         let expectedToken = 'zaplandia_verify_token';
 
         try {
