@@ -384,16 +384,30 @@ export class WebhooksController {
             const remoteJid = messageData.key.remoteJid; // e.g., 5511999998888@s.whatsapp.net
             const pushName = messageData.pushName || payload.sender || (isOutbound ? 'Sistema' : 'WhatsApp User');
 
-            // Extract text content
+            // --- ROBUST TEXT EXTRACTION ---
             let content = '';
-            if (messageData.message?.conversation) content = messageData.message.conversation;
-            else if (messageData.message?.extendedTextMessage?.text) content = messageData.message.extendedTextMessage.text;
-            else if (messageData.message?.imageMessage?.caption) content = messageData.message.imageMessage.caption;
-            // Also check for send.message specific structure if different
-            else if (messageData.extendedTextMessage?.text) content = messageData.extendedTextMessage.text;
+            const msg = messageData.message || {};
+            
+            if (msg.conversation) content = msg.conversation;
+            else if (msg.extendedTextMessage?.text) content = msg.extendedTextMessage.text;
+            else if (msg.imageMessage?.caption) content = msg.imageMessage.caption;
+            else if (msg.videoMessage?.caption) content = msg.videoMessage.caption;
+            else if (msg.templateMessage?.hydratedTemplate?.hydratedContentText) {
+                content = msg.templateMessage.hydratedTemplate.hydratedContentText;
+            } else if (msg.buttonsResponseMessage?.selectedButtonId) {
+                content = msg.buttonsResponseMessage.selectedDisplayText || msg.buttonsResponseMessage.selectedButtonId;
+            } else if (msg.listResponseMessage?.title) {
+                content = msg.listResponseMessage.title;
+            } else if (messageData.messageStubParameters) {
+                content = `[Notificação do Sistema: ${messageData.messageStubType || 'Evento'}]`;
+            } else {
+                // Fallback generic type indicator
+                const type = Object.keys(msg)[0] || 'unknown';
+                content = `[Mensagem: ${type.toUpperCase()}]`;
+            }
 
             if (!content) {
-                this.logger.warn(`Message from ${remoteJid} has no text content. Type: ${messageData.messageType}`);
+                this.logger.warn(`[EVOLUTION] Message from ${remoteJid} has no extractable content. Raw types: ${Object.keys(msg).join(', ')}`);
                 return { status: 'no_content' };
             }
 
