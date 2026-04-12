@@ -38,9 +38,10 @@ export class UsersService implements OnModuleInit {
                 if (currentMistake.id !== OLD_ID) {
                     console.log(`[RESTORE] Detected HQ Tenant with WRONG ID (${currentMistake.id}). Migrating to ${OLD_ID}...`);
                     
-                    // Delete the wrong one first (if no foreign key constraints block it, or move data first)
-                    // In TypeORM, we might need a manual query to change the primary key or move all related data
+                    // Rename the old one's slug first to avoid unique constraint conflict
                     try {
+                        await this.tenantsRepository.update(currentMistake.id, { slug: `old-hq-${Date.now()}` });
+                        
                         // Create the correct one
                         hqTenant = this.tenantsRepository.create({
                             id: OLD_ID,
@@ -60,7 +61,8 @@ export class UsersService implements OnModuleInit {
                         console.log(`[RESTORE] Successfully migrated data from ${currentMistake.id} to ${OLD_ID}`);
                     } catch (err) {
                         console.error(`[RESTORE] Critical error during HQ migration: ${err.message}`);
-                        hqTenant = currentMistake; // Fallback to whatever exists to avoid crash
+                        // If it fails, try to use the mistake one
+                        hqTenant = await this.tenantsRepository.findOne({ where: { id: currentMistake.id } });
                     }
                 } else {
                     hqTenant = currentMistake;
