@@ -117,14 +117,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             if (apiKey) {
                 // AGGRESSIVE SANITIZATION: Remove quotes, newlines, and surrounding whitespace
                 const cleanedKey = apiKey.replace(/["'\n\r]/g, '').trim();
-
-                // DEBUG: Log character codes to find hidden chars (redacted for security)
-                if (cleanedKey) {
-                    const charCodes = cleanedKey.split('').map(c => c.charCodeAt(0)).join(',');
-                    this.logger.debug(`[GEMINI_KEY_DEBUG] Key Len: ${cleanedKey.length}, Chars: [${charCodes.substring(0, 20)}...]`);
-                    return cleanedKey;
-                }
+                if (cleanedKey) return cleanedKey;
             }
+
+            // GLOBAL FALLBACK: Use environment variables if no tenant-specific key exists
+            const envKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+            if (envKey) {
+                this.logger.log(`[AI] Using global GEMINI_API_KEY fallback from environment`);
+                return envKey.trim();
+            }
+
             return null;
         } catch (error) {
             this.logger.error(`Failed to get Gemini API key for tenant ${tenantId}: ${error.message}`);
@@ -138,7 +140,15 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     private async getOpenRouterApiKey(tenantId: string): Promise<string | null> {
         try {
             const apiKey = await this.integrationsService.getCredential(tenantId, 'OPENROUTER_API_KEY');
-            return apiKey?.trim() || null;
+            if (apiKey?.trim()) return apiKey.trim();
+
+            // GLOBAL FALLBACK
+            if (process.env.OPENROUTER_API_KEY) {
+                this.logger.log(`[AI] Using global OPENROUTER_API_KEY fallback from environment`);
+                return process.env.OPENROUTER_API_KEY.trim();
+            }
+
+            return null;
         } catch (error) {
             this.logger.error(`Failed to get OpenRouter API key for tenant ${tenantId}: ${error.message}`);
             return null;
