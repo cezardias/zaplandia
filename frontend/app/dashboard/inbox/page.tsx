@@ -695,17 +695,18 @@ export default function OmniInboxPage() {
                                     </div>
                                 </div>
                                 <div className="flex-1 text-left overflow-hidden">
-                                        <div className="flex items-center gap-1">
-                                            <p className="font-bold truncate">{contact.name || 'Contato'}</p>
-                                            <div className="flex gap-0.5">
-                                                {contact.aiEnabled !== false && <span className="text-[10px]" title="IA Ativa">🤖</span>}
-                                                {contact.n8nEnabled !== false && <span className="text-[10px]" title="Fluxos Ativos">🔗</span>}
-                                                {(contact.aiEnabled === false || contact.n8nEnabled === false) && <span className="text-[10px]" title="Automação Parcialmente Pausada">⏸️</span>}
-                                            </div>
+                                    <div className="flex items-center gap-1">
+                                        <p className="font-bold truncate">{contact.name || 'Contato'}</p>
+                                        <div className="flex gap-0.5">
+                                            {contact.aiEnabled !== false && <span className="text-[10px]" title="IA Ativa">🤖</span>}
+                                            {contact.n8nEnabled !== false && <span className="text-[10px]" title="Fluxos Ativos">🔗</span>}
+                                            {(contact.aiEnabled === false || contact.n8nEnabled === false) && <span className="text-[10px]" title="Automação Parcialmente Pausada">⏸️</span>}
                                         </div>
-                                        <span className="text-[10px] text-gray-500">12:30</span>
                                     </div>
-                                    <p className="text-xs text-gray-500 truncate">{contact.lastMessage || 'Sem mensagens...'}</p>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-xs text-gray-500 truncate">{contact.lastMessage || 'Sem mensagens...'}</p>
+                                        <span className="text-[10px] text-gray-400">12:30</span>
+                                    </div>
                                 </div>
                             </button>
                         ))
