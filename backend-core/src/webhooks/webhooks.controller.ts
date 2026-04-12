@@ -186,12 +186,15 @@ export class WebhooksController {
                                 await this.contactRepository.save(contact);
 
                                 // --- AUTOMATION LOGIC ---
-                                const isN8nEnabledGlobally = integration?.n8nEnabled ?? false;
+                                const hasN8nWebhook = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
+                                const isN8nEnabledInCreds = await this.integrationsService.getCredential(tenantId, 'N8N_ENABLED', true) === 'true';
+                                
+                                const isN8nEnabledGlobally = integration?.n8nEnabled || isN8nEnabledInCreds || !!hasN8nWebhook;
                                 const isN8nActiveForContact = contact.n8nEnabled !== false;
                                 const isAiActiveForContact = contact.aiEnabled !== false;
 
                                 if (isN8nEnabledGlobally && isN8nActiveForContact) {
-                                    this.logger.log(`[META_WA] Triggering n8n for ${from}`);
+                                    this.logger.log(`[META_WA] Triggering n8n for ${from} (Tenant: ${tenantId})`);
                                     await this.n8nService.triggerWebhook(tenantId, {
                                         type: 'whatsapp.message',
                                         sender: from,
@@ -202,8 +205,8 @@ export class WebhooksController {
                                     }, integration);
                                 }
 
-                                // Fallback AI logic
-                                if (isAiActiveForContact && (!isN8nEnabledGlobally || !isN8nActiveForContact)) {
+                                // Fallback AI logic (Only if n8n is NOT handling it)
+                                if (isAiActiveForContact && !isN8nEnabledGlobally) {
                                     const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
                                     if (shouldRespond) {
                                         this.logger.log(`[META_WA] Triggering internal AI for ${from}`);
