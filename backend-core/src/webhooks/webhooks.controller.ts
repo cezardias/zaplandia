@@ -57,10 +57,21 @@ export class WebhooksController {
     @HttpCode(HttpStatus.OK)
     async handleMeta(@Body() payload: any) {
         // --- PROACTIVE LOGGING FOR DEBUGGING ---
-        this.logger.log(`[META_WEBHOOK_RAW] Object: ${payload?.object}, Payload: ${JSON.stringify(payload)}`);
+        this.logger.log(`[META_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
+
+        // Handle Meta manual "Test" button payloads
+        if (payload?.sample) {
+            this.logger.log(`[META_WEBHOOK_TEST] Received test sample for field: ${payload.sample.field}`);
+            return { status: 'test_received' };
+        }
 
         if (!payload || (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account')) {
-            return { status: 'skipped' };
+            // Be lenient: if it has 'entry', it might be a malformed meta payload, return 200 anyway
+            if (payload?.entry) {
+                this.logger.warn(`[META_WEBHOOK_LENIENT] Unknown object but has entries: ${payload.object}`);
+            } else {
+                return { status: 'skipped' };
+            }
         }
 
         const entries = payload.entry || [];
