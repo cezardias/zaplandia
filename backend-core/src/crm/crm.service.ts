@@ -52,39 +52,56 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             await queryRunner.release();
             this.logger.log('Sincronização de colunas concluída com sucesso.');
 
-            // --- NEW: AGGRESSIVE DUPLICATE MERGE SCRIPT ---
-            this.logger.log('Iniciando limpeza AGRESSIVA de contatos duplicados...');
-            
-            // 1. Get all contacts to normalize and group in-memory
-            // This is safer for complex cleanup logic than a raw SQL GROUP BY with suffixes
+            // --- ALL CONTACTS FETCH FOR CLEANUP ---
             const allContacts = await this.contactRepository.find();
-            const contactGroups = new Map<string, Contact[]>();
+            let mergeCount = 0;
 
+            // --- PHASE 1: SUFFIX MATCHING ---
+            const contactGroups = new Map<string, Contact[]>();
             for (const c of allContacts) {
                 const phone = (c.phoneNumber || c.externalId || '').split('@')[0].replace(/\D/g, '');
-                if (phone.length < 8) continue;
-                
-                const suffix8 = phone.slice(-8);
-                const key = `${c.tenantId}_${suffix8}`;
-                
-                if (!contactGroups.has(key)) contactGroups.set(key, []);
-                contactGroups.get(key)!.push(c);
+                if (phone.length >= 8) {
+                    const suffix8 = phone.slice(-8);
+                    const key = `${c.tenantId}_${suffix8}`;
+                    if (!contactGroups.has(key)) contactGroups.set(key, []);
+                    contactGroups.get(key)!.push(c);
+                }
             }
-
-            let mergeCount = 0;
             for (const [key, group] of contactGroups.entries()) {
                 if (group.length > 1) {
-                    const tenantId = key.split('_')[0];
                     try {
-                        await this.mergeContacts(tenantId, group);
+                        await this.mergeContacts(key.split('_')[0], group);
                         mergeCount++;
-                    } catch (err) {
-                        this.logger.error(`Erro ao mesclar grupo ${key}: ${err.message}`);
+                    } catch (err) {}
+                }
+            }
+
+            // --- PHASE 2: NAME MATCHING (For LID vs JID) ---
+            const nameGroups = new Map<string, Contact[]>();
+            for (const c of allContacts) {
+                const normName = c.name?.trim().toLowerCase();
+                if (!normName || normName.length < 4 || normName === 'contato' || normName === 'sistema' || normName.includes('@')) continue;
+                
+                const key = `${c.tenantId}_${normName}`;
+                if (!nameGroups.has(key)) nameGroups.set(key, []);
+                nameGroups.get(key)!.push(c);
+            }
+
+            for (const [key, group] of nameGroups.entries()) {
+                if (group.length > 1) {
+                    const tenantId = key.split('_')[0];
+                    const hasMix = group.some(c => c.externalId?.includes('@lid')) && group.some(c => !c.externalId?.includes('@lid'));
+                    if (hasMix) {
+                        try {
+                            this.logger.log(`[NAME_MERGE] Unificando contatos com o mesmo nome: ${group[0].name}`);
+                            await this.mergeContacts(tenantId, group);
+                            mergeCount++;
+                        } catch (err) {}
                     }
                 }
             }
 
-            this.logger.log(`Limpeza agressiva concluída. ${mergeCount} grupos de duplicados foram consolidados.`);
+            this.logger.log(`Limpeza agressiva concluída. Total de ${mergeCount} grupos consolidados.`);
 
         } catch (err) {
             this.logger.error(`Erro ao sincronizar colunas: ${err.message}`);
@@ -523,6 +540,21 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     // If it's a number, append @s.whatsapp.net
                     if (/^\d+$/.test(targetNumber)) {
                         targetNumber = `${targetNumber}@s.whatsapp.net`;
+                    }
+                }
+
+                // 3.6 SMART LID HEAL: If target is a LID but Evolution says it can't send, we prefer a phone-based JID
+                if (targetNumber.includes('@lid') && contact?.name) {
+                    const phoneDupe = await this.contactRepository.findOne({
+                        where: {
+                            tenantId,
+                            name: contact.name,
+                            externalId: Like('%@s.whatsapp.net')
+                        }
+                    });
+                    if (phoneDupe?.externalId) {
+                        this.logger.log(`[LID_HEALING] Redirecting message for ${contact.name} from LID ${targetNumber} to Phone JID ${phoneDupe.externalId}`);
+                        targetNumber = phoneDupe.externalId;
                     }
                 }
 
