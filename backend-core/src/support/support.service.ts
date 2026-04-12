@@ -202,6 +202,31 @@ O Agente de IA do Zaplandia possui ferramentas nativas para interagir com sua Ri
 
 **Dica**: Você não precisa configurar nada no prompt. Basta ter a **Rifa API Key** configurada e o Agente de IA ativo no canal desejado.`,
             }
+{
+                title: 'Pausar Automação Individual (Omni Inbox)',
+                category: 'IA',
+                content: `Controle total sobre o atendimento humano no Omni Inbox:
+
+1. **Localização**: Dentro de qualquer conversa, no cabeçalho superior direito.
+2. **Botão de Automação**:
+   - **Verde (Ativa)**: A IA e os Fluxos n8n estão operando normalmente para este contato.
+   - **Vermelho (Pausada)**: Todas as respostas automáticas estão bloqueadas para este contato.
+3. **Quando usar**: Sempre que você (humano) assumir uma conversa e não quiser que a IA ou o n8n "atropelem" suas respostas ou enviem mensagens automáticas enquanto você negocia.
+4. **Independência**: Pausar um contato não afeta os outros; o restante do sistema continua automatizado.`,
+            },
+            {
+                title: 'Criar Modelos de Mensagem (WhatsApp Oficial)',
+                category: 'WhatsApp',
+                content: `Como gerenciar templates para a API Oficial (Meta):
+
+1. **Acesso**: Vá em **Integrações > Meta API** e selecione a aba **Templates (BBM)**.
+2. **Nova Criação**: Clique no botão **NOVO MODELO**.
+3. **Configuração**:
+   - **Nome**: Use apenas letras minúsculas e sublinhados (ex: \`confirmacao_pedido\`).
+   - **Categoria**: Marketing (ofertas), Utilidade (avisos) ou Autenticação (tokens).
+   - **Corpo**: Texto principal da mensagem que será enviada.
+4. **Aprovação**: Após clicar em "Criar", a Meta analisará o modelo. O status mudará de **PENDING** para **APPROVED** quando estiver pronto para uso em campanhas.`,
+            }
         ];
 
         for (const article of articles) {
