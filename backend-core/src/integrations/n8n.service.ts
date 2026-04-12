@@ -12,11 +12,18 @@ export class N8nService {
         try {
             this.logger.log(`[TRIGGER_N8N] Initiated for tenant: ${tenantId}, Event: ${payload?.type || 'unknown'}`);
             
-            const webhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
+            let webhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
 
             if (!webhookUrl) {
                 this.logger.warn(`[TRIGGER_N8N] Webhook NOT configured for tenant ${tenantId}. Skipping.`);
                 return;
+            }
+
+            // AUTO-FIX: Common typos in protocol
+            if (webhookUrl.startsWith('htthttps:')) {
+                webhookUrl = webhookUrl.replace('htthttps:', 'https:');
+            } else if (webhookUrl.startsWith('hhttps:')) {
+                webhookUrl = webhookUrl.replace('hhttps:', 'https:');
             }
 
             this.logger.log(`[TRIGGER_N8N] Sending to: ${webhookUrl}`);
