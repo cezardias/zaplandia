@@ -545,8 +545,14 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
                     // 2. Fallback: Use first connected instance
                     if (!activeInstance) {
-                        activeInstance = instances.find((i: any) => i.status === 'open' || i.status === 'connected') || instances[0];
-                        this.logger.warn(`No instance found for contact. Using fallback: ${activeInstance?.name || 'none'}`);
+                        activeInstance = instances.find((i: any) => i.status === 'open' || i.status === 'connected' || i.state === 'open' || i.state === 'connected');
+                        
+                        if (!activeInstance) {
+                            this.logger.error(`No connected instances found for tenant ${tenantId}. Cannot send message.`);
+                            throw new BadRequestException('Não há instâncias de WhatsApp conectadas ou abertas para este cliente. Verifique as Integrações.');
+                        }
+                        
+                        this.logger.warn(`No exact instance match for contact. Using fallback: ${activeInstance.name || activeInstance.instanceName}`);
                     }
 
                     if (activeInstance) {
@@ -678,6 +684,14 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         const where: any[] = [];
         if (data.phoneNumber && data.phoneNumber !== '') where.push({ phoneNumber: data.phoneNumber, tenantId });
         if (data.externalId && data.externalId !== '') where.push({ externalId: data.externalId, tenantId });
+
+        // --- NEW: Suffix Matching (Handles formatting diffs in Brazil like 5561... vs 61...)
+        const rawPhone = (data.phoneNumber || data.externalId || '').split('@')[0].replace(/\D/g, '');
+        if (rawPhone.length >= 8) {
+            const suffix8 = rawPhone.slice(-8);
+            where.push({ phoneNumber: Like(`%${suffix8}`), tenantId });
+            where.push({ externalId: Like(`%${suffix8}%`), tenantId });
+        }
 
         if (where.length === 0) {
             const contact = this.contactRepository.create({
