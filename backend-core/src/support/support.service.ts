@@ -201,8 +201,8 @@ O Agente de IA do Zaplandia possui ferramentas nativas para interagir com sua Ri
 - **Reserva de Pedidos**: A IA pode coletar o nome e WhatsApp do cliente e reservar os números escolhidos via \`create_raffle_order\`.
 
 **Dica**: Você não precisa configurar nada no prompt. Basta ter a **Rifa API Key** configurada e o Agente de IA ativo no canal desejado.`,
-            }
-{
+            },
+            {
                 title: 'Pausar Automação Individual (Omni Inbox)',
                 category: 'IA',
                 content: `Controle total sobre o atendimento humano no Omni Inbox:
