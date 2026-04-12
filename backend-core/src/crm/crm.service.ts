@@ -598,53 +598,34 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 }
 
                 if (targetNumber) {
-                    // CRITICAL FIX: Use the contact's instance, not just the first available one!
-                    // This ensures we reply from the same WhatsApp number the contact messaged
-                    const instances = await this.evolutionApiService.listInstances(tenantId);
+                    // --- CLEAN NUMBER FOR GLOBAL COMPATIBILITY ---
+                    const cleanTarget = targetNumber.split('@')[0].replace(/\D/g, '');
+                    this.logger.debug(`[CRM_SEND] Target: ${targetNumber} -> Clean: ${cleanTarget}`);
 
-                    let activeInstance;
+                    // 1. SMART ROUTING: Check if this is a Meta WhatsApp contact or if we have a Meta Integration
+                    const metaIntegration = await this.integrationRepository.findOne({
+                        where: { tenantId, provider: 'whatsapp', status: 'connected' }
+                    });
 
-                    // 1. Try to find the exact instance this contact belongs to
-                    if (contact?.instance) {
-                        activeInstance = instances.find((i: any) => {
-                            const instanceName = i.name || i.instance?.instanceName || i.instanceName;
-                            // Match both full name and friendly name
-                            return instanceName === contact.instance || instanceName.endsWith(`_${contact.instance}`);
-                        });
-
-                        if (activeInstance) {
-                            this.logger.log(`Using contact's instance: ${contact.instance}`);
-                        } else {
-                            this.logger.warn(`Contact's instance '${contact.instance}' not found. Falling back to first available.`);
-                        }
-                    }
-
-                    // 2. Fallback: Use first connected instance
-                    if (!activeInstance) {
-                        activeInstance = instances.find((i: any) => i.status === 'open' || i.status === 'connected' || i.state === 'open' || i.state === 'connected');
-                        
-                        if (!activeInstance) {
-                            this.logger.error(`No connected instances found for tenant ${tenantId}. Cannot send message.`);
-                            throw new BadRequestException('Não há instâncias de WhatsApp conectadas ou abertas para este cliente. Verifique as Integrações.');
-                        }
-                        
-                        this.logger.warn(`No exact instance match for contact. Using fallback: ${activeInstance.name || activeInstance.instanceName}`);
-                    }
-
-                    if (activeInstance) {
-                        const instanceName = activeInstance.name || activeInstance.instance?.instanceName || activeInstance.instanceName;
-
-                        // --- NEW: META API CHECK ---
-                        if (activeInstance.provider === 'whatsapp' && activeInstance.credentials?.META_ACCESS_TOKEN) {
-                            this.logger.log(`Sending Official WhatsApp message to ${targetNumber} via Meta API`);
-                            const response = await this.metaApiService.sendTextMessage(tenantId, targetNumber, content);
+                    if (metaIntegration && metaIntegration.credentials?.META_ACCESS_TOKEN) {
+                        this.logger.log(`[META_WA] Routing message to ${cleanTarget} via Official API`);
+                        try {
+                            const response = await this.metaApiService.sendTextMessage(tenantId, cleanTarget, content);
                             if (response?.messages?.[0]?.id) {
                                 message.wamid = response.messages[0].id;
                                 message.status = 'SENT';
+                                message.provider = 'whatsapp';
                                 await this.messageRepository.save(message);
+                                return message;
                             }
-                            return message;
+                        } catch (metaErr: any) {
+                            this.logger.error(`[META_WA] Failed to send via Meta: ${metaErr.message}. Falling back to Evolution if available.`);
                         }
+                    }
+
+                    // 2. FALLBACK: Use Evolution API
+                    const instances = await this.evolutionApiService.listInstances(tenantId);
+                    let activeInstance;
 
                         if (media && media.url) {
                             // MEDIA SENDING LOGIC
