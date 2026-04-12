@@ -607,16 +607,11 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     const cleanTarget = targetNumber.split('@')[0].replace(/\D/g, '');
                     this.logger.debug(`[CRM_SEND] Target: ${targetNumber} -> Clean: ${cleanTarget}`);
 
-                    // 1. SMART ROUTING: Check if this is a Meta WhatsApp contact or if we have a Meta Integration
-                    const metaIntegration = await this.integrationRepository.findOne({
-                        where: { 
-                            tenantId, 
-                            provider: IntegrationProvider.WHATSAPP, 
-                            status: IntegrationStatus.CONNECTED 
-                        }
-                    });
+                    // 1. SMART ROUTING: Prioritize Meta API if credentials exist
+                    const metaAccessToken = await this.integrationsService.getCredential(tenantId, 'META_ACCESS_TOKEN', true);
+                    const metaPhoneId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
 
-                    if (metaIntegration && metaIntegration.credentials?.META_ACCESS_TOKEN) {
+                    if (metaAccessToken && metaPhoneId) {
                         this.logger.log(`[META_WA] Routing message to ${cleanTarget} via Official API`);
                         try {
                             const response = await this.metaApiService.sendTextMessage(tenantId, cleanTarget, content);
