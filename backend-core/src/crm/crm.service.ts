@@ -77,8 +77,10 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             }
 
             // --- PHASE 2: NAME MATCHING (For LID vs JID) ---
+            // Refresh contacts since Phase 1 might have deleted some
+            const remainingContacts = await this.contactRepository.find();
             const nameGroups = new Map<string, Contact[]>();
-            for (const c of allContacts) {
+            for (const c of remainingContacts) {
                 const normName = c.name?.trim().toLowerCase();
                 if (!normName || normName.length < 4 || normName === 'contato' || normName === 'sistema' || normName.includes('@')) continue;
                 
@@ -555,6 +557,19 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     if (phoneDupe?.externalId) {
                         this.logger.log(`[LID_HEALING] Redirecting message for ${contact.name} from LID ${targetNumber} to Phone JID ${phoneDupe.externalId}`);
                         targetNumber = phoneDupe.externalId;
+                    } else {
+                        // Broader Search: search for ANY with phone provided name matches partially
+                        const broadSearch = await this.contactRepository.findOne({
+                           where: {
+                               tenantId,
+                               name: Like(`${contact.name.split(' ')[0]}%`),
+                               externalId: Like('%@s.whatsapp.net')
+                           }
+                        });
+                        if (broadSearch?.externalId) {
+                            this.logger.log(`[LID_HEALING_BROAD] Redirecting message for ${contact.name} to related phone ${broadSearch.externalId}`);
+                            targetNumber = broadSearch.externalId;
+                        }
                     }
                 }
 
