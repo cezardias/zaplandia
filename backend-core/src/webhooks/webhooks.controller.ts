@@ -58,22 +58,19 @@ export class WebhooksController {
     async handleMeta(@Body() payload: any) {
         // --- 1. SUPER FAST BYPASS FOR META TESTS ---
         if (payload?.entry?.[0]?.id === '0' || payload?.sample) {
-            this.logger.log(`[META_WEBHOOK_TEST] Fast-track test detected (ID 0 or Sample). Returning OK.`);
-            return 'OK';
+            this.logger.log(`[META_WEBHOOK_TEST] Fast-track test detected. Returning 200 OK (Empty).`);
+            return; // Returns 200 OK with empty body
         }
 
         // --- 2. LOGGING FOR REAL REQUESTS ---
         this.logger.log(`[META_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
 
         if (!payload || (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account')) {
-            // Be lenient: if it has 'entry', it might be a malformed meta payload, return 200 anyway
-            return payload?.entry ? { status: 'lenient_ok' } : { status: 'skipped' };
+            return; // Just return 200 OK even if skipped
         }
 
         const entries = payload.entry || [];
-        if (entries.length === 0) {
-            return { status: 'empty_entry' };
-        }
+        if (entries.length === 0) return;
 
         // --- 3. WHATSAPP OFFICIAL HANDLER ---
         if (payload.object === 'whatsapp_business_account') {
@@ -83,17 +80,10 @@ export class WebhooksController {
                     const changes = entry.changes || [];
 
                     for (const change of changes) {
-                        if (change.field !== 'messages') continue;
-
+                        const field = change.field;
                         const value = change.value;
                         if (!value) continue;
 
-                        const phoneNumberIdInPayload = value.metadata?.phone_number_id;
-                        const displayPhoneNumber = value.metadata?.display_phone_number;
-
-                        this.logger.debug(`[META_WA] Processing change for WABA: ${wabaIdInPayload}, PhoneID: ${phoneNumberIdInPayload}, DisplayNum: ${displayPhoneNumber}`);
-
-                        // 1. Resolve Tenant by WABA ID or Phone ID (Flexible Search)
                         // We check for exact matches in the credentials JSONB field
                         const integration = await this.integrationRepository.createQueryBuilder('i')
                             .where("i.credentials->>'META_WABA_ID' = :wabaId", { wabaId: wabaIdInPayload })
