@@ -226,6 +226,38 @@ O Agente de IA do Zaplandia possui ferramentas nativas para interagir com sua Ri
    - **Categoria**: Marketing (ofertas), Utilidade (avisos) ou Autenticação (tokens).
    - **Corpo**: Texto principal da mensagem que será enviada.
 4. **Aprovação**: Após clicar em "Criar", a Meta analisará o modelo. O status mudará de **PENDING** para **APPROVED** quando estiver pronto para uso em campanhas.`,
+            },
+            {
+                title: 'Meta API: Onde encontrar Token, WABA ID e Phone ID',
+                category: 'Configurações',
+                content: `Configurar a Nuvem do WhatsApp (Meta) exige 3 valores principais. Veja como obtê-los:
+
+### 1. Criando o App na Meta
+- Acesse [developers.facebook.com](https://developers.facebook.com).
+- Clique em "Meus Aplicativos" > "Criar aplicativo".
+- Selecione o tipo **"Outro"** e depois **"Empresa"**.
+- No painel lateral, adicione o produto **"WhatsApp"**.
+
+### 2. Obtendo o Phone Number ID e o WABA ID
+- No menu do WhatsApp (dentro do seu app na Meta), clique em **"Configuração de API"**.
+- Lá você verá:
+  - **ID do número de telefone (Phone Number ID)**: Geralmente começa com 10... ou 11...
+  - **ID da conta do WhatsApp Business (WABA ID)**: Fica logo abaixo.
+- Copie e cole esses valores no Zaplandia.
+
+### 3. Gerando o Access Token Permanente (Essencial!)
+O Zaplandia precisa de um token que não expire:
+- Vá ao seu **Gerenciador de Negócios (Business Settings)** no Facebook.
+- Em "Usuários" > **"Usuários do Sistema"**, clique em "Adicionar".
+- Crie um usuário com a função "Administrador".
+- Clique em **"Gerar Novo Token"**.
+- Selecione o seu App do Zaplandia e marque as permissões:
+  - \`whatsapp_business_messaging\`
+  - \`whatsapp_business_management\`
+- Copie o token gerado. **Ele só aparece uma vez!**
+- Cole no campo "Access Token (Permanente)" no Zaplandia.
+
+**Dica**: Se você usar o "Token Temporário" da tela de desenvolvedor, a integração parará de funcionar após 24 horas. Use sempre o Token do Usuário do Sistema.`,
             }
         ];
 
