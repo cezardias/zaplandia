@@ -627,6 +627,20 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     const instances = await this.evolutionApiService.listInstances(tenantId);
                     let activeInstance;
 
+                    if (contact?.instance) {
+                        activeInstance = instances.find((i: any) => {
+                            const instanceName = i.name || i.instance?.instanceName || i.instanceName;
+                            return instanceName === contact.instance || instanceName.endsWith(`_${contact.instance}`);
+                        });
+                    }
+
+                    if (!activeInstance) {
+                        activeInstance = instances.find((i: any) => i.status === 'open' || i.status === 'connected' || i.state === 'open' || i.state === 'connected');
+                    }
+
+                    if (activeInstance) {
+                        const instanceName = activeInstance.name || activeInstance.instance?.instanceName || activeInstance.instanceName;
+
                         if (media && media.url) {
                             // MEDIA SENDING LOGIC
                             this.logger.log(`Sending WhatsApp MEDIA to ${targetNumber} via ${instanceName}`);
