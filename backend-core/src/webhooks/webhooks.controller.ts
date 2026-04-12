@@ -108,7 +108,11 @@ export class WebhooksController {
                             continue;
                         }
 
-                        const instanceName = integration?.credentials?.instanceName || integration?.credentials?.name || displayPhoneNumber || phoneNumberIdInPayload || 'MetaOfficial';
+                        const instanceName = integration?.credentials?.instanceName || 
+                                             integration?.credentials?.name || 
+                                             phoneNumberIdInPayload || 
+                                             displayPhoneNumber || 
+                                             'MetaOfficial';
 
                         // 2. Process Status Updates (Delivery Receipts)
                         if (value.statuses) {

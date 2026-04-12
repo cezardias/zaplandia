@@ -170,20 +170,23 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             return (credInst && match(credInst)) || (settInst && match(settInst));
         });
 
-        if (!integration) {
             // FALLBACK: Check if this matches a Meta Official setup without a formal Integration record
             const metaPhoneId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
-            if (metaPhoneId && metaPhoneId === instanceName) {
+            // Relaxed matching: try to match instanceName against the stored Phone ID OR handle any MetaOfficial name
+            if (metaPhoneId && (metaPhoneId === instanceName || instanceName === 'MetaOfficial')) {
                 this.logger.log(`[META_WA] Manual integration recognized for instance ${instanceName}`);
                 // In manual mode, we assume AI is enabled if prompt is found
+                // Check for a specific AI_PROMPT_ID credential OR use the first available prompt
                 const globalAiPromptId = await this.integrationsService.getCredential(tenantId, 'AI_PROMPT_ID', true);
                 if (globalAiPromptId && contact.aiEnabled !== false) {
                     return true;
                 }
+                // If no specific credential, check if tenant has ANY prompt (safer fallback)
+                const prompts = await this.aiPromptRepository.find({ where: { tenantId } });
+                if (prompts.length > 0 && contact.aiEnabled !== false) {
+                    return true;
+                }
             }
-            this.logger.warn(`No integration found for instance ${instanceName} to handle auto-response`);
-            return false;
-        }
 
         // --- HIERARCHY LOGIC ---
         // Contact Level (Manual Override) - Pausa a automação para este contato específico
