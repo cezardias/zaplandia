@@ -124,4 +124,32 @@ export class MetaApiService {
             throw error;
         }
     }
+
+    async createTemplate(tenantId: string, templateData: { name: string, category: string, language: string, bodyText: string }) {
+        try {
+            const { accessToken, wabaId } = await this.getCredentials(tenantId);
+            if (!wabaId) throw new Error('META_WABA_ID not configured');
+
+            const response = await axios.post(
+                `${this.baseUrl}/${wabaId}/message_templates`,
+                {
+                    name: templateData.name,
+                    category: templateData.category,
+                    language: templateData.language,
+                    components: [
+                        {
+                            type: 'BODY',
+                            text: templateData.bodyText
+                        }
+                    ]
+                },
+                { params: { access_token: accessToken } }
+            );
+            return response.data;
+        } catch (error) {
+            const errorMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`Failed to create Meta template: ${errorMsg}`);
+            throw new Error(errorMsg);
+        }
+    }
 }

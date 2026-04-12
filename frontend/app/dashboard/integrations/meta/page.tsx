@@ -17,7 +17,9 @@ import {
     Phone,
     Copy,
     ChevronRight,
-    ArrowLeft
+    ArrowLeft,
+    Plus,
+    X
 } from 'lucide-react';
 
 export default function MetaApiPage() {
@@ -40,6 +42,15 @@ export default function MetaApiPage() {
     const [templates, setTemplates] = useState<any[]>([]);
     const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<'config' | 'templates' | 'phones'>('config');
+
+    // Template Creation State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [templateData, setTemplateData] = useState({
+        name: '',
+        category: 'MARKETING',
+        language: 'pt_BR',
+        bodyText: ''
+    });
 
     useEffect(() => {
         if (token) {
@@ -152,6 +163,40 @@ export default function MetaApiPage() {
             setError(e.message);
         } finally {
             setTesting(false);
+        }
+    };
+
+    const handleCreateTemplate = async () => {
+        if (!templateData.name || !templateData.bodyText) {
+            setError('Nome e Texto são obrigatórios');
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+        try {
+            const res = await fetch('/api/integrations/meta/templates', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(templateData)
+            });
+
+            if (res.ok) {
+                setSuccess('Modelo enviado para aprovação com sucesso!');
+                setIsModalOpen(false);
+                setTemplateData({ name: '', category: 'MARKETING', language: 'pt_BR', bodyText: '' });
+                fetchMetaDetails();
+            } else {
+                const data = await res.json();
+                setError('Falha ao criar modelo: ' + (data.message || 'Erro desconhecido'));
+            }
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -363,13 +408,23 @@ export default function MetaApiPage() {
                                         <h2 className="text-xl font-bold">Templates de Mensagem (BBM)</h2>
                                         <p className="text-sm text-gray-400">Templates aprovados em sua conta Meta</p>
                                     </div>
-                                    <div className="relative w-full md:w-64">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                                        <input
-                                            type="text"
-                                            placeholder="Buscar template..."
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-2 text-sm outline-none focus:border-primary transition"
-                                        />
+                                    <div className="flex items-center space-x-3 w-full md:w-auto">
+                                        <div className="relative flex-1 md:w-64">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                            <input
+                                                type="text"
+                                                placeholder="Buscar template..."
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-2 text-sm outline-none focus:border-primary transition"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => setIsModalOpen(true)}
+                                            className="bg-primary hover:bg-primary/90 text-white p-2.5 rounded-xl transition shadow-lg flex items-center space-x-2"
+                                            title="Criar Novo Modelo"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                            <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest">Novo Modelo</span>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -451,6 +506,95 @@ export default function MetaApiPage() {
 
                 </div>
             </div>
+
+            {/* Create Template Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-surface border border-white/10 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-white/5 bg-white/2 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-bold">Criar Novo Modelo (BBM)</h2>
+                                <p className="text-xs text-gray-400 mt-1">Este modelo será enviado para aprovação da Meta.</p>
+                            </div>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-8 space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Nome do Modelo</label>
+                                <input
+                                    type="text"
+                                    value={templateData.name}
+                                    onChange={(e) => setTemplateData({ ...templateData, name: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
+                                    placeholder="ex: promocao_verao_2024"
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                />
+                                <p className="text-[10px] text-gray-500">Apenas letras minúsculas, números e sublinhados.</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Categoria</label>
+                                    <select
+                                        value={templateData.category}
+                                        onChange={(e) => setTemplateData({ ...templateData, category: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition appearance-none"
+                                    >
+                                        <option value="MARKETING">Marketing</option>
+                                        <option value="UTILITY">Utilidade</option>
+                                        <option value="AUTHENTICATION">Autenticação</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Idioma</label>
+                                    <select
+                                        value={templateData.language}
+                                        onChange={(e) => setTemplateData({ ...templateData, language: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition appearance-none"
+                                    >
+                                        <option value="pt_BR">Português (BR)</option>
+                                        <option value="en_US">Inglês (US)</option>
+                                        <option value="es_ES">Espanhol (ES)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Texto do Corpo (Body)</label>
+                                <textarea
+                                    value={templateData.bodyText}
+                                    onChange={(e) => setTemplateData({ ...templateData, bodyText: e.target.value })}
+                                    placeholder="Olá! Temos uma oferta especial para você..."
+                                    rows={4}
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition resize-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-8 bg-white/2 border-t border-white/5 flex gap-4">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="flex-1 bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-black transition"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleCreateTemplate}
+                                disabled={saving}
+                                className="flex-[2] bg-primary hover:bg-primary/90 text-white py-4 rounded-2xl font-black flex items-center justify-center space-x-3 transition shadow-xl shadow-primary/20"
+                            >
+                                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                                <span>Criar Modelo</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

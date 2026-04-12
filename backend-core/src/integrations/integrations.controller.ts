@@ -409,4 +409,10 @@ export class IntegrationsController {
     async testMetaConnection(@Request() req) {
         return this.metaApiService.testConnection(req.user.tenantId);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('meta/templates')
+    async createMetaTemplate(@Request() req, @Body() body: { name: string, category: string, language: string, bodyText: string }) {
+        return this.metaApiService.createTemplate(req.user.tenantId, body);
+    }
 }
