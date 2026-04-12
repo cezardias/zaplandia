@@ -297,39 +297,49 @@ export class WebhooksController {
         let tenantId = 'default';
         let instanceName = typeof instance === 'string' ? instance : (instance?.instanceName || instance?.name || '');
 
-        // Strategy 1: regex to extract UUID from tenant_{UUID}_... format (most reliable)
-        const uuidMatch = instanceName.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
-        if (uuidMatch) {
-            tenantId = uuidMatch[1];
-        } else if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(instanceName)) {
-            // Strategy 2: instanceName IS the UUID itself
-            tenantId = instanceName;
-        } else if (instanceName.startsWith('tenant_')) {
-            // Strategy 3: starts with tenant_ but doesn't follow strict UUID format
-            tenantId = instanceName.replace('tenant_', '').split('_')[0];
-        } else if (sender && typeof sender === 'string') {
-            // Strategy 4: try sender field for same patterns
-            const senderMatch = sender.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
-            if (senderMatch) {
-                tenantId = senderMatch[1];
-                instanceName = sender;
-            }
-        }
+        // Strategy 0: Find integration by instance name (most reliable after migrations)
+        const existingIntegration = await this.integrationRepository.createQueryBuilder('i')
+            .where(`(i.settings->>'instanceName' = :instanceName OR i.credentials->>'instanceName' = :instanceName OR i.credentials->>'name' = :instanceName)`, { instanceName })
+            .getOne();
 
-        this.logger.log(`[EVOLUTION_WEBHOOK] Event: ${eventType}, Tenant: ${tenantId}, Instance: ${instanceName}`);
-
-        if (tenantId === 'default') {
-            this.logger.error(`[CRITICAL] FAILED TO EXTRACT TENANT ID from payload. Key fields: instance=${instanceName}, sender=${sender}`);
+        if (existingIntegration) {
+            tenantId = existingIntegration.tenantId;
+            this.logger.debug(`[EVOLUTION_WEBHOOK] Found tenant ${tenantId} via integration record for instance ${instanceName}`);
         } else {
-            const tenantExists = await this.integrationsService.checkTenantExists(tenantId);
-            if (!tenantExists) {
-                this.logger.warn(`[WEBHOOK] Tenant ${tenantId} does not exist in DB (orphaned instance?). Skipping message.`);
-                return { status: 'skipped_no_tenant' };
+            // Strategy 1: regex to extract UUID from tenant_{UUID}_... format (fallback)
+            const uuidMatch = instanceName.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+            if (uuidMatch) {
+                tenantId = uuidMatch[1];
+            } else if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(instanceName)) {
+                // Strategy 2: instanceName IS the UUID itself
+                tenantId = instanceName;
+            } else if (instanceName.startsWith('tenant_')) {
+                // Strategy 3: starts with tenant_ but doesn't follow strict UUID format
+                tenantId = instanceName.replace('tenant_', '').split('_')[0];
+            } else if (sender && typeof sender === 'string') {
+                // Strategy 4: try sender field for same patterns
+                const senderMatch = sender.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+                if (senderMatch) {
+                    tenantId = senderMatch[1];
+                    instanceName = sender;
+                }
+            }
+
+            this.logger.log(`[EVOLUTION_WEBHOOK] Event: ${eventType}, Tenant Extracted: ${tenantId}, Instance: ${instanceName}`);
+
+            if (tenantId === 'default') {
+                this.logger.error(`[CRITICAL] FAILED TO EXTRACT TENANT ID from payload. Key fields: instance=${instanceName}, sender=${sender}`);
+            } else {
+                const tenantExists = await this.integrationsService.checkTenantExists(tenantId);
+                if (!tenantExists) {
+                    this.logger.warn(`[WEBHOOK] Tenant ${tenantId} does not exist in DB (orphaned instance?). Skipping message.`);
+                    return { status: 'skipped_no_tenant' };
+                }
             }
         }
 
-        // Fetch integration detail to check for n8n/AI config
-        const integration = await this.integrationRepository.createQueryBuilder('i')
+        // Fetch integration detail if not already found (for n8n/AI config)
+        const integration = existingIntegration || await this.integrationRepository.createQueryBuilder('i')
             .where('i.tenantId = :tenantId', { tenantId })
             .andWhere(`(i.settings->>'instanceName' = :instanceName OR i.credentials->>'instanceName' = :instanceName OR i.credentials->>'name' = :instanceName)`, { instanceName })
             .getOne();
