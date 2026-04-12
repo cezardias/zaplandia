@@ -57,17 +57,21 @@ export class WebhooksController {
     @HttpCode(HttpStatus.OK)
     async handleMeta(@Body() payload: any) {
         // --- PROACTIVE LOGGING FOR DEBUGGING ---
-        this.logger.log(`[META_WEBHOOK_RAW] Object: ${payload.object}, Payload: ${JSON.stringify(payload)}`);
+        this.logger.log(`[META_WEBHOOK_RAW] Object: ${payload?.object}, Payload: ${JSON.stringify(payload)}`);
 
-        if (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account') {
-            this.logger.warn(`Unsupported Meta object: ${payload.object}`);
+        if (!payload || (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account')) {
             return { status: 'skipped' };
+        }
+
+        const entries = payload.entry || [];
+        if (entries.length === 0) {
+            return { status: 'empty_entry' };
         }
 
         // --- WHATSAPP OFFICIAL HANDLER ---
         if (payload.object === 'whatsapp_business_account') {
             try {
-                for (const entry of payload.entry) {
+                for (const entry of entries) {
                     const wabaIdInPayload = entry.id;
                     const changes = entry.changes || [];
 
