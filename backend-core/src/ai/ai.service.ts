@@ -171,6 +171,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         });
 
         if (!integration) {
+            // FALLBACK: Check if this matches a Meta Official setup without a formal Integration record
+            const metaPhoneId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
+            if (metaPhoneId && metaPhoneId === instanceName) {
+                this.logger.log(`[META_WA] Manual integration recognized for instance ${instanceName}`);
+                // In manual mode, we assume AI is enabled if prompt is found
+                const globalAiPromptId = await this.integrationsService.getCredential(tenantId, 'AI_PROMPT_ID', true);
+                if (globalAiPromptId && contact.aiEnabled !== false) {
+                    return true;
+                }
+            }
             this.logger.warn(`No integration found for instance ${instanceName} to handle auto-response`);
             return false;
         }

@@ -148,24 +148,15 @@ export class WebhooksController {
 
                                 this.logger.log(`[META_WA] Inbound from ${from}: ${content.substring(0, 50)}...`);
 
-                                // Find/Create Contact - Global Number Friendly
-                                let contact = await this.contactRepository.findOne({
-                                    where: { externalId: from, tenantId }
+                                // Find/Create Contact with Reconciliation
+                                const profileName = value.contacts?.find(c => c.wa_id === from)?.profile?.name;
+                                let contact = await this.crmService.ensureContact(tenantId, {
+                                    name: profileName || `WhatsApp ${from}`,
+                                    phoneNumber: from,
+                                    externalId: from,
+                                    provider: 'whatsapp',
+                                    instance: instanceName
                                 });
-
-                                if (!contact) {
-                                    // Extract profile name if Meta provided it
-                                    const profileName = value.contacts?.find(c => c.wa_id === from)?.profile?.name;
-                                    
-                                    this.logger.debug(`[META_WA] Creating new contact for global number: ${from}`);
-                                    contact = await this.crmService.ensureContact(tenantId, {
-                                        name: profileName || `WhatsApp ${from}`,
-                                        phoneNumber: from,
-                                        externalId: from,
-                                        provider: 'whatsapp',
-                                        instance: instanceName
-                                    });
-                                }
 
                                 // Idempotency check
                                 const exists = await this.messageRepository.findOne({ where: { wamid } });

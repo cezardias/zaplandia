@@ -611,7 +611,11 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     const metaAccessToken = await this.integrationsService.getCredential(tenantId, 'META_ACCESS_TOKEN', true);
                     const metaPhoneId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
 
-                    if (metaAccessToken && metaPhoneId) {
+                    // CRITICAL: Meta Cloud API ONLY supports real phone numbers (max 14 digits).
+                    // If target is a LID (@lid), we MUST skip Meta and use Evolution.
+                    const isLid = targetNumber.includes('@lid') || cleanTarget.length > 14;
+
+                    if (metaAccessToken && metaPhoneId && !isLid) {
                         this.logger.log(`[META_WA] Routing message to ${cleanTarget} via Official API`);
                         try {
                             const response = await this.metaApiService.sendTextMessage(tenantId, cleanTarget, content);
@@ -739,8 +743,22 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 where.push({ externalId: Like(`%${suffix8}%`), tenantId });
             }
 
-            // 4. Name Match Fallback (Avoid system generic names)
+            // 4. Name Match Fallback - Agressive Reconciliation for LID -> Phone
             if (data.name && !['contato', 'sistema', 'lead', 'whatsapp user'].includes(data.name.toLowerCase()) && data.name.length > 3) {
+                // If we are getting a REAL phone number but we might have a LID contact by name, find it!
+                const nameMatches = await this.contactRepository.find({ where: { name: data.name, tenantId } });
+                
+                if (nameMatches.length > 0 && (cleanPhone && cleanPhone.length > 8)) {
+                    const lidContact = nameMatches.find(c => c.externalId?.includes('@lid'));
+                    if (lidContact) {
+                        this.logger.log(`[RECONCILIATION] Found LID contact '${lidContact.name}' (${lidContact.id}). Upgrading to phone ${cleanPhone}.`);
+                        await this.contactRepository.update(lidContact.id, { 
+                            phoneNumber: cleanPhone,
+                            externalId: data.externalId || cleanPhone 
+                        });
+                        return { ...lidContact, phoneNumber: cleanPhone, externalId: data.externalId || cleanPhone };
+                    }
+                }
                 where.push({ name: data.name, tenantId });
             }
 
