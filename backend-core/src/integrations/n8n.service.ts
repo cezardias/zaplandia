@@ -10,29 +10,36 @@ export class N8nService {
 
     async triggerWebhook(tenantId: string, payload: any, integration?: any) {
         try {
+            this.logger.log(`[TRIGGER_N8N] Initiated for tenant: ${tenantId}, Event: ${payload?.type || 'unknown'}`);
+            
             const webhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
 
             if (!webhookUrl) {
-                this.logger.debug(`n8n Webhook não configurado para o tenant ${tenantId}. Pulando.`);
+                this.logger.warn(`[TRIGGER_N8N] Webhook NOT configured for tenant ${tenantId}. Skipping.`);
                 return;
             }
 
-            this.logger.log(`Enviando evento para n8n: ${webhookUrl}`);
+            this.logger.log(`[TRIGGER_N8N] Sending to: ${webhookUrl}`);
 
             // Send async to not block the main flow
             axios.post(webhookUrl, {
                 ...payload,
                 tenantId,
                 integrationId: integration?.id,
-                instanceName: integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name,
+                instanceName: integration?.credentials?.instanceName || integration?.settings?.instanceName || integration?.credentials?.name || integration?.credentials?.instance || integration?.settings?.name,
                 timestamp: new Date().toISOString(),
                 platform: 'zaplandia'
+            }).then(response => {
+                this.logger.log(`[TRIGGER_N8N] SUCCESS: Webhook accepted for tenant ${tenantId}. Status: ${response.status}`);
             }).catch(err => {
-                this.logger.error(`Erro ao enviar para n8n: ${err.message}`);
+                this.logger.error(`[TRIGGER_N8N] FAILED: Error sending to n8n for tenant ${tenantId}: ${err.message}`);
+                if (err.response) {
+                    this.logger.error(`[TRIGGER_N8N] Response status: ${err.response.status}, Data: ${JSON.stringify(err.response.data)}`);
+                }
             });
 
         } catch (error) {
-            this.logger.error(`Erro inesperado no trigger n8n: ${error.message}`);
+            this.logger.error(`[TRIGGER_N8N] UNEXPECTED ERROR: ${error.message}`);
         }
     }
 }

@@ -301,8 +301,14 @@ export class WebhooksController {
         const uuidMatch = instanceName.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
         if (uuidMatch) {
             tenantId = uuidMatch[1];
+        } else if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(instanceName)) {
+            // Strategy 2: instanceName IS the UUID itself
+            tenantId = instanceName;
+        } else if (instanceName.startsWith('tenant_')) {
+            // Strategy 3: starts with tenant_ but doesn't follow strict UUID format
+            tenantId = instanceName.replace('tenant_', '').split('_')[0];
         } else if (sender && typeof sender === 'string') {
-            // Strategy 2: try sender field
+            // Strategy 4: try sender field for same patterns
             const senderMatch = sender.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
             if (senderMatch) {
                 tenantId = senderMatch[1];

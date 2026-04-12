@@ -272,13 +272,27 @@ export class IntegrationsController {
         return this.evolutionApiService.deleteInstance(req.user.tenantId, instanceName);
     }
 
-    // Public Webhook for EvolutionAPI
     @Post('evolution/webhook')
     async handleEvolutionWebhook(@Body() payload: any) {
-        // EvolutionAPI sends instance name in payload. Example: "tenant_<uuid>"
+        // EvolutionAPI sends instance name in payload. Example: "tenant_<uuid>" or "tenant_<uuid>_<name>"
         const instanceName = payload.instance;
-        if (instanceName && instanceName.startsWith('tenant_')) {
-            const tenantId = instanceName.replace('tenant_', '');
+        if (instanceName) {
+            // Regex to extract UUID: looking for tenant_<UUID>
+            const uuidMatch = instanceName.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+            
+            let tenantId = 'default';
+            if (uuidMatch) {
+                tenantId = uuidMatch[1];
+            } else if (instanceName.startsWith('tenant_')) {
+                // Fallback for legacy instances without a perfect UUID structure but still have the tenant_ prefix
+                tenantId = instanceName.replace('tenant_', '').split('_')[0];
+            } else if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(instanceName)) {
+                // If the instance name IS the UUID itself
+                tenantId = instanceName;
+            }
+
+            console.log(`[EVOLUTION_WEBHOOK_OLD_PATH] Received message for instance ${instanceName}, resolved tenant: ${tenantId}`);
+            
             // Forward to n8n for automation
             await this.n8nService.triggerWebhook(tenantId, payload);
         }
