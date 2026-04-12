@@ -39,6 +39,7 @@ export default function DashboardLayout({
         { name: 'Assistente IA', icon: <Zap size={20} />, path: '/dashboard/ai-assistant' },
         { name: 'WhatsApp Manager', icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp' },
         { name: 'Meta API', icon: <Facebook size={20} />, path: '/dashboard/integrations/meta' },
+        { name: 'Governança Meta', icon: <ShieldCheck size={20} />, path: '/dashboard/governance' },
         { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm' },
         { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams' },
         { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban' },
