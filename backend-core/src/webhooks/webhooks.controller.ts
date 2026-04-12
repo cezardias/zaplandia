@@ -228,12 +228,16 @@ export class WebhooksController {
                                 }
                             }
                         }
+                        // 4. Handle Message Echoes (Optional - preventing subscription errors)
+                        if (field === 'message_echoes' || value.message_echoes) {
+                            this.logger.debug(`[META_WA] Message Echo received for WABA ${wabaIdInPayload}. Skipping processing but returning 200.`);
+                        }
                     }
                 }
             } catch (error) {
                 this.logger.error('Error processing WhatsApp Official Webhook', error.stack);
             }
-            return { status: 'received' };
+            return {}; // Always return empty JSON for Meta v25+
         }
 
         try {
