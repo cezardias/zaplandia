@@ -384,30 +384,27 @@ export class WebhooksController {
             const remoteJid = messageData.key.remoteJid; // e.g., 5511999998888@s.whatsapp.net
             const pushName = messageData.pushName || payload.sender || (isOutbound ? 'Sistema' : 'WhatsApp User');
 
-            // --- ROBUST TEXT EXTRACTION ---
+            // Extract text content (Enhanced for Global/Meta templates)
             let content = '';
-            const msg = messageData.message || {};
+            const msg = messageData.message;
             
-            if (msg.conversation) content = msg.conversation;
-            else if (msg.extendedTextMessage?.text) content = msg.extendedTextMessage.text;
-            else if (msg.imageMessage?.caption) content = msg.imageMessage.caption;
-            else if (msg.videoMessage?.caption) content = msg.videoMessage.caption;
-            else if (msg.templateMessage?.hydratedTemplate?.hydratedContentText) {
+            if (msg?.conversation) content = msg.conversation;
+            else if (msg?.extendedTextMessage?.text) content = msg.extendedTextMessage.text;
+            else if (msg?.imageMessage?.caption) content = msg.imageMessage.caption;
+            else if (messageData.extendedTextMessage?.text) content = messageData.extendedTextMessage.text;
+            // Support for Meta/Evolution Template Messages
+            else if (msg?.templateMessage?.hydratedTemplate?.hydratedContentText) {
                 content = msg.templateMessage.hydratedTemplate.hydratedContentText;
-            } else if (msg.buttonsResponseMessage?.selectedButtonId) {
+            } else if (msg?.templateMessage?.hydratedTemplate?.hydratedButtons) {
+                content = msg.templateMessage.hydratedTemplate.hydratedContentText || '[Template Message]';
+            } else if (msg?.buttonsResponseMessage?.selectedButtonId) {
                 content = msg.buttonsResponseMessage.selectedDisplayText || msg.buttonsResponseMessage.selectedButtonId;
-            } else if (msg.listResponseMessage?.title) {
+            } else if (msg?.listResponseMessage?.title) {
                 content = msg.listResponseMessage.title;
-            } else if (messageData.messageStubParameters) {
-                content = `[Notificação do Sistema: ${messageData.messageStubType || 'Evento'}]`;
-            } else {
-                // Fallback generic type indicator
-                const type = Object.keys(msg)[0] || 'unknown';
-                content = `[Mensagem: ${type.toUpperCase()}]`;
             }
 
             if (!content) {
-                this.logger.warn(`[EVOLUTION] Message from ${remoteJid} has no extractable content. Raw types: ${Object.keys(msg).join(', ')}`);
+                this.logger.warn(`Message from ${remoteJid} has no text content. Type: ${messageData.messageType || 'unknown'}`);
                 return { status: 'no_content' };
             }
 
