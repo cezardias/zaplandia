@@ -691,11 +691,18 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         if (data.externalId && data.externalId !== '') where.push({ externalId: data.externalId, tenantId });
 
         // --- NEW: Suffix Matching (Handles formatting diffs in Brazil like 5561... vs 61...)
-        const rawPhone = (data.phoneNumber || data.externalId || '').split('@')[0].replace(/\D/g, '');
-        if (rawPhone.length >= 8) {
-            const suffix8 = rawPhone.slice(-8);
-            where.push({ phoneNumber: Like(`%${suffix8}`), tenantId });
-            where.push({ externalId: Like(`%${suffix8}%`), tenantId });
+        // Aggressively extract digits from ANY field to find the actual phone number
+        const allPossibleDigits = [
+            data.phoneNumber,
+            data.externalId,
+            (data.externalId || '').split('@')[0]
+        ].map(s => (s || '').replace(/\D/g, ''))
+         .filter(s => s.length >= 8);
+
+        for (const digits of allPossibleDigits) {
+            const suffix8 = digits.slice(-8);
+            where.push({ phoneNumber: Like(`%${suffix8}`) });
+            where.push({ externalId: Like(`%${suffix8}%`) });
         }
 
         if (where.length === 0) {

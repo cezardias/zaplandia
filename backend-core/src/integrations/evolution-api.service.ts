@@ -51,15 +51,17 @@ export class EvolutionApiService {
 
             let tenantInstances: any[] = [];
 
-            if (role === 'superadmin') {
-                this.logger.log(`[SECURITY] User is superadmin. Showing ALL instances.`);
+            if (role === 'superadmin' || !role || role === 'system') {
+                this.logger.log(`[SECURITY] Authorized bypass (role: ${role || 'internal'}). Showing ALL instances.`);
                 tenantInstances = allInstances;
             } else {
                 this.logger.log(`Filtering for tenantId: ${tenantId}`);
                 tenantInstances = allInstances.filter((inst: any) => {
                     const name = inst.name || inst.instance?.instanceName || inst.instanceName || '';
-                    const match = name.startsWith(`tenant_${tenantId}_`);
-                    return match;
+                    // Be more lenient: match prefix OR contains tenantId slice
+                    return name.startsWith(`tenant_${tenantId}_`) || 
+                           name.includes(tenantId.slice(0, 8)) ||
+                           name.includes(tenantId.replace(/-/g, '').slice(0, 8));
                 });
             }
 
