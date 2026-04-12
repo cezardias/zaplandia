@@ -31,9 +31,9 @@ export class IntegrationsController {
             // Pass user role to allow superadmin to see all
             liveInstancesRaw = await this.evolutionApiService.listInstances(req.user.tenantId, req.user.role);
             evolutionInstances = await Promise.all(liveInstancesRaw.map(async (inst: any) => {
-                const rawName = inst.name || inst.instance?.instanceName || inst.instanceName;
+                const rawName = inst.name || inst.instance?.instanceName || inst.instanceName || '';
+                if (!rawName) return null;
                 // Clean name: remove technical prefix "tenant_<uuid>_"
-                // We keep everything after the second underscore
                 const friendlyName = rawName.replace(/^tenant_[0-9a-fA-F-]{36}_/, '');
 
                 // Find the corresponding integration in the database by matching the instance name
