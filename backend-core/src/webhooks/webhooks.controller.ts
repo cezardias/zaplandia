@@ -494,22 +494,10 @@ export class WebhooksController {
                             for (const res of responses) {
                                 const textToSend = res.textMessage || res.text || res.message;
                                 if (textToSend) {
-                                    this.logger.log(`[N8N_RESPONSE] Sending message from n8n to ${remoteJid}`);
+                                    this.logger.log(`[N8N_RESPONSE] Sending message from n8n to ${remoteJid} via Centralized CRM`);
                                     
-                                    // Save to DB first
-                                    const outboundMsg = this.messageRepository.create({
-                                        tenantId,
-                                        contactId: contact.id,
-                                        content: textToSend,
-                                        direction: 'outbound',
-                                        provider: 'whatsapp',
-                                        status: 'PENDING',
-                                        instance: instanceName
-                                    });
-                                    await this.messageRepository.save(outboundMsg);
-
-                                    // Send to WhatsApp
-                                    await this.evolutionApiService.sendText(tenantId, instanceName, remoteJid, textToSend);
+                                    // NO MANUAL SAVE HERE - sendMessage handles it
+                                    await this.crmService.sendMessage(tenantId, contact.id, textToSend);
                                 }
                             }
                         }
@@ -541,21 +529,9 @@ export class WebhooksController {
                                 if (aiResponse) {
                                     this.logger.log(`AI generated response for ${contact.id}: ${aiResponse.substring(0, 50)}...`);
                                     
-                                    // Save AI response to database
-                                    const aiMessage = this.messageRepository.create({
-                                        tenantId,
-                                        contactId: contact.id,
-                                        content: aiResponse,
-                                        direction: 'outbound',
-                                        provider: 'whatsapp',
-                                        status: 'PENDING',
-                                        instance: instanceName
-                                    });
-                                    await this.messageRepository.save(aiMessage);
-
-                                    // Send AI response via Evolution API
-                                    await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
-                                    this.logger.log(`AI response sent successfully to contact ${contact.id} via ${instanceName}`);
+                                    // Use CENTRALIZED CRM Message Router
+                                    await this.crmService.sendMessage(tenantId, contact.id, aiResponse);
+                                    this.logger.log(`AI response sent successfully to contact ${contact.id} via Centralized CRM`);
                                 } else {
                                     this.logger.warn(`AI failed to generate response for contact ${contact.id}`);
                                 }
