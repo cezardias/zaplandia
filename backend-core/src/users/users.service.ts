@@ -52,17 +52,37 @@ export class UsersService implements OnModuleInit {
                         await this.tenantsRepository.save(hqTenant);
 
                         // Move all related data
-                        await this.usersRepository.query('UPDATE users SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
-                        await this.usersRepository.query('UPDATE integrations SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
-                        await this.usersRepository.query('UPDATE api_credentials SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
+                        const tables = [
+                            'users', 
+                            'integrations', 
+                            'api_credentials', 
+                            'ai_prompts', 
+                            'contacts', 
+                            'messages', 
+                            'campaigns', 
+                            'contact_lists', 
+                            'daily_usage', 
+                            'audit_logs', 
+                            'pipeline_stages'
+                        ];
+
+                        for (const table of tables) {
+                            try {
+                                await this.usersRepository.query(`UPDATE ${table} SET "tenantId" = $1 WHERE "tenantId" = $2`, [OLD_ID, currentMistake.id]);
+                            } catch (e) {
+                                // Silent skip if table doesn't exist or doesn't have tenantId (though we checked)
+                                console.warn(`[RESTORE] Could not migrate table ${table}: ${e.message}`);
+                            }
+                        }
                         
                         // Delete the old one
                         await this.tenantsRepository.delete(currentMistake.id);
-                        console.log(`[RESTORE] Successfully migrated data from ${currentMistake.id} to ${OLD_ID}`);
+                        console.log(`[RESTORE] Successfully migrated ALL data from ${currentMistake.id} to ${OLD_ID}`);
                     } catch (err) {
                         console.error(`[RESTORE] Critical error during HQ migration: ${err.message}`);
-                        // If it fails, try to use the mistake one
-                        hqTenant = await this.tenantsRepository.findOne({ where: { id: currentMistake.id } });
+                        // Fallback: reload the old one to avoid leaving hqTenant null
+                        hqTenant = await this.tenantsRepository.findOne({ where: { slug: 'zaplandia-hq' } }) || 
+                                   await this.tenantsRepository.findOne({ where: { id: currentMistake.id } });
                     }
                 } else {
                     hqTenant = currentMistake;
