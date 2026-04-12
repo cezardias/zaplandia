@@ -126,7 +126,7 @@ export class IntegrationsService {
         return this.apiCredentialRepository.delete({ tenantId, key_name: keyName });
     }
 
-    async getCredential(tenantId: string, keyName: string, isOptional: boolean = false): Promise<string | null> {
+    async getCredential(tenantId: string | null, keyName: string, isOptional: boolean = false): Promise<string | null> {
         // 1. First try to get tenant-specific credential
         const tenantCred = await this.apiCredentialRepository.findOne({
             where: { tenantId, key_name: keyName }
