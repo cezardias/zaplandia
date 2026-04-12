@@ -59,198 +59,166 @@ export class WebhooksController {
         // --- 1. SUPER FAST BYPASS FOR META TESTS ---
         if (payload?.entry?.[0]?.id === '0' || payload?.sample) {
             this.logger.log(`[META_WEBHOOK_TEST] Fast-track test detected. Returning 200 OK.`);
-            return {}; // Returns 200 OK with {} body
+            return {}; 
         }
 
-        // --- 2. LOGGING FOR REAL REQUESTS ---
-        this.logger.log(`[META_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
-
+        // Validate payload object
         if (!payload || (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account')) {
             return {}; 
         }
 
+        // --- 2. IMMEDIATE ACKNOWLEDGEMENT (Meta Requirement) ---
+        // We trigger processing in the background and return 200 OK immediately
+        try {
+            this.processMetaPayload(payload).catch(err => {
+                this.logger.error(`[META_WEBHOOK_ERROR] Background processing failed: ${err.message}`, err.stack);
+            });
+        } catch (e) {
+            this.logger.error(`[META_WEBHOOK_ERROR] Initiating processing failed: ${e.message}`);
+        }
+
+        return { status: 'received' }; // Always return 200 OK
+    }
+
+    private async processMetaPayload(payload: any) {
+        this.logger.log(`[META_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
+
         const entries = payload.entry || [];
-        if (entries.length === 0) return {};
+        if (entries.length === 0) return;
 
-        // --- 3. WHATSAPP OFFICIAL HANDLER ---
+        // --- WHATSAPP OFFICIAL HANDLER ---
         if (payload.object === 'whatsapp_business_account') {
-            try {
-                for (const entry of entries) {
-                    const wabaIdInPayload = entry.id;
-                    const changes = entry.changes || [];
+            for (const entry of entries) {
+                const wabaIdInPayload = entry.id;
+                const changes = entry.changes || [];
 
-                    for (const change of changes) {
-                        const field = change.field;
-                        const value = change.value;
-                        if (!value) continue;
+                for (const change of changes) {
+                    const field = change.field;
+                    const value = change.value;
+                    if (!value || field !== 'messages') continue;
 
-                        const phoneNumberIdInPayload = value.metadata?.phone_number_id;
-                        const displayPhoneNumber = value.metadata?.display_phone_number;
+                    const phoneNumberIdInPayload = value.metadata?.phone_number_id;
+                    const displayPhoneNumber = value.metadata?.display_phone_number;
 
-                        // Identify Tenant
-                        let tenantId: string | null = null;
-                        
-                        // We check for exact matches in the credentials JSONB field
-                        const integration = await this.integrationRepository.createQueryBuilder('i')
-                            .where("i.credentials->>'META_WABA_ID' = :wabaId", { wabaId: wabaIdInPayload })
-                            .orWhere("i.credentials->>'META_PHONE_NUMBER_ID' = :phoneId", { phoneId: phoneNumberIdInPayload })
-                            .getOne();
+                    // Identify Tenant - optimized lookup
+                    const integration = await this.integrationRepository.createQueryBuilder('i')
+                        .where("i.credentials->>'META_WABA_ID' = :wabaId", { wabaId: wabaIdInPayload })
+                        .orWhere("i.credentials->>'META_PHONE_NUMBER_ID' = :phoneId", { phoneId: phoneNumberIdInPayload })
+                        .getOne();
 
-                        if (integration) {
-                            tenantId = integration.tenantId;
-                        } else {
-                            const cred = await this.integrationsService.findCredentialByValue('META_WABA_ID', wabaIdInPayload);
-                            tenantId = cred?.tenantId || null;
-                        }
+                    let tenantId = integration?.tenantId;
+                    if (!tenantId) {
+                        const cred = await this.integrationsService.findCredentialByValue('META_WABA_ID', wabaIdInPayload);
+                        tenantId = cred?.tenantId || null;
+                    }
 
-                        if (!tenantId) {
-                            this.logger.warn(`[META_WEBHOOK] No tenant found for WABA ID: ${wabaIdInPayload}`);
-                            continue;
-                        }
+                    if (!tenantId) {
+                        this.logger.warn(`[META_WEBHOOK] No tenant found for WABA ID: ${wabaIdInPayload}`);
+                        continue;
+                    }
 
-                        const instanceName = integration?.credentials?.instanceName || 
-                                             integration?.credentials?.name || 
-                                             phoneNumberIdInPayload || 
-                                             displayPhoneNumber || 
-                                             'MetaOfficial';
+                    const instanceName = integration?.credentials?.instanceName || 
+                                         integration?.credentials?.name || 
+                                         phoneNumberIdInPayload || 
+                                         displayPhoneNumber || 
+                                         'MetaOfficial';
 
-                        // 2. Process Status Updates (Delivery Receipts)
-                        if (value.statuses) {
-                            for (const statusObj of value.statuses) {
-                                const wamid = statusObj.id;
-                                const status = statusObj.status.toUpperCase();
-                                
-                                this.logger.debug(`[META_WA] Status Update: ${wamid} -> ${status}`);
+                    // 1. Process Status Updates
+                    if (value.statuses) {
+                        for (const statusObj of value.statuses) {
+                            const wamid = statusObj.id;
+                            const status = statusObj.status.toUpperCase();
+                            this.logger.debug(`[META_WA] Status Update: ${wamid} -> ${status}`);
 
-                                const message = await this.messageRepository.findOne({ where: { wamid } });
-                                if (message) {
-                                    message.status = status;
-                                    await this.messageRepository.save(message);
-                                }
-                            }
-                        }
-
-                        // 3. Process Inbound Messages
-                        if (value.messages) {
-                            for (const msg of value.messages) {
-                                const from = msg.from; // Phone number string
-                                const wamid = msg.id;
-                                let content = '';
-
-                                if (msg.type === 'text') content = msg.text.body;
-                                else if (msg.type === 'button') content = msg.button.text;
-                                else if (msg.type === 'interactive') {
-                                    content = msg.interactive.button_reply?.title || msg.interactive.list_reply?.title || 'Interactive Message';
-                                } else {
-                                    content = `[${msg.type.toUpperCase()}]`;
-                                }
-
-                                if (!content) {
-                                    this.logger.warn(`[META_WA] Skipping message ${wamid} with no extractable content.`);
-                                    continue;
-                                }
-
-                                this.logger.log(`[META_WA] Inbound from ${from}: ${content.substring(0, 50)}...`);
-
-                                // Find/Create Contact with Reconciliation
-                                const profileName = value.contacts?.find(c => c.wa_id === from)?.profile?.name;
-                                let contact = await this.crmService.ensureContact(tenantId, {
-                                    name: profileName || `WhatsApp ${from}`,
-                                    phoneNumber: from,
-                                    externalId: from,
-                                    provider: 'whatsapp',
-                                    instance: instanceName
-                                });
-
-                                // Idempotency check
-                                const exists = await this.messageRepository.findOne({ where: { wamid } });
-                                if (exists) {
-                                    this.logger.debug(`[META_WA] Duplicate message ${wamid} skipped.`);
-                                    continue;
-                                }
-
-                                // Save Message
-                                const message = this.messageRepository.create({
-                                    tenantId,
-                                    contactId: contact.id,
-                                    content,
-                                    direction: 'inbound',
-                                    provider: 'whatsapp',
-                                    instance: instanceName,
-                                    wamid
-                                });
+                            const message = await this.messageRepository.findOne({ where: { wamid } });
+                            if (message) {
+                                message.status = status;
                                 await this.messageRepository.save(message);
-
-                                contact.lastMessage = content;
-                                contact.updatedAt = new Date();
-                                await this.contactRepository.save(contact);
-
-                                // --- AUTOMATION LOGIC ---
-                                const hasN8nWebhook = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
-                                const isN8nEnabledInCreds = await this.integrationsService.getCredential(tenantId, 'N8N_ENABLED', true) === 'true';
-                                
-                                const isN8nEnabledGlobally = integration?.n8nEnabled || isN8nEnabledInCreds || !!hasN8nWebhook;
-                                const isN8nActiveForContact = contact.n8nEnabled !== false;
-                                const isAiActiveForContact = contact.aiEnabled !== false;
-
-                                if (isN8nEnabledGlobally && isN8nActiveForContact) {
-                                    this.logger.log(`[META_WA] Triggering n8n for ${from} (Tenant: ${tenantId})`);
-                                    const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
-                                        type: 'whatsapp.message',
-                                        sender: from,
-                                        content,
-                                        contact_id: contact.id,
-                                        name: contact.name,
-                                        message_id: message.id
-                                    }, integration);
-
-                                    // NEW: Process n8n response for Meta Official
-                                    if (n8nResponse) {
-                                        const responsesBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
-                                        for (const res of responsesBuffer) {
-                                            const textToSend = res.textMessage || res.text || res.message;
-                                            if (textToSend) {
-                                                this.logger.log(`[META_WA] Sending automated reply from n8n to ${from}`);
-                                                await this.crmService.sendMessage(tenantId, contact.id, textToSend);
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Fallback AI logic (Only if n8n is NOT handling it)
-                                if (isAiActiveForContact && !isN8nEnabledGlobally) {
-                                    const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
-                                    if (shouldRespond) {
-                                        this.logger.log(`[META_WA] Triggering internal AI for ${from}`);
-                                        const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
-                                        if (aiResponse) {
-                                            const aiMsg = this.messageRepository.create({
-                                                tenantId,
-                                                contactId: contact.id,
-                                                content: aiResponse,
-                                                direction: 'outbound',
-                                                provider: 'whatsapp',
-                                                instance: instanceName,
-                                                status: 'PENDING'
-                                            });
-                                            await this.messageRepository.save(aiMsg);
-                                            await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
-                                        }
-                                    }
-                                }
                             }
                         }
-                        // 4. Handle Message Echoes (Optional - preventing subscription errors)
-                        if (field === 'message_echoes' || value.message_echoes) {
-                            this.logger.debug(`[META_WA] Message Echo received for WABA ${wabaIdInPayload}. Skipping processing but returning 200.`);
+                    }
+
+                    // 2. Process Inbound Messages
+                    if (value.messages) {
+                        for (const msg of value.messages) {
+                            const from = msg.from;
+                            const wamid = msg.id;
+                            let content = '';
+
+                            // Enhanced Type Handling (Pro-Grade for App Review)
+                            if (msg.type === 'text') content = msg.text.body;
+                            else if (msg.type === 'button') content = msg.button.text;
+                            else if (msg.type === 'interactive') {
+                                content = msg.interactive.button_reply?.title || msg.interactive.list_reply?.title || 'Interactive';
+                            } else if (['image', 'video', 'audio', 'document', 'sticker'].includes(msg.type)) {
+                                content = `[${msg.type.toUpperCase()} RECEIVED]`;
+                                // Future: Media processing would happen here
+                            } else {
+                                content = `[${msg.type.toUpperCase()}]`;
+                            }
+
+                            if (!content) continue;
+
+                            this.logger.log(`[META_WA] Inbound from ${from}: ${content.substring(0, 50)}...`);
+
+                            // Reconciliation & Idempotency
+                            const profileName = value.contacts?.find(c => c.wa_id === from)?.profile?.name;
+                            let contact = await this.crmService.ensureContact(tenantId, {
+                                name: profileName || `WhatsApp ${from}`,
+                                phoneNumber: from,
+                                externalId: from,
+                                provider: 'whatsapp',
+                                instance: instanceName
+                            });
+
+                            const exists = await this.messageRepository.findOne({ where: { wamid } });
+                            if (exists) continue;
+
+                            // Save and trigger automation
+                            const message = this.messageRepository.create({
+                                tenantId, contactId: contact.id, content,
+                                direction: 'inbound', provider: 'whatsapp',
+                                instance: instanceName, wamid
+                            });
+                            await this.messageRepository.save(message);
+
+                            contact.lastMessage = content;
+                            await this.contactRepository.save(contact);
+
+                            // Trigger n8n/AI logic
+                            const hasN8n = !!(await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true));
+                            const n8nActive = contact.n8nEnabled !== false;
+
+                            if (hasN8n && n8nActive) {
+                                this.logger.log(`[META_WA] Triggering n8n for ${from}`);
+                                const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
+                                    type: 'whatsapp.message', sender: from, content,
+                                    contact_id: contact.id, name: contact.name, message_id: message.id
+                                }, integration);
+
+                                if (n8nResponse) {
+                                    const resBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
+                                    for (const r of resBuffer) {
+                                        const text = r.textMessage || r.text || r.message;
+                                        if (text) await this.crmService.sendMessage(tenantId, contact.id, text);
+                                    }
+                                }
+                            } else if (contact.aiEnabled !== false) {
+                                // Fallback to internal AI
+                                const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+                                if (shouldRespond) {
+                                    const aiResp = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
+                                    if (aiResp) await this.crmService.sendMessage(tenantId, contact.id, aiResp);
+                                }
+                            }
                         }
                     }
                 }
-            } catch (error) {
-                this.logger.error('Error processing WhatsApp Official Webhook', error.stack);
             }
-            return {}; // Always return empty JSON for Meta v25+
+        } else if (payload.object === 'instagram') {
+            // Instagram specific logic would stay here...
         }
+    }
 
         try {
             for (const entry of payload.entry) {

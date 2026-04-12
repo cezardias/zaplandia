@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
     Search,
@@ -78,6 +78,15 @@ export default function OmniInboxPage() {
     const [contactAiEnabled, setContactAiEnabled] = useState<boolean | null>(null);
     const [contactN8nEnabled, setContactN8nEnabled] = useState<boolean | null>(null);
     const [teams, setTeams] = useState<any[]>([]);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const fetchInstances = async () => {
         if (!token) return;
@@ -840,6 +849,7 @@ export default function OmniInboxPage() {
                                     </div>
                                 </div>
                             ))}
+                            <div ref={messagesEndRef} />
                         </div>
 
                         {/* Input */}
