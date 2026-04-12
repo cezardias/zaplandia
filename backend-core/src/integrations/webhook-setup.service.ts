@@ -24,8 +24,8 @@ export class WebhookSetupService implements OnApplicationBootstrap {
     ) { }
 
     async onApplicationBootstrap(): Promise<void> {
-        // Wait a bit for the DB connections to settle
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Wait for the DB and Evolution API server to be ready
+        await new Promise(resolve => setTimeout(resolve, 8000));
 
         const webhookUrl = process.env.INTERNAL_WEBHOOK_URL;
         if (!webhookUrl) {

@@ -28,26 +28,53 @@ export class UsersService implements OnModuleInit {
 
         // 1. Ensure a default HQ tenant exists with the ORIGINAL ID
         let hqTenant = await this.tenantsRepository.findOne({ where: { id: OLD_ID } });
+        
+        // If it doesn't exist by ID, check if it exists by SLUG
         if (!hqTenant) {
-            // Check if there is a 'mistaken' tenant from the reset and migrate it
             const currentMistake = await this.tenantsRepository.findOne({ where: { slug: 'zaplandia-hq' } });
             
-            hqTenant = this.tenantsRepository.create({
-                id: OLD_ID,
-                name: 'Zaplandia HQ',
-                slug: 'zaplandia-hq',
-                trialEndsAt: new Date('2099-12-31'),
-            });
-            await this.tenantsRepository.save(hqTenant);
-            console.log(`[RESTORE] Created HQ Tenant with original ID: ${OLD_ID}`);
+            if (currentMistake) {
+                // If it exists by slug but has WRONG ID, we need to migrate it
+                if (currentMistake.id !== OLD_ID) {
+                    console.log(`[RESTORE] Detected HQ Tenant with WRONG ID (${currentMistake.id}). Migrating to ${OLD_ID}...`);
+                    
+                    // Delete the wrong one first (if no foreign key constraints block it, or move data first)
+                    // In TypeORM, we might need a manual query to change the primary key or move all related data
+                    try {
+                        // Create the correct one
+                        hqTenant = this.tenantsRepository.create({
+                            id: OLD_ID,
+                            name: 'Zaplandia HQ',
+                            slug: 'zaplandia-hq',
+                            trialEndsAt: new Date('2099-12-31'),
+                        });
+                        await this.tenantsRepository.save(hqTenant);
 
-            if (currentMistake && currentMistake.id !== OLD_ID) {
-                // If the user already Logged In with the wrong ID, we need to move them
-                await this.usersRepository.query('UPDATE users SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
-                await this.usersRepository.query('UPDATE integrations SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
-                await this.usersRepository.query('UPDATE api_credentials SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
-                await this.tenantsRepository.delete(currentMistake.id);
-                console.log(`[RESTORE] Migrated data from ${currentMistake.id} to ${OLD_ID}`);
+                        // Move all related data
+                        await this.usersRepository.query('UPDATE users SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
+                        await this.usersRepository.query('UPDATE integrations SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
+                        await this.usersRepository.query('UPDATE api_credentials SET "tenantId" = $1 WHERE "tenantId" = $2', [OLD_ID, currentMistake.id]);
+                        
+                        // Delete the old one
+                        await this.tenantsRepository.delete(currentMistake.id);
+                        console.log(`[RESTORE] Successfully migrated data from ${currentMistake.id} to ${OLD_ID}`);
+                    } catch (err) {
+                        console.error(`[RESTORE] Critical error during HQ migration: ${err.message}`);
+                        hqTenant = currentMistake; // Fallback to whatever exists to avoid crash
+                    }
+                } else {
+                    hqTenant = currentMistake;
+                }
+            } else {
+                // Create brand new
+                hqTenant = this.tenantsRepository.create({
+                    id: OLD_ID,
+                    name: 'Zaplandia HQ',
+                    slug: 'zaplandia-hq',
+                    trialEndsAt: new Date('2099-12-31'),
+                });
+                await this.tenantsRepository.save(hqTenant);
+                console.log(`[RESTORE] Created brand new HQ Tenant with original ID: ${OLD_ID}`);
             }
         }
 
