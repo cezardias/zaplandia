@@ -753,30 +753,33 @@ export default function OmniInboxPage() {
                                     ))}
                                 </select>
 
-                                {/* AI Toggle */}
+                                {/* Unified Automation Toggle */}
                                 <button
-                                    onClick={toggleContactAi}
-                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${contactAiEnabled === false
-                                        ? 'bg-red-500/20 text-red-500 border border-red-500/30'
-                                        : 'bg-green-500/20 text-green-500 border border-green-500/30'
-                                        }`}
-                                    title={contactAiEnabled === false ? 'IA Pausada para este contato' : 'IA Ativa (Herdado)'}
+                                    onClick={async () => {
+                                        const isPaused = contactAiEnabled === false && contactN8nEnabled === false;
+                                        const newValue = isPaused ? null : false; // null means inherit/active, false means specifically paused
+                                        
+                                        // Toggle both at once
+                                        const res = await fetch(`/api/crm/chats/${selectedContact.id}`, {
+                                            method: 'PATCH',
+                                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ aiEnabled: newValue, n8nEnabled: newValue })
+                                        });
+                                        if (res.ok) {
+                                            const data = await res.json();
+                                            setContactAiEnabled(data.aiEnabled);
+                                            setContactN8nEnabled(data.n8nEnabled);
+                                            setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } : c));
+                                        }
+                                    }}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg ${
+                                        contactAiEnabled === false && contactN8nEnabled === false
+                                            ? 'bg-red-600 text-white border-b-4 border-red-800 active:border-b-0 active:translate-y-1'
+                                            : 'bg-green-600/20 text-green-500 border border-green-500/30 hover:bg-green-500/30'
+                                    }`}
                                 >
-                                    <Bot className={`w-3 h-3 ${contactAiEnabled === false ? 'grayscale' : ''}`} />
-                                    <span>IA</span>
-                                </button>
-
-                                {/* n8n Toggle */}
-                                <button
-                                    onClick={toggleContactN8n}
-                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${contactN8nEnabled === false
-                                        ? 'bg-red-500/20 text-red-500 border border-red-500/30'
-                                        : 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
-                                        }`}
-                                    title={contactN8nEnabled === false ? 'Fluxos Pausados para este contato' : 'Fluxos Ativos (Herdado)'}
-                                >
-                                    <Terminal className={`w-3 h-3 ${contactN8nEnabled === false ? 'grayscale' : ''}`} />
-                                    <span>Flows</span>
+                                    <Bot className={`w-4 h-4 ${(contactAiEnabled === false && contactN8nEnabled === false) ? 'animate-pulse' : ''}`} />
+                                    <span>{(contactAiEnabled === false && contactN8nEnabled === false) ? 'Automação Pausada' : 'Automação Ativa'}</span>
                                 </button>
                                 <button className="hover:text-white transition"><MoreVertical className="w-5 h-5" /></button>
                             </div>
