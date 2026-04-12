@@ -417,14 +417,17 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         });
     }
 
-    async sendMessage(tenantId: string, contactId: string, content: string, provider: string, media?: { url: string, type: string, mimetype: string, fileName?: string }) {
+    async sendMessage(tenantId: string, contactId: string, content: string, provider?: string, media?: { url: string, type: string, mimetype?: string, fileName?: string }) {
+        const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
+        const finalProvider = provider || contact?.provider || 'whatsapp';
+
         // 1. Save to DB
         const message = this.messageRepository.create({
             tenantId,
             contactId,
             content,
             direction: 'outbound',
-            provider,
+            provider: finalProvider,
             mediaUrl: media?.url,
             mediaType: media?.type,
             mediaMimeType: media?.mimetype,
