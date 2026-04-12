@@ -58,19 +58,19 @@ export class WebhooksController {
     async handleMeta(@Body() payload: any) {
         // --- 1. SUPER FAST BYPASS FOR META TESTS ---
         if (payload?.entry?.[0]?.id === '0' || payload?.sample) {
-            this.logger.log(`[META_WEBHOOK_TEST] Fast-track test detected. Returning 200 OK (Empty).`);
-            return; // Returns 200 OK with empty body
+            this.logger.log(`[META_WEBHOOK_TEST] Fast-track test detected. Returning 200 OK.`);
+            return {}; // Returns 200 OK with {} body
         }
 
         // --- 2. LOGGING FOR REAL REQUESTS ---
         this.logger.log(`[META_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
 
         if (!payload || (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account')) {
-            return; // Just return 200 OK even if skipped
+            return {}; 
         }
 
         const entries = payload.entry || [];
-        if (entries.length === 0) return;
+        if (entries.length === 0) return {};
 
         // --- 3. WHATSAPP OFFICIAL HANDLER ---
         if (payload.object === 'whatsapp_business_account') {
