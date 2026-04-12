@@ -84,19 +84,31 @@ export class WebhooksController {
                         const value = change.value;
                         if (!value) continue;
 
+                        const phoneNumberIdInPayload = value.metadata?.phone_number_id;
+                        const displayPhoneNumber = value.metadata?.display_phone_number;
+
+                        // Identify Tenant
+                        let tenantId: string | null = null;
+                        
                         // We check for exact matches in the credentials JSONB field
                         const integration = await this.integrationRepository.createQueryBuilder('i')
                             .where("i.credentials->>'META_WABA_ID' = :wabaId", { wabaId: wabaIdInPayload })
                             .orWhere("i.credentials->>'META_PHONE_NUMBER_ID' = :phoneId", { phoneId: phoneNumberIdInPayload })
                             .getOne();
 
-                        if (!integration) {
-                            this.logger.warn(`[CRITICAL] No integration found for WABA ${wabaIdInPayload} or PhoneID ${phoneNumberIdInPayload}. Payload might be from unconfigured account.`);
+                        if (integration) {
+                            tenantId = integration.tenantId;
+                        } else {
+                            const cred = await this.integrationsService.findCredentialByValue('META_WABA_ID', wabaIdInPayload);
+                            tenantId = cred?.tenantId || null;
+                        }
+
+                        if (!tenantId) {
+                            this.logger.warn(`[META_WEBHOOK] No tenant found for WABA ID: ${wabaIdInPayload}`);
                             continue;
                         }
 
-                        const tenantId = integration.tenantId;
-                        const instanceName = integration.credentials?.instanceName || integration.credentials?.name || displayPhoneNumber || phoneNumberIdInPayload;
+                        const instanceName = integration?.credentials?.instanceName || integration?.credentials?.name || displayPhoneNumber || phoneNumberIdInPayload || 'MetaOfficial';
 
                         // 2. Process Status Updates (Delivery Receipts)
                         if (value.statuses) {
