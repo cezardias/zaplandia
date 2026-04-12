@@ -178,4 +178,10 @@ export class IntegrationsService {
             return normalizedName === normalizedInput;
         }) || null;
     }
+
+    async findCredentialByValue(keyName: string, keyValue: string): Promise<ApiCredential | null> {
+        return this.apiCredentialRepository.findOne({
+            where: { key_name: keyName, key_value: keyValue }
+        });
+    }
 }
