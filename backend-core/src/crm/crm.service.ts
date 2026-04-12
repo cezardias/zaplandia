@@ -81,10 +81,14 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             const remainingContacts = await this.contactRepository.find();
             const nameGroups = new Map<string, Contact[]>();
             for (const c of remainingContacts) {
-                const normName = c.name?.trim().toLowerCase();
-                if (!normName || normName.length < 4 || normName === 'contato' || normName === 'sistema' || normName.includes('@')) continue;
+                // Aggressive normalization: remove spaces and special chars
+                const normName = c.name?.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (!normName || normName.length < 4 || normName === 'contato' || normName === 'sistema') continue;
                 
-                const key = `${c.tenantId}_${normName}`;
+                // We use a GLOBAL name key if tenantId is missing, but prefer tenant+name
+                const tenantKey = c.tenantId || 'global';
+                const key = `${tenantKey}_${normName}`;
+                
                 if (!nameGroups.has(key)) nameGroups.set(key, []);
                 nameGroups.get(key)!.push(c);
             }
@@ -92,14 +96,12 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             for (const [key, group] of nameGroups.entries()) {
                 if (group.length > 1) {
                     const tenantId = key.split('_')[0];
-                    const hasMix = group.some(c => c.externalId?.includes('@lid')) && group.some(c => !c.externalId?.includes('@lid'));
-                    if (hasMix) {
-                        try {
-                            this.logger.log(`[NAME_MERGE] Unificando contatos com o mesmo nome: ${group[0].name}`);
-                            await this.mergeContacts(tenantId, group);
-                            mergeCount++;
-                        } catch (err) {}
-                    }
+                    // Any mix of formats (phone, LID, etc) for the same name should be merged
+                    try {
+                        this.logger.log(`[NAME_MERGE] Unificando ${group.length} contatos para o nome normalizado: ${key.split('_')[1]}`);
+                        await this.mergeContacts(tenantId === 'global' ? group[0].tenantId : tenantId, group);
+                        mergeCount++;
+                    } catch (err) {}
                 }
             }
 
