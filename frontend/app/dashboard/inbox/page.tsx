@@ -186,6 +186,11 @@ export default function OmniInboxPage() {
 
     useEffect(() => {
         fetchChats();
+        // Polling interval to simulate real-time updates (since we don't use sockets)
+        const interval = setInterval(() => {
+            fetchChats();
+        }, 10000); // Poll every 10 seconds
+
         // Sync AI state for the newly selected instance
         if (selectedInstance !== 'all') {
             const inst = availableInstances.find(i => i.id === selectedInstance);
@@ -201,6 +206,8 @@ export default function OmniInboxPage() {
             setSelectedPromptId(null);
             setSelectedAiModel('gemini-1.5-flash');
         }
+
+        return () => clearInterval(interval); // Cleanup on unmount
     }, [token, selectedInstance, availableInstances]);
 
     const handleSeed = async () => {
