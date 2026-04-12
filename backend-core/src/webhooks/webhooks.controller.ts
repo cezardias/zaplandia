@@ -84,6 +84,13 @@ export class WebhooksController {
             try {
                 for (const entry of entries) {
                     const wabaIdInPayload = entry.id;
+
+                    // Meta Test ID Bypass
+                    if (wabaIdInPayload === '0') {
+                        this.logger.log('[META_WEBHOOK_TEST] Meta Test ID "0" detected. Returning success.');
+                        continue; // Process other entries if any, but ID 0 is always success
+                    }
+
                     const changes = entry.changes || [];
 
                     for (const change of changes) {
