@@ -604,8 +604,14 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
                 if (targetNumber) {
                     // --- CLEAN NUMBER FOR GLOBAL COMPATIBILITY ---
-                    const cleanTarget = targetNumber.split('@')[0].replace(/\D/g, '');
-                    this.logger.debug(`[CRM_SEND] Target: ${targetNumber} -> Clean: ${cleanTarget}`);
+                    let cleanTarget = targetNumber.split('@')[0].replace(/\D/g, '');
+                    
+                    // BR Normalization: Ensure 13 digits for Meta if it has 11 (adding 55) or 12 (missing 9)
+                    // Note: Meta API is picky. We mainly ensure it starts with the country code.
+                    if (cleanTarget.startsWith('0')) cleanTarget = cleanTarget.substring(1);
+                    if (cleanTarget.length === 11 && !cleanTarget.startsWith('55')) cleanTarget = `55${cleanTarget}`;
+
+                    this.logger.log(`[CRM_SEND] Routing Request - Target: ${targetNumber} -> Normalized: ${cleanTarget}`);
 
                     // 1. SMART ROUTING: Prioritize Meta API if credentials exist
                     const metaAccessToken = await this.integrationsService.getCredential(tenantId, 'META_ACCESS_TOKEN', true);
@@ -616,10 +622,11 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     const isLid = targetNumber.includes('@lid') || cleanTarget.length > 14;
 
                     if (metaAccessToken && metaPhoneId && !isLid) {
-                        this.logger.log(`[META_WA] Routing message to ${cleanTarget} via Official API`);
+                        this.logger.log(`[META_WA] Attempting Official API send to ${cleanTarget}`);
                         try {
                             const response = await this.metaApiService.sendTextMessage(tenantId, cleanTarget, content);
                             if (response?.messages?.[0]?.id) {
+                                this.logger.log(`[META_WA] SENT SUCCESS via Official API to ${cleanTarget}`);
                                 message.wamid = response.messages[0].id;
                                 message.status = 'SENT';
                                 message.provider = 'whatsapp';
@@ -627,8 +634,11 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                                 return message;
                             }
                         } catch (metaErr: any) {
-                            this.logger.error(`[META_WA] Failed to send via Meta: ${metaErr.message}. Falling back to Evolution if available.`);
+                            this.logger.warn(`[META_WA] ROUTING FAILURE: ${metaErr.message}. Attempting Evolution fallback...`);
                         }
+                    } else {
+                        const reason = isLid ? 'LID detected' : 'Missing Meta Credentials';
+                        this.logger.debug(`[CRM_SEND] Skipping Meta API: ${reason}`);
                     }
 
                     // 2. FALLBACK: Use Evolution API

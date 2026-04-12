@@ -107,20 +107,32 @@ export class MetaApiService {
             const { accessToken, phoneNumberId } = await this.getCredentials(tenantId);
             if (!phoneNumberId) throw new Error('META_PHONE_NUMBER_ID not configured');
 
+            const payload = {
+                messaging_product: 'whatsapp',
+                recipient_type: 'individual',
+                to,
+                type: 'text',
+                text: { body: text }
+            };
+
+            this.logger.log(`[META_DEBUG] Sending text to ${to} via ID ${phoneNumberId}`);
+            // this.logger.debug(`[META_DEBUG] Payload: ${JSON.stringify(payload)}`);
+
             const response = await axios.post(
                 `${this.baseUrl}/${phoneNumberId}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    recipient_type: 'individual',
-                    to,
-                    type: 'text',
-                    text: { body: text }
-                },
+                payload,
                 { params: { access_token: accessToken } }
             );
+
+            this.logger.log(`[META_DEBUG] SUCCESS: Message ID ${response.data?.messages?.[0]?.id}`);
             return response.data;
-        } catch (error) {
-            this.logger.error(`Failed to send Meta text message: ${error.message}`);
+        } catch (error: any) {
+            const errorData = error.response?.data?.error || {};
+            const detailedMsg = errorData.message || error.message;
+            this.logger.error(`[META_DEBUG] FAILED to send to ${to}: ${detailedMsg}`);
+            if (error.response?.data) {
+                this.logger.error(`[META_DEBUG] Full Error Data: ${JSON.stringify(error.response.data)}`);
+            }
             throw error;
         }
     }
