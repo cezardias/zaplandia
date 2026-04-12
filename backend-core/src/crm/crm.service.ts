@@ -52,34 +52,39 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             await queryRunner.release();
             this.logger.log('Sincronização de colunas concluída com sucesso.');
 
-            // --- NEW: DUPLICATE MERGE SCRIPT ---
-            this.logger.log('Iniciando limpeza de contatos duplicados em produção...');
-            const duplicatesFound = await this.contactRepository.createQueryBuilder('c')
-                .select('c.tenantId', 'tenantId')
-                .addSelect('c.externalId', 'externalId')
-                .groupBy('c.tenantId')
-                .addGroupBy('c.externalId')
-                .having('COUNT(*) > 1')
-                .getRawMany();
+            // --- NEW: AGGRESSIVE DUPLICATE MERGE SCRIPT ---
+            this.logger.log('Iniciando limpeza AGRESSIVA de contatos duplicados...');
+            
+            // 1. Get all contacts to normalize and group in-memory
+            // This is safer for complex cleanup logic than a raw SQL GROUP BY with suffixes
+            const allContacts = await this.contactRepository.find();
+            const contactGroups = new Map<string, Contact[]>();
 
-            this.logger.log(`Encontrados ${duplicatesFound.length} grupos de duplicados para processar.`);
+            for (const c of allContacts) {
+                const phone = (c.phoneNumber || c.externalId || '').split('@')[0].replace(/\D/g, '');
+                if (phone.length < 8) continue;
+                
+                const suffix8 = phone.slice(-8);
+                const key = `${c.tenantId}_${suffix8}`;
+                
+                if (!contactGroups.has(key)) contactGroups.set(key, []);
+                contactGroups.get(key)!.push(c);
+            }
 
-            for (const dup of duplicatesFound) {
-                try {
-                    const contacts = await this.contactRepository.find({
-                        where: {
-                            tenantId: dup.tenantId,
-                            externalId: dup.externalId
-                        }
-                    });
-                    if (contacts.length > 1) {
-                        await this.mergeContacts(dup.tenantId, contacts);
+            let mergeCount = 0;
+            for (const [key, group] of contactGroups.entries()) {
+                if (group.length > 1) {
+                    const tenantId = key.split('_')[0];
+                    try {
+                        await this.mergeContacts(tenantId, group);
+                        mergeCount++;
+                    } catch (err) {
+                        this.logger.error(`Erro ao mesclar grupo ${key}: ${err.message}`);
                     }
-                } catch (err) {
-                    this.logger.error(`Erro ao mesclar duplicado ${dup.externalId}: ${err.message}`);
                 }
             }
-            this.logger.log('Limpeza de duplicados concluída.');
+
+            this.logger.log(`Limpeza agressiva concluída. ${mergeCount} grupos de duplicados foram consolidados.`);
 
         } catch (err) {
             this.logger.error(`Erro ao sincronizar colunas: ${err.message}`);
