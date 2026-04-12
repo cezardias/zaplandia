@@ -809,6 +809,13 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             // Move campaign leads
             await this.leadRepository.update({ externalId: dup.externalId }, { externalId: primary.externalId });
             
+            // Prefer regular WhatsApp JIDs over LIDs for the primary record to fix delivery
+            if (dup.externalId?.includes('@s.whatsapp.net') && primary.externalId?.includes('@lid')) {
+                this.logger.log(`[MERGE] Swapping LID ${primary.externalId} for Phone JID ${dup.externalId} on primary`);
+                primary.externalId = dup.externalId;
+                if (!primary.phoneNumber) primary.phoneNumber = dup.phoneNumber || dup.externalId.split('@')[0];
+            }
+
             // Inherit overrides (If dup is paused, primary stays paused)
             if (dup.aiEnabled === false) primary.aiEnabled = false;
             if (dup.n8nEnabled === false) primary.n8nEnabled = false;
