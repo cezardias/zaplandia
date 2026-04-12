@@ -438,7 +438,6 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         await this.messageRepository.save(message);
 
         // 2. Trigger n8n Webhook for automation (If not overridden by contact)
-        const contact = await this.findOne(contactId, tenantId);
         if (contact && contact.n8nEnabled !== false) {
             await this.n8nService.triggerWebhook(tenantId, {
                 type: 'message.new',
