@@ -381,16 +381,23 @@ export class WebhooksController {
 
             // Clean remoteJid for externalId (strip device suffixes like :7 but keep @s.whatsapp.net or @lid)
             const externalId = remoteJid.replace(/:[0-9]+/, '');
-            const phonePart = externalId.split('@')[0];
-            this.logger.debug(`[JID] remoteJid: ${remoteJid} -> externalId: ${externalId} (Phone: ${phonePart})`);
-
+            
+            // NEW: Extract alternative JID or Phone if Evolution provided them (Resolves LIDs)
+            const remoteJidAlt = messageData.remoteJidAlt || messageData.key.remoteJidAlt || null;
+            const senderPn = messageData.senderPn || messageData.pushNumber || null;
+            
+            this.logger.debug(`[JID_METADATA] remoteJid: ${remoteJid}, alt: ${remoteJidAlt}, pn: ${senderPn}`);
+            
+            const phonePart = (senderPn || remoteJidAlt || externalId).split('@')[0].replace(/\D/g, '');
+            
             try {
                 // STEP 1 & 2: Resolved contact via Centralized CRM Service (Handles Deduplication & Merging)
                 const contact = await this.crmService.ensureContact(tenantId, {
                     name: pushName,
-                    phoneNumber: phonePart, // Extracted earlier from JID
+                    phoneNumber: phonePart,
                     externalId: externalId,
-                    instance: instanceName
+                    instance: instanceName,
+                    alternativeId: remoteJidAlt // Pass for smarter merging
                 });
 
                 // 3. IDEMPOTENCY CHECK: Ensure we don't save the same message twice

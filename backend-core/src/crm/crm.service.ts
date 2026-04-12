@@ -472,14 +472,17 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 this.logger.log(`WhatsApp Send Request - Contact: ${contactId}, Name: ${contact?.name}, Provider: ${contact?.provider}, Phone: ${contact?.phoneNumber}, ExtId: ${contact?.externalId}`);
 
                 // FIX: STRICT number resolution logic
-                // 1. Prefer full JID from externalId (Supports LIDs and strict JIDs)
-                // If the externalId already has a suffix like @s.whatsapp.net or @lid, use it directly.
-                // This ensures we reply to the EXACT same thread the user contacted us from.
-                let targetNumber = (contact?.externalId && contact.externalId.includes('@')) ? contact.externalId : null;
+                // 1. Prefer full JID from externalId if it's a REAL JID (@s.whatsapp.net)
+                let targetNumber = (contact?.externalId && contact.externalId.includes('@s.whatsapp.net')) ? contact.externalId : null;
 
-                // 2. If no full JID, prefer explicitly saved phoneNumber
+                // 2. If no real JID, prefer explicitly saved phoneNumber
                 if (!targetNumber) {
                     targetNumber = contact?.phoneNumber || null;
+                }
+
+                // 3. If still no number, fall back to LID if available
+                if (!targetNumber && contact?.externalId && contact.externalId.includes('@lid')) {
+                    targetNumber = contact.externalId;
                 }
 
                 // 3. Fallback: If externalId looks like a raw number (no suffix), use it
@@ -634,9 +637,6 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                         // --- NEW: META API CHECK ---
                         if (activeInstance.provider === 'whatsapp' && activeInstance.credentials?.META_ACCESS_TOKEN) {
                             this.logger.log(`Sending Official WhatsApp message to ${targetNumber} via Meta API`);
-                            // For manual CRM messages through Meta, we send as regular text if within window,
-                            // or fallback to a template if needed. For now, assuming standard text sending.
-                            // Note: Meta Cloud API allows text messages to be sent if the user contacted first (< 24h).
                             const response = await this.metaApiService.sendTextMessage(tenantId, targetNumber, content);
                             if (response?.messages?.[0]?.id) {
                                 message.wamid = response.messages[0].id;
@@ -649,18 +649,14 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                         if (media && media.url) {
                             // MEDIA SENDING LOGIC
                             this.logger.log(`Sending WhatsApp MEDIA to ${targetNumber} via ${instanceName}`);
-
-                            // 1. Resolve local path from URL
-                            // URL format: /uploads/filename.ext -> ./uploads/filename.ext
                             const filename = media.url.split('/').pop() || 'unknown_file';
                             const filePath = path.join(process.cwd(), 'uploads', filename);
 
                             if (fs.existsSync(filePath)) {
                                 const fileBuffer = fs.readFileSync(filePath);
                                 const base64 = fileBuffer.toString('base64');
-
                                 const response = await this.evolutionApiService.sendMedia(tenantId, instanceName, targetNumber, {
-                                    type: media.type || 'image', // default
+                                    type: media.type || 'image',
                                     mimetype: media.mimetype || '',
                                     base64: base64,
                                     fileName: media.fileName || filename,
@@ -671,9 +667,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                                     message.wamid = response.key.id;
                                     message.status = 'SENT';
                                     await this.messageRepository.save(message);
-                                    this.logger.log(`Updated Outbound WAMID: ${message.wamid}`);
                                 }
-
                             } else {
                                 this.logger.error(`Media file not found at ${filePath}. Sending text only.`);
                                 const response = await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
@@ -691,7 +685,6 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                                 message.wamid = response.key.id;
                                 message.status = 'SENT';
                                 await this.messageRepository.save(message);
-                                this.logger.log(`Updated Outbound WAMID: ${message.wamid}`);
                             }
                         }
                     } else {
@@ -700,91 +693,62 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 }
             } catch (err: any) {
                 this.logger.error(`Failed to send WhatsApp message: ${err.message}`);
-                // Throw error to notify frontend
                 if (err instanceof BadRequestException) throw err;
                 throw new BadRequestException(`Falha no envio: ${err.message}`);
             }
         }
-
         return message;
     }
 
-    async seedDemoData(tenantId: string) {
-        // 1. Create 3 contacts
-        const contactsData = [
-            { name: 'Ana Silva', provider: 'whatsapp', externalId: '5511999998888' },
-            { name: 'Bernardo Souza', provider: 'instagram', externalId: 'inst_user_123' },
-            { name: 'Clara Mendes', provider: 'facebook', externalId: 'fb_user_456' },
-        ];
+    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string, provider?: string, instance?: string, alternativeId?: string }, options?: { forceStage?: string }) {
+        const provider = data.provider || 'whatsapp';
+        const cleanPhone = data.phoneNumber?.replace(/\D/g, '');
 
-        for (const data of contactsData) {
-            let contact = await this.contactRepository.findOne({ where: { externalId: data.externalId, tenantId } });
-            if (!contact) {
-                contact = this.contactRepository.create({ ...data, tenantId });
-                await this.contactRepository.save(contact);
+        try {
+            // 1. Direct match by externalId (JID or LID)
+            if (data.externalId) {
+                const existing = await this.contactRepository.findOne({ where: { tenantId, externalId: data.externalId } });
+                if (existing) {
+                    // Smart Upgrade: If we found a LID contact but just received a real phone number/alt JID, upgrade it!
+                    if (existing.externalId.includes('@lid') && (data.alternativeId || (cleanPhone && cleanPhone.length > 8))) {
+                        const nextId = (data.alternativeId && !data.alternativeId.includes('@lid')) ? data.alternativeId : existing.externalId;
+                        this.logger.log(`[Smart Link] Upgrading LID contact ${existing.id} (${existing.name}) with phone/alt data.`);
+                        await this.contactRepository.update(existing.id, { 
+                            phoneNumber: cleanPhone || existing.phoneNumber,
+                            externalId: nextId 
+                        });
+                        return { ...existing, phoneNumber: cleanPhone || existing.phoneNumber, externalId: nextId };
+                    }
+                    return existing;
+                }
             }
 
-            // 2. Add 2 messages per contact
-            const messages = [
-                { content: 'Olá, gostaria de saber mais sobre o Zaplandia!', direction: 'inbound' as const },
-                { content: 'Com certeza, Ana! O Zaplandia é o melhor CRM Omnichannel.', direction: 'outbound' as const },
-            ];
-
-            for (const msgData of messages) {
-                const msg = this.messageRepository.create({
-                    ...msgData,
-                    contactId: contact.id,
-                    tenantId,
-                    provider: contact.provider
-                });
-                await this.messageRepository.save(msg);
+            // 2. Direct match by alternativeId (often real JID even if incoming is LID)
+            if (data.alternativeId) {
+                const altMatch = await this.contactRepository.findOne({ where: { tenantId, externalId: data.alternativeId } });
+                if (altMatch) return altMatch;
             }
 
-            contact.lastMessage = messages[1].content;
-            await this.contactRepository.save(contact);
-        }
-    }
-    async updateContact(tenantId: string, contactId: string, updates: any) {
-        const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
-        if (!contact) return null;
-
-        await this.contactRepository.update(contactId, updates);
-        this.logger.log(`Updated contact ${contactId} with: ${JSON.stringify(updates)}`);
-        return this.contactRepository.findOne({ where: { id: contactId } });
-    }
-
-    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string, instance?: string }, options?: { forceStage?: string }) {
-        const where: any[] = [];
-        if (data.phoneNumber && data.phoneNumber !== '') where.push({ phoneNumber: data.phoneNumber, tenantId });
-        if (data.externalId && data.externalId !== '') where.push({ externalId: data.externalId, tenantId });
-
-        // --- NEW: Suffix Matching (Handles formatting diffs in Brazil like 5561... vs 61...)
-        // Aggressively extract digits from ANY field to find the actual phone number
-        const allPossibleDigits = [
-            data.phoneNumber,
-            data.externalId,
-            (data.externalId || '').split('@')[0]
-        ].map(s => (s || '').replace(/\D/g, ''))
-         .filter(s => s.length >= 8);
-
-        for (const digits of allPossibleDigits) {
-            const suffix8 = digits.slice(-8);
-            where.push({ phoneNumber: Like(`%${suffix8}`), tenantId });
-            where.push({ externalId: Like(`%${suffix8}%`), tenantId });
-        }
-
-        // --- NEW: Name Matching Fallback (Crucial for LID vs Phone JID consolidation)
-        if (data.name && data.name.toLowerCase() !== 'contato' && data.name.length > 3) {
-            where.push({ name: data.name, tenantId });
-            // Also try fuzzy name match for existing JIDs if this is a LID
-            if (data.externalId?.includes('@lid')) {
-                where.push({ name: Like(`${data.name.split(' ')[0]}%`), tenantId, externalId: Like('%@s.whatsapp.net') });
+            // 3. Match by Phone suffix (Aggressive Consolidation)
+            const where: any[] = [];
+            if (cleanPhone && cleanPhone.length >= 8) {
+                const suffix8 = cleanPhone.slice(-8);
+                where.push({ phoneNumber: Like(`%${suffix8}`), tenantId });
+                where.push({ externalId: Like(`%${suffix8}%`), tenantId });
             }
-        }
 
-        const contacts = await this.contactRepository.find({ where });
+            // 4. Name Match Fallback
+            if (data.name && data.name.toLowerCase() !== 'contato' && data.name.length > 3) {
+                where.push({ name: data.name, tenantId });
+            }
 
-        if (contacts.length === 0) {
+            if (where.length > 0) {
+                const contacts = await this.contactRepository.find({ where });
+                if (contacts.length > 1) return await this.mergeContacts(tenantId, contacts);
+                if (contacts.length === 1) return contacts[0];
+            }
+
+            // 5. Create NEW if nothing found
             this.logger.log(`Creating NEW contact for ${data.phoneNumber || data.externalId}`);
             const contact = this.contactRepository.create({
                 ...data,
@@ -792,52 +756,13 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 stage: options?.forceStage || 'LEAD',
                 externalId: data.externalId || data.phoneNumber
             });
-            const saved = await this.contactRepository.save(contact);
-            
-            // PROACTIVE RESOLUTION: If it's a LID, try to resolve it immediately to avoid duplicates later
-            if (saved.externalId?.includes('@lid') && saved.instance) {
-                const resolved = await this.evolutionApiService.resolveLid(tenantId, saved.instance, saved.externalId);
-                if (resolved) {
-                    saved.externalId = resolved;
-                    if (!saved.phoneNumber) saved.phoneNumber = resolved.split('@')[0];
-                    return await this.contactRepository.save(saved);
-                }
-            }
-            return saved;
-        }
+            return await this.contactRepository.save(contact);
 
-        // --- DUPLICATE MERGE LOGIC ---
-        if (contacts.length > 1) {
-            this.logger.warn(`Found ${contacts.length} duplicate contacts for ${data.phoneNumber || data.externalId}. Merging...`);
-            return await this.mergeContacts(tenantId, contacts);
+        } catch (err: any) {
+            this.logger.error(`Error in ensureContact: ${err.message}`);
+            // Fallback create to avoid blocking
+            return await this.contactRepository.save(this.contactRepository.create({ ...data, tenantId }));
         }
-
-        const contact = contacts[0];
-        
-        // Update fields if needed
-        let hasParamsToUpdate = false;
-        if (data.name && data.name !== contact.name && data.name.toLowerCase() !== 'contato') {
-            contact.name = data.name;
-            hasParamsToUpdate = true;
-        }
-        if (data.phoneNumber && data.phoneNumber !== contact.phoneNumber) {
-            contact.phoneNumber = data.phoneNumber;
-            hasParamsToUpdate = true;
-        }
-        if (data.instance && data.instance !== contact.instance) {
-            contact.instance = data.instance;
-            hasParamsToUpdate = true;
-        }
-        if (options?.forceStage && contact.stage !== options.forceStage) {
-            contact.stage = options.forceStage;
-            hasParamsToUpdate = true;
-        }
-
-        if (hasParamsToUpdate) {
-            await this.contactRepository.save(contact);
-        }
-
-        return contact;
     }
 
     async mergeContacts(tenantId: string, contacts: Contact[]): Promise<Contact> {
