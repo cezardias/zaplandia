@@ -34,7 +34,6 @@ export class WebhooksController {
     @Get('meta')
     async verifyMeta(@Query('hub.mode') mode: string, @Query('hub.verify_token') token: string, @Query('hub.challenge') challenge: string) {
         this.logger.log('Verifying Meta Webhook...');
-        // Default verify token or could fetch from DB
         const metaConfig = await this.integrationsService.getCredential(null, 'META_APP_CONFIG', true);
         let expectedToken = 'zaplandia_verify_token';
 
@@ -56,19 +55,15 @@ export class WebhooksController {
     @Post('meta')
     @HttpCode(HttpStatus.OK)
     async handleMeta(@Body() payload: any) {
-        // --- 1. SUPER FAST BYPASS FOR META TESTS ---
         if (payload?.entry?.[0]?.id === '0' || payload?.sample) {
             this.logger.log(`[META_WEBHOOK_TEST] Fast-track test detected. Returning 200 OK.`);
             return {}; 
         }
 
-        // Validate payload object
         if (!payload || (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account')) {
             return {}; 
         }
 
-        // --- 2. IMMEDIATE ACKNOWLEDGEMENT (Meta Requirement) ---
-        // We trigger processing in the background and return 200 OK immediately
         try {
             this.processMetaPayload(payload).catch(err => {
                 this.logger.error(`[META_WEBHOOK_ERROR] Background processing failed: ${err.message}`, err.stack);
@@ -77,16 +72,14 @@ export class WebhooksController {
             this.logger.error(`[META_WEBHOOK_ERROR] Initiating processing failed: ${e.message}`);
         }
 
-        return { status: 'received' }; // Always return 200 OK
+        return { status: 'received' };
     }
 
     private async processMetaPayload(payload: any) {
         this.logger.log(`[META_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
-
         const entries = payload.entry || [];
         if (entries.length === 0) return;
 
-        // --- WHATSAPP OFFICIAL HANDLER ---
         if (payload.object === 'whatsapp_business_account') {
             for (const entry of entries) {
                 const wabaIdInPayload = entry.id;
@@ -100,7 +93,6 @@ export class WebhooksController {
                     const phoneNumberIdInPayload = value.metadata?.phone_number_id;
                     const displayPhoneNumber = value.metadata?.display_phone_number;
 
-                    // Identify Tenant - optimized lookup
                     const integration = await this.integrationRepository.createQueryBuilder('i')
                         .where("i.credentials->>'META_WABA_ID' = :wabaId", { wabaId: wabaIdInPayload })
                         .orWhere("i.credentials->>'META_PHONE_NUMBER_ID' = :phoneId", { phoneId: phoneNumberIdInPayload })
@@ -109,7 +101,7 @@ export class WebhooksController {
                     let tenantId = integration?.tenantId;
                     if (!tenantId) {
                         const cred = await this.integrationsService.findCredentialByValue('META_WABA_ID', wabaIdInPayload);
-                        tenantId = cred?.tenantId || null;
+                        tenantId = cred?.tenantId || undefined;
                     }
 
                     if (!tenantId) {
@@ -123,13 +115,10 @@ export class WebhooksController {
                                          displayPhoneNumber || 
                                          'MetaOfficial';
 
-                    // 1. Process Status Updates
                     if (value.statuses) {
                         for (const statusObj of value.statuses) {
                             const wamid = statusObj.id;
                             const status = statusObj.status.toUpperCase();
-                            this.logger.debug(`[META_WA] Status Update: ${wamid} -> ${status}`);
-
                             const message = await this.messageRepository.findOne({ where: { wamid } });
                             if (message) {
                                 message.status = status;
@@ -138,30 +127,24 @@ export class WebhooksController {
                         }
                     }
 
-                    // 2. Process Inbound Messages
                     if (value.messages) {
                         for (const msg of value.messages) {
                             const from = msg.from;
                             const wamid = msg.id;
                             let content = '';
 
-                            // Enhanced Type Handling (Pro-Grade for App Review)
                             if (msg.type === 'text') content = msg.text.body;
                             else if (msg.type === 'button') content = msg.button.text;
                             else if (msg.type === 'interactive') {
                                 content = msg.interactive.button_reply?.title || msg.interactive.list_reply?.title || 'Interactive';
                             } else if (['image', 'video', 'audio', 'document', 'sticker'].includes(msg.type)) {
                                 content = `[${msg.type.toUpperCase()} RECEIVED]`;
-                                // Future: Media processing would happen here
                             } else {
                                 content = `[${msg.type.toUpperCase()}]`;
                             }
 
                             if (!content) continue;
 
-                            this.logger.log(`[META_WA] Inbound from ${from}: ${content.substring(0, 50)}...`);
-
-                            // Reconciliation & Idempotency
                             const profileName = value.contacts?.find(c => c.wa_id === from)?.profile?.name;
                             let contact = await this.crmService.ensureContact(tenantId, {
                                 name: profileName || `WhatsApp ${from}`,
@@ -174,7 +157,6 @@ export class WebhooksController {
                             const exists = await this.messageRepository.findOne({ where: { wamid } });
                             if (exists) continue;
 
-                            // Save and trigger automation
                             const message = this.messageRepository.create({
                                 tenantId, contactId: contact.id, content,
                                 direction: 'inbound', provider: 'whatsapp',
@@ -185,12 +167,8 @@ export class WebhooksController {
                             contact.lastMessage = content;
                             await this.contactRepository.save(contact);
 
-                            // Trigger n8n/AI logic
                             const hasN8n = !!(await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true));
-                            const n8nActive = contact.n8nEnabled !== false;
-
-                            if (hasN8n && n8nActive) {
-                                this.logger.log(`[META_WA] Triggering n8n for ${from}`);
+                            if (hasN8n && contact.n8nEnabled !== false) {
                                 const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
                                     type: 'whatsapp.message', sender: from, content,
                                     contact_id: contact.id, name: contact.name, message_id: message.id
@@ -204,7 +182,6 @@ export class WebhooksController {
                                     }
                                 }
                             } else if (contact.aiEnabled !== false) {
-                                // Fallback to internal AI
                                 const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
                                 if (shouldRespond) {
                                     const aiResp = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
@@ -216,381 +193,144 @@ export class WebhooksController {
                 }
             }
         } else if (payload.object === 'instagram') {
-            // Instagram specific logic would stay here...
-        }
-    }
-
-        try {
-            for (const entry of payload.entry) {
-                const tenantId = entry.id; // Usually the Page ID or App ID, for now mapped to a default or found via integration table
-
-                // 1. Handle Instagram Direct Messages (Messaging)
-                if (entry.messaging) {
-                    for (const messaging of entry.messaging) {
-                        const senderId = messaging.sender.id;
-                        const recipientId = messaging.recipient.id;
-                        const text = messaging.message?.text;
-
-                        if (text) {
-                            this.logger.log(`Instagram DM from ${senderId}: ${text}`);
-
-                            // Find or create contact
-                            const contact = await this.crmService.ensureContact('default-tenant', {
-                                name: `Instagram User ${senderId.slice(-4)}`,
-                                externalId: senderId,
-                                provider: 'instagram',
-                                instance: tenantId
-                            });
-
-                            // Save message
-                            const message = this.messageRepository.create({
-                                tenantId: 'default-tenant',
-                                contactId: contact.id,
-                                content: text,
-                                direction: 'inbound',
-                                provider: 'instagram',
-                                instance: tenantId
-                            });
-                            await this.messageRepository.save(message);
-
-                            // Update Contact Stage on Reply
-                            if (['NOVO', 'LEAD', 'CONTACTED', 'SENT'].includes(contact.stage || '')) {
-                                await this.crmService.updateContact('default-tenant', contact.id, { stage: 'NEGOTIATION' });
+            try {
+                for (const entry of entries) {
+                    const entryId = entry.id;
+                    if (entry.messaging) {
+                        for (const messaging of entry.messaging) {
+                            const senderId = messaging.sender.id;
+                            const text = messaging.message?.text;
+                            if (text) {
+                                const contact = await this.crmService.ensureContact('default-tenant', {
+                                    name: `Instagram User ${senderId.slice(-4)}`,
+                                    externalId: senderId, provider: 'instagram', instance: entryId
+                                });
+                                const message = this.messageRepository.create({
+                                    tenantId: 'default-tenant', contactId: contact.id, content: text,
+                                    direction: 'inbound', provider: 'instagram', instance: entryId
+                                });
+                                await this.messageRepository.save(message);
+                                if (['NOVO', 'LEAD', 'CONTACTED', 'SENT'].includes(contact.stage || '')) {
+                                    await this.crmService.updateContact('default-tenant', contact.id, { stage: 'NEGOTIATION' });
+                                }
+                                if (contact.n8nEnabled !== false) {
+                                    await this.n8nService.triggerWebhook('default-tenant', {
+                                        type: 'instagram.message', sender_id: senderId, content: text, contact_id: contact.id
+                                    });
+                                }
                             }
-
-                            // Automation logic for Instagram
-                            const isN8nActiveForContact = contact.n8nEnabled !== false;
-
-                            if (isN8nActiveForContact) {
-                                // Trigger n8n for AI Automation
+                        }
+                    }
+                    if (entry.changes) {
+                        for (const change of entry.changes) {
+                            if (change.field === 'comments' || change.field === 'mentions') {
+                                const value = change.value;
                                 await this.n8nService.triggerWebhook('default-tenant', {
-                                    type: 'instagram.message',
-                                    sender_id: senderId,
-                                    recipient_id: recipientId,
-                                    content: text,
-                                    contact_id: contact.id
+                                    type: `instagram.${change.field}`, from: value.from, content: value.text,
+                                    media_id: value.media_id, comment_id: value.id
                                 });
                             }
                         }
                     }
                 }
-
-                // 2. Handle Instagram Comments / Mentions (Changes)
-                if (entry.changes) {
-                    for (const change of entry.changes) {
-                        if (change.field === 'comments' || change.field === 'mentions') {
-                            const value = change.value;
-                            this.logger.log(`Instagram ${change.field}: ${value.text}`);
-
-                            // Send to n8n for AI response logic
-                            await this.n8nService.triggerWebhook('default-tenant', {
-                                type: `instagram.${change.field}`,
-                                from: value.from,
-                                content: value.text,
-                                media_id: value.media_id,
-                                comment_id: value.id
-                            });
-                        }
-                    }
-                }
+            } catch (e) {
+                this.logger.error('Error processing Instagram Webhook', e.stack);
             }
-        } catch (e) {
-            this.logger.error('Error processing Instagram Webhook', e.stack);
         }
-
-        return { status: 'received' };
     }
 
-    // Handle EvolutionAPI payloads (WhatsApp)
     @Post('evolution')
     @HttpCode(HttpStatus.OK)
     async handleEvolution(@Body() payload: any) {
-        // --- EMERGENCY DEBUG LOGGING ---
         this.logger.log(`[EVOLUTION_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
-
         const { event: eventType, sender, instance, data } = payload;
-
-        // Extract tenantId using multiple strategies
         let tenantId = 'default';
         let instanceName = typeof instance === 'string' ? instance : (instance?.instanceName || instance?.name || '');
 
-        // Strategy 0: Find integration by instance name (most reliable after migrations)
         const existingIntegration = await this.integrationRepository.createQueryBuilder('i')
             .where(`(i.settings->>'instanceName' = :instanceName OR i.credentials->>'instanceName' = :instanceName OR i.credentials->>'name' = :instanceName)`, { instanceName })
             .getOne();
 
         if (existingIntegration) {
             tenantId = existingIntegration.tenantId;
-            this.logger.debug(`[EVOLUTION_WEBHOOK] Found tenant ${tenantId} via integration record for instance ${instanceName}`);
         } else {
-            // Strategy 1: regex to extract UUID from tenant_{UUID}_... format (fallback)
             const uuidMatch = instanceName.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
-            if (uuidMatch) {
-                tenantId = uuidMatch[1];
-            } else if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(instanceName)) {
-                // Strategy 2: instanceName IS the UUID itself
-                tenantId = instanceName;
-            } else if (instanceName.startsWith('tenant_')) {
-                // Strategy 3: starts with tenant_ but doesn't follow strict UUID format
-                tenantId = instanceName.replace('tenant_', '').split('_')[0];
-            } else if (sender && typeof sender === 'string') {
-                // Strategy 4: try sender field for same patterns
-                const senderMatch = sender.match(/^tenant_([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
-                if (senderMatch) {
-                    tenantId = senderMatch[1];
-                    instanceName = sender;
-                }
-            }
-
-            this.logger.log(`[EVOLUTION_WEBHOOK] Event: ${eventType}, Tenant Extracted: ${tenantId}, Instance: ${instanceName}`);
-
-            if (tenantId === 'default') {
-                this.logger.error(`[CRITICAL] FAILED TO EXTRACT TENANT ID from payload. Key fields: instance=${instanceName}, sender=${sender}`);
-            } else {
+            if (uuidMatch) tenantId = uuidMatch[1];
+            else if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(instanceName)) tenantId = instanceName;
+            if (tenantId !== 'default') {
                 const tenantExists = await this.integrationsService.checkTenantExists(tenantId);
-                if (!tenantExists) {
-                    this.logger.warn(`[WEBHOOK] Tenant ${tenantId} does not exist in DB (orphaned instance?). Skipping message.`);
-                    return { status: 'skipped_no_tenant' };
-                }
+                if (!tenantExists) return { status: 'skipped_no_tenant' };
             }
         }
 
-        // Fetch integration detail if not already found (for n8n/AI config)
         const integration = existingIntegration || await this.integrationRepository.createQueryBuilder('i')
             .where('i.tenantId = :tenantId', { tenantId })
             .andWhere(`(i.settings->>'instanceName' = :instanceName OR i.credentials->>'instanceName' = :instanceName OR i.credentials->>'name' = :instanceName)`, { instanceName })
             .getOne();
 
-        // Normalize eventType: EvolutionAPI may send 'messages.upsert' or 'MESSAGES_UPSERT'
-        // Normalize to uppercase with underscores for consistent comparison
         const normalizedEvent = (eventType || '').toUpperCase().replace(/\./g, '_');
-        this.logger.debug(`[EVOLUTION_WEBHOOK] Normalized event: ${normalizedEvent} (original: ${eventType})`);
-
         if (normalizedEvent === 'MESSAGES_UPSERT' || normalizedEvent === 'SEND_MESSAGE') {
-
-            const messageData = data.data || data; // Handle potential structure variations
-
-            if (!messageData || !messageData.key) {
-                this.logger.log(`Ignoring message: Data incomplete.`);
-                return { status: 'ignored' };
-            }
+            const messageData = data.data || data;
+            if (!messageData || !messageData.key) return { status: 'ignored' };
 
             const isOutbound = messageData.key.fromMe === true;
-            const remoteJid = messageData.key.remoteJid; // e.g., 5511999998888@s.whatsapp.net
+            const remoteJid = messageData.key.remoteJid;
             const pushName = messageData.pushName || payload.sender || (isOutbound ? 'Sistema' : 'WhatsApp User');
-
-            // Extract text content (Enhanced for Global/Meta templates)
             let content = '';
             const msg = messageData.message;
-            
             if (msg?.conversation) content = msg.conversation;
             else if (msg?.extendedTextMessage?.text) content = msg.extendedTextMessage.text;
             else if (msg?.imageMessage?.caption) content = msg.imageMessage.caption;
-            else if (messageData.extendedTextMessage?.text) content = messageData.extendedTextMessage.text;
-            // Support for Meta/Evolution Template Messages
-            else if (msg?.templateMessage?.hydratedTemplate?.hydratedContentText) {
-                content = msg.templateMessage.hydratedTemplate.hydratedContentText;
-            } else if (msg?.templateMessage?.hydratedTemplate?.hydratedButtons) {
-                content = msg.templateMessage.hydratedTemplate.hydratedContentText || '[Template Message]';
-            } else if (msg?.buttonsResponseMessage?.selectedButtonId) {
-                content = msg.buttonsResponseMessage.selectedDisplayText || msg.buttonsResponseMessage.selectedButtonId;
-            } else if (msg?.listResponseMessage?.title) {
-                content = msg.listResponseMessage.title;
-            }
 
-            if (!content) {
-                this.logger.warn(`Message from ${remoteJid} has no text content. Type: ${messageData.messageType || 'unknown'}`);
-                return { status: 'no_content' };
-            }
-
-            this.logger.log(`WhatsApp (${isOutbound ? 'OUT' : 'IN'}) from ${pushName} (${remoteJid}): ${content}`);
-
-            // Clean remoteJid for externalId (strip device suffixes like :7 but keep @s.whatsapp.net or @lid)
+            if (!content) return { status: 'no_content' };
             const externalId = remoteJid.replace(/:[0-9]+/, '');
-            
-            // NEW: Extract alternative JID or Phone if Evolution provided them (Resolves LIDs)
-            const remoteJidAlt = messageData.remoteJidAlt || messageData.key.remoteJidAlt || null;
-            const senderPn = messageData.senderPn || messageData.pushNumber || null;
-            
-            this.logger.debug(`[JID_METADATA] remoteJid: ${remoteJid}, alt: ${remoteJidAlt}, pn: ${senderPn}`);
-            
-            const phonePart = (senderPn || remoteJidAlt || externalId).split('@')[0].replace(/\D/g, '');
-            
+            const phonePart = (messageData.senderPn || externalId).split('@')[0].replace(/\D/g, '');
+
             try {
-                // STEP 1 & 2: Resolved contact via Centralized CRM Service (Handles Deduplication & Merging)
                 const contact = await this.crmService.ensureContact(tenantId, {
-                    name: pushName,
-                    phoneNumber: phonePart,
-                    externalId: externalId,
-                    instance: instanceName,
-                    alternativeId: remoteJidAlt // Pass for smarter merging
+                    name: pushName, phoneNumber: phonePart, externalId: externalId, instance: instanceName
                 });
-
-                // 3. IDEMPOTENCY CHECK: Ensure we don't save the same message twice
                 const wamid = messageData.key.id;
-                const existingMessage = await this.messageRepository.findOne({
-                    where: { wamid, contactId: contact.id, direction: isOutbound ? 'outbound' : 'inbound' }
-                });
-                if (existingMessage) {
-                    this.logger.warn(`[Deduplication] Message ${wamid} already exists. Skipping.`);
-                    return { status: 'duplicate_skipped' };
-                }
+                const exists = await this.messageRepository.findOne({ where: { wamid, contactId: contact.id } });
+                if (exists) return { status: 'duplicate_skipped' };
 
-                // Save message
                 const message = this.messageRepository.create({
-                    contactId: contact.id,
-                    content,
-                    direction: isOutbound ? 'outbound' : 'inbound',
-                    provider: 'whatsapp',
-                    tenantId,
-                    wamid: messageData.key.id, // Save External WhatsApp ID
-                    instance: instanceName
+                    contactId: contact.id, content, direction: isOutbound ? 'outbound' : 'inbound',
+                    provider: 'whatsapp', tenantId, wamid, instance: instanceName
                 });
                 await this.messageRepository.save(message);
-                this.logger.log(`Message saved successfully. ID: ${message.id}`);
-
-                // Update contact meta info to show in inbox
                 contact.lastMessage = content;
-                contact.updatedAt = new Date(); // Explicitly touch updatedAt
                 await this.contactRepository.save(contact);
 
-                // Update Contact Stage on Reply (INBOUND ONLY)
-                // We only move to NEGOTIATION if it's a real inbound message from the customer
-                if (!isOutbound && ['NOVO', 'LEAD', 'CONTACTED', 'SENT'].includes(contact.stage || '')) {
-                    await this.crmService.updateContact(tenantId, contact.id, { stage: 'NEGOTIATION' });
-                    this.logger.log(`Updated contact ${contact.id} stage to NEGOTIATION due to reply`);
-                }
-
-                // RE-FETCH contact to ensure latest aiEnabled/n8nEnabled flags
-                const freshContact = await this.crmService.findOne(contact.id, tenantId);
-                const useContact = freshContact || contact;
-
-                // Trigger n8n for AI Automation (INBOUND ONLY to avoid infinite loops)
-                // Respect contact-level override if present, otherwise follow integration setting
-                const isN8nActiveForContact = useContact.n8nEnabled !== false; 
-                this.logger.debug(`[AUTOMATION_CHECK] Contact ${useContact.id}: n8nEnabled=${useContact.n8nEnabled}, aiEnabled=${useContact.aiEnabled}. n8nActive=${isN8nActiveForContact}`);
-
-                if (!isOutbound && isN8nActiveForContact) {
-                    try {
-                        const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
-                            type: 'whatsapp.message',
-                            sender: remoteJid,
-                            content,
-                            contact_id: useContact.id,
-                            name: pushName,
-                            message_id: message.id
-                        }, integration);
-                        
-                        this.logger.log('Triggered n8n webhook');
-
-                        // Process n8n response if it contains messages to send back
-                        if (n8nResponse) {
-                            const responses = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
-                            for (const res of responses) {
-                                const textToSend = res.textMessage || res.text || res.message;
-                                if (textToSend) {
-                                    this.logger.log(`[N8N_RESPONSE] Sending message from n8n to ${remoteJid} via Centralized CRM`);
-                                    
-                                    // NO MANUAL SAVE HERE - sendMessage handles it
-                                    await this.crmService.sendMessage(tenantId, contact.id, textToSend);
-                                }
-                            }
+                if (!isOutbound && contact.n8nEnabled !== false) {
+                    const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
+                        type: 'whatsapp.message', sender: remoteJid, content, contact_id: contact.id, name: pushName, message_id: message.id
+                    }, integration);
+                    if (n8nResponse) {
+                        const responses = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
+                        for (const res of responses) {
+                            const text = res.textMessage || res.text || res.message;
+                            if (text) await this.crmService.sendMessage(tenantId, contact.id, text);
                         }
-                    } catch (n8nError) {
-                        this.logger.error(`Failed to trigger n8n: ${n8nError.message}`);
+                    }
+                } else if (!isOutbound && contact.aiEnabled !== false) {
+                    const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+                    if (shouldRespond) {
+                        const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
+                        if (aiResponse) await this.crmService.sendMessage(tenantId, contact.id, aiResponse);
                     }
                 }
-
-                // AI AUTO-RESPONSE LOGIC
-                // Check if AI should respond to this message (INBOUND ONLY)
-                if (!isOutbound) {
-                    try {
-                        const isN8nEnabledGlobally = integration?.n8nEnabled ?? false;
-                        const isN8nActiveForContact = useContact.n8nEnabled !== false;
-
-                        // AI auto-response is a fallback if n8n is NOT handling this contact
-                        if (isN8nEnabledGlobally && isN8nActiveForContact) {
-                            this.logger.log(`n8n is active for this contact on instance ${instanceName}. Skipping internal AI auto-response.`);
-                        } else {
-                            // If n8n is disabled globally OR paused for this contact, AI can take over
-                            const shouldRespond = await this.aiService.shouldRespond(useContact, instanceName, tenantId);
-
-                            if (shouldRespond) {
-                                this.logger.log(`AI responding to contact ${useContact.id} (n8n was ${isN8nEnabledGlobally ? 'paused for contact' : 'disabled globally'})`);
-
-                                // Generate AI response
-                                const aiResponse = await this.aiService.generateResponse(useContact, content, tenantId, instanceName);
-
-                                if (aiResponse) {
-                                    this.logger.log(`AI generated response for ${contact.id}: ${aiResponse.substring(0, 50)}...`);
-                                    
-                                    // Use CENTRALIZED CRM Message Router
-                                    await this.crmService.sendMessage(tenantId, contact.id, aiResponse);
-                                    this.logger.log(`AI response sent successfully to contact ${contact.id} via Centralized CRM`);
-                                } else {
-                                    this.logger.warn(`AI failed to generate response for contact ${contact.id}`);
-                                }
-                            } else {
-                                this.logger.debug(`AI disabled or not configured for contact ${contact.id}`);
-                            }
-                        }
-                    } catch (aiError) {
-                        this.logger.error(`AI auto-response error: ${aiError.message}`);
-                    }
-                }
-
-            } catch (err) {
-                this.logger.error(`Error processing WhatsApp message: ${err.message}`, err.stack);
-                throw err;
-            }
+            } catch (err) { this.logger.error(`Error processing WhatsApp message: ${err.message}`, err.stack); }
         } else if (normalizedEvent === 'MESSAGES_UPDATE') {
-            // ACK / READ STATUS UPDATES
-            // This is critical for "Learning" LIDs. 
-            // If we sent to a Phone Number but get an ACK from a LID, we link them here.
-
             const eventData = data.data || data;
             if (eventData && eventData.id) {
-                const messageId = eventData.id;
-                const remoteJid = eventData.remoteJid;
-                const status = eventData.status;
-
-                // 1. Find the message
-                // 1. Find the message by WAMID (External ID) to avoid UUID errors
-                const message = await this.messageRepository.findOne({ where: { wamid: messageId /*, tenantId*/ } });
-
-                if (message) {
-                    // Update Status
-                    if (status) {
-                        message.status = status;
-                        await this.messageRepository.save(message);
-                    }
-                    // 2. LID LINKING MAGIC - Strict instance-locked rules
-                    if (remoteJid && message.contactId) {
-                        const contact = await this.contactRepository.findOne({ where: { id: message.contactId } });
-                        if (contact) {
-                            const newExternalId = remoteJid.replace(/:[0-9]+/, '');
-                            const currentExternalId = contact.externalId;
-
-                            const isNewLid = newExternalId.includes('@lid');
-                            const isCurrentLid = currentExternalId?.includes('@lid');
-                            const isSameInstance = !contact.instance || contact.instance === instanceName;
-
-                            let shouldUpdate = false;
-                            if (!isNewLid && isCurrentLid) shouldUpdate = true; // Upgrade to phone
-                            if (isNewLid && isSameInstance) shouldUpdate = true; // Same instance LID update
-                            if (!isNewLid && !isCurrentLid && newExternalId !== currentExternalId) shouldUpdate = true;
-
-                            if (shouldUpdate && !newExternalId.includes('status')) {
-                                this.logger.log(`[Smart Link] Updating JID: ${currentExternalId} -> ${newExternalId} (Instance: ${instanceName})`);
-                                contact.externalId = newExternalId;
-                                await this.contactRepository.save(contact);
-                            }
-                        }
-                    }
+                const message = await this.messageRepository.findOne({ where: { wamid: eventData.id } });
+                if (message && eventData.status) {
+                    message.status = eventData.status;
+                    await this.messageRepository.save(message);
                 }
             }
         }
-
         return { status: 'received' };
     }
 
@@ -598,40 +338,19 @@ export class WebhooksController {
     @HttpCode(HttpStatus.OK)
     async handleN8nResponse(@Body() payload: { tenantId: string; contactId: string; content: string; instanceName?: string }) {
         const { tenantId, contactId, content, instanceName } = payload;
-        this.logger.log(`[N8N_RESPONSE] Received response for contact ${contactId} in tenant ${tenantId}`);
-
         try {
             const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
-            if (!contact) {
-                this.logger.error(`[N8N_RESPONSE] Contact ${contactId} not found for tenant ${tenantId}`);
-                return { success: false, error: 'Contact not found' };
-            }
-
+            if (!contact) return { success: false, error: 'Contact not found' };
             const useInstance = instanceName || contact.instance;
-            if (!useInstance) {
-                this.logger.error(`[N8N_RESPONSE] No instance found or provided for contact ${contactId}`);
-                return { success: false, error: 'Instance not found' };
-            }
+            if (!useInstance) return { success: false, error: 'Instance not found' };
 
-            // Save outbound message
             const message = this.messageRepository.create({
-                tenantId,
-                contactId: contact.id,
-                content,
-                direction: 'outbound',
-                provider: contact.provider as any || 'whatsapp',
-                instance: useInstance,
-                status: 'PENDING'
+                tenantId, contactId: contact.id, content, direction: 'outbound',
+                provider: contact.provider as any || 'whatsapp', instance: useInstance, status: 'PENDING'
             });
             await this.messageRepository.save(message);
-
-            // Send via AI service (it handles both Evolution and Meta)
             await this.aiService.sendAIResponse(contact, content, tenantId, useInstance);
-
             return { success: true, messageId: message.id };
-        } catch (error) {
-            this.logger.error(`[N8N_RESPONSE] Error sending n8n response: ${error.message}`);
-            return { success: false, error: error.message };
-        }
+        } catch (error) { return { success: false, error: error.message }; }
     }
 }
