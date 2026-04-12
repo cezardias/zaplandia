@@ -608,7 +608,11 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
                     // 1. SMART ROUTING: Check if this is a Meta WhatsApp contact or if we have a Meta Integration
                     const metaIntegration = await this.integrationRepository.findOne({
-                        where: { tenantId, provider: 'whatsapp', status: 'connected' }
+                        where: { 
+                            tenantId, 
+                            provider: IntegrationProvider.WHATSAPP, 
+                            status: IntegrationStatus.CONNECTED 
+                        }
                     });
 
                     if (metaIntegration && metaIntegration.credentials?.META_ACCESS_TOKEN) {
