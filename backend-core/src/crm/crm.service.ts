@@ -15,6 +15,8 @@ import { MetaApiService } from '../integrations/meta-api.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { Integration } from '../integrations/entities/integration.entity';
+
 @Injectable()
 export class CrmService implements OnApplicationBootstrap, OnModuleInit {
     private readonly logger = new Logger(CrmService.name);
@@ -27,6 +29,8 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         private leadRepository: Repository<CampaignLead>,
         @InjectRepository(Campaign)
         private campaignRepository: Repository<Campaign>,
+        @InjectRepository(Integration)
+        private integrationRepository: Repository<Integration>,
         private readonly n8nService: N8nService,
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,

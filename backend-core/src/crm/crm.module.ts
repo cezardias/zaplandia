@@ -11,11 +11,11 @@ import { PipelineStageController } from './pipeline-stage.controller';
 import { UploadController } from './upload.controller';
 import { IntegrationsModule } from '../integrations/integrations.module';
 
-import { Campaign } from '../campaigns/entities/campaign.entity';
+import { Integration } from '../integrations/entities/integration.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Contact, Message, CampaignLead, Campaign, PipelineStage]),
+        TypeOrmModule.forFeature([Contact, Message, CampaignLead, Campaign, PipelineStage, Integration]),
         IntegrationsModule,
         BullModule.registerQueue({
             name: 'campaign-queue',
