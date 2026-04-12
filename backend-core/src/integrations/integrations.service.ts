@@ -96,7 +96,8 @@ export class IntegrationsService {
         }
 
         let cred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: tenantId ?? IsNull(), key_name: keyName }
+            where: { tenantId: tenantId ?? IsNull(), key_name: keyName },
+            order: { updatedAt: 'DESC' } // Ensure we get the latest if duplicates exist
         });
 
         if (cred) {
@@ -129,7 +130,8 @@ export class IntegrationsService {
     async getCredential(tenantId: string | null, keyName: string, isOptional: boolean = false): Promise<string | null> {
         // 1. First try to get tenant-specific credential
         const tenantCred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: tenantId ?? IsNull(), key_name: keyName }
+            where: { tenantId: tenantId ?? IsNull(), key_name: keyName },
+            order: { updatedAt: 'DESC' } // CRITICAL: Always pick the most recent
         });
 
         if (tenantCred?.key_value) {
@@ -139,7 +141,8 @@ export class IntegrationsService {
 
         // 2. Fallback: get GLOBAL credential (tenantId = null)
         const globalCred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: IsNull(), key_name: keyName }
+            where: { tenantId: IsNull(), key_name: keyName },
+            order: { updatedAt: 'DESC' }
         });
         if (globalCred?.key_value) {
             this.logger.log(`[GET_CRED] SUCCESS: Found GLOBAL fallback "${keyName}"`);
