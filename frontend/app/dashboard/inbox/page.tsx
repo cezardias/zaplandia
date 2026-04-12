@@ -411,37 +411,30 @@ export default function OmniInboxPage() {
 
         try {
             // "Agente" Toggle Logic:
-            // ON -> Set both aiEnabled/n8nEnabled to FALSE for contact (Manual Override)
-            // OFF -> Set both to NULL (Inherit from Instance)
+            // ON (Manual Overide) -> Set both aiEnabled/n8nEnabled to FALSE for contact
+            // OFF (Back to bot) -> Set both to NULL (Inherit from Instance)
             const isAgentActive = contactAiEnabled === false && contactN8nEnabled === false;
-            const newValue = isAgentActive ? null : false;
+            const newAiValue = isAgentActive ? null : false;
+            const newN8nValue = isAgentActive ? null : false;
 
-            const res = await fetch(`/api/teams/transfer`, {
-                method: 'POST',
+            const res = await fetch(`/api/crm/chats/${selectedContact.id}`, {
+                method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    contactId: selectedContact.id,
-                    teamId: selectedContact.assignedTeamId,
-                    userId: selectedContact.assignedUserId
+                    aiEnabled: newAiValue,
+                    n8nEnabled: newN8nValue
                 })
             });
 
-            // Special case for manual resume: we need to reset the flags
-            // Currently our /transfer endpoint sets to false. Let's make it smarter or add a resume endpoint.
-            // For now, let's just use a dynamic update endpoint if it exists or reuse transfer.
-            
-            // Using a dedicated update if available, otherwise reuse logic.
-            // Let's assume we want to SET to FALSE to stop automation.
-            
             if (res.ok) {
                 const data = await res.json();
                 setContactAiEnabled(data.aiEnabled);
                 setContactN8nEnabled(data.n8nEnabled);
                 
-                // Update local contact
+                // Update local contact list to show bot icon correctly
                 setContacts(prev => prev.map(c => 
                     c.id === selectedContact.id 
                         ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } 

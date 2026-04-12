@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, OnApplicationBootstrap, OnModuleInit } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import axios from 'axios';
@@ -16,7 +16,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 @Injectable()
-export class CrmService implements OnApplicationBootstrap {
+export class CrmService implements OnApplicationBootstrap, OnModuleInit {
     private readonly logger = new Logger(CrmService.name);
     constructor(
         @InjectRepository(Contact)
@@ -33,6 +33,28 @@ export class CrmService implements OnApplicationBootstrap {
         private readonly metaApiService: MetaApiService,
         @InjectQueue('campaign-queue') private readonly campaignQueue: Queue,
     ) { }
+
+    async onModuleInit() {
+        this.logger.log('Iniciando sincronização de colunas do CRM...');
+        try {
+            const queryRunner = this.contactRepository.manager.connection.createQueryRunner();
+            await queryRunner.connect();
+            
+            // Add aiEnabled
+            await queryRunner.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS "aiEnabled" BOOLEAN`);
+            // Add n8nEnabled
+            await queryRunner.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS "n8nEnabled" BOOLEAN`);
+            // Add assignedTeamId
+            await queryRunner.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS "assignedTeamId" UUID`);
+            // Add assignedUserId
+            await queryRunner.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS "assignedUserId" UUID`);
+
+            await queryRunner.release();
+            this.logger.log('Sincronização de colunas concluída com sucesso.');
+        } catch (err) {
+            this.logger.error(`Erro ao sincronizar colunas: ${err.message}`);
+        }
+    }
 
     async onApplicationBootstrap() {
         this.logger.log('Checking for messages that need instance backfill...');

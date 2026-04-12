@@ -42,6 +42,18 @@ export class Contact {
     @Column({ type: 'jsonb', nullable: true })
     metadata: any; // Stores avatar, social profile links, etc.
 
+    @Column({ nullable: true })
+    aiEnabled: boolean; // null = inherit, false = disabled
+
+    @Column({ nullable: true })
+    n8nEnabled: boolean; // null = inherit, false = disabled
+
+    @Column({ nullable: true })
+    assignedTeamId: string;
+
+    @Column({ nullable: true })
+    assignedUserId: string;
+
     @ManyToOne(() => Tenant)
     tenant: Tenant;
 
