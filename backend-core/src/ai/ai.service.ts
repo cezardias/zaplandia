@@ -176,6 +176,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
 
         // --- HIERARCHY LOGIC ---
+        // Contact Level (Manual Override) - Pausa a automação para este contato específico
+        if (contact.aiEnabled === false) {
+            this.logger.log(`AI disabled specifically for contact ${contact.id}`);
+            return false;
+        }
+
         // Global Level (Instance Level)
         if (!integration.aiEnabled) {
             this.logger.log(`AI disabled globally for instance ${instanceName}`);

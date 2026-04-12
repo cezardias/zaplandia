@@ -573,7 +573,9 @@ export class WebhooksController {
                 }
 
                 // Trigger n8n for AI Automation (INBOUND ONLY to avoid infinite loops)
-                if (!isOutbound) {
+                // Respect contact-level override if present, otherwise follow integration setting
+                const isN8nActiveForContact = contact.n8nEnabled !== false; 
+                if (!isOutbound && isN8nActiveForContact) {
                     try {
                         const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
                             type: 'whatsapp.message',

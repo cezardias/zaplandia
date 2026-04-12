@@ -762,17 +762,17 @@ export default function OmniInboxPage() {
                                 <button
                                     onClick={toggleContactAgent}
                                     className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${contactAiEnabled === false && contactN8nEnabled === false
-                                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                        : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                                        ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
+                                        : 'bg-primary text-white shadow-lg shadow-primary/20'
                                         }`}
                                     title={
                                         contactAiEnabled === false && contactN8nEnabled === false
-                                            ? 'Modo Atendimento Humano Ativo (Automação Desligada)'
-                                            : 'Modo Automação Ativo (Bot/n8n)'
+                                            ? 'Automação Pausada (Atendimento Humano)'
+                                            : 'Automação Ativa (IA/n8n)'
                                     }
                                 >
-                                    {contactAiEnabled === false && contactN8nEnabled === false ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
-                                    <span>{contactAiEnabled === false && contactN8nEnabled === false ? 'Agente' : 'Automação'}</span>
+                                    {contactAiEnabled === false && contactN8nEnabled === false ? <Bot className="w-3 h-3 grayscale opacity-50" /> : <Bot className="w-3 h-3" />}
+                                    <span>{contactAiEnabled === false && contactN8nEnabled === false ? 'Pausada' : 'Automação'}</span>
                                 </button>
                                 <button className="hover:text-white transition"><MoreVertical className="w-5 h-5" /></button>
                             </div>
