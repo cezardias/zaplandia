@@ -132,16 +132,13 @@ export class WebhooksController {
                                 });
 
                                 if (!contact) {
-                                    contact = this.contactRepository.create({
-                                        tenantId,
-                                        externalId: from,
-                                        phoneNumber: from,
+                                    contact = await this.crmService.ensureContact(tenantId, {
                                         name: value.contacts?.[0]?.profile?.name || `WhatsApp Official ${from.slice(-4)}`,
+                                        phoneNumber: from,
+                                        externalId: from,
                                         provider: 'whatsapp',
-                                        instance: instanceName,
-                                        stage: 'NOVO'
+                                        instance: instanceName
                                     });
-                                    await this.contactRepository.save(contact);
                                 }
 
                                 // Deduplicate
@@ -164,20 +161,25 @@ export class WebhooksController {
                                 contact.updatedAt = new Date();
                                 await this.contactRepository.save(contact);
 
-                                // Trigger n8n
-                                await this.n8nService.triggerWebhook(tenantId, {
-                                    type: 'whatsapp.message',
-                                    sender: from,
-                                    content,
-                                    contact_id: contact.id,
-                                    name: contact.name,
-                                    message_id: message.id
-                                }, integration);
+                                // --- AUTOMATION LOGIC ---
+                                const isN8nEnabledGlobally = integration?.n8nEnabled ?? false;
+                                const isN8nActiveForContact = contact.n8nEnabled !== false;
+                                const isAiActiveForContact = contact.aiEnabled !== false;
 
-                                // 1. AI Auto-Response (Check if n8n is NOT enabled)
-                                if (integration.n8nEnabled) {
-                                    this.logger.log(`n8n is enabled for instance ${instanceName}. Skipping internal AI.`);
-                                } else {
+                                // 1. Trigger n8n if enabled globally AND active for this contact
+                                if (isN8nEnabledGlobally && isN8nActiveForContact) {
+                                    await this.n8nService.triggerWebhook(tenantId, {
+                                        type: 'whatsapp.message',
+                                        sender: from,
+                                        content,
+                                        contact_id: contact.id,
+                                        name: contact.name,
+                                        message_id: message.id
+                                    }, integration);
+                                }
+
+                                // 2. Trigger AI if AI is active for contact AND (n8n is disabled globally OR paused for contact)
+                                if (isAiActiveForContact && (!isN8nEnabledGlobally || !isN8nActiveForContact)) {
                                     const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
                                     if (shouldRespond) {
                                         const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
@@ -221,41 +223,42 @@ export class WebhooksController {
                             this.logger.log(`Instagram DM from ${senderId}: ${text}`);
 
                             // Find or create contact
-                            let contact = await this.contactRepository.findOne({ where: { externalId: senderId } });
-                            if (!contact) {
-                                contact = this.contactRepository.create({
-                                    externalId: senderId,
-                                    name: `Instagram User ${senderId.slice(-4)}`,
-                                    provider: 'instagram',
-                                    tenant: { id: 'default-tenant' } as any // Placeholder mapping
-                                });
-                                await this.contactRepository.save(contact);
-                            }
+                            const contact = await this.crmService.ensureContact('default-tenant', {
+                                name: `Instagram User ${senderId.slice(-4)}`,
+                                externalId: senderId,
+                                provider: 'instagram',
+                                instance: tenantId
+                            });
 
                             // Save message
                             const message = this.messageRepository.create({
+                                tenantId: 'default-tenant',
                                 contactId: contact.id,
                                 content: text,
                                 direction: 'inbound',
                                 provider: 'instagram',
-                                tenantId: 'default-tenant',
-                                instance: tenantId // Mapping tenantId as instance for Meta for now
+                                instance: tenantId
                             });
                             await this.messageRepository.save(message);
 
                             // Update Contact Stage on Reply
                             if (['NOVO', 'LEAD', 'CONTACTED', 'SENT'].includes(contact.stage || '')) {
-                                await this.crmService.updateContact(tenantId, contact.id, { stage: 'NEGOTIATION' });
+                                await this.crmService.updateContact('default-tenant', contact.id, { stage: 'NEGOTIATION' });
                             }
 
-                            // Trigger n8n for AI Automation
-                            await this.n8nService.triggerWebhook('default-tenant', {
-                                type: 'instagram.message',
-                                sender_id: senderId,
-                                recipient_id: recipientId,
-                                content: text,
-                                contact_id: contact.id
-                            });
+                            // Automation logic for Instagram
+                            const isN8nActiveForContact = contact.n8nEnabled !== false;
+
+                            if (isN8nActiveForContact) {
+                                // Trigger n8n for AI Automation
+                                await this.n8nService.triggerWebhook('default-tenant', {
+                                    type: 'instagram.message',
+                                    sender_id: senderId,
+                                    recipient_id: recipientId,
+                                    content: text,
+                                    contact_id: contact.id
+                                });
+                            }
                         }
                     }
                 }
