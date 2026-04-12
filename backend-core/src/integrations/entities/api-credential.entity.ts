@@ -17,7 +17,7 @@ export class ApiCredential {
     // Tenant ID stored as string without foreign key constraint
     // This allows saving credentials even if tenant doesn't exist in DB yet
     @Column({ type: 'uuid', nullable: true })
-    tenantId: string;
+    tenantId: string | null;
 
     @CreateDateColumn()
     createdAt: Date;
