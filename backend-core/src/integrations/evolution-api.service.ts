@@ -57,14 +57,16 @@ export class EvolutionApiService {
             } else {
                 this.logger.log(`Filtering for tenantId: ${tenantId}`);
                 tenantInstances = allInstances.filter((inst: any) => {
-                    const name = inst.name || inst.instance?.instanceName || inst.instanceName || '';
-                    if (!tenantId) return false;
-                    const slice = tenantId.slice(0, 8);
-                    const cleanSlice = tenantId.replace(/-/g, '').slice(0, 8);
+                    const name = String(inst.name || inst.instance?.instanceName || inst.instanceName || '');
+                    const tid = String(tenantId || '');
+                    if (!tid) return false;
+
+                    const slice = tid.length >= 8 ? tid.slice(0, 8) : tid;
+                    const cleanSlice = tid.replace(/-/g, '').slice(0, 8);
                     
-                    return name.startsWith(`tenant_${tenantId}_`) || 
-                           name.includes(slice) ||
-                           name.includes(cleanSlice);
+                    return name.startsWith(`tenant_${tid}_`) || 
+                           (slice && name.includes(slice)) ||
+                           (cleanSlice && name.includes(cleanSlice));
                 });
             }
 
