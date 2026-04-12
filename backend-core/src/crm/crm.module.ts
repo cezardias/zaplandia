@@ -11,6 +11,7 @@ import { PipelineStageController } from './pipeline-stage.controller';
 import { UploadController } from './upload.controller';
 import { IntegrationsModule } from '../integrations/integrations.module';
 
+import { Campaign } from '../campaigns/entities/campaign.entity';
 import { Integration } from '../integrations/entities/integration.entity';
 
 @Module({

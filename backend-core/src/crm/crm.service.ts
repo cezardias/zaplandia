@@ -15,7 +15,7 @@ import { MetaApiService } from '../integrations/meta-api.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { Integration } from '../integrations/entities/integration.entity';
+import { Integration, IntegrationProvider, IntegrationStatus } from '../integrations/entities/integration.entity';
 
 @Injectable()
 export class CrmService implements OnApplicationBootstrap, OnModuleInit {
