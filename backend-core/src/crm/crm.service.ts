@@ -702,10 +702,11 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
     async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string, provider?: string, instance?: string, alternativeId?: string }, options?: { forceStage?: string }) {
         const provider = data.provider || 'whatsapp';
+        // Clean phone should keep all digits for international support
         const cleanPhone = data.phoneNumber?.replace(/\D/g, '');
 
         try {
-            // 1. Direct match by externalId (JID or LID)
+            // 1. Direct match by externalId (JID, LID or PSID)
             if (data.externalId) {
                 const existing = await this.contactRepository.findOne({ where: { tenantId, externalId: data.externalId } });
                 if (existing) {
@@ -723,44 +724,47 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 }
             }
 
-            // 2. Direct match by alternativeId (often real JID even if incoming is LID)
+            // 2. Direct match by alternativeId
             if (data.alternativeId) {
                 const altMatch = await this.contactRepository.findOne({ where: { tenantId, externalId: data.alternativeId } });
                 if (altMatch) return altMatch;
             }
 
-            // 3. Match by Phone suffix (Aggressive Consolidation)
+            // 3. Match by Phone suffix (Aggressive Consolidation - adjusted for global)
             const where: any[] = [];
             if (cleanPhone && cleanPhone.length >= 8) {
+                // For Brazilian numbers, suffix matching is safe.
+                // For international, we still try suffix matching but prioritize exact matches via externalId above.
                 const suffix8 = cleanPhone.slice(-8);
                 where.push({ phoneNumber: Like(`%${suffix8}`), tenantId });
                 where.push({ externalId: Like(`%${suffix8}%`), tenantId });
             }
 
-            // 4. Name Match Fallback
-            if (data.name && data.name.toLowerCase() !== 'contato' && data.name.length > 3) {
+            // 4. Name Match Fallback (Avoid system generic names)
+            if (data.name && !['contato', 'sistema', 'lead', 'whatsapp user'].includes(data.name.toLowerCase()) && data.name.length > 3) {
                 where.push({ name: data.name, tenantId });
             }
 
             if (where.length > 0) {
                 const contacts = await this.contactRepository.find({ where });
+                // If we found local matches, use the best one or merge
                 if (contacts.length > 1) return await this.mergeContacts(tenantId, contacts);
                 if (contacts.length === 1) return contacts[0];
             }
 
             // 5. Create NEW if nothing found
-            this.logger.log(`Creating NEW contact for ${data.phoneNumber || data.externalId}`);
+            this.logger.log(`[CRM] Creating NEW contact for ${data.phoneNumber || data.externalId} (${data.name})`);
             const contact = this.contactRepository.create({
                 ...data,
                 tenantId,
                 stage: options?.forceStage || 'LEAD',
-                externalId: data.externalId || data.phoneNumber
+                externalId: data.externalId || data.phoneNumber || cleanPhone
             });
             return await this.contactRepository.save(contact);
 
         } catch (err: any) {
             this.logger.error(`Error in ensureContact: ${err.message}`);
-            // Fallback create to avoid blocking
+            // Fallback create to avoid blocking the webhook flow
             return await this.contactRepository.save(this.contactRepository.create({ ...data, tenantId }));
         }
     }

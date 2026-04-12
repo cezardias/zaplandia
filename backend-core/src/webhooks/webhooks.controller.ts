@@ -56,7 +56,8 @@ export class WebhooksController {
     @Post('meta')
     @HttpCode(HttpStatus.OK)
     async handleMeta(@Body() payload: any) {
-        this.logger.debug('Received Meta Payload: ' + JSON.stringify(payload));
+        // --- PROACTIVE LOGGING FOR DEBUGGING ---
+        this.logger.log(`[META_WEBHOOK_RAW] Object: ${payload.object}, Payload: ${JSON.stringify(payload)}`);
 
         if (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account') {
             this.logger.warn(`Unsupported Meta object: ${payload.object}`);
@@ -67,7 +68,7 @@ export class WebhooksController {
         if (payload.object === 'whatsapp_business_account') {
             try {
                 for (const entry of payload.entry) {
-                    const wabaId = entry.id;
+                    const wabaIdInPayload = entry.id;
                     const changes = entry.changes || [];
 
                     for (const change of changes) {
@@ -76,35 +77,38 @@ export class WebhooksController {
                         const value = change.value;
                         if (!value) continue;
 
-                        const phoneNumberId = value.metadata?.phone_number_id;
+                        const phoneNumberIdInPayload = value.metadata?.phone_number_id;
+                        const displayPhoneNumber = value.metadata?.display_phone_number;
 
-                        // 1. Resolve Tenant by WABA ID or Phone ID
-                        // This bit is tricky; we'll look for an integration that matches this WABA ID
+                        this.logger.debug(`[META_WA] Processing change for WABA: ${wabaIdInPayload}, PhoneID: ${phoneNumberIdInPayload}, DisplayNum: ${displayPhoneNumber}`);
+
+                        // 1. Resolve Tenant by WABA ID or Phone ID (Flexible Search)
+                        // We check for exact matches in the credentials JSONB field
                         const integration = await this.integrationRepository.createQueryBuilder('i')
-                            .where("i.credentials->>'META_WABA_ID' = :wabaId", { wabaId })
-                            .orWhere("i.credentials->>'META_PHONE_NUMBER_ID' = :phoneId", { phoneId: phoneNumberId })
+                            .where("i.credentials->>'META_WABA_ID' = :wabaId", { wabaId: wabaIdInPayload })
+                            .orWhere("i.credentials->>'META_PHONE_NUMBER_ID' = :phoneId", { phoneId: phoneNumberIdInPayload })
                             .getOne();
 
                         if (!integration) {
-                            this.logger.warn(`No integration found for WABA ${wabaId} or PhoneID ${phoneNumberId}`);
+                            this.logger.warn(`[CRITICAL] No integration found for WABA ${wabaIdInPayload} or PhoneID ${phoneNumberIdInPayload}. Payload might be from unconfigured account.`);
                             continue;
                         }
 
                         const tenantId = integration.tenantId;
-                        const instanceName = integration.credentials?.instanceName || integration.credentials?.name || phoneNumberId;
+                        const instanceName = integration.credentials?.instanceName || integration.credentials?.name || displayPhoneNumber || phoneNumberIdInPayload;
 
                         // 2. Process Status Updates (Delivery Receipts)
                         if (value.statuses) {
                             for (const statusObj of value.statuses) {
                                 const wamid = statusObj.id;
-                                const status = statusObj.status.toUpperCase(); // DELIVERED, READ, SENT, FAILED
+                                const status = statusObj.status.toUpperCase();
+                                
+                                this.logger.debug(`[META_WA] Status Update: ${wamid} -> ${status}`);
 
                                 const message = await this.messageRepository.findOne({ where: { wamid } });
                                 if (message) {
                                     message.status = status;
                                     await this.messageRepository.save(message);
-                                    // Also update campaign lead if it was a campaign message
-                                    // Removed invalid 'lastStatus' column update
                                 }
                             }
                         }
@@ -112,7 +116,7 @@ export class WebhooksController {
                         // 3. Process Inbound Messages
                         if (value.messages) {
                             for (const msg of value.messages) {
-                                const from = msg.from; // Phone number
+                                const from = msg.from; // Phone number string
                                 const wamid = msg.id;
                                 let content = '';
 
@@ -124,16 +128,25 @@ export class WebhooksController {
                                     content = `[${msg.type.toUpperCase()}]`;
                                 }
 
-                                if (!content) continue;
+                                if (!content) {
+                                    this.logger.warn(`[META_WA] Skipping message ${wamid} with no extractable content.`);
+                                    continue;
+                                }
 
-                                // Find/Create Contact
+                                this.logger.log(`[META_WA] Inbound from ${from}: ${content.substring(0, 50)}...`);
+
+                                // Find/Create Contact - Global Number Friendly
                                 let contact = await this.contactRepository.findOne({
                                     where: { externalId: from, tenantId }
                                 });
 
                                 if (!contact) {
+                                    // Extract profile name if Meta provided it
+                                    const profileName = value.contacts?.find(c => c.wa_id === from)?.profile?.name;
+                                    
+                                    this.logger.debug(`[META_WA] Creating new contact for global number: ${from}`);
                                     contact = await this.crmService.ensureContact(tenantId, {
-                                        name: value.contacts?.[0]?.profile?.name || `WhatsApp Official ${from.slice(-4)}`,
+                                        name: profileName || `WhatsApp ${from}`,
                                         phoneNumber: from,
                                         externalId: from,
                                         provider: 'whatsapp',
@@ -141,9 +154,12 @@ export class WebhooksController {
                                     });
                                 }
 
-                                // Deduplicate
+                                // Idempotency check
                                 const exists = await this.messageRepository.findOne({ where: { wamid } });
-                                if (exists) continue;
+                                if (exists) {
+                                    this.logger.debug(`[META_WA] Duplicate message ${wamid} skipped.`);
+                                    continue;
+                                }
 
                                 // Save Message
                                 const message = this.messageRepository.create({
@@ -166,8 +182,8 @@ export class WebhooksController {
                                 const isN8nActiveForContact = contact.n8nEnabled !== false;
                                 const isAiActiveForContact = contact.aiEnabled !== false;
 
-                                // 1. Trigger n8n if enabled globally AND active for this contact
                                 if (isN8nEnabledGlobally && isN8nActiveForContact) {
+                                    this.logger.log(`[META_WA] Triggering n8n for ${from}`);
                                     await this.n8nService.triggerWebhook(tenantId, {
                                         type: 'whatsapp.message',
                                         sender: from,
@@ -178,10 +194,11 @@ export class WebhooksController {
                                     }, integration);
                                 }
 
-                                // 2. Trigger AI if AI is active for contact AND (n8n is disabled globally OR paused for contact)
+                                // Fallback AI logic
                                 if (isAiActiveForContact && (!isN8nEnabledGlobally || !isN8nActiveForContact)) {
                                     const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
                                     if (shouldRespond) {
+                                        this.logger.log(`[META_WA] Triggering internal AI for ${from}`);
                                         const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
                                         if (aiResponse) {
                                             const aiMsg = this.messageRepository.create({
