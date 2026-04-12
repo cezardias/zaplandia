@@ -56,22 +56,18 @@ export class WebhooksController {
     @Post('meta')
     @HttpCode(HttpStatus.OK)
     async handleMeta(@Body() payload: any) {
-        // --- PROACTIVE LOGGING FOR DEBUGGING ---
-        this.logger.log(`[META_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
-
-        // Handle Meta manual "Test" button payloads
-        if (payload?.sample) {
-            this.logger.log(`[META_WEBHOOK_TEST] Received test sample for field: ${payload.sample.field}`);
-            return { status: 'test_received' };
+        // --- 1. SUPER FAST BYPASS FOR META TESTS ---
+        if (payload?.entry?.[0]?.id === '0' || payload?.sample) {
+            this.logger.log(`[META_WEBHOOK_TEST] Fast-track test detected (ID 0 or Sample). Returning OK.`);
+            return 'OK';
         }
+
+        // --- 2. LOGGING FOR REAL REQUESTS ---
+        this.logger.log(`[META_WEBHOOK_RAW] Payload: ${JSON.stringify(payload)}`);
 
         if (!payload || (payload.object !== 'instagram' && payload.object !== 'whatsapp_business_account')) {
             // Be lenient: if it has 'entry', it might be a malformed meta payload, return 200 anyway
-            if (payload?.entry) {
-                this.logger.warn(`[META_WEBHOOK_LENIENT] Unknown object but has entries: ${payload.object}`);
-            } else {
-                return { status: 'skipped' };
-            }
+            return payload?.entry ? { status: 'lenient_ok' } : { status: 'skipped' };
         }
 
         const entries = payload.entry || [];
@@ -79,18 +75,11 @@ export class WebhooksController {
             return { status: 'empty_entry' };
         }
 
-        // --- WHATSAPP OFFICIAL HANDLER ---
+        // --- 3. WHATSAPP OFFICIAL HANDLER ---
         if (payload.object === 'whatsapp_business_account') {
             try {
                 for (const entry of entries) {
                     const wabaIdInPayload = entry.id;
-
-                    // Meta Test ID Bypass
-                    if (wabaIdInPayload === '0') {
-                        this.logger.log('[META_WEBHOOK_TEST] Meta Test ID "0" detected. Returning success.');
-                        continue; // Process other entries if any, but ID 0 is always success
-                    }
-
                     const changes = entry.changes || [];
 
                     for (const change of changes) {
