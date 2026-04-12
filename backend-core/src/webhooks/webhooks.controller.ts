@@ -484,25 +484,29 @@ export class WebhooksController {
                 // Check if AI should respond to this message (INBOUND ONLY)
                 if (!isOutbound) {
                     try {
-                        const isN8nEnabled = integration?.n8nEnabled ?? false;
+                        const isN8nEnabledGlobally = integration?.n8nEnabled ?? false;
+                        const isN8nActiveForContact = useContact.n8nEnabled !== false;
 
-                        if (isN8nEnabled) {
-                            this.logger.log(`n8n is enabled for instance ${instanceName} and not overridden for contact. Skipping internal AI auto-response.`);
+                        // AI auto-response is a fallback if n8n is NOT handling this contact
+                        if (isN8nEnabledGlobally && isN8nActiveForContact) {
+                            this.logger.log(`n8n is active for this contact on instance ${instanceName}. Skipping internal AI auto-response.`);
                         } else {
+                            // If n8n is disabled globally OR paused for this contact, AI can take over
                             const shouldRespond = await this.aiService.shouldRespond(useContact, instanceName, tenantId);
 
                             if (shouldRespond) {
-                                this.logger.log(`AI enabled for contact ${useContact.id} on instance ${instanceName}. Generating response...`);
+                                this.logger.log(`AI responding to contact ${useContact.id} (n8n was ${isN8nEnabledGlobally ? 'paused for contact' : 'disabled globally'})`);
 
                                 // Generate AI response
                                 const aiResponse = await this.aiService.generateResponse(useContact, content, tenantId, instanceName);
 
                                 if (aiResponse) {
                                     this.logger.log(`AI generated response for ${contact.id}: ${aiResponse.substring(0, 50)}...`);
+                                    
                                     // Save AI response to database
                                     const aiMessage = this.messageRepository.create({
                                         tenantId,
-                                        contactId: contact.id, // Fixed: Link message to contact
+                                        contactId: contact.id,
                                         content: aiResponse,
                                         direction: 'outbound',
                                         provider: 'whatsapp',
@@ -511,21 +515,18 @@ export class WebhooksController {
                                     });
                                     await this.messageRepository.save(aiMessage);
 
-                                    // Send AI response via Evolution API (passing instanceName to ensure context lock)
+                                    // Send AI response via Evolution API
                                     await this.aiService.sendAIResponse(contact, aiResponse, tenantId, instanceName);
-
-
                                     this.logger.log(`AI response sent successfully to contact ${contact.id} via ${instanceName}`);
                                 } else {
-                                    this.logger.warn(`AI failed to generate response for contact ${contact.id} (Check Gemini API Key and Prompt Configuration)`);
+                                    this.logger.warn(`AI failed to generate response for contact ${contact.id}`);
                                 }
                             } else {
-                                this.logger.debug(`AI should not respond to contact ${contact.id} on instance ${instanceName}`);
+                                this.logger.debug(`AI disabled or not configured for contact ${contact.id}`);
                             }
                         }
                     } catch (aiError) {
                         this.logger.error(`AI auto-response error: ${aiError.message}`);
-                        // Don't throw - AI errors shouldn't break the webhook
                     }
                 }
 

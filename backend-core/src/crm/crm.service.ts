@@ -547,30 +547,49 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     }
                 }
 
-                // 3.6 SMART LID HEAL: If target is a LID but Evolution says it can't send, we prefer a phone-based JID
-                if (targetNumber.includes('@lid') && contact?.name) {
-                    const phoneDupe = await this.contactRepository.findOne({
-                        where: {
-                            tenantId,
-                            name: contact.name,
-                            externalId: Like('%@s.whatsapp.net')
+                // 3.6 SMART LID HEAL: If target is a LID, try to resolve to real phone JID via Evolution API
+                if (targetNumber.includes('@lid')) {
+                    this.logger.log(`[LID_RESOLVE] Manual message target is @lid — attempting resolution for ${targetNumber}`);
+                    
+                    // Attempt resolution via API (most accurate)
+                    const instances = await this.evolutionApiService.listInstances(tenantId);
+                    const useInstance = contact?.instance || (instances.find((i: any) => i.status === 'open' || i.status === 'connected')?.name);
+                    
+                    if (useInstance) {
+                        const resolvedJid = await this.evolutionApiService.resolveLid(tenantId, useInstance, targetNumber);
+                        if (resolvedJid) {
+                            this.logger.log(`[LID_RESOLVE] API Success: ${targetNumber} -> ${resolvedJid}`);
+                            targetNumber = resolvedJid;
+                            // Persist the resolved JID to the contact record to fix it permanently
+                            await this.contactRepository.update(contactId, { externalId: resolvedJid });
                         }
-                    });
-                    if (phoneDupe?.externalId) {
-                        this.logger.log(`[LID_HEALING] Redirecting message for ${contact.name} from LID ${targetNumber} to Phone JID ${phoneDupe.externalId}`);
-                        targetNumber = phoneDupe.externalId;
-                    } else {
-                        // Broader Search: search for ANY with phone provided name matches partially
-                        const broadSearch = await this.contactRepository.findOne({
-                           where: {
-                               tenantId,
-                               name: Like(`${contact.name.split(' ')[0]}%`),
-                               externalId: Like('%@s.whatsapp.net')
-                           }
+                    }
+
+                    // Fallback to local name-based healing if API fails or instance not found
+                    if (targetNumber.includes('@lid') && contact?.name) {
+                        const phoneDupe = await this.contactRepository.findOne({
+                            where: {
+                                tenantId,
+                                name: contact.name,
+                                externalId: Like('%@s.whatsapp.net')
+                            }
                         });
-                        if (broadSearch?.externalId) {
-                            this.logger.log(`[LID_HEALING_BROAD] Redirecting message for ${contact.name} to related phone ${broadSearch.externalId}`);
-                            targetNumber = broadSearch.externalId;
+                        if (phoneDupe?.externalId) {
+                            this.logger.log(`[LID_HEALING] Local Match: Redirecting ${contact.name} from LID ${targetNumber} to Phone JID ${phoneDupe.externalId}`);
+                            targetNumber = phoneDupe.externalId;
+                        } else {
+                            // Broader Search: first name match
+                            const broadSearch = await this.contactRepository.findOne({
+                                where: {
+                                    tenantId,
+                                    name: Like(`${contact.name.split(' ')[0]}%`),
+                                    externalId: Like('%@s.whatsapp.net')
+                                }
+                            });
+                            if (broadSearch?.externalId) {
+                                this.logger.log(`[LID_HEALING_BROAD] Local Broad Match: Redirecting ${contact.name} to ${broadSearch.externalId}`);
+                                targetNumber = broadSearch.externalId;
+                            }
                         }
                     }
                 }
@@ -750,18 +769,17 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
         for (const digits of allPossibleDigits) {
             const suffix8 = digits.slice(-8);
-            where.push({ phoneNumber: Like(`%${suffix8}`) });
-            where.push({ externalId: Like(`%${suffix8}%`) });
+            where.push({ phoneNumber: Like(`%${suffix8}`), tenantId });
+            where.push({ externalId: Like(`%${suffix8}%`), tenantId });
         }
 
-        if (where.length === 0) {
-            const contact = this.contactRepository.create({
-                ...data,
-                tenantId,
-                stage: options?.forceStage || 'LEAD',
-                externalId: data.externalId || data.phoneNumber || `gen-${Date.now()}`
-            });
-            return this.contactRepository.save(contact);
+        // --- NEW: Name Matching Fallback (Crucial for LID vs Phone JID consolidation)
+        if (data.name && data.name.toLowerCase() !== 'contato' && data.name.length > 3) {
+            where.push({ name: data.name, tenantId });
+            // Also try fuzzy name match for existing JIDs if this is a LID
+            if (data.externalId?.includes('@lid')) {
+                where.push({ name: Like(`${data.name.split(' ')[0]}%`), tenantId, externalId: Like('%@s.whatsapp.net') });
+            }
         }
 
         const contacts = await this.contactRepository.find({ where });
@@ -774,7 +792,18 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 stage: options?.forceStage || 'LEAD',
                 externalId: data.externalId || data.phoneNumber
             });
-            return await this.contactRepository.save(contact);
+            const saved = await this.contactRepository.save(contact);
+            
+            // PROACTIVE RESOLUTION: If it's a LID, try to resolve it immediately to avoid duplicates later
+            if (saved.externalId?.includes('@lid') && saved.instance) {
+                const resolved = await this.evolutionApiService.resolveLid(tenantId, saved.instance, saved.externalId);
+                if (resolved) {
+                    saved.externalId = resolved;
+                    if (!saved.phoneNumber) saved.phoneNumber = resolved.split('@')[0];
+                    return await this.contactRepository.save(saved);
+                }
+            }
+            return saved;
         }
 
         // --- DUPLICATE MERGE LOGIC ---

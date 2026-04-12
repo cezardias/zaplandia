@@ -406,44 +406,38 @@ export default function OmniInboxPage() {
         }
     };
 
-    const toggleContactAgent = async () => {
+    const toggleContactAi = async () => {
         if (!token || !selectedContact) return;
-
         try {
-            // "Agente" Toggle Logic:
-            // ON (Manual Overide) -> Set both aiEnabled/n8nEnabled to FALSE for contact
-            // OFF (Back to bot) -> Set both to NULL (Inherit from Instance)
-            const isAgentActive = contactAiEnabled === false && contactN8nEnabled === false;
-            const newAiValue = isAgentActive ? null : false;
-            const newN8nValue = isAgentActive ? null : false;
-
+            const newValue = contactAiEnabled === false ? null : false;
             const res = await fetch(`/api/crm/chats/${selectedContact.id}`, {
                 method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    aiEnabled: newAiValue,
-                    n8nEnabled: newN8nValue
-                })
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ aiEnabled: newValue })
             });
-
             if (res.ok) {
                 const data = await res.json();
                 setContactAiEnabled(data.aiEnabled);
-                setContactN8nEnabled(data.n8nEnabled);
-                
-                // Update local contact list to show bot icon correctly
-                setContacts(prev => prev.map(c => 
-                    c.id === selectedContact.id 
-                        ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } 
-                        : c
-                ));
+                setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, aiEnabled: data.aiEnabled } : c));
             }
-        } catch (err) {
-            console.error('Erro ao alternar agente:', err);
-        }
+        } catch (err) { console.error('Erro ao alternar IA do contato:', err); }
+    };
+
+    const toggleContactN8n = async () => {
+        if (!token || !selectedContact) return;
+        try {
+            const newValue = contactN8nEnabled === false ? null : false;
+            const res = await fetch(`/api/crm/chats/${selectedContact.id}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ n8nEnabled: newValue })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setContactN8nEnabled(data.n8nEnabled);
+                setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, n8nEnabled: data.n8nEnabled } : c));
+            }
+        } catch (err) { console.error('Erro ao alternar n8n do contato:', err); }
     };
 
     const handleTeamTransfer = async (teamId: string | null) => {
@@ -701,12 +695,13 @@ export default function OmniInboxPage() {
                                     </div>
                                 </div>
                                 <div className="flex-1 text-left overflow-hidden">
-                                    <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-1">
                                             <p className="font-bold truncate">{contact.name || 'Contato'}</p>
-                                            {aiEnabled && contact.aiEnabled !== false && (
-                                                <span className="text-xs">🤖</span>
-                                            )}
+                                            <div className="flex gap-0.5">
+                                                {contact.aiEnabled !== false && <span className="text-[10px]" title="IA Ativa">🤖</span>}
+                                                {contact.n8nEnabled !== false && <span className="text-[10px]" title="Fluxos Ativos">🔗</span>}
+                                                {(contact.aiEnabled === false || contact.n8nEnabled === false) && <span className="text-[10px]" title="Automação Parcialmente Pausada">⏸️</span>}
+                                            </div>
                                         </div>
                                         <span className="text-[10px] text-gray-500">12:30</span>
                                     </div>
@@ -758,21 +753,30 @@ export default function OmniInboxPage() {
                                     ))}
                                 </select>
 
-                                {/* Agente Toggle (Manual Override) */}
+                                {/* AI Toggle */}
                                 <button
-                                    onClick={toggleContactAgent}
-                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${contactAiEnabled === false && contactN8nEnabled === false
-                                        ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
-                                        : 'bg-primary text-white shadow-lg shadow-primary/20'
+                                    onClick={toggleContactAi}
+                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${contactAiEnabled === false
+                                        ? 'bg-red-500/20 text-red-500 border border-red-500/30'
+                                        : 'bg-green-500/20 text-green-500 border border-green-500/30'
                                         }`}
-                                    title={
-                                        contactAiEnabled === false && contactN8nEnabled === false
-                                            ? 'Automação Pausada (Atendimento Humano)'
-                                            : 'Automação Ativa (IA/n8n)'
-                                    }
+                                    title={contactAiEnabled === false ? 'IA Pausada para este contato' : 'IA Ativa (Herdado)'}
                                 >
-                                    {contactAiEnabled === false && contactN8nEnabled === false ? <Bot className="w-3 h-3 grayscale opacity-50" /> : <Bot className="w-3 h-3" />}
-                                    <span>{contactAiEnabled === false && contactN8nEnabled === false ? 'Pausada' : 'Automação'}</span>
+                                    <Bot className={`w-3 h-3 ${contactAiEnabled === false ? 'grayscale' : ''}`} />
+                                    <span>IA</span>
+                                </button>
+
+                                {/* n8n Toggle */}
+                                <button
+                                    onClick={toggleContactN8n}
+                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${contactN8nEnabled === false
+                                        ? 'bg-red-500/20 text-red-500 border border-red-500/30'
+                                        : 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
+                                        }`}
+                                    title={contactN8nEnabled === false ? 'Fluxos Pausados para este contato' : 'Fluxos Ativos (Herdado)'}
+                                >
+                                    <Terminal className={`w-3 h-3 ${contactN8nEnabled === false ? 'grayscale' : ''}`} />
+                                    <span>Flows</span>
                                 </button>
                                 <button className="hover:text-white transition"><MoreVertical className="w-5 h-5" /></button>
                             </div>
