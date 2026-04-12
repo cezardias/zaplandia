@@ -572,16 +572,22 @@ export class WebhooksController {
                     this.logger.log(`Updated contact ${contact.id} stage to NEGOTIATION due to reply`);
                 }
 
+                // RE-FETCH contact to ensure latest aiEnabled/n8nEnabled flags
+                const freshContact = await this.crmService.findOne(contact.id, tenantId);
+                const useContact = freshContact || contact;
+
                 // Trigger n8n for AI Automation (INBOUND ONLY to avoid infinite loops)
                 // Respect contact-level override if present, otherwise follow integration setting
-                const isN8nActiveForContact = contact.n8nEnabled !== false; 
+                const isN8nActiveForContact = useContact.n8nEnabled !== false; 
+                this.logger.debug(`[AUTOMATION_CHECK] Contact ${useContact.id}: n8nEnabled=${useContact.n8nEnabled}, aiEnabled=${useContact.aiEnabled}. n8nActive=${isN8nActiveForContact}`);
+
                 if (!isOutbound && isN8nActiveForContact) {
                     try {
                         const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
                             type: 'whatsapp.message',
                             sender: remoteJid,
                             content,
-                            contact_id: contact.id,
+                            contact_id: useContact.id,
                             name: pushName,
                             message_id: message.id
                         }, integration);
@@ -625,15 +631,15 @@ export class WebhooksController {
                         const isN8nEnabled = integration?.n8nEnabled ?? false;
 
                         if (isN8nEnabled) {
-                            this.logger.log(`n8n is enabled for instance ${instanceName}. Skipping internal AI auto-response.`);
+                            this.logger.log(`n8n is enabled for instance ${instanceName} and not overridden for contact. Skipping internal AI auto-response.`);
                         } else {
-                            const shouldRespond = await this.aiService.shouldRespond(contact, instanceName, tenantId);
+                            const shouldRespond = await this.aiService.shouldRespond(useContact, instanceName, tenantId);
 
                             if (shouldRespond) {
-                                this.logger.log(`AI enabled for contact ${contact.id} on instance ${instanceName}. Generating response...`);
+                                this.logger.log(`AI enabled for contact ${useContact.id} on instance ${instanceName}. Generating response...`);
 
                                 // Generate AI response
-                                const aiResponse = await this.aiService.generateResponse(contact, content, tenantId, instanceName);
+                                const aiResponse = await this.aiService.generateResponse(useContact, content, tenantId, instanceName);
 
                                 if (aiResponse) {
                                     this.logger.log(`AI generated response for ${contact.id}: ${aiResponse.substring(0, 50)}...`);

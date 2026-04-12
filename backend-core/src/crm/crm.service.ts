@@ -74,6 +74,10 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         }
     }
 
+    async findOne(id: string, tenantId: string) {
+        return this.contactRepository.findOne({ where: { id, tenantId } });
+    }
+
     async getRecentChats(tenantId: string, role: string, filters?: { stage?: string; campaignId?: string; search?: string; instance?: string }) {
         // If superadmin, can see all messages? No, usually scoped by tenant.
         // Assuming role check handled in Controller or Guard.
@@ -370,17 +374,20 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
         await this.messageRepository.save(message);
 
-        // 2. Trigger n8n Webhook for automation
-        await this.n8nService.triggerWebhook(tenantId, {
-            type: 'message.new',
-            message: {
-                id: message.id,
-                content: message.content,
-                direction: message.direction,
-                provider: message.provider,
-                contactId: message.contactId
-            }
-        });
+        // 2. Trigger n8n Webhook for automation (If not overridden by contact)
+        const contact = await this.findOne(contactId, tenantId);
+        if (contact && contact.n8nEnabled !== false) {
+            await this.n8nService.triggerWebhook(tenantId, {
+                type: 'message.new',
+                message: {
+                    id: message.id,
+                    content: message.content,
+                    direction: message.direction,
+                    provider: message.provider,
+                    contactId: message.contactId
+                }
+            });
+        }
 
         // 3. Call target Social API
         if (provider === 'instagram') {
@@ -633,6 +640,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         if (!contact) return null;
 
         await this.contactRepository.update(contactId, updates);
+        this.logger.log(`Updated contact ${contactId} with: ${JSON.stringify(updates)}`);
         return this.contactRepository.findOne({ where: { id: contactId } });
     }
 
@@ -656,6 +664,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         let contact = await this.contactRepository.findOne({ where });
 
         if (!contact) {
+            this.logger.log(`Creating NEW contact for ${data.phoneNumber || data.externalId}`);
             contact = this.contactRepository.create({
                 ...data, // includes instance if provided
                 tenantId,
@@ -664,6 +673,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             });
             await this.contactRepository.save(contact);
         } else {
+            this.logger.debug(`Found existing contact ${contact.id} for ${data.phoneNumber || data.externalId}. Flags: n8nEnabled=${contact.n8nEnabled}, aiEnabled=${contact.aiEnabled}`);
             // Update existing contact fields if provided
             let hasParamsToUpdate = false;
             if (data.name && data.name !== contact.name && data.name.toLowerCase() !== 'contato') {

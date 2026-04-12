@@ -605,6 +605,7 @@ export class EvolutionApiService {
                     'User-Agent': 'ZaplandiaCore/1.0'
                 }
             });
+            this.logger.log(`[EvolutionAPI] Message delivered to Evolution API for ${finalNumber}`);
             return response.data;
         }
 
