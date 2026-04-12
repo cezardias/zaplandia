@@ -8,6 +8,7 @@ import { Integration } from '../integrations/entities/integration.entity';
 import { Contact, Message } from '../crm/entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EvolutionApiService } from '../integrations/evolution-api.service';
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -18,6 +19,7 @@ export class WebhooksController {
         private readonly aiService: AiService,
         private readonly integrationsService: IntegrationsService,
         private readonly n8nService: N8nService,
+        private readonly evolutionApiService: EvolutionApiService,
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
         @InjectRepository(Message)
@@ -572,7 +574,7 @@ export class WebhooksController {
 
                 // Trigger n8n for AI Automation
                 try {
-                    await this.n8nService.triggerWebhook(tenantId, {
+                    const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
                         type: 'whatsapp.message',
                         sender: remoteJid,
                         content,
@@ -580,7 +582,34 @@ export class WebhooksController {
                         name: pushName,
                         message_id: message.id
                     }, integration);
+                    
                     this.logger.log('Triggered n8n webhook');
+
+                    // Process n8n response if it contains messages to send back
+                    if (n8nResponse) {
+                        const responses = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
+                        for (const res of responses) {
+                            const textToSend = res.textMessage || res.text || res.message;
+                            if (textToSend) {
+                                this.logger.log(`[N8N_RESPONSE] Sending message from n8n to ${remoteJid}`);
+                                
+                                // Save to DB first
+                                const outboundMsg = this.messageRepository.create({
+                                    tenantId,
+                                    contactId: contact.id,
+                                    content: textToSend,
+                                    direction: 'outbound',
+                                    provider: 'whatsapp',
+                                    status: 'PENDING',
+                                    instance: instanceName
+                                });
+                                await this.messageRepository.save(outboundMsg);
+
+                                // Send to WhatsApp
+                                await this.evolutionApiService.sendText(tenantId, instanceName, remoteJid, textToSend);
+                            }
+                        }
+                    }
                 } catch (n8nError) {
                     this.logger.error(`Failed to trigger n8n: ${n8nError.message}`);
                 }
