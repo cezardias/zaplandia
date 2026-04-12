@@ -82,6 +82,8 @@ export class UsersService implements OnModuleInit {
 
         const adminExists = await this.usersRepository.findOne({ where: { email: adminEmail } });
 
+        if (!hqTenant) return; // TypeScript guard
+
         if (!adminExists) {
             const hashedPassword = await bcrypt.hash('zap@2026', 10);
             const superAdmin = this.usersRepository.create({
