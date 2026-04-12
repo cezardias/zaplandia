@@ -85,6 +85,14 @@ export default function OmniInboxPage() {
             const res = await fetch('/api/integrations', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (res.ok) {
+                const data = await res.json();
+                // Filter connected instances (Evolution and Meta)
+                const activeIntegrations = data.filter((i: any) =>
+                    (i.provider === 'evolution' && (i.status === 'CONNECTED' || i.status === 'connected')) ||
+                    (i.provider === 'meta')
+                );
+
                 // Ensure we have a consistent name and identifier for filtering
                 const formatted = activeIntegrations.map((i: any) => {
                     const nameInCreds = i.credentials?.instanceName || i.credentials?.name;
