@@ -18,6 +18,8 @@ export class MetaApiService {
             throw new Error('META_ACCESS_TOKEN not configured');
         }
 
+        this.logger.debug(`[META_AUTH] Using token starting with: ${accessToken.substring(0, 5)}...`);
+
         return { accessToken, wabaId, phoneNumberId };
     }
 
