@@ -195,7 +195,7 @@ export class WebhooksController {
 
                                 if (isN8nEnabledGlobally && isN8nActiveForContact) {
                                     this.logger.log(`[META_WA] Triggering n8n for ${from} (Tenant: ${tenantId})`);
-                                    await this.n8nService.triggerWebhook(tenantId, {
+                                    const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
                                         type: 'whatsapp.message',
                                         sender: from,
                                         content,
@@ -203,6 +203,18 @@ export class WebhooksController {
                                         name: contact.name,
                                         message_id: message.id
                                     }, integration);
+
+                                    // NEW: Process n8n response for Meta Official
+                                    if (n8nResponse) {
+                                        const responsesBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
+                                        for (const res of responsesBuffer) {
+                                            const textToSend = res.textMessage || res.text || res.message;
+                                            if (textToSend) {
+                                                this.logger.log(`[META_WA] Sending automated reply from n8n to ${from}`);
+                                                await this.crmService.sendMessage(tenantId, contact.id, textToSend);
+                                            }
+                                        }
+                                    }
                                 }
 
                                 // Fallback AI logic (Only if n8n is NOT handling it)

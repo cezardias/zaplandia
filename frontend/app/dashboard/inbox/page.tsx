@@ -85,13 +85,19 @@ export default function OmniInboxPage() {
             const res = await fetch('/api/integrations', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (res.ok) {
-                const data = await res.json();
-                // Filter only Evolution instances that are connected
-                const evolutionInstances = data.filter((i: any) =>
-                    i.provider === 'evolution' && (i.status === 'CONNECTED' || i.status === 'connected')
-                );
-                setAvailableInstances(evolutionInstances);
+                // Ensure we have a consistent name and identifier for filtering
+                const formatted = activeIntegrations.map((i: any) => {
+                    const nameInCreds = i.credentials?.instanceName || i.credentials?.name;
+                    const phoneId = i.credentials?.META_PHONE_NUMBER_ID; // Fallback if name is missing
+                    
+                    return {
+                        ...i,
+                        displayName: i.name || nameInCreds || (i.provider === 'meta' ? 'Meta Oficial' : i.id),
+                        instanceName: i.instanceName || nameInCreds || phoneId || i.id
+                    };
+                });
+
+                setAvailableInstances(formatted);
             }
         } catch (err) {
             console.error('Erro ao carregar instâncias:', err);
@@ -519,7 +525,7 @@ export default function OmniInboxPage() {
                                 <option value="all">Todas as Caixas</option>
                                 {availableInstances.map(inst => (
                                     <option key={inst.id} value={inst.id}>
-                                        {inst.name}
+                                        {inst.displayName}
                                     </option>
                                 ))}
                             </select>
