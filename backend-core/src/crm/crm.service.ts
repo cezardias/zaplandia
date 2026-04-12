@@ -51,6 +51,36 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
             await queryRunner.release();
             this.logger.log('Sincronização de colunas concluída com sucesso.');
+
+            // --- NEW: DUPLICATE MERGE SCRIPT ---
+            this.logger.log('Iniciando limpeza de contatos duplicados em produção...');
+            const duplicatesFound = await this.contactRepository.createQueryBuilder('c')
+                .select('c.tenantId', 'tenantId')
+                .addSelect('c.externalId', 'externalId')
+                .groupBy('c.tenantId')
+                .addGroupBy('c.externalId')
+                .having('COUNT(*) > 1')
+                .getRawMany();
+
+            this.logger.log(`Encontrados ${duplicatesFound.length} grupos de duplicados para processar.`);
+
+            for (const dup of duplicatesFound) {
+                try {
+                    const contacts = await this.contactRepository.find({
+                        where: {
+                            tenantId: dup.tenantId,
+                            externalId: dup.externalId
+                        }
+                    });
+                    if (contacts.length > 1) {
+                        await this.mergeContacts(dup.tenantId, contacts);
+                    }
+                } catch (err) {
+                    this.logger.error(`Erro ao mesclar duplicado ${dup.externalId}: ${err.message}`);
+                }
+            }
+            this.logger.log('Limpeza de duplicados concluída.');
+
         } catch (err) {
             this.logger.error(`Erro ao sincronizar colunas: ${err.message}`);
         }
@@ -649,54 +679,88 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         if (data.phoneNumber && data.phoneNumber !== '') where.push({ phoneNumber: data.phoneNumber, tenantId });
         if (data.externalId && data.externalId !== '') where.push({ externalId: data.externalId, tenantId });
 
-        // If no identifiers, create generic or throw? For now create generic with random extId if needed but prefer skipping.
-        // But if name is present, we create.
         if (where.length === 0) {
             const contact = this.contactRepository.create({
-                ...data, // includes instance if provided
+                ...data,
                 tenantId,
-                stage: 'NOVO',
+                stage: options?.forceStage || 'LEAD',
                 externalId: data.externalId || data.phoneNumber || `gen-${Date.now()}`
             });
             return this.contactRepository.save(contact);
         }
 
-        let contact = await this.contactRepository.findOne({ where });
+        const contacts = await this.contactRepository.find({ where });
 
-        if (!contact) {
+        if (contacts.length === 0) {
             this.logger.log(`Creating NEW contact for ${data.phoneNumber || data.externalId}`);
-            contact = this.contactRepository.create({
-                ...data, // includes instance if provided
+            const contact = this.contactRepository.create({
+                ...data,
                 tenantId,
-                stage: 'NOVO',
+                stage: options?.forceStage || 'LEAD',
                 externalId: data.externalId || data.phoneNumber
             });
-            await this.contactRepository.save(contact);
-        } else {
-            this.logger.debug(`Found existing contact ${contact.id} for ${data.phoneNumber || data.externalId}. Flags: n8nEnabled=${contact.n8nEnabled}, aiEnabled=${contact.aiEnabled}`);
-            // Update existing contact fields if provided
-            let hasParamsToUpdate = false;
-            if (data.name && data.name !== contact.name && data.name.toLowerCase() !== 'contato') {
-                contact.name = data.name;
-                hasParamsToUpdate = true;
-            }
-            if (data.phoneNumber && data.phoneNumber !== contact.phoneNumber) {
-                contact.phoneNumber = data.phoneNumber;
-                hasParamsToUpdate = true;
-            }
-            if (data.instance && data.instance !== contact.instance) {
-                contact.instance = data.instance;
-                hasParamsToUpdate = true;
-            }
-            if (options?.forceStage && contact.stage !== options.forceStage) {
-                contact.stage = options.forceStage;
-                hasParamsToUpdate = true;
-            }
-            if (hasParamsToUpdate) {
-                await this.contactRepository.save(contact);
-            }
+            return await this.contactRepository.save(contact);
         }
+
+        // --- DUPLICATE MERGE LOGIC ---
+        if (contacts.length > 1) {
+            this.logger.warn(`Found ${contacts.length} duplicate contacts for ${data.phoneNumber || data.externalId}. Merging...`);
+            return await this.mergeContacts(tenantId, contacts);
+        }
+
+        const contact = contacts[0];
+        
+        // Update fields if needed
+        let hasParamsToUpdate = false;
+        if (data.name && data.name !== contact.name && data.name.toLowerCase() !== 'contato') {
+            contact.name = data.name;
+            hasParamsToUpdate = true;
+        }
+        if (data.phoneNumber && data.phoneNumber !== contact.phoneNumber) {
+            contact.phoneNumber = data.phoneNumber;
+            hasParamsToUpdate = true;
+        }
+        if (data.instance && data.instance !== contact.instance) {
+            contact.instance = data.instance;
+            hasParamsToUpdate = true;
+        }
+        if (options?.forceStage && contact.stage !== options.forceStage) {
+            contact.stage = options.forceStage;
+            hasParamsToUpdate = true;
+        }
+
+        if (hasParamsToUpdate) {
+            await this.contactRepository.save(contact);
+        }
+
         return contact;
+    }
+
+    async mergeContacts(tenantId: string, contacts: Contact[]): Promise<Contact> {
+        // Sort by creation date (keep oldest as primary) or by presence of info
+        const sorted = contacts.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+        const primary = sorted[0];
+        const duplicates = sorted.slice(1);
+
+        this.logger.log(`[MERGE] Consolidating ${duplicates.length} duplicates into primary contact ${primary.id}`);
+
+        for (const dup of duplicates) {
+            // Move messages to primary
+            await this.messageRepository.update({ contactId: dup.id }, { contactId: primary.id });
+            
+            // Move campaign leads
+            await this.leadRepository.update({ externalId: dup.externalId }, { externalId: primary.externalId });
+            
+            // Inherit overrides (If dup is paused, primary stays paused)
+            if (dup.aiEnabled === false) primary.aiEnabled = false;
+            if (dup.n8nEnabled === false) primary.n8nEnabled = false;
+
+            // Delete duplicate
+            await this.contactRepository.delete(dup.id);
+        }
+
+        await this.contactRepository.save(primary);
+        return primary;
     }
 
     async removeAllContacts(tenantId: string) {
