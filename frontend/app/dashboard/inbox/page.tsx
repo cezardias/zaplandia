@@ -625,7 +625,7 @@ export default function OmniInboxPage() {
                                                 }
                                             }}
                                         />
-                                    </div>
+                                    </div>}
                                 </div>
                             )}
                         </div>
