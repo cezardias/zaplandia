@@ -6,6 +6,7 @@ import { User } from '../users/entities/user.entity';
 import { CrmService } from '../crm/crm.service';
 
 @Injectable()
+export class TeamsService implements OnModuleInit {
     private readonly logger = new Logger(TeamsService.name);
 
     constructor(
