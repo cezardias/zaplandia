@@ -206,7 +206,7 @@ export default function OmniInboxPage() {
         // Polling interval to simulate real-time updates (since we don't use sockets)
         const interval = setInterval(() => {
             fetchChats();
-        }, 10000); // Poll every 10 seconds
+        }, 5000); // Increased frequency: Poll every 5 seconds
 
         // Sync AI state for the newly selected instance
         if (selectedInstance !== 'all') {
@@ -246,23 +246,44 @@ export default function OmniInboxPage() {
         }
     };
 
+    const fetchMessages = async () => {
+        if (!selectedContact || !token) return;
+        try {
+            const res = await fetch(`/api/crm/chats/${selectedContact.id}/messages`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                // Only update if message count changed or we have new IDs to avoid unnecessary re-renders
+                setMessages(prev => {
+                    if (prev.length !== data.length || (data.length > 0 && prev[prev.length-1]?.id !== data[data.length-1]?.id)) {
+                        return data;
+                    }
+                    return prev;
+                });
+            }
+        } catch (err) {
+            console.error('Erro ao carregar mensagens:', err);
+        }
+    };
+
     useEffect(() => {
         if (selectedContact && token) {
-            console.log(`Buscando mensagens do contato: ${selectedContact.id}`);
+            console.log(`Iniciando monitoramento de mensagens: ${selectedContact.id}`);
 
             // Sync AI state for the newly selected contact
             setContactAiEnabled(selectedContact.aiEnabled ?? null);
             setContactN8nEnabled(selectedContact.n8nEnabled ?? null);
 
-            fetch(`/api/crm/chats/${selectedContact.id}/messages`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-                .then(res => res.json())
-                .then(data => {
-                    console.log('Mensagens recebidas:', data);
-                    setMessages(data);
-                })
-                .catch(err => console.error('Erro ao carregar mensagens:', err));
+            // Initial load
+            fetchMessages();
+
+            // Polling for messages in the active chat (every 4 seconds for a snappy feel)
+            const msgInterval = setInterval(() => {
+                fetchMessages();
+            }, 4000);
+
+            return () => clearInterval(msgInterval);
         }
     }, [selectedContact, token]);
 
