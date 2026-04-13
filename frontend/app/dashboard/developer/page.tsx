@@ -236,7 +236,7 @@ export default function DeveloperPage() {
                             </h3>
                         </div>
                         <div className="p-6 space-y-4 flex-1">
-                            <p className="text-sm text-gray-400">Cole esta URL no painel da sua Evolution API (Webhook > Global).</p>
+                            <p className="text-sm text-gray-400">Cole esta URL no painel da sua Evolution API (Webhook &gt; Global).</p>
                             
                             <div className="p-3 bg-black/40 rounded-xl space-y-2 border border-white/5">
                                 <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">URL do Webhook</p>
