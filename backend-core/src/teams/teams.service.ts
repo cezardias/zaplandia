@@ -73,7 +73,17 @@ export class TeamsService implements OnModuleInit {
     }
 
     async transferContact(tenantId: string, contactId: string, target: { teamId?: string, userId?: string }) {
-        const contact = await this.crmService.findOneById(tenantId, contactId);
+        let contact;
+        // Check if contactId is a valid UUID (Fixes 500 Error when phone number is sent)
+        const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(contactId);
+        
+        if (isUuid) {
+            contact = await this.crmService.findOneById(tenantId, contactId);
+        } else {
+            this.logger.log(`[TEAM_TRANSFER] Attempting to resolve contact by externalId: ${contactId}`);
+            contact = await this.crmService.findOneByExternalId(tenantId, contactId);
+        }
+
         if (!contact) throw new NotFoundException('Contato não encontrado.');
 
         const updateData: any = {
