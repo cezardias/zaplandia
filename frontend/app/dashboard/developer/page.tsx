@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { 
     Terminal, 
     Copy, 
@@ -14,35 +15,29 @@ import {
 } from 'lucide-react';
 
 export default function DeveloperPage() {
+    const { user, token: authContextToken } = useAuth();
     const [apiKey, setApiKey] = useState('');
-    const [tenantId, setTenantId] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isRotating, setIsRotating] = useState(false);
     const [copiedKey, setCopiedKey] = useState(false);
     const [copiedUrl, setCopiedUrl] = useState(false);
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (user) {
+            fetchData();
+        }
+    }, [user]);
 
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('zaplandia_token');
-            const [keyRes, userRes] = await Promise.all([
-                fetch('/api/integrations/api-key', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch('/api/auth/me', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
-            ]);
+            const token = authContextToken || localStorage.getItem('zap_token');
+            const keyRes = await fetch('/api/integrations/api-key', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
 
             const keyData = await keyRes.json();
-            const userData = await userRes.json();
-
             setApiKey(keyData.apiKey);
-            setTenantId(userData.tenantId);
         } catch (error) {
             console.error('Erro ao buscar dados do desenvolvedor:', error);
         } finally {
@@ -55,7 +50,7 @@ export default function DeveloperPage() {
         
         setIsRotating(true);
         try {
-            const token = localStorage.getItem('zaplandia_token');
+            const token = authContextToken || localStorage.getItem('zap_token');
             const res = await fetch('/api/integrations/api-key/rotate', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -106,7 +101,7 @@ export default function DeveloperPage() {
                     </div>
                     <p className="text-sm text-gray-400 mb-1">Seu ID de Usuário (Tenant ID)</p>
                     <div className="flex items-center gap-2">
-                        <code className="text-lg font-mono text-primary font-bold">{tenantId}</code>
+                        <code className="text-lg font-mono text-primary font-bold">{user?.tenantId}</code>
                     </div>
                 </div>
 
