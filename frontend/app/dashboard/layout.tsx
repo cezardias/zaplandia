@@ -15,7 +15,8 @@ import {
     Smartphone,
     Facebook,
     Menu,
-    X
+    X,
+    Terminal
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -52,7 +53,7 @@ export default function DashboardLayout({
         { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Integrações', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Desenvolvedor', icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Central de Ajuda', icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
 

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Integration, IntegrationProvider, IntegrationStatus } from './entities/integration.entity';
@@ -186,5 +187,15 @@ export class IntegrationsService {
         return this.apiCredentialRepository.findOne({
             where: { key_name: keyName, key_value: keyValue }
         });
+    }
+
+    async getOrCreateTenantApiKey(tenantId: string): Promise<string> {
+        const existingKey = await this.getCredential(tenantId, 'TENANT_API_KEY', true);
+        if (existingKey) return existingKey;
+
+        const newKey = `zp_${crypto.randomBytes(32).toString('hex')}`;
+        await this.saveApiCredential(tenantId, 'TENANT_API_KEY', newKey);
+        this.logger.log(`[API_KEY] Generated new API Key for tenant ${tenantId}`);
+        return newKey;
     }
 }

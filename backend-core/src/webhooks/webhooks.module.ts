@@ -8,6 +8,10 @@ import { Contact, Message } from '../crm/entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { Integration } from '../integrations/entities/integration.entity';
 
+import { ApiKeyGuard } from '../auth/guards/api-key.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
+
 @Module({
     imports: [
         CrmModule,
@@ -16,6 +20,6 @@ import { Integration } from '../integrations/entities/integration.entity';
         TypeOrmModule.forFeature([Contact, Message, CampaignLead, Integration])
     ],
     controllers: [WebhooksController],
-    providers: [],
+    providers: [ApiKeyGuard, JwtAuthGuard, UniversalAuthGuard],
 })
 export class WebhooksModule { }

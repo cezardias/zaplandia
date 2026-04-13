@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, UseGuards } from '@nestjs/common';
+import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
 import { CrmService } from '../crm/crm.service';
 import { AiService } from '../ai/ai.service';
 import { IntegrationsService } from '../integrations/integrations.service';
@@ -360,6 +361,7 @@ export class WebhooksController {
     }
 
     @Post('n8n/response')
+    @UseGuards(UniversalAuthGuard)
     @HttpCode(HttpStatus.OK)
     async handleN8nResponse(@Body() payload: { tenantId: string; contactId: string; content: string; instanceName?: string }) {
         const { tenantId, contactId, content, instanceName } = payload;

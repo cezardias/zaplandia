@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request, Logger, ForbiddenException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TeamsService } from './teams.service';
+import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
 
 @Controller('teams')
-@UseGuards(JwtAuthGuard)
+@UseGuards(UniversalAuthGuard)
 export class TeamsController {
     private readonly logger = new Logger(TeamsController.name);
 

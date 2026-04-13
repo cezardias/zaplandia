@@ -17,6 +17,21 @@ export class IntegrationsController {
     ) { }
 
     @UseGuards(JwtAuthGuard)
+    @Get('api-key')
+    async getApiKey(@Request() req) {
+        const apiKey = await this.integrationsService.getOrCreateTenantApiKey(req.user.tenantId);
+        return { apiKey };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('api-key/rotate')
+    async rotateApiKey(@Request() req) {
+        await this.integrationsService.deleteCredential(req.user.tenantId, 'TENANT_API_KEY');
+        const apiKey = await this.integrationsService.getOrCreateTenantApiKey(req.user.tenantId);
+        return { apiKey };
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Get()
     async findAll(@Request() req) {
         console.log(`[SECURITY] User ${req.user.email} (${req.user.role}) listing integrations for tenant ${req.user.tenantId}`);
