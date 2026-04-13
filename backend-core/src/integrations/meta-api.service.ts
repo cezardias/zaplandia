@@ -161,9 +161,40 @@ export class MetaApiService {
             );
             return response.data;
         } catch (error) {
-            const errorMsg = error.response?.data?.error?.message || error.message;
-            this.logger.error(`Failed to create Meta template: ${errorMsg}`);
-            throw new Error(errorMsg);
+            const errorData = error.response?.data?.error || {};
+            const detailedMsg = errorData.message || error.message;
+            this.logger.error(`Failed to create Meta template: ${detailedMsg}`);
+            if (error.response?.data) {
+                this.logger.error(`[META_TEMPLATE_ERROR] Full Response: ${JSON.stringify(error.response.data)}`);
+            }
+            throw new Error(detailedMsg);
+        }
+    }
+
+    async registerNumber(tenantId: string, pin: string) {
+        try {
+            const { accessToken, phoneNumberId } = await this.getCredentials(tenantId);
+            if (!phoneNumberId) throw new Error('META_PHONE_NUMBER_ID not configured');
+
+            const response = await axios.post(
+                `${this.baseUrl}/${phoneNumberId}/register`,
+                {
+                    messaging_product: 'whatsapp',
+                    pin: pin || '000000'
+                },
+                { params: { access_token: accessToken } }
+            );
+
+            this.logger.log(`[META_AUTH] SUCCESS: Number registered successfully: ${phoneNumberId}`);
+            return response.data;
+        } catch (error) {
+            const errorData = error.response?.data?.error || {};
+            const detailedMsg = errorData.message || error.message;
+            this.logger.error(`Failed to register Meta number: ${detailedMsg}`);
+            if (error.response?.data) {
+                this.logger.error(`[META_REG_ERROR] Full Response: ${JSON.stringify(error.response.data)}`);
+            }
+            throw new Error(detailedMsg);
         }
     }
 }

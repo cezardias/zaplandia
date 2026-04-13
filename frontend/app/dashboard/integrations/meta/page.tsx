@@ -166,6 +166,35 @@ export default function MetaApiPage() {
         }
     };
 
+    const handleRegisterNumber = async () => {
+        setSaving(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            const pin = prompt('Se você tem Verificação em Duas Etapas, digite o PIN de 6 dígitos. Se não tem, deixe em branco e clique em OK.');
+            const res = await fetch('/api/integrations/meta/register', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ pin: pin || '000000' })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setSuccess('Número ativado com sucesso! Ele deve ficar On-line em instantes.');
+                fetchMetaDetails();
+            } else {
+                setError('Falha na ativação: ' + (data.message || 'Erro desconhecido'));
+            }
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleCreateTemplate = async () => {
         if (!templateData.name || !templateData.bodyText) {
             setError('Nome e Texto são obrigatórios');
@@ -237,6 +266,14 @@ export default function MetaApiPage() {
                         className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition"
                     >
                         <RefreshCw className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={handleRegisterNumber}
+                        disabled={saving}
+                        className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-green-500/20"
+                    >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                        <span>Ativar Número (Ficar On-line)</span>
                     </button>
                     <button
                         onClick={handleTestConnection}

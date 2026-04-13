@@ -430,4 +430,10 @@ export class IntegrationsController {
     async createMetaTemplate(@Request() req, @Body() body: { name: string, category: string, language: string, bodyText: string }) {
         return this.metaApiService.createTemplate(req.user.tenantId, body);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('meta/register')
+    async registerMetaNumber(@Request() req, @Body() body: { pin?: string }) {
+        return this.metaApiService.registerNumber(req.user.tenantId, body.pin);
+    }
 }
