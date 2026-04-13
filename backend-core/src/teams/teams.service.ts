@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './entities/team.entity';
@@ -6,7 +6,8 @@ import { User } from '../users/entities/user.entity';
 import { CrmService } from '../crm/crm.service';
 
 @Injectable()
-export class TeamsService {
+    private readonly logger = new Logger(TeamsService.name);
+
     constructor(
         @InjectRepository(Team)
         private teamsRepository: Repository<Team>,
@@ -14,6 +15,34 @@ export class TeamsService {
         private usersRepository: Repository<User>,
         private crmService: CrmService,
     ) { }
+
+    async onModuleInit() {
+        this.logger.log('Iniciando migração manual da tabela de Equipes...');
+        const queryRunner = this.teamsRepository.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        try {
+            // Create teams table if not exists
+            await queryRunner.query(`
+                CREATE TABLE IF NOT EXISTS "teams" (
+                    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    "name" VARCHAR(255) NOT NULL,
+                    "tenantId" UUID NOT NULL,
+                    "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
+                )
+            `);
+            
+            // Add teamId to users if not exists
+            await queryRunner.query(`
+                ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "teamId" UUID
+            `);
+
+            this.logger.log('Migração manual de Equipes concluída com sucesso.');
+        } catch (error) {
+            this.logger.error('Erro na migração manual de Equipes:', error);
+        } finally {
+            await queryRunner.release();
+        }
+    }
 
     async findAll(tenantId: string) {
         return this.teamsRepository.find({
