@@ -41,10 +41,10 @@ export default function DashboardLayout({
         { name: 'Meta API', icon: <Facebook size={20} />, path: '/dashboard/integrations/meta', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Governança Meta', icon: <ShieldCheck size={20} />, path: '/dashboard/governance', roles: ['superadmin', 'admin', 'user'] },
         { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
-        { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin'] },
+        { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Integrações', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin'] },
-        { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api', roles: ['superadmin', 'admin'] },
+        { name: 'Integrações', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Central de Ajuda', icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
 
