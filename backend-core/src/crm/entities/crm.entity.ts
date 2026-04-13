@@ -49,10 +49,10 @@ export class Contact {
     n8nEnabled: boolean; // null = inherit, false = disabled
 
     @Column({ nullable: true })
-    assignedTeamId: string;
+    assignedTeamId: string | null;
 
     @Column({ nullable: true })
-    assignedUserId: string;
+    assignedUserId: string | null;
 
     @ManyToOne(() => Tenant)
     tenant: Tenant;

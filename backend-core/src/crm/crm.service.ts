@@ -138,20 +138,6 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         return this.contactRepository.findOne({ where: { id, tenantId } });
     }
 
-    async finishService(tenantId: string, contactId: string) {
-        const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
-        if (!contact) throw new BadRequestException('Contato não encontrado.');
-
-        // Re-enable automation and clear assignment
-        contact.aiEnabled = true;
-        contact.n8nEnabled = true;
-        contact.assignedUserId = null;
-        // Keep assignedTeamId? Usually yes, to know which team handled it, or clear it too.
-        // User said: "automacao liga e reincica" and "sai da equipe", 
-        // but typically we keep the historical teamId and just clear the specific user assignment.
-
-        return this.contactRepository.save(contact);
-    }
 
     async getRecentChats(tenantId: string, user: { userId: string, role: string, teamId?: string }, filters?: { stage?: string; campaignId?: string; search?: string; instance?: string }) {
         const { userId, role, teamId } = user;
