@@ -346,8 +346,7 @@ export class WebhooksController {
             } catch (err) { 
                 this.logger.error(`[EVOLUTION_WEBHOOK_ERROR] Error processing WhatsApp message: ${err.message}`, err.stack); 
             }
-        }
-} else if (normalizedEvent === 'MESSAGES_UPDATE') {
+        } else if (normalizedEvent === 'MESSAGES_UPDATE') {
             const eventData = data.data || data;
             if (eventData && eventData.id) {
                 const message = await this.messageRepository.findOne({ where: { wamid: eventData.id } });
