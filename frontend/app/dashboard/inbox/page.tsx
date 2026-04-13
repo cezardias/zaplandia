@@ -19,7 +19,8 @@ import {
     Store,
     Bot,
     Terminal,
-    CheckCircle
+    CheckCircle,
+    ArrowLeft
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
@@ -569,9 +570,9 @@ export default function OmniInboxPage() {
     });
 
     return (
-        <div className="flex h-[calc(100vh-2rem)] m-4 bg-surface rounded-3xl border border-white/5 overflow-hidden">
+        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 bg-surface rounded-2xl md:rounded-3xl border border-white/5 overflow-hidden relative">
             {/* Contact List */}
-            <div className="w-80 border-r border-white/5 flex flex-col">
+            <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-white/5 flex-col`}>
                 <div className="p-4 border-b border-white/5 space-y-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold">Omni Inbox</h2>
@@ -785,12 +786,18 @@ export default function OmniInboxPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-background/30">
+            <div className={`${selectedContact ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-background/30`}>
                 {selectedContact ? (
                     <>
                         {/* Header */}
                         <div className="p-4 border-b border-white/5 bg-surface/50 backdrop-blur-sm flex justify-between items-center">
                             <div className="flex items-center space-x-3">
+                                <button 
+                                    onClick={() => setSelectedContact(null)}
+                                    className="md:hidden p-2 -ml-2 hover:bg-white/5 rounded-full text-gray-400"
+                                >
+                                    <ArrowLeft size={20} />
+                                </button>
                                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
                                     {selectedContact.name?.charAt(0) || 'C'}
                                 </div>
