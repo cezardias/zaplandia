@@ -11,11 +11,21 @@ export class UniversalAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // 1. Try API Key first (cheaper/direct for external tools)
-    const canByApiKey = await this.apiKeyGuard.canActivate(context).catch(() => false);
-    if (canByApiKey) return true;
+    try {
+      const result = this.apiKeyGuard.canActivate(context);
+      const canByApiKey = result instanceof Promise ? await result : result;
+      if (canByApiKey) return true;
+    } catch (e) {
+      // Ignore API key errors and fall back to JWT
+    }
 
     // 2. Fallback to JWT (standard for frontend/mobile)
-    const canByJwt = await this.jwtGuard.canActivate(context).catch(() => false);
-    return canByJwt;
+    try {
+      const result = this.jwtGuard.canActivate(context);
+      const canByJwt = result instanceof Promise ? await result : result;
+      return !!canByJwt;
+    } catch (e) {
+      return false;
+    }
   }
 }
