@@ -1,10 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Tenant } from './tenant.entity';
 
 export enum UserRole {
     SUPERADMIN = 'superadmin',
     ADMIN = 'admin',
     USER = 'user',
+    AGENT = 'agent',
 }
 
 @Entity('users')
@@ -33,6 +34,13 @@ export class User {
 
     @Column({ nullable: true })
     tenantId: string | null;
+
+    @ManyToOne('Team', 'members', { nullable: true })
+    @JoinColumn({ name: 'teamId' })
+    team: any; 
+
+    @Column({ nullable: true })
+    teamId: string | null;
 
     @CreateDateColumn()
     createdAt: Date;

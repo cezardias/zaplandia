@@ -18,7 +18,8 @@ import {
     ShoppingBag,
     Store,
     Bot,
-    Terminal
+    Terminal,
+    CheckCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
@@ -517,6 +518,25 @@ export default function OmniInboxPage() {
         }
     };
 
+    const handleFinishService = async () => {
+        if (!token || !selectedContact) return;
+        if (!confirm('Deseja finalizar este atendimento e devolver para a Automação?')) return;
+        
+        try {
+            const res = await fetch(`/api/crm/chats/${selectedContact.id}/finish`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                // Refresh contacts to show the updated status
+                fetchContacts();
+                setSelectedContact(null); // Close the chat
+            }
+        } catch (err) {
+            console.error('Erro ao finalizar atendimento:', err);
+        }
+    };
+
     const fetchAIPrompts = async () => {
         if (!token) return;
         try {
@@ -788,8 +808,16 @@ export default function OmniInboxPage() {
                                     className="hover:text-white transition"
                                     title="Ligar para o contato"
                                 >
-                                    <Phone className="w-5 h-5" />
                                 </a>
+
+                                <button
+                                    onClick={handleFinishService}
+                                    className="flex items-center space-x-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 px-3 py-1.5 rounded-lg transition text-[10px] font-bold"
+                                    title="Finalizar e Devolver para Automação"
+                                >
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>FINALIZAR</span>
+                                </button>
 
                                 {/* Team Selector */}
                                 <select

@@ -34,7 +34,7 @@ export class CrmController {
     @Get('chats')
     async getChats(@Request() req, @Query('instance') instance?: string) {
         this.logger.log(`[SECURITY] User ${req.user.email} (${req.user.role}) accessing chats for tenant ${req.user.tenantId}`);
-        return this.crmService.getRecentChats(req.user.tenantId, req.user.role, { instance });
+        return this.crmService.getRecentChats(req.user.tenantId, req.user, { instance });
     }
 
     @Get('chats/:contactId/messages')
@@ -50,6 +50,11 @@ export class CrmController {
     @Patch('chats/:contactId')
     updateContact(@Request() req, @Param('contactId') contactId: string, @Body() body: any) {
         return this.crmService.updateContact(req.user.tenantId, contactId, body);
+    }
+
+    @Patch('chats/:contactId/finish')
+    finishChat(@Request() req, @Param('contactId') contactId: string) {
+        return this.crmService.finishService(req.user.tenantId, contactId);
     }
 
     @Get('campaign-logs/:campaignId')

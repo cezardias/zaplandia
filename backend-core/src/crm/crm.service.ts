@@ -134,16 +134,39 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         }
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOneById(tenantId: string, id: string): Promise<Contact | null> {
         return this.contactRepository.findOne({ where: { id, tenantId } });
     }
 
-    async getRecentChats(tenantId: string, role: string, filters?: { stage?: string; campaignId?: string; search?: string; instance?: string }) {
-        // If superadmin, can see all messages? No, usually scoped by tenant.
-        // Assuming role check handled in Controller or Guard.
+    async finishService(tenantId: string, contactId: string) {
+        const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
+        if (!contact) throw new BadRequestException('Contato não encontrado.');
 
+        // Re-enable automation and clear assignment
+        contact.aiEnabled = true;
+        contact.n8nEnabled = true;
+        contact.assignedUserId = null;
+        // Keep assignedTeamId? Usually yes, to know which team handled it, or clear it too.
+        // User said: "automacao liga e reincica" and "sai da equipe", 
+        // but typically we keep the historical teamId and just clear the specific user assignment.
+
+        return this.contactRepository.save(contact);
+    }
+
+    async getRecentChats(tenantId: string, user: { userId: string, role: string, teamId?: string }, filters?: { stage?: string; campaignId?: string; search?: string; instance?: string }) {
+        const { userId, role, teamId } = user;
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
+
+        // AGENT ROLE FILTER: Only see assigned chats or team chats
+        if (role === 'agent') {
+            query.andWhere(new Brackets(qb => {
+                qb.where('contact.assignedUserId = :userId', { userId })
+                if (teamId) {
+                    qb.orWhere('contact.assignedTeamId = :teamId', { teamId });
+                }
+            }));
+        }
 
         if (filters?.stage) {
             query.andWhere('contact.stage = :stage', { stage: filters.stage });
@@ -1140,5 +1163,16 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             limitRemaining,
             limitResetTime
         };
+    }
+    async finishService(tenantId: string, contactId: string) {
+        const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
+        if (!contact) throw new BadRequestException('Contato não encontrado.');
+
+        // Re-enable automation and clear assignment
+        contact.aiEnabled = true;
+        contact.n8nEnabled = true;
+        contact.assignedUserId = null;
+        
+        return this.contactRepository.save(contact);
     }
 }

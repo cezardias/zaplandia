@@ -34,19 +34,23 @@ export default function DashboardLayout({
     }, [user, isLoading, router]);
 
     const menuItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
-        { name: 'Omni Inbox', icon: <MessageSquare size={20} />, path: '/dashboard/inbox' },
-        { name: 'Assistente IA', icon: <Zap size={20} />, path: '/dashboard/ai-assistant' },
-        { name: 'WhatsApp Manager', icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp' },
-        { name: 'Meta API', icon: <Facebook size={20} />, path: '/dashboard/integrations/meta' },
-        { name: 'Governança Meta', icon: <ShieldCheck size={20} />, path: '/dashboard/governance' },
-        { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm' },
-        { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams' },
-        { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban' },
-        { name: 'Integrações', icon: <Settings size={20} />, path: '/dashboard/integrations' },
-        { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api' },
-        { name: 'Central de Ajuda', icon: <HelpCircle size={20} />, path: '/dashboard/support' },
+        { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Omni Inbox', icon: <MessageSquare size={20} />, path: '/dashboard/inbox', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: 'Assistente IA', icon: <Zap size={20} />, path: '/dashboard/ai-assistant', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'WhatsApp Manager', icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Meta API', icon: <Facebook size={20} />, path: '/dashboard/integrations/meta', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Governança Meta', icon: <ShieldCheck size={20} />, path: '/dashboard/governance', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin'] },
+        { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Integrações', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin'] },
+        { name: 'Configurações API', icon: <Settings size={20} />, path: '/dashboard/settings/api', roles: ['superadmin', 'admin'] },
+        { name: 'Central de Ajuda', icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
+
+    const filteredMenuItems = menuItems.filter(item => 
+        !item.roles || item.roles.includes(user?.role || '')
+    );
 
     if (isLoading) {
         return (
@@ -70,7 +74,7 @@ export default function DashboardLayout({
                 </div>
 
                 <nav className="flex-1 overflow-y-auto px-4 space-y-1">
-                    {menuItems.map((item) => (
+                    {filteredMenuItems.map((item) => (
                         <Link
                             key={item.path}
                             href={item.path}
