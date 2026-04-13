@@ -151,7 +151,7 @@ export default function DeveloperPage() {
                     Guia rápido: Conectando no n8n
                 </h2>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* HTTP Request Step */}
                     <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-xl">
                         <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
@@ -223,6 +223,42 @@ export default function DeveloperPage() {
                                         O campo <strong className="text-white">teamId</strong> você encontra na aba "Equipes". Ao transferir, a automação (IA/n8n) desse contato será pausada para o humano assumir.
                                     </p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Evolution API Webhook */}
+                    <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden flex flex-col shadow-xl">
+                        <div className="p-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                            <h3 className="font-bold flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[12px]">3</span>
+                                Evolution API (Webhook)
+                            </h3>
+                        </div>
+                        <div className="p-6 space-y-4 flex-1">
+                            <p className="text-sm text-gray-400">Cole esta URL no painel da sua Evolution API (Webhook > Global).</p>
+                            
+                            <div className="p-3 bg-black/40 rounded-xl space-y-2 border border-white/5">
+                                <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">URL do Webhook</p>
+                                <div className="flex items-center justify-between">
+                                    <code className="text-[11px] text-green-400">{baseUrl}/api/webhooks/evolution</code>
+                                    <button onClick={() => copyToClipboard(`${baseUrl}/api/webhooks/evolution`, setCopiedUrl)} className="p-2 hover:bg-white/10 rounded-lg transition text-gray-400">
+                                        {copiedUrl ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="p-4 bg-yellow-500/5 rounded-xl border border-yellow-500/20">
+                                    <p className="text-[11px] text-yellow-500 font-bold mb-1 uppercase tracking-tighter">⚠️ Regra Crítica da Instância</p>
+                                    <p className="text-xs text-gray-400">
+                                        O nome da sua instância deve começar com: <br/>
+                                        <code className="text-white font-mono bg-black/40 px-1 rounded">tenant_{user?.tenantId}_</code>
+                                    </p>
+                                </div>
+                                <p className="text-[11px] text-gray-500 leading-relaxed italic">
+                                    Isso garante que as mensagens cheguem na sua conta corretamente.
+                                </p>
                             </div>
                         </div>
                     </div>

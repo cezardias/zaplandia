@@ -17,6 +17,21 @@ export class Tenant {
     @Column({ type: 'timestamp', nullable: true })
     trialEndsAt: Date;
 
+    @Column({ 
+        type: 'varchar', 
+        default: 'trial' 
+    })
+    planType: string; // trial, monthly, annual
+
+    @Column({ 
+        type: 'varchar', 
+        default: 'trial' 
+    })
+    subscriptionStatus: string; // trial, active, expired, pending
+
+    @Column({ type: 'timestamp', nullable: true })
+    paidUntil: Date;
+
     @CreateDateColumn()
     createdAt: Date;
 }

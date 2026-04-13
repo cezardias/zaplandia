@@ -17,6 +17,8 @@ import { UsageModule } from './usage/usage.module';
 import { AuditModule } from './audit/audit.module';
 import { TeamsModule } from './teams/teams.module';
 import { CommunicationModule } from './communication/communication.module';
+import { BillingModule } from './billing/billing.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { CommunicationModule } from './communication/communication.module';
     AuditModule,
     TeamsModule,
     CommunicationModule,
+    BillingModule,
+    MailModule,
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'redis',

@@ -16,7 +16,9 @@ import {
     Facebook,
     Menu,
     X,
-    Terminal
+    Terminal,
+    CreditCard,
+    AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -39,8 +41,23 @@ export default function DashboardLayout({
     useEffect(() => {
         if (!isLoading && !user) {
             router.push('/auth/login');
+            return;
         }
-    }, [user, isLoading, router]);
+
+        // Check License Status (except for superadmin and billing/support pages)
+        if (user && user.role !== 'superadmin' && !pathname.includes('/billing') && !pathname.includes('/support')) {
+            fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/billing/status`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('zap_token')}` }
+            })
+            .then(res => res.json())
+            .then(status => {
+                if (status.isExpired) {
+                    router.push('/dashboard/billing');
+                }
+            })
+            .catch(err => console.error('Erro ao validar licença:', err));
+        }
+    }, [user, isLoading, router, pathname]);
 
     const menuItems = [
         { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard', roles: ['superadmin', 'admin', 'user'] },
@@ -52,7 +69,8 @@ export default function DashboardLayout({
         { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
         { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Integrações', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Configurações', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Pagamentos', icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
         { name: 'Desenvolvedor', icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Central de Ajuda', icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
@@ -158,8 +176,22 @@ export default function DashboardLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-background/50 pt-16 md:pt-0">
-                {children}
+            <main className="flex-1 overflow-y-auto bg-background/50 pt-16 md:pt-0 flex flex-col">
+                {/* Trial/Subscription Banner */}
+                {user?.role !== 'superadmin' && (
+                    <div className="bg-primary/10 border-b border-primary/20 px-6 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-primary font-medium">
+                            <AlertCircle size={14} />
+                            <span>Seu período de teste (Trial) está ativo. Aproveite todas as funções!</span>
+                        </div>
+                        <Link href="/dashboard/billing" className="text-[10px] bg-primary text-white px-3 py-1 rounded-full hover:bg-primary-dark transition font-bold uppercase tracking-wider">
+                            Escolher Plano
+                        </Link>
+                    </div>
+                )}
+                <div className="flex-1">
+                    {children}
+                </div>
             </main>
         </div>
     );
