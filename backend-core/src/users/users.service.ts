@@ -16,9 +16,10 @@ export class UsersService implements OnModuleInit {
 
     async onModuleInit() {
         try {
+            await this.usersRepository.query(`ALTER TYPE users_role_enum ADD VALUE IF NOT EXISTS 'agent'`);
             await this.seedSuperAdmin();
         } catch (e) {
-            console.error('Erro ao inicializar banco de dados/seed:', e);
+            console.error('Erro ao inicializar banco de dados ou migrar roles:', e);
         }
     }
 
