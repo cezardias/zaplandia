@@ -16,6 +16,7 @@ import { AiModule } from './ai/ai.module';
 import { UsageModule } from './usage/usage.module';
 import { AuditModule } from './audit/audit.module';
 import { TeamsModule } from './teams/teams.module';
+import { CommunicationModule } from './communication/communication.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { TeamsModule } from './teams/teams.module';
     UsageModule,
     AuditModule,
     TeamsModule,
+    CommunicationModule,
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'redis',

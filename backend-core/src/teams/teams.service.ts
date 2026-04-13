@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, Logger, Inject, forwardRef } from '@nestjs/common';
+import { CommunicationService } from '../communication/communication.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './entities/team.entity';
@@ -15,6 +16,8 @@ export class TeamsService implements OnModuleInit {
         @InjectRepository(User)
         private usersRepository: Repository<User>,
         private crmService: CrmService,
+        @Inject(forwardRef(() => CommunicationService))
+        private readonly communicationService: CommunicationService,
     ) { }
 
     async onModuleInit() {
@@ -94,6 +97,17 @@ export class TeamsService implements OnModuleInit {
             n8nEnabled: false
         };
 
-        return this.crmService.updateContact(tenantId, contact.id, updateData);
+        const updated = await this.crmService.updateContact(tenantId, contact.id, updateData);
+
+        // ✅ Emitir evento WebSocket para atualização em tempo real da lista no Inbox
+        this.communicationService.emitToTenant(tenantId, 'contact_transferred', {
+            contactId: contact.id,
+            teamId: target.teamId || null,
+            userId: target.userId || null,
+            aiEnabled: false,
+            n8nEnabled: false
+        });
+
+        return updated;
     }
 }

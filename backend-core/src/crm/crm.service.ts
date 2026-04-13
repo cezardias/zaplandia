@@ -1,4 +1,5 @@
-import { Injectable, Logger, BadRequestException, OnApplicationBootstrap, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, OnApplicationBootstrap, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
+import { CommunicationService } from '../communication/communication.service';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import axios from 'axios';
@@ -35,6 +36,8 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
         private readonly metaApiService: MetaApiService,
+        @Inject(forwardRef(() => CommunicationService))
+        private readonly communicationService: CommunicationService,
         @InjectQueue('campaign-queue') private readonly campaignQueue: Queue,
     ) { }
 
@@ -444,6 +447,12 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
         await this.messageRepository.save(message);
 
+        // ✅ Emitir evento WebSocket para atualização em tempo real
+        this.communicationService.emitToTenant(tenantId, 'new_message', {
+            ...message,
+            contact: contact ? { id: contact.id, name: contact.name } : null
+        });
+
         // 2. Trigger n8n Webhook for automation (If not overridden by contact)
         if (contact && contact.n8nEnabled !== false) {
             await this.n8nService.triggerWebhook(tenantId, {
@@ -842,8 +851,18 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         if (!contact) return null;
 
         await this.contactRepository.update(contactId, updates);
+        const updated = await this.contactRepository.findOne({ where: { id: contactId } });
+        
+        // ✅ Notificar Frontend via WebSocket
+        if (updated) {
+            this.communicationService.emitToTenant(tenantId, 'contact_updated', {
+                contactId: updated.id,
+                ...updates
+            });
+        }
+
         this.logger.log(`Updated contact ${contactId} with: ${JSON.stringify(updates)}`);
-        return this.contactRepository.findOne({ where: { id: contactId } });
+        return updated;
     }
 
     async seedDemoData(tenantId: string) {
@@ -1157,6 +1176,17 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         contact.n8nEnabled = true;
         contact.assignedUserId = null;
         
-        return this.contactRepository.save(contact);
+        await this.contactRepository.save(contact);
+
+        // ✅ Inserir marcador de sistema para resetar a memória da IA (Lisa)
+        // Isso garante que ela comece do "Menu Inicial" no próximo contato
+        await this.messageRepository.save({
+            contactId: contact.id,
+            content: '[CONTROLE_SISTEMA]: Atendimento Humano Finalizado. Reiniciar Fluxo de IA.',
+            direction: 'outbound',
+            tenantId: tenantId
+        });
+
+        return contact;
     }
 }

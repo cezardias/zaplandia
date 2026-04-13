@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
+import { useSocket } from '@/context/SocketContext';
 import AiModelSelector from '@/components/AiModelSelector';
 
 interface Contact {
@@ -58,6 +59,7 @@ export default function OmniInboxPage() {
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const { user, token } = useAuth();
+    const { socket } = useSocket();
     const router = useRouter();
 
     // Media Upload State
@@ -205,11 +207,7 @@ export default function OmniInboxPage() {
 
     useEffect(() => {
         fetchChats();
-        // Polling interval to simulate real-time updates (since we don't use sockets)
-        const interval = setInterval(() => {
-            fetchChats();
-        }, 5000); // Increased frequency: Poll every 5 seconds
-
+        
         // Sync AI state for the newly selected instance
         if (selectedInstance !== 'all') {
             const inst = availableInstances.find(i => i.id === selectedInstance);
@@ -225,9 +223,63 @@ export default function OmniInboxPage() {
             setSelectedPromptId(null);
             setSelectedAiModel('gemini-1.5-flash');
         }
-
-        return () => clearInterval(interval); // Cleanup on unmount
     }, [token, selectedInstance, availableInstances]);
+
+    // ✅ WebSocket Real-time Updates (REPLACES POLLING)
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewMessage = (msg: any) => {
+            console.log('📬 Nova mensagem recebida via Socket:', msg);
+            
+            // 1. Update Contacts List
+            setContacts(prev => {
+                const existing = prev.find(c => c.id === msg.contactId);
+                const updatedContact = existing 
+                    ? { ...existing, lastMessage: msg.content, updatedAt: new Date().toISOString() }
+                    : { ...msg.contact, lastMessage: msg.content, updatedAt: new Date().toISOString(), provider: msg.provider };
+                
+                const filtered = prev.filter(c => c.id !== msg.contactId);
+                return [updatedContact as Contact, ...filtered];
+            });
+
+            // 2. Update messages if current contact is selected
+            if (selectedContact && msg.contactId === selectedContact.id) {
+                setMessages(prev => {
+                    const exists = prev.find(m => m.id === msg.id);
+                    if (exists) return prev;
+                    return [...prev, msg];
+                });
+            }
+        };
+
+        const handleContactUpdate = (data: any) => {
+            console.log('👤 Contato atualizado via Socket:', data);
+            setContacts(prev => prev.map(c => c.id === data.contactId ? { ...c, ...data } : c));
+            
+            if (selectedContact && data.contactId === selectedContact.id) {
+                setContactAiEnabled(data.aiEnabled ?? null);
+                setContactN8nEnabled(data.n8nEnabled ?? null);
+            }
+        };
+
+        const handleMessageStatus = (data: any) => {
+            setMessages(prev => prev.map(m => m.id === data.messageId ? { ...m, status: data.status } : m));
+        };
+
+        socket.on('new_message', handleNewMessage);
+        socket.on('contact_transferred', handleContactUpdate);
+        socket.on('contact_updated', handleContactUpdate);
+        socket.on('message_status', handleMessageStatus);
+
+        return () => {
+            socket.off('new_message', handleNewMessage);
+            socket.off('contact_transferred', handleContactUpdate);
+            socket.off('contact_updated', handleContactUpdate);
+            socket.off('message_status', handleMessageStatus);
+        };
+    }, [socket, selectedContact]);
+
 
     const handleSeed = async () => {
         if (!confirm('Gerar dados de demonstração para o Inbox?')) return;
@@ -271,7 +323,7 @@ export default function OmniInboxPage() {
 
     useEffect(() => {
         if (selectedContact && token) {
-            console.log(`Iniciando monitoramento de mensagens: ${selectedContact.id}`);
+            console.log(`Iniciando chat: ${selectedContact.id}`);
 
             // Sync AI state for the newly selected contact
             setContactAiEnabled(selectedContact.aiEnabled ?? null);
@@ -279,13 +331,6 @@ export default function OmniInboxPage() {
 
             // Initial load
             fetchMessages();
-
-            // Polling for messages in the active chat (every 4 seconds for a snappy feel)
-            const msgInterval = setInterval(() => {
-                fetchMessages();
-            }, 4000);
-
-            return () => clearInterval(msgInterval);
         }
     }, [selectedContact, token]);
 

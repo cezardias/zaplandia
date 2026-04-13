@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, UseGuards } from '@nestjs/common';
 import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
+import { CommunicationService } from '../communication/communication.service';
 import { CrmService } from '../crm/crm.service';
 import { AiService } from '../ai/ai.service';
 import { IntegrationsService } from '../integrations/integrations.service';
@@ -29,6 +30,7 @@ export class WebhooksController {
         private leadRepository: Repository<CampaignLead>,
         @InjectRepository(Integration)
         private integrationRepository: Repository<Integration>,
+        private readonly communicationService: CommunicationService,
     ) { }
 
     // Meta (Face/Insta/WhatsApp) Webhook verification
@@ -124,6 +126,12 @@ export class WebhooksController {
                             if (message) {
                                 message.status = status;
                                 await this.messageRepository.save(message);
+                                
+                                // ✅ Emitir atualização de status via WebSocket
+                                this.communicationService.emitToTenant(tenantId, 'message_status', {
+                                    messageId: message.id,
+                                    status: status
+                                });
                             }
                         }
                     }
@@ -164,6 +172,12 @@ export class WebhooksController {
                                 instance: instanceName, wamid
                             });
                             await this.messageRepository.save(message);
+
+                            // ✅ Emitir nova mensagem via WebSocket
+                            this.communicationService.emitToTenant(tenantId, 'new_message', {
+                                ...message,
+                                contact: { id: contact.id, name: contact.name }
+                            });
 
                             contact.lastMessage = content;
                             await this.contactRepository.save(contact);
@@ -316,6 +330,12 @@ export class WebhooksController {
                     provider: 'whatsapp', tenantId, wamid, instance: instanceName
                 });
                 await this.messageRepository.save(message);
+
+                // ✅ Emitir nova mensagem via WebSocket (Evolution)
+                this.communicationService.emitToTenant(tenantId, 'new_message', {
+                    ...message,
+                    contact: { id: contact.id, name: contact.name }
+                });
                 
                 // FIX: Use update instead of save to avoid overwriting automation settings (aiEnabled/n8nEnabled) with stale data
                 await this.contactRepository.update(contact.id, { lastMessage: content });
@@ -352,8 +372,14 @@ export class WebhooksController {
             if (eventData && eventData.id) {
                 const message = await this.messageRepository.findOne({ where: { wamid: eventData.id } });
                 if (message && eventData.status) {
-                    message.status = eventData.status;
+                     message.status = eventData.status;
                     await this.messageRepository.save(message);
+
+                    // ✅ Emitir atualização de status via WebSocket (Evolution)
+                    this.communicationService.emitToTenant(tenantId, 'message_status', {
+                        messageId: message.id,
+                        status: eventData.status
+                    });
                 }
             }
         }

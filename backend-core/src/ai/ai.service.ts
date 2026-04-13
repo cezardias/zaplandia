@@ -286,11 +286,22 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName);
 
             // 5. Get conversation history (last 10 messages)
-            const history = await this.messageRepository.find({
+            const rawHistory = await this.messageRepository.find({
                 where: { contactId: contact.id },
                 order: { createdAt: 'DESC' },
-                take: 10
+                take: 15 // Take a bit more to ensure we find the reset marker if present
             });
+
+            // Smart Memory Reset: If we find the [CONTROLE_SISTEMA] marker, we discard everything before it
+            // because a human has finished the service and the AI should start over.
+            const resetMarkerIndex = rawHistory.findIndex(m => m.content.includes('[CONTROLE_SISTEMA]'));
+            let history = rawHistory;
+            if (resetMarkerIndex !== -1) {
+                this.logger.log(`[AI_MEMORY] Reset marker found at index ${resetMarkerIndex}. Clearing previous context.`);
+                history = rawHistory.slice(0, resetMarkerIndex);
+            } else {
+                history = rawHistory.slice(0, 10);
+            }
 
             // Build context
             const conversationContext = history
@@ -298,7 +309,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`)
                 .join('\n');
 
-            const fullPrompt = `${promptContent}\n\nHistórico da Conversa:\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
+            const isFreshStart = history.length === 0;
+            const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]: O atendimento humano acabou de ser finalizado. Inicie o contato do zero de acordo com o prompt acima.' : 'Histórico da Conversa:'}\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
             // 6. Call Gemini API manually (Resilient Fallback List)
             const configuredModel = integration.aiModel || 'gemini-1.5-flash';
