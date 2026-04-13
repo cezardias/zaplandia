@@ -434,6 +434,6 @@ export class IntegrationsController {
     @UseGuards(JwtAuthGuard)
     @Post('meta/register')
     async registerMetaNumber(@Request() req, @Body() body: { pin?: string }) {
-        return this.metaApiService.registerNumber(req.user.tenantId, body.pin);
+        return this.metaApiService.registerNumber(req.user.tenantId, body.pin || '');
     }
 }
