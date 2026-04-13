@@ -529,7 +529,7 @@ export default function OmniInboxPage() {
             });
             if (res.ok) {
                 // Refresh contacts to show the updated status
-                fetchContacts();
+                fetchChats();
                 setSelectedContact(null); // Close the chat
             }
         } catch (err) {
