@@ -30,6 +30,10 @@ export class BtgService {
             .where('config.id = :id', { id: config.id })
             .getOne();
 
+        if (!fullConfig) {
+            throw new InternalServerErrorException('Falha ao recuperar segredo do banco.');
+        }
+
         try {
             const auth = Buffer.from(`${fullConfig.btgClientId}:${fullConfig.btgClientSecret}`).toString('base64');
             const response = await axios.post(this.authUrl, 'grant_type=client_credentials', {
