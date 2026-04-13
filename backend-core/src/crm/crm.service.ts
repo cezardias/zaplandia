@@ -144,13 +144,11 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
 
-        // AGENT ROLE FILTER: Only see assigned chats or team chats
-        if (role === 'agent') {
+        // AGENT ROLE FILTER: Only see assigned chats or team chats IF the agent is in a team
+        if (role === 'agent' && teamId) {
             query.andWhere(new Brackets(qb => {
                 qb.where('contact.assignedUserId = :userId', { userId })
-                if (teamId) {
-                    qb.orWhere('contact.assignedTeamId = :teamId', { teamId });
-                }
+                  .orWhere('contact.assignedTeamId = :teamId', { teamId });
             }));
         }
 

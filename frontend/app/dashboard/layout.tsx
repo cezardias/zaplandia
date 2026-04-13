@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
     BarChart3,
@@ -13,7 +13,9 @@ import {
     ShieldCheck,
     HelpCircle,
     Smartphone,
-    Facebook
+    Facebook,
+    Menu,
+    X
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -26,6 +28,12 @@ export default function DashboardLayout({
     const { user, logout, isLoading } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Close mobile menu when pathname changes
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [pathname]);
 
     useEffect(() => {
         if (!isLoading && !user) {
@@ -63,9 +71,35 @@ export default function DashboardLayout({
     if (!user) return null;
 
     return (
-        <div className="flex h-screen bg-background overflow-hidden text-white">
+        <div className="flex h-screen bg-background overflow-hidden text-white relative">
+            {/* Mobile Header */}
+            <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-surface border-b border-white/5 flex items-center justify-between px-6 z-40">
+                <div className="flex items-center space-x-2">
+                    <Zap className="text-primary w-6 h-6 fill-primary" />
+                    <span className="text-lg font-bold tracking-tight">ZAPLANDIA</span>
+                </div>
+                <button 
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="p-2 hover:bg-white/5 rounded-xl transition"
+                >
+                    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+            </header>
+
+            {/* Backdrop for mobile */}
+            {isMobileMenuOpen && (
+                <div 
+                    className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 bg-surface border-r border-white/5 flex flex-col h-screen fixed md:relative z-50">
+            <aside className={`
+                w-64 bg-surface border-r border-white/5 flex flex-col h-screen fixed md:relative z-50 
+                transition-transform duration-300 ease-in-out
+                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            `}>
                 <div className="p-6">
                     <div className="flex items-center space-x-2">
                         <Zap className="text-primary w-8 h-8 fill-primary" />
@@ -123,7 +157,7 @@ export default function DashboardLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-background/50">
+            <main className="flex-1 overflow-y-auto bg-background/50 pt-16 md:pt-0">
                 {children}
             </main>
         </div>
