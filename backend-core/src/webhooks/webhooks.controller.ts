@@ -317,11 +317,11 @@ export class WebhooksController {
                 });
                 await this.messageRepository.save(message);
                 
-                contact.lastMessage = content;
-                await this.contactRepository.save(contact);
+                // FIX: Use update instead of save to avoid overwriting automation settings (aiEnabled/n8nEnabled) with stale data
+                await this.contactRepository.update(contact.id, { lastMessage: content });
 
-                // 3. n8n Dynamic Trigger
-                const n8nActive = existingIntegration?.n8nEnabled === true || contact.n8nEnabled !== false;
+                // 3. n8n Dynamic Trigger - Must respect BOTH global and contact level settings
+                const n8nActive = existingIntegration?.n8nEnabled === true && contact.n8nEnabled !== false;
                 
                 if (!isOutbound && n8nActive) {
                     this.logger.log(`[EVOLUTION_WEBHOOK] Triggering n8n for ${contact.name} (Tenant: ${tenantId})`);
