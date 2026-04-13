@@ -94,6 +94,6 @@ export class TeamsService implements OnModuleInit {
             n8nEnabled: false
         };
 
-        return this.crmService.updateContact(tenantId, contactId, updateData);
+        return this.crmService.updateContact(tenantId, contact.id, updateData);
     }
 }
