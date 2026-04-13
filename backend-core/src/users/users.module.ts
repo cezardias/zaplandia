@@ -4,6 +4,7 @@ import { User } from './entities/user.entity';
 import { Tenant } from './entities/tenant.entity';
 import { UsersService } from './users.service';
 import { AdminController } from './admin.controller';
+import { UsersController } from './users.controller';
 import { CrmModule } from '../crm/crm.module';
 import { SupportModule } from '../support/support.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
@@ -15,7 +16,7 @@ import { IntegrationsModule } from '../integrations/integrations.module';
         SupportModule,
         IntegrationsModule,
     ],
-    controllers: [AdminController],
+    controllers: [AdminController, UsersController],
     providers: [UsersService],
     exports: [UsersService],
 })

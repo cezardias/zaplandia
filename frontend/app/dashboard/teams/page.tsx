@@ -11,10 +11,11 @@ import {
     Terminal, 
     Loader2, 
     CheckCircle2,
-    Search,
-    ChevronRight,
     Copy,
-    Layout
+    Layout,
+    Mail,
+    Lock,
+    X
 } from 'lucide-react';
 
 interface Team {
@@ -33,6 +34,9 @@ export default function TeamsPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [copySuccess, setCopySuccess] = useState<string | null>(null);
+    const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
+    const [newAgentData, setNewAgentData] = useState({ name: '', email: '', password: '' });
+    const [isSavingAgent, setIsSavingAgent] = useState(false);
 
     useEffect(() => {
         if (token) {
@@ -45,14 +49,12 @@ export default function TeamsPage() {
         try {
             const [teamsRes, usersRes] = await Promise.all([
                 fetch('/api/teams', { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
 
             if (teamsRes.ok) setTeams(await teamsRes.json());
             if (usersRes.ok) {
-                const users = await usersRes.json();
-                // Filter users to only show those in the same tenant (unless superadmin)
-                setAllUsers(users.filter((u: any) => user?.role === 'superadmin' || u.tenantId === user?.tenantId));
+                setAllUsers(await usersRes.json());
             }
         } catch (err) {
             console.error('Failed to fetch teams/users', err);
@@ -121,6 +123,34 @@ export default function TeamsPage() {
             }
         } catch (err) {
             setError('Erro ao atribuir usuário.');
+        }
+    };
+
+    const createAgent = async () => {
+        if (!newAgentData.name || !newAgentData.email || !newAgentData.password) return;
+        setIsSavingAgent(true);
+        try {
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newAgentData)
+            });
+
+            if (res.ok) {
+                setSuccess('Atendente cadastrado com sucesso!');
+                setNewAgentData({ name: '', email: '', password: '' });
+                setIsAgentModalOpen(false);
+                fetchData();
+            } else {
+                setError('Erro ao cadastrar atendente. Verifique se o e-mail já existe.');
+            }
+        } catch (err) {
+            setError('Erro de conexão ao salvar atendente.');
+        } finally {
+            setIsSavingAgent(false);
         }
     };
 
@@ -244,10 +274,19 @@ export default function TeamsPage() {
 
                 {/* Right: Agents Management */}
                 <div className="bg-surface border border-white/10 rounded-3xl p-6 flex flex-col h-fit shadow-xl">
-                    <h2 className="text-xl font-bold mb-6 flex items-center space-x-2">
-                        <Shield className="w-5 h-5 text-primary" />
-                        <span>Atendentes</span>
-                    </h2>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold flex items-center space-x-2">
+                            <Shield className="w-5 h-5 text-primary" />
+                            <span>Atendentes</span>
+                        </h2>
+                        <button 
+                            onClick={() => setIsAgentModalOpen(true)}
+                            className="p-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-xl transition flex items-center space-x-2 text-xs font-bold"
+                        >
+                            <UserPlus className="w-4 h-4" />
+                            <span>Novo</span>
+                        </button>
+                    </div>
 
                     <div className="space-y-4">
                         {allUsers.map(u => (
@@ -282,6 +321,76 @@ export default function TeamsPage() {
                     </p>
                 </div>
             </div>
+            {/* Modal: New Agent */}
+            {isAgentModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsAgentModalOpen(false)} />
+                    <div className="bg-surface border border-white/10 rounded-3xl w-full max-w-md p-8 relative shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold flex items-center space-x-3">
+                                <UserPlus className="text-primary" />
+                                <span>Novo Atendente</span>
+                            </h3>
+                            <button onClick={() => setIsAgentModalOpen(false)} className="text-gray-500 hover:text-white transition">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Nome do Atendente</label>
+                                <div className="relative">
+                                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                    <input 
+                                        type="text" 
+                                        value={newAgentData.name}
+                                        onChange={(e) => setNewAgentData({ ...newAgentData, name: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-sm outline-none focus:border-primary transition"
+                                        placeholder="Nome Completo"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">E-mail (Login)</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                    <input 
+                                        type="email" 
+                                        value={newAgentData.email}
+                                        onChange={(e) => setNewAgentData({ ...newAgentData, email: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-sm outline-none focus:border-primary transition"
+                                        placeholder="email@exemplo.com"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Senha Provisória</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                    <input 
+                                        type="password" 
+                                        value={newAgentData.password}
+                                        onChange={(e) => setNewAgentData({ ...newAgentData, password: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-sm outline-none focus:border-primary transition"
+                                        placeholder="Mínimo 6 caracteres"
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={createAgent}
+                                disabled={isSavingAgent || !newAgentData.name || !newAgentData.email || newAgentData.password.length < 6}
+                                className="w-full bg-primary hover:bg-primary-dark py-4 rounded-2xl font-bold transition flex items-center justify-center space-x-2 disabled:opacity-50 mt-4 shadow-lg shadow-primary/20"
+                            >
+                                {isSavingAgent ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                                <span>Cadastrar Atendente</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

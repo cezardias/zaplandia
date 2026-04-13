@@ -163,6 +163,13 @@ export class UsersService implements OnModuleInit {
         });
     }
 
+    async findAllByTenant(tenantId: string): Promise<User[]> {
+        return this.usersRepository.find({
+            where: { tenantId },
+            order: { name: 'ASC' }
+        });
+    }
+
     async update(id: string, updateData: any): Promise<User | null> {
         if (updateData.password) {
             updateData.password = await bcrypt.hash(updateData.password, 10);
