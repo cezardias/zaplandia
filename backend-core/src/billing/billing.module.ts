@@ -7,11 +7,13 @@ import { BillingService } from './billing.service';
 import { BtgService } from './btg.service';
 import { BillingController } from './billing.controller';
 import { UsersModule } from '../users/users.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([BillingConfig, Transaction, Tenant]),
         forwardRef(() => UsersModule),
+        AuthModule,
     ],
     providers: [BillingService, BtgService],
     controllers: [BillingController],

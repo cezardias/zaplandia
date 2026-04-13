@@ -5,6 +5,9 @@ import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ApiKeyGuard } from './guards/api-key.guard';
+import { UniversalAuthGuard } from './guards/universal-auth.guard';
 
 @Module({
     imports: [
@@ -16,7 +19,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
-    exports: [AuthService],
+    providers: [AuthService, JwtStrategy, JwtAuthGuard, ApiKeyGuard, UniversalAuthGuard],
+    exports: [AuthService, JwtAuthGuard, ApiKeyGuard, UniversalAuthGuard],
 })
 export class AuthModule { }
