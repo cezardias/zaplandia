@@ -48,10 +48,10 @@ export class Contact {
     @Column({ nullable: true })
     n8nEnabled: boolean; // null = inherit, false = disabled
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     assignedTeamId: string | null;
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     assignedUserId: string | null;
 
     @ManyToOne(() => Tenant)

@@ -39,7 +39,7 @@ export class User {
     @JoinColumn({ name: 'teamId' })
     team: any; 
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     teamId: string | null;
 
     @CreateDateColumn()
