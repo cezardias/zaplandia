@@ -9,10 +9,13 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiKeyGuard } from './guards/api-key.guard';
 import { UniversalAuthGuard } from './guards/universal-auth.guard';
 
+import { IntegrationsModule } from '../integrations/integrations.module';
+
 @Module({
     imports: [
         UsersModule,
         PassportModule,
+        forwardRef(() => IntegrationsModule),
         JwtModule.register({
             secret: process.env.JWT_SECRET || 'zaplandia_super_secret_key',
             signOptions: { expiresIn: '7d' },
