@@ -14,6 +14,9 @@ export class BillingConfig {
     @Column({ nullable: true })
     btgPixKey: string;
 
+    @Column({ default: false })
+    isSandbox: boolean;
+
     @Column({ default: 'cal.zaplandia.com.br' })
     smtpHost: string;
 
