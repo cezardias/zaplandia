@@ -43,6 +43,8 @@ export class UsersService implements OnModuleInit {
                     CONSTRAINT "PK_billing_configs" PRIMARY KEY ("id")
                 )
             `);
+            // Ensure column exists for existing tables
+            await this.usersRepository.query(`ALTER TABLE "billing_configs" ADD COLUMN IF NOT EXISTS "btgPixKey" character varying`).catch(() => {});
 
             // 2. Create migrations for types if they don't exist
             try {
