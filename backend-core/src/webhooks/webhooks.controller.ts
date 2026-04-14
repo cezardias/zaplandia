@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, UseGuards, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
 import { CommunicationService } from '../communication/communication.service';
 import { CrmService } from '../crm/crm.service';
@@ -35,8 +36,13 @@ export class WebhooksController {
 
     // Meta (Face/Insta/WhatsApp) Webhook verification
     @Get('meta')
-    async verifyMeta(@Query('hub.mode') mode: string, @Query('hub.verify_token') token: string, @Query('hub.challenge') challenge: string) {
-        this.logger.log('Verifying Meta Webhook...');
+    async verifyMeta(
+        @Query('hub.mode') mode: string,
+        @Query('hub.verify_token') token: string,
+        @Query('hub.challenge') challenge: string,
+        @Res() res: Response
+    ) {
+        this.logger.log(`[META_VERIFY] Mode: ${mode}, Token: ${token}, Challenge: ${challenge}`);
         const metaConfig = await this.integrationsService.getCredential(null, 'META_APP_CONFIG', true);
         let expectedToken = 'zaplandia_verify_token';
 
@@ -48,10 +54,13 @@ export class WebhooksController {
         } catch (e) { }
 
         if (mode === 'subscribe' && token === expectedToken) {
-            this.logger.log('Meta Webhook Verified!');
-            return challenge;
+            this.logger.log('[META_VERIFY] ✅ Webhook verified successfully!');
+            // CRITICAL: Must return plain text, NOT JSON — Meta rejects JSON-wrapped challenges
+            return res.status(200).send(challenge);
         }
-        return 'Forbidden';
+
+        this.logger.warn(`[META_VERIFY] ❌ Verification failed. Expected token: ${expectedToken}, Got: ${token}`);
+        return res.status(403).send('Forbidden');
     }
 
     // Handle Meta payloads (Instagram focus)

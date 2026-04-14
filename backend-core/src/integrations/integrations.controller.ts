@@ -436,4 +436,16 @@ export class IntegrationsController {
     async registerMetaNumber(@Request() req, @Body() body: { pin?: string }) {
         return this.metaApiService.registerNumber(req.user.tenantId, body.pin || '');
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('meta/webhook-status')
+    async getMetaWebhookStatus(@Request() req) {
+        return this.metaApiService.getWebhookStatus(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('meta/subscribe-webhook')
+    async subscribeMetaWebhook(@Request() req) {
+        return this.metaApiService.setupWebhookSubscription(req.user.tenantId);
+    }
 }

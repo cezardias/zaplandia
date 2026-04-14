@@ -19,7 +19,10 @@ import {
     ChevronRight,
     ArrowLeft,
     Plus,
-    X
+    X,
+    Wifi,
+    WifiOff,
+    Zap
 } from 'lucide-react';
 
 export default function MetaApiPage() {
@@ -42,6 +45,8 @@ export default function MetaApiPage() {
     const [templates, setTemplates] = useState<any[]>([]);
     const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState<'config' | 'templates' | 'phones'>('config');
+    const [webhookStatus, setWebhookStatus] = useState<any>(null);
+    const [subscribing, setSubscribing] = useState(false);
 
     // Template Creation State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -55,6 +60,7 @@ export default function MetaApiPage() {
     useEffect(() => {
         if (token) {
             fetchData();
+            fetchWebhookStatus();
         }
     }, [token]);
 
@@ -93,6 +99,43 @@ export default function MetaApiPage() {
         });
         const data = await res.json();
         return data.find((c: any) => c.key_name === 'META_WABA_ID')?.key_value;
+    };
+
+    const fetchWebhookStatus = async () => {
+        try {
+            const res = await fetch('/api/integrations/meta/webhook-status', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setWebhookStatus(data);
+            }
+        } catch (e) {
+            console.error('Could not fetch webhook status', e);
+        }
+    };
+
+    const handleSubscribeWebhook = async () => {
+        setSubscribing(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            const res = await fetch('/api/integrations/meta/subscribe-webhook', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setSuccess('App inscrito com sucesso! O WhatsApp agora enviará mensagens para o Zaplandia.');
+                await fetchWebhookStatus();
+            } else {
+                setError('Falha ao inscrever: ' + JSON.stringify(data));
+            }
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setSubscribing(false);
+        }
     };
 
     const fetchMetaDetails = async () => {
@@ -435,6 +478,89 @@ export default function MetaApiPage() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Webhook Status Panel */}
+                                <div className="mt-6 p-6 bg-white/2 border border-white/10 rounded-2xl space-y-4">
+                                    <div className="flex items-center justify-between flex-wrap gap-3">
+                                        <div className="flex items-center space-x-3">
+                                            <div className={`p-2 rounded-xl ${webhookStatus?.isSubscribed ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                                                {webhookStatus?.isSubscribed
+                                                    ? <Wifi className="w-5 h-5 text-green-400" />
+                                                    : <WifiOff className="w-5 h-5 text-red-400" />}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-sm">Recebimento de Mensagens (Webhook)</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {webhookStatus === null
+                                                        ? 'Verificando status...'
+                                                        : webhookStatus.isSubscribed
+                                                            ? '✅ Ativo — mensagens chegando ao Zaplandia'
+                                                            : '❌ Inativo — o WhatsApp não está enviando mensagens recebidas para cá'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={handleSubscribeWebhook}
+                                            disabled={subscribing || webhookStatus?.isSubscribed}
+                                            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-black transition ${
+                                                webhookStatus?.isSubscribed
+                                                    ? 'bg-green-500/10 text-green-400 cursor-default border border-green-500/20'
+                                                    : 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20'
+                                            }`}
+                                        >
+                                            {subscribing
+                                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                : webhookStatus?.isSubscribed
+                                                    ? <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    : <Zap className="w-3.5 h-3.5" />}
+                                            <span>{webhookStatus?.isSubscribed ? 'Inscrito' : 'Ativar Recebimento'}</span>
+                                        </button>
+                                    </div>
+
+                                    {/* Phone number live status */}
+                                    {webhookStatus?.phoneStatus && (
+                                        <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Número Ativo</p>
+                                                <p className="text-sm font-bold">{webhookStatus.phoneStatus.verified_name}</p>
+                                                <p className="text-xs text-gray-400">+{webhookStatus.phoneStatus.display_phone_number}</p>
+                                            </div>
+                                            <span className={`text-[10px] font-black px-2 py-1 rounded uppercase ${
+                                                webhookStatus.phoneStatus.status === 'FLAGGED' ? 'bg-red-500/20 text-red-400' :
+                                                webhookStatus.phoneStatus.status === 'CONNECTED' ? 'bg-green-500/20 text-green-400' :
+                                                'bg-yellow-500/20 text-yellow-400'
+                                            }`}>
+                                                {webhookStatus.phoneStatus.status || 'N/A'}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Webhook URL info */}
+                                    <div className="pt-4 border-t border-white/5">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">URL do Webhook (configurar no Meta for Developers)</p>
+                                        <div className="flex items-center space-x-2">
+                                            <code className="flex-1 text-[11px] bg-black/30 px-3 py-2 rounded-xl text-green-400 font-mono truncate">
+                                                {typeof window !== 'undefined'
+                                                    ? `${window.location.protocol}//${window.location.hostname}/api/webhooks/meta`
+                                                    : 'https://SEU_DOMINIO/api/webhooks/meta'}
+                                            </code>
+                                            <button
+                                                onClick={() => copyToClipboard(
+                                                    typeof window !== 'undefined'
+                                                        ? `${window.location.protocol}//${window.location.hostname}/api/webhooks/meta`
+                                                        : ''
+                                                )}
+                                                className="p-2 hover:bg-white/10 rounded-lg transition"
+                                                title="Copiar URL"
+                                            >
+                                                <Copy className="w-4 h-4 text-gray-400" />
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-gray-600 mt-2">
+                                            Verify Token: <span className="text-gray-400 font-mono">zaplandia_verify_token</span>
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="p-8 bg-white/2 border-t border-white/5 flex justify-end">

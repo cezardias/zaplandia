@@ -197,4 +197,76 @@ export class MetaApiService {
             throw new Error(detailedMsg);
         }
     }
+
+    /**
+     * Subscribes the app to the WABA to receive webhooks for the 'messages' field.
+     * This is equivalent to clicking "Subscribe" in the Meta for Developers dashboard.
+     * The actual webhook URL & verify token must be set in the Meta app dashboard.
+     */
+    async setupWebhookSubscription(tenantId: string) {
+        try {
+            const { accessToken, wabaId } = await this.getCredentials(tenantId);
+            if (!wabaId) throw new Error('META_WABA_ID not configured');
+
+            // Subscribe the app to the WABA webhook for messages
+            const response = await axios.post(
+                `${this.baseUrl}/${wabaId}/subscribed_apps`,
+                {},
+                { params: { access_token: accessToken } }
+            );
+
+            this.logger.log(`[META_WEBHOOK] App subscribed to WABA ${wabaId}: ${JSON.stringify(response.data)}`);
+            return { success: true, data: response.data };
+        } catch (error) {
+            const errorData = error.response?.data?.error || {};
+            const detailedMsg = errorData.message || error.message;
+            this.logger.error(`[META_WEBHOOK] Failed to subscribe app: ${detailedMsg}`);
+            throw new Error(detailedMsg);
+        }
+    }
+
+    /**
+     * Returns the current webhook subscription status for the WABA.
+     */
+    async getWebhookStatus(tenantId: string) {
+        try {
+            const { accessToken, wabaId, phoneNumberId } = await this.getCredentials(tenantId);
+
+            // Get subscribed apps for the WABA
+            const subRes = await axios.get(
+                `${this.baseUrl}/${wabaId}/subscribed_apps`,
+                { params: { access_token: accessToken } }
+            ).catch(() => ({ data: { data: [] } }));
+
+            // Get phone number status
+            let phoneStatus: any = null;
+            if (phoneNumberId) {
+                try {
+                    const phoneRes = await axios.get(
+                        `${this.baseUrl}/${phoneNumberId}`,
+                        { params: { access_token: accessToken, fields: 'id,display_phone_number,status,quality_rating,verified_name,code_verification_status,is_official_business_account' } }
+                    );
+                    phoneStatus = phoneRes.data;
+                } catch (e) {
+                    this.logger.warn(`[META_WEBHOOK] Could not fetch phone status: ${e.message}`);
+                }
+            }
+
+            const subscribedApps = subRes.data?.data || [];
+            const isSubscribed = subscribedApps.length > 0;
+
+            return {
+                isSubscribed,
+                subscribedApps,
+                phoneStatus,
+                wabaId,
+                phoneNumberId,
+            };
+        } catch (error) {
+            const errorData = error.response?.data?.error || {};
+            const detailedMsg = errorData.message || error.message;
+            this.logger.error(`[META_WEBHOOK] Failed to get webhook status: ${detailedMsg}`);
+            throw new Error(detailedMsg);
+        }
+    }
 }
