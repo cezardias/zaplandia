@@ -37,12 +37,17 @@ export class WebhooksController {
     // Meta (Face/Insta/WhatsApp) Webhook verification
     @Get('meta')
     async verifyMeta(
-        @Query('hub.mode') mode: string,
-        @Query('hub.verify_token') token: string,
-        @Query('hub.challenge') challenge: string,
+        @Query() query: Record<string, any>,
         @Res() res: Response
     ) {
+        // qs may parse 'hub.verify_token' as nested object OR flat key depending on config
+        const mode      = query['hub.mode']         ?? query?.hub?.mode;
+        const token     = query['hub.verify_token'] ?? query?.hub?.verify_token;
+        const challenge = query['hub.challenge']    ?? query?.hub?.challenge;
+
         this.logger.log(`[META_VERIFY] Mode: ${mode}, Token: ${token}, Challenge: ${challenge}`);
+        this.logger.debug(`[META_VERIFY] Raw query: ${JSON.stringify(query)}`);
+
         const metaConfig = await this.integrationsService.getCredential(null, 'META_APP_CONFIG', true);
         let expectedToken = 'zaplandia_verify_token';
 
@@ -59,9 +64,8 @@ export class WebhooksController {
             return res.status(200).send(challenge);
         }
 
-        this.logger.warn(`[META_VERIFY] ❌ Verification failed. Expected token: ${expectedToken}, Got: ${token}`);
+        this.logger.warn(`[META_VERIFY] ❌ Verification failed. Expected: ${expectedToken}, Got: ${token}`);
         return res.status(403).send('Forbidden');
-    }
 
     // Handle Meta payloads (Instagram focus)
     @Post('meta')
