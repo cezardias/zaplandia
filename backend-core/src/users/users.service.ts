@@ -38,6 +38,7 @@ export class UsersService implements OnModuleInit {
                     "smtpPort" integer DEFAULT 587,
                     "smtpUser" character varying DEFAULT 'financeiro@zaplandia.com.br',
                     "smtpPass" character varying,
+                    "btgPixKey" character varying,
                     "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
                     CONSTRAINT "PK_billing_configs" PRIMARY KEY ("id")
                 )

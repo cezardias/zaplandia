@@ -25,7 +25,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPaymentsPage() {
     const { token } = useAuth();
-    const [config, setConfig] = useState({ btgClientId: '', btgClientSecret: '' });
+    const [config, setConfig] = useState({ btgClientId: '', btgClientSecret: '', btgPixKey: '' });
     const [revenueData, setRevenueData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -209,6 +209,17 @@ export default function AdminPaymentsPage() {
                                     onChange={(e) => setConfig({ ...config, btgClientSecret: e.target.value })}
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition"
                                     placeholder="••••••••••••••••"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[11px] uppercase text-gray-500 font-bold tracking-widest pl-1">Chave Pix BTG</label>
+                                <input 
+                                    type="text" 
+                                    value={config.btgPixKey}
+                                    onChange={(e) => setConfig({ ...config, btgPixKey: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition"
+                                    placeholder="CPF, CNPJ, Email ou EVP"
                                 />
                             </div>
 

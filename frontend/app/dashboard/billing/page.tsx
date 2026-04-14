@@ -46,7 +46,7 @@ export default function BillingPage() {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     
     // Admin Config State
-    const [adminConfig, setAdminConfig] = useState<any>({ btgClientId: '', btgClientSecret: '' });
+    const [adminConfig, setAdminConfig] = useState<any>({ btgClientId: '', btgClientSecret: '', btgPixKey: '' });
     const [isSavingConfig, setIsSavingConfig] = useState(false);
     const [showConfigSuccess, setShowConfigSuccess] = useState(false);
 
@@ -238,7 +238,7 @@ export default function BillingPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                if (method === 'credit_card' && data.checkoutUrl) {
+                if ((method === 'credit_card' || method === 'debit_card' || method === 'boleto') && data.checkoutUrl) {
                     window.location.href = data.checkoutUrl;
                 } else {
                     setTransaction(data);
@@ -608,6 +608,17 @@ export default function BillingPage() {
                                     value={adminConfig.btgClientSecret}
                                     onChange={(e) => setAdminConfig({...adminConfig, btgClientSecret: e.target.value})}
                                     placeholder="••••••••••••••••"
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-yellow-500/50 outline-none transition"
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-2">Chave Pix BTG</label>
+                                <input 
+                                    type="text"
+                                    value={adminConfig.btgPixKey || ''}
+                                    onChange={(e) => setAdminConfig({...adminConfig, btgPixKey: e.target.value})}
+                                    placeholder="CPF, CNPJ, Email ou EVP"
                                     className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-yellow-500/50 outline-none transition"
                                 />
                             </div>

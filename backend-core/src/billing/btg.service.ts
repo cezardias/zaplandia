@@ -35,7 +35,9 @@ export class BtgService {
         }
 
         try {
-            const auth = Buffer.from(`${fullConfig.btgClientId}:${fullConfig.btgClientSecret}`).toString('base64');
+            const clientId = fullConfig.btgClientId.trim();
+            const clientSecret = fullConfig.btgClientSecret.trim();
+            const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
             const response = await axios.post(this.authUrl, 'grant_type=client_credentials', {
                 headers: {
                     'Authorization': `Basic ${auth}`,
@@ -50,15 +52,16 @@ export class BtgService {
     }
 
     async createPix(tenantId: string, amount: number): Promise<Transaction> {
+        const config = await this.configRepository.findOne({ where: {} });
+        const pixKey = config?.btgPixKey || 'chave-pix-não-configurada';
+        
         const token = await this.getAccessToken();
         
         try {
-            // Placeholder: Exemplo de payload baseado em padrões do BTG Developers
-            // O endpoint real pode variar (ex: /pix/v1/cobv)
             const response = await axios.post(`${this.baseUrl}/pix/v1/cob`, {
-                calendario: { expiração: 3600 },
+                calendario: { expiracao: 3600 },
                 valor: { original: amount.toFixed(2) },
-                chave: 'chave-pix-configurada', // Isso viria do BillingConfig no futuro
+                chave: pixKey,
                 solicitacaoPagador: 'Pagamento Zaplandia',
             }, {
                 headers: { 'Authorization': `Bearer ${token}` }

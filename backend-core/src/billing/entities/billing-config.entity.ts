@@ -10,6 +10,9 @@ export class BillingConfig {
 
     @Column({ nullable: true, select: false }) // Select: false for security
     btgClientSecret: string;
+    
+    @Column({ nullable: true })
+    btgPixKey: string;
 
     @Column({ default: 'cal.zaplandia.com.br' })
     smtpHost: string;
