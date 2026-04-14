@@ -25,6 +25,15 @@ export class UsersService implements OnModuleInit {
                 await this.usersRepository.query(`ALTER TYPE users_role_enum ADD VALUE IF NOT EXISTS 'superadmin'`);
             } catch (e) { /* ignore */ }
 
+            // ✅ Payment Methods Enum Upgrade
+            try {
+                await this.usersRepository.query(`ALTER TYPE transactions_method_enum ADD VALUE IF NOT EXISTS 'debit_card'`);
+            } catch (e) { /* ignore */ }
+
+            try {
+                await this.usersRepository.query(`ALTER TYPE transactions_method_enum ADD VALUE IF NOT EXISTS 'boleto'`);
+            } catch (e) { /* ignore */ }
+
             // ✅ Tenants Schema Upgrade (Trial/Plans/Billing Info)
             console.log('[SCHEMA] Checking for missing columns in tenants table...');
             await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "planType" VARCHAR DEFAULT 'trial'`);

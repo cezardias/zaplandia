@@ -23,7 +23,7 @@ export class BillingController {
 
     @UseGuards(UniversalAuthGuard)
     @Post('pay')
-    async createPayment(@Request() req: any, @Body() body: { plan: 'monthly' | 'annual', method: 'pix' | 'credit_card' }) {
+    async createPayment(@Request() req: any, @Body() body: { plan: 'monthly' | 'annual', method: 'pix' | 'credit_card' | 'debit_card' | 'boleto' }) {
         return this.billingService.initiatePayment(req.user.tenantId, body.plan, body.method);
     }
 

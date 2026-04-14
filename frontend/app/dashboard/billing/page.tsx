@@ -16,15 +16,18 @@ import {
     Mail,
     PhoneCall,
     IdCard,
-    X
+    X,
+    FileText,
+    ShieldCheck,
+    Lock
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function BillingPage() {
-    const { token } = useAuth();
+    const { user, token } = useAuth();
     const [status, setStatus] = useState<any>(null);
     const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
-    const [method, setMethod] = useState<'pix' | 'credit_card'>('credit_card');
+    const [method, setMethod] = useState<'pix' | 'credit_card' | 'debit_card' | 'boleto'>('credit_card');
     const [isGenerating, setIsGenerating] = useState(false);
     const [transaction, setTransaction] = useState<any>(null);
     const [copied, setCopied] = useState(false);
@@ -41,12 +44,54 @@ export default function BillingPage() {
         responsibleEmail: ''
     });
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    
+    // Admin Config State
+    const [adminConfig, setAdminConfig] = useState<any>({ btgClientId: '', btgClientSecret: '' });
+    const [isSavingConfig, setIsSavingConfig] = useState(false);
+    const [showConfigSuccess, setShowConfigSuccess] = useState(false);
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
     useEffect(() => {
         fetchStatus();
-    }, []);
+        if (user?.role === 'superadmin') {
+            fetchAdminConfig();
+        }
+    }, [user]);
+
+    const fetchAdminConfig = async () => {
+        try {
+            const res = await fetch(`${baseUrl}/api/billing/admin/config`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) setAdminConfig(await res.json());
+        } catch (error) {
+            console.error('Erro ao buscar config admin:', error);
+        }
+    };
+
+    const handleSaveAdminConfig = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSavingConfig(true);
+        try {
+            const res = await fetch(`${baseUrl}/api/billing/admin/config`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(adminConfig)
+            });
+            if (res.ok) {
+                setShowConfigSuccess(true);
+                setTimeout(() => setShowConfigSuccess(false), 3000);
+            }
+        } catch (error) {
+            console.error('Erro ao salvar config:', error);
+        } finally {
+            setIsSavingConfig(false);
+        }
+    };
 
     const fetchStatus = async () => {
         try {
@@ -307,20 +352,34 @@ export default function BillingPage() {
                     Método de Pagamento
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <button 
                         onClick={() => setMethod('credit_card')}
-                        className={`p-4 rounded-2xl border-2 transition flex items-center gap-3 ${method === 'credit_card' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
+                        className={`p-4 rounded-2xl border-2 transition flex flex-col items-center justify-center gap-3 text-center ${method === 'credit_card' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
                     >
-                        <CreditCard size={20} />
-                        <span className="font-bold">Cartão de Crédito</span>
+                        <CreditCard size={24} />
+                        <span className="font-bold text-sm">Crédito</span>
+                    </button>
+                    <button 
+                        onClick={() => setMethod('debit_card')}
+                        className={`p-4 rounded-2xl border-2 transition flex flex-col items-center justify-center gap-3 text-center ${method === 'debit_card' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
+                    >
+                        <CreditCard size={24} className="rotate-180" />
+                        <span className="font-bold text-sm">Débito</span>
                     </button>
                     <button 
                         onClick={() => setMethod('pix')}
-                        className={`p-4 rounded-2xl border-2 transition flex items-center gap-3 ${method === 'pix' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
+                        className={`p-4 rounded-2xl border-2 transition flex flex-col items-center justify-center gap-3 text-center ${method === 'pix' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
                     >
-                        <QrCode size={20} />
-                        <span className="font-bold">Pix Instantâneo</span>
+                        <QrCode size={24} />
+                        <span className="font-bold text-sm">Pix</span>
+                    </button>
+                    <button 
+                        onClick={() => setMethod('boleto')}
+                        className={`p-4 rounded-2xl border-2 transition flex flex-col items-center justify-center gap-3 text-center ${method === 'boleto' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
+                    >
+                        <FileText size={24} />
+                        <span className="font-bold text-sm">Boleto</span>
                     </button>
                 </div>
 
@@ -509,6 +568,62 @@ export default function BillingPage() {
                                 {isSavingProfile ? 'Salvando...' : 'Salvar Dados e Prosseguir'}
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* Admin Config Section - Only for Superadmins */}
+            {user?.role === 'superadmin' && (
+                <div className="mt-20 pt-12 border-t border-white/5">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-3 bg-yellow-500/10 text-yellow-500 rounded-xl">
+                            <ShieldCheck size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold">Configurações Gerenciais</h2>
+                            <p className="text-gray-400 text-sm italic">Ambiente restrito • BTG Pactual Gateway</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-surface border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-5">
+                            <Lock size={120} />
+                        </div>
+                        
+                        <form onSubmit={handleSaveAdminConfig} className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-2">BTG Client ID</label>
+                                <input 
+                                    type="text"
+                                    value={adminConfig.btgClientId}
+                                    onChange={(e) => setAdminConfig({...adminConfig, btgClientId: e.target.value})}
+                                    placeholder="Ex: 8a7b9c..."
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-yellow-500/50 outline-none transition"
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-2">BTG Client Secret</label>
+                                <input 
+                                    type="password"
+                                    value={adminConfig.btgClientSecret}
+                                    onChange={(e) => setAdminConfig({...adminConfig, btgClientSecret: e.target.value})}
+                                    placeholder="••••••••••••••••"
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-yellow-500/50 outline-none transition"
+                                />
+                            </div>
+                            
+                            <div className="md:col-span-2 flex items-center justify-between">
+                                <div className="text-xs text-gray-500 leading-relaxed max-w-md">
+                                    Certifique-se de que os escopos necessários (links, pix, webhooks) estejam habilitados no painel do BTG Id.
+                                </div>
+                                <button 
+                                    type="submit"
+                                    disabled={isSavingConfig}
+                                    className={`px-8 py-4 rounded-2xl font-bold transition flex items-center gap-2 ${showConfigSuccess ? 'bg-green-500 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg shadow-yellow-500/20'}`}
+                                >
+                                    {isSavingConfig ? 'Salvando...' : showConfigSuccess ? <><Check size={20} /> Salvo!</> : 'Atualizar Credenciais BTG'}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

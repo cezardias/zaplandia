@@ -5,6 +5,7 @@ export enum PaymentMethod {
     PIX = 'pix',
     BOLETO = 'boleto',
     CREDIT_CARD = 'credit_card',
+    DEBIT_CARD = 'debit_card',
 }
 
 export enum PaymentStatus {

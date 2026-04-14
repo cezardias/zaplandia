@@ -84,13 +84,13 @@ export class BtgService {
         const token = await this.getAccessToken();
 
         try {
-            // Placeholder: Endpoint de checkout do BTG
             const response = await axios.post(`${this.baseUrl}/checkout/v1/payment-links`, {
-                amount: Math.round(amount * 100), // Em centavos
+                amount: Math.round(amount * 100),
                 installments: installments,
-                interestType: 'buyer', // Juros pelo comprador conforme pedido
+                payment_methods: ['credit_card'], // Force credit only
+                interestType: 'buyer',
                 callbackUrl: 'https://zaplandia.com.br/api/billing/webhook',
-                description: 'Assinatura Zaplandia',
+                description: 'Assinatura Zaplandia (Crédito)',
             }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -108,6 +108,65 @@ export class BtgService {
         } catch (error) {
             this.logger.error('Erro ao gerar Link de Cartão BTG:', error.response?.data || error.message);
             throw new InternalServerErrorException('Erro ao gerar link de pagamento.');
+        }
+    }
+
+    async createDebitLink(tenantId: string, amount: number): Promise<Transaction> {
+        const token = await this.getAccessToken();
+
+        try {
+            const response = await axios.post(`${this.baseUrl}/checkout/v1/payment-links`, {
+                amount: Math.round(amount * 100),
+                installments: 1, // Debit is always 1x
+                payment_methods: ['debit_card'], // Force debit only
+                callbackUrl: 'https://zaplandia.com.br/api/billing/webhook',
+                description: 'Assinatura Zaplandia (Débito)',
+            }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const transaction = this.transactionRepository.create({
+                tenantId,
+                amount,
+                method: PaymentMethod.DEBIT_CARD,
+                installments: 1,
+                btgPaymentId: response.data.id,
+                checkoutUrl: response.data.checkoutUrl,
+            });
+
+            return this.transactionRepository.save(transaction);
+        } catch (error) {
+            this.logger.error('Erro ao gerar Link de Débito BTG:', error.response?.data || error.message);
+            throw new InternalServerErrorException('Erro ao gerar cobrança de débito.');
+        }
+    }
+
+    async createBoleto(tenantId: string, amount: number): Promise<Transaction> {
+        const token = await this.getAccessToken();
+
+        try {
+            // Using Payment Link for Boleto as it's the safest way to handle it without address collection
+            const response = await axios.post(`${this.baseUrl}/checkout/v1/payment-links`, {
+                amount: Math.round(amount * 100),
+                payment_methods: ['boleto'], // Force boleto only
+                callbackUrl: 'https://zaplandia.com.br/api/billing/webhook',
+                description: 'Assinatura Zaplandia (Boleto)',
+            }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const transaction = this.transactionRepository.create({
+                tenantId,
+                amount,
+                method: PaymentMethod.BOLETO,
+                btgPaymentId: response.data.id,
+                checkoutUrl: response.data.checkoutUrl,
+            });
+
+            return this.transactionRepository.save(transaction);
+        } catch (error) {
+            this.logger.error('Erro ao gerar Boleto BTG:', error.response?.data || error.message);
+            throw new InternalServerErrorException('Erro ao gerar boleto bancário.');
         }
     }
 }

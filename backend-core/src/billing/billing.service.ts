@@ -71,13 +71,20 @@ export class BillingService {
         return this.tenantRepository.save(tenant);
     }
 
-    async initiatePayment(tenantId: string, planType: 'monthly' | 'annual', method: 'pix' | 'credit_card') {
+    async initiatePayment(tenantId: string, planType: 'monthly' | 'annual', method: 'pix' | 'credit_card' | 'debit_card' | 'boleto') {
         const amount = planType === 'monthly' ? 300 : 2400;
         
-        if (method === 'pix') {
-            return this.btgService.createPix(tenantId, amount);
-        } else {
-            return this.btgService.createCardLink(tenantId, amount, planType === 'annual' ? 12 : 1);
+        switch (method) {
+            case 'pix':
+                return this.btgService.createPix(tenantId, amount);
+            case 'credit_card':
+                return this.btgService.createCardLink(tenantId, amount, planType === 'annual' ? 12 : 1);
+            case 'debit_card':
+                return this.btgService.createDebitLink(tenantId, amount);
+            case 'boleto':
+                return this.btgService.createBoleto(tenantId, amount);
+            default:
+                throw new InternalServerErrorException('Método de pagamento não suportado.');
         }
     }
 
