@@ -139,6 +139,64 @@ export class MetaApiService {
         }
     }
 
+    /**
+     * Send an Instagram DM reply to a user via their Page-Scoped ID (PSID).
+     * Requires instagram_manage_messages permission and the Page Access Token.
+     * The recipient PSID comes from messaging.sender.id in the Instagram webhook payload.
+     */
+    async sendInstagramMessage(tenantId: string, recipientPsid: string, text: string) {
+        try {
+            const { accessToken } = await this.getCredentials(tenantId);
+
+            // Instagram page ID for the tenant
+            const pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
+
+            const payload = {
+                recipient: { id: recipientPsid },
+                message: { text },
+                messaging_type: 'RESPONSE',
+            };
+
+            this.logger.log(`[INSTAGRAM_SEND] Sending DM to PSID ${recipientPsid} via Page ${pageId}`);
+
+            const response = await axios.post(
+                `${this.baseUrl}/${pageId}/messages`,
+                payload,
+                { params: { access_token: accessToken } }
+            );
+
+            this.logger.log(`[INSTAGRAM_SEND] SUCCESS: ${JSON.stringify(response.data)}`);
+            return response.data;
+        } catch (error: any) {
+            const errorData = error.response?.data?.error || {};
+            const detailedMsg = errorData.message || error.message;
+            this.logger.error(`[INSTAGRAM_SEND] FAILED: ${detailedMsg}`);
+            if (error.response?.data) {
+                this.logger.error(`[INSTAGRAM_SEND] Full Error: ${JSON.stringify(error.response.data)}`);
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Fetches the Instagram user's real name from their PSID.
+     * Used when creating a contact from an Instagram DM.
+     */
+    async getInstagramUserProfile(tenantId: string, psid: string): Promise<{ name: string; username?: string } | null> {
+        try {
+            const { accessToken } = await this.getCredentials(tenantId);
+            const response = await axios.get(
+                `${this.baseUrl}/${psid}`,
+                { params: { access_token: accessToken, fields: 'name,username' } }
+            );
+            return response.data;
+        } catch (error: any) {
+            this.logger.warn(`[INSTAGRAM_PROFILE] Could not fetch profile for PSID ${psid}: ${error.message}`);
+            return null;
+        }
+    }
+
     async createTemplate(tenantId: string, templateData: { name: string, category: string, language: string, bodyText: string }) {
         try {
             const { accessToken, wabaId } = await this.getCredentials(tenantId);

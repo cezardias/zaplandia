@@ -12,6 +12,7 @@ import { Contact, Message } from '../crm/entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
+import { MetaApiService } from '../integrations/meta-api.service';
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -23,6 +24,7 @@ export class WebhooksController {
         private readonly integrationsService: IntegrationsService,
         private readonly n8nService: N8nService,
         private readonly evolutionApiService: EvolutionApiService,
+        private readonly metaApiService: MetaApiService,
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
         @InjectRepository(Message)
@@ -225,46 +227,154 @@ export class WebhooksController {
         } else if (payload.object === 'instagram') {
             try {
                 for (const entry of entries) {
-                    const entryId = entry.id;
+                    const pageId = entry.id; // This is the Facebook Page ID linked to Instagram
+
+                    // --- MULTITENANT: find tenant by INSTAGRAM_PAGE_ID credential ---
+                    const pageCred = await this.integrationsService.findCredentialByValue('INSTAGRAM_PAGE_ID', pageId);
+                    let tenantId = pageCred?.tenantId;
+
+                    // Fallback: look for Meta integration linked to this page
+                    if (!tenantId) {
+                        const instaIntegration = await this.integrationRepository.findOne({
+                            where: { provider: 'instagram' as any }
+                        });
+                        tenantId = instaIntegration?.tenantId;
+                    }
+
+                    if (!tenantId) {
+                        this.logger.warn(`[INSTAGRAM_WEBHOOK] No tenant found for Page ID: ${pageId}. Configure INSTAGRAM_PAGE_ID credential.`);
+                        continue;
+                    }
+
+                    this.logger.log(`[INSTAGRAM_WEBHOOK] Processing entry for Page ${pageId} → Tenant ${tenantId}`);
+
+                    // --- Direct Messages ---
                     if (entry.messaging) {
                         for (const messaging of entry.messaging) {
-                            const senderId = messaging.sender.id;
+                            const senderId = messaging.sender?.id;
+                            const recipientId = messaging.recipient?.id;
+                            if (!senderId || senderId === pageId) continue; // skip echo/outbound
+
                             const text = messaging.message?.text;
-                            if (text) {
-                                const contact = await this.crmService.ensureContact('default-tenant', {
-                                    name: `Instagram User ${senderId.slice(-4)}`,
-                                    externalId: senderId, provider: 'instagram', instance: entryId
-                                });
-                                const message = this.messageRepository.create({
-                                    tenantId: 'default-tenant', contactId: contact.id, content: text,
-                                    direction: 'inbound', provider: 'instagram', instance: entryId
-                                });
-                                await this.messageRepository.save(message);
-                                if (['NOVO', 'LEAD', 'CONTACTED', 'SENT'].includes(contact.stage || '')) {
-                                    await this.crmService.updateContact('default-tenant', contact.id, { stage: 'NEGOTIATION' });
+                            const attachments = messaging.message?.attachments;
+                            let content = text || '';
+
+                            if (!content && attachments?.length > 0) {
+                                const att = attachments[0];
+                                content = `[${(att.type || 'arquivo').toUpperCase()} RECEBIDO]`;
+                            }
+
+                            if (!content) continue;
+
+                            const wamid = messaging.message?.mid;
+
+                            // Dedup
+                            if (wamid) {
+                                const exists = await this.messageRepository.findOne({ where: { wamid } });
+                                if (exists) {
+                                    this.logger.debug(`[INSTAGRAM_WEBHOOK] Duplicate message skipped: ${wamid}`);
+                                    continue;
                                 }
-                                if (contact.n8nEnabled !== false) {
-                                    await this.n8nService.triggerWebhook('default-tenant', {
-                                        type: 'instagram.message', sender_id: senderId, content: text, contact_id: contact.id
-                                    });
+                            }
+
+                            // Fetch real name from Instagram Graph API
+                            let profileName = `Instagram ${senderId.slice(-4)}`;
+                            try {
+                                const profile = await this.metaApiService.getInstagramUserProfile(tenantId, senderId);
+                                if (profile?.name) profileName = profile.name;
+                            } catch (e) { /* profile fetch is best-effort */ }
+
+                            const contact = await this.crmService.ensureContact(tenantId, {
+                                name: profileName,
+                                externalId: senderId,
+                                provider: 'instagram',
+                                instance: pageId,
+                            });
+
+                            const message = this.messageRepository.create({
+                                tenantId,
+                                contactId: contact.id,
+                                content,
+                                direction: 'inbound',
+                                provider: 'instagram',
+                                instance: pageId,
+                                wamid: wamid || undefined,
+                            });
+                            await this.messageRepository.save(message);
+
+                            // Emit via WebSocket to inbox
+                            this.communicationService.emitToTenant(tenantId, 'new_message', {
+                                ...message,
+                                contact: { id: contact.id, name: contact.name, provider: 'instagram' }
+                            });
+
+                            // Update last message on contact
+                            contact.lastMessage = content;
+                            await this.contactRepository.save(contact);
+
+                            this.logger.log(`[INSTAGRAM_WEBHOOK] ✅ DM from ${profileName} (${senderId}) saved and emitted`);
+
+                            // N8N or AI response
+                            const hasN8n = !!(await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true));
+                            if (hasN8n && contact.n8nEnabled !== false) {
+                                const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
+                                    type: 'instagram.message',
+                                    sender_id: senderId,
+                                    content,
+                                    contact_id: contact.id,
+                                    name: contact.name,
+                                    message_id: message.id,
+                                    provider: 'instagram',
+                                }, null);
+
+                                if (n8nResponse) {
+                                    const resBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
+                                    for (const r of resBuffer) {
+                                        const replyText = r.textMessage || r.text || r.message;
+                                        if (replyText) {
+                                            try {
+                                                await this.metaApiService.sendInstagramMessage(tenantId, senderId, replyText);
+                                            } catch (sendErr: any) {
+                                                this.logger.error(`[INSTAGRAM_WEBHOOK] Failed to send N8N reply: ${sendErr.message}`);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if (contact.aiEnabled !== false) {
+                                try {
+                                    const shouldRespond = await this.aiService.shouldRespond(contact, pageId, tenantId);
+                                    if (shouldRespond) {
+                                        const aiResp = await this.aiService.generateResponse(contact, content, tenantId, pageId);
+                                        if (aiResp) {
+                                            await this.metaApiService.sendInstagramMessage(tenantId, senderId, aiResp);
+                                        }
+                                    }
+                                } catch (aiErr: any) {
+                                    this.logger.warn(`[INSTAGRAM_WEBHOOK] AI response failed: ${aiErr.message}`);
                                 }
                             }
                         }
                     }
+
+                    // --- Comments / Mentions (pass to N8N) ---
                     if (entry.changes) {
                         for (const change of entry.changes) {
                             if (change.field === 'comments' || change.field === 'mentions') {
                                 const value = change.value;
-                                await this.n8nService.triggerWebhook('default-tenant', {
-                                    type: `instagram.${change.field}`, from: value.from, content: value.text,
-                                    media_id: value.media_id, comment_id: value.id
-                                });
+                                this.logger.log(`[INSTAGRAM_WEBHOOK] ${change.field} event from ${value.from?.id}`);
+                                await this.n8nService.triggerWebhook(tenantId, {
+                                    type: `instagram.${change.field}`,
+                                    from: value.from,
+                                    content: value.text,
+                                    media_id: value.media_id,
+                                    comment_id: value.id,
+                                }, null);
                             }
                         }
                     }
                 }
-            } catch (e) {
-                this.logger.error('Error processing Instagram Webhook', e.stack);
+            } catch (e: any) {
+                this.logger.error(`[INSTAGRAM_WEBHOOK] Fatal error processing payload: ${e.message}`, e.stack);
             }
         }
     }
