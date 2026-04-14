@@ -10,7 +10,14 @@ export class UsersController {
 
     @Get('me')
     async getMe(@Request() req) {
-        return req.user; // O Request já possui o usuário injetado pelo JwtAuthGuard
+        const user = req.user;
+        return {
+            id: user.userId || user.id || user.sub,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            tenantId: user.tenantId
+        };
     }
 
     @Get()
