@@ -25,7 +25,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPaymentsPage() {
     const { token } = useAuth();
-    const [config, setConfig] = useState({ btgClientId: '', btgClientSecret: '', btgPixKey: '' });
+    const [config, setConfig] = useState({ btgClientId: '', btgClientSecret: '', btgPixKey: '', btgWebhookSecret: '' });
     const [revenueData, setRevenueData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -221,6 +221,18 @@ export default function AdminPaymentsPage() {
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition"
                                     placeholder="CPF, CNPJ, Email ou EVP"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[11px] uppercase text-gray-500 font-bold tracking-widest pl-1">Webhook Secret BTG</label>
+                                <input 
+                                    type="password" 
+                                    value={config.btgWebhookSecret}
+                                    onChange={(e) => setConfig({ ...config, btgWebhookSecret: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition"
+                                    placeholder="••••••••••••••••"
+                                />
+                                <p className="text-[10px] text-gray-500 pl-1 italic">Pegue esta chave no painel do BTG -> Meus Aplicativos -> Webhooks</p>
                             </div>
 
                             {message.text && (

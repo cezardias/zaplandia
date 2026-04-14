@@ -60,6 +60,7 @@ export class BtgService {
                 valor: { original: amount.toFixed(2) },
                 chave: pixKey,
                 solicitacaoPagador: 'Pagamento Zaplandia',
+                tags: { tenantId }
             }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -91,6 +92,7 @@ export class BtgService {
                 interestType: 'buyer',
                 callbackUrl: 'https://zaplandia.com.br/api/billing/webhook',
                 description: 'Assinatura Zaplandia (Crédito)',
+                tags: { tenantId }
             }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -121,6 +123,7 @@ export class BtgService {
                 payment_methods: ['debit_card'], // Force debit only
                 callbackUrl: 'https://zaplandia.com.br/api/billing/webhook',
                 description: 'Assinatura Zaplandia (Débito)',
+                tags: { tenantId }
             }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -151,6 +154,7 @@ export class BtgService {
                 payment_methods: ['boleto'], // Force boleto only
                 callbackUrl: 'https://zaplandia.com.br/api/billing/webhook',
                 description: 'Assinatura Zaplandia (Boleto)',
+                tags: { tenantId }
             }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });

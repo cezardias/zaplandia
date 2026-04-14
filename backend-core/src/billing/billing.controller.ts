@@ -34,11 +34,40 @@ export class BillingController {
     }
 
     @Post('webhook')
-    async webhook(@Body() body: any) {
+    async webhook(@Request() req: any, @Body() body: any) {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) throw new ForbiddenException('Header de autorização ausente.');
+
+        // Get configured secret
+        const config = await this.configRepository.findOne({ 
+            where: {},
+            select: ['id', 'btgWebhookSecret'] // Manually include select:false field
+        });
+
+        if (!config || !config.btgWebhookSecret) {
+            console.warn('[WEBHOOK] Recebido mas Webhook Secret não está configurado.');
+            // We return 200 anyway to stop retries if misconfigured? 
+            // Better 403 to indicate actual failure to auth if configured.
+            return { ok: false }; 
+        }
+
+        const token = authHeader.replace('Bearer ', '');
+        if (token !== config.btgWebhookSecret) {
+            throw new ForbiddenException('Token de webhook inválido.');
+        }
+
         // BTG Webhook Logic
-        // In production, we should verify the signature/IP
-        const { id, status } = body;
-        return this.billingService.handleWebhook(id, status);
+        // Structure: { event: string, data: { id: string, status: string, tags: { tenantId } } }
+        const { event, data } = body;
+        
+        console.log(`[WEBHOOK] Recebido evento: ${event} para ID: ${data?.id}`);
+
+        // Only process paid/confirmed events
+        if (event.includes('.paid') || event.includes('.received') || data?.status === 'PAID' || data?.status === 'CONFIRMED') {
+            return this.billingService.handleWebhook(data?.id, 'PAID', data?.txid);
+        }
+
+        return { ok: true };
     }
 
     // --- SUPERADMIN ENDPOINTS ---

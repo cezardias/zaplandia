@@ -17,6 +17,9 @@ export class BillingConfig {
     @Column({ default: false })
     isSandbox: boolean;
 
+    @Column({ nullable: true, select: false })
+    btgWebhookSecret: string;
+
     @Column({ default: 'cal.zaplandia.com.br' })
     smtpHost: string;
 

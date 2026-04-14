@@ -46,7 +46,7 @@ export default function BillingPage() {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     
     // Admin Config State
-    const [adminConfig, setAdminConfig] = useState<any>({ btgClientId: '', btgClientSecret: '', btgPixKey: '' });
+    const [adminConfig, setAdminConfig] = useState<any>({ btgClientId: '', btgClientSecret: '', btgPixKey: '', btgWebhookSecret: '' });
     const [isSavingConfig, setIsSavingConfig] = useState(false);
     const [showConfigSuccess, setShowConfigSuccess] = useState(false);
 
@@ -621,6 +621,18 @@ export default function BillingPage() {
                                     placeholder="CPF, CNPJ, Email ou EVP"
                                     className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-yellow-500/50 outline-none transition"
                                 />
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-2">Webhook Secret BTG</label>
+                                <input 
+                                    type="password"
+                                    value={adminConfig.btgWebhookSecret || ''}
+                                    onChange={(e) => setAdminConfig({...adminConfig, btgWebhookSecret: e.target.value})}
+                                    placeholder="••••••••••••••••"
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:border-yellow-500/50 outline-none transition"
+                                />
+                                <p className="text-[10px] text-gray-500 px-2 italic">Pegue esta chave no painel do BTG - Meus Aplicativos - Webhooks</p>
                             </div>
                             
                             <div className="md:col-span-2 flex items-center justify-between">

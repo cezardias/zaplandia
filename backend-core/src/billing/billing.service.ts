@@ -88,15 +88,19 @@ export class BillingService {
         }
     }
 
-    async handleWebhook(btgPaymentId: string, status: string) {
+    async handleWebhook(id: string, status: string, txid?: string) {
+        // Try to find transaction by btgPaymentId (Link ID or Pix TXID)
         const transaction = await this.transactionRepository.findOne({ 
-            where: { btgPaymentId },
+            where: [
+                { btgPaymentId: id },
+                { btgPaymentId: txid }
+            ],
             relations: ['tenant']
         });
 
         if (!transaction) {
-            this.logger.warn(`[WEBHOOK] Transação não encontrada para ID BTG: ${btgPaymentId}`);
-            return;
+            this.logger.warn(`[WEBHOOK] Transação não encontrada para ID: ${id} ou TXID: ${txid}`);
+            return { ok: false, message: 'Transaction not found' };
         }
 
         if (status === 'PAID' && transaction.status !== PaymentStatus.PAID) {

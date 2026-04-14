@@ -40,6 +40,7 @@ export class UsersService implements OnModuleInit {
                     "smtpPass" character varying,
                     "btgPixKey" character varying,
                     "isSandbox" boolean DEFAULT false,
+                    "btgWebhookSecret" character varying,
                     "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
                     CONSTRAINT "PK_billing_configs" PRIMARY KEY ("id")
                 )
@@ -47,6 +48,7 @@ export class UsersService implements OnModuleInit {
             // Ensure column exists for existing tables
             await this.usersRepository.query(`ALTER TABLE "billing_configs" ADD COLUMN IF NOT EXISTS "btgPixKey" character varying`).catch(() => {});
             await this.usersRepository.query(`ALTER TABLE "billing_configs" ADD COLUMN IF NOT EXISTS "isSandbox" boolean DEFAULT false`).catch(() => {});
+            await this.usersRepository.query(`ALTER TABLE "billing_configs" ADD COLUMN IF NOT EXISTS "btgWebhookSecret" character varying`).catch(() => {});
 
             // 2. Create migrations for types if they don't exist
             try {
