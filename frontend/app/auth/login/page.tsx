@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Zap, Mail, Lock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import GoogleButton from '@/components/auth/GoogleButton';
+import FacebookButton from '@/components/auth/FacebookButton';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -111,7 +112,10 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                <GoogleButton />
+                <div className="flex flex-col gap-3">
+                    <GoogleButton />
+                    <FacebookButton />
+                </div>
 
                 <div className="text-center mt-4">
                     <p className="text-gray-400">

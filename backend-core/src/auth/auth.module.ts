@@ -11,6 +11,7 @@ import { UniversalAuthGuard } from './guards/universal-auth.guard';
 
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { FacebookStrategy } from './strategies/facebook.strategy';
 
 @Module({
     imports: [
@@ -23,7 +24,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, GoogleStrategy, JwtAuthGuard, ApiKeyGuard, UniversalAuthGuard],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, FacebookStrategy, JwtAuthGuard, ApiKeyGuard, UniversalAuthGuard],
     exports: [AuthService, JwtAuthGuard, ApiKeyGuard, UniversalAuthGuard],
 })
 export class AuthModule { }

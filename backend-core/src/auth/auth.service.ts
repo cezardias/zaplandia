@@ -89,4 +89,27 @@ export class AuthService {
 
         return this.login(user);
     }
+
+    async facebookLogin(profile: any) {
+        if (!profile) {
+            throw new UnauthorizedException('Perfil do Facebook não fornecido.');
+        }
+
+        let user = await this.usersService.findOneByEmail(profile.email);
+
+        if (!user) {
+            // Auto-register new user via Facebook
+            user = await this.register({
+                email: profile.email,
+                name: `${profile.firstName} ${profile.lastName}`,
+                password: Math.random().toString(36).slice(-12),
+                companyName: `Negócio de ${profile.firstName}`,
+            });
+            console.log(`[META] Novo cadastro automático via Facebook: ${user.email}`);
+        } else {
+            console.log(`[META] Login realizado com sucesso: ${user.email}`);
+        }
+
+        return this.login(user);
+    }
 }

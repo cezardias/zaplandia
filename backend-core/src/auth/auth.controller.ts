@@ -41,4 +41,18 @@ export class AuthController {
         // Redireciona para o frontend salvando o token no localStorage via página de callback
         return res.redirect(`https://zaplandia.com.br/auth/callback?token=${token}`);
     }
+
+    @Get('facebook')
+    @UseGuards(AuthGuard('facebook'))
+    async facebookAuth(@Request() req) {
+        // Redirecionamento automático do Guard
+    }
+
+    @Get('facebook/callback')
+    @UseGuards(AuthGuard('facebook'))
+    async facebookAuthRedirect(@Request() req, @Res() res: any) {
+        const result = await this.authService.facebookLogin(req.user);
+        const token = result.access_token;
+        return res.redirect(`https://zaplandia.com.br/auth/callback?token=${token}`);
+    }
 }
