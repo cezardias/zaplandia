@@ -42,7 +42,7 @@ export default function BillingPage() {
     });
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
     useEffect(() => {
         fetchStatus();
