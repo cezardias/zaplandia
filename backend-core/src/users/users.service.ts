@@ -16,10 +16,24 @@ export class UsersService implements OnModuleInit {
 
     async onModuleInit() {
         try {
-            await this.usersRepository.query(`ALTER TYPE users_role_enum ADD VALUE IF NOT EXISTS 'agent'`);
+            // ✅ Roles
+            try {
+                await this.usersRepository.query(`ALTER TYPE users_role_enum ADD VALUE IF NOT EXISTS 'agent'`);
+            } catch (e) { /* ignore if already exists */ }
+            
+            try {
+                await this.usersRepository.query(`ALTER TYPE users_role_enum ADD VALUE IF NOT EXISTS 'superadmin'`);
+            } catch (e) { /* ignore */ }
+
+            // ✅ Tenants Schema Upgrade (Trial/Plans)
+            console.log('[SCHEMA] Checking for missing columns in tenants table...');
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "planType" VARCHAR DEFAULT 'trial'`);
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "subscriptionStatus" VARCHAR DEFAULT 'trial'`);
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "paidUntil" TIMESTAMP`);
+            
             await this.seedSuperAdmin();
         } catch (e) {
-            console.error('Erro ao inicializar banco de dados ou migrar roles:', e);
+            console.error('Erro ao inicializar banco de dados ou migrar esquema:', e);
         }
     }
 
