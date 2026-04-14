@@ -1,4 +1,5 @@
-import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException, Res } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -24,5 +25,20 @@ export class AuthController {
         };
 
         return this.authService.register(safeUserData);
+    }
+
+    @Get('google')
+    @UseGuards(AuthGuard('google'))
+    async googleAuth(@Request() req) {
+        // Guard redirects to Google
+    }
+
+    @Get('google/callback')
+    @UseGuards(AuthGuard('google'))
+    async googleAuthRedirect(@Request() req, @Res() res: any) {
+        const result = await this.authService.googleLogin(req.user);
+        const token = result.access_token;
+        // Redireciona para o frontend salvando o token no localStorage via página de callback
+        return res.redirect(`https://zaplandia.com.br/auth/callback?token=${token}`);
     }
 }

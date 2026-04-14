@@ -10,6 +10,7 @@ import { ApiKeyGuard } from './guards/api-key.guard';
 import { UniversalAuthGuard } from './guards/universal-auth.guard';
 
 import { IntegrationsModule } from '../integrations/integrations.module';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
     imports: [
@@ -22,7 +23,7 @@ import { IntegrationsModule } from '../integrations/integrations.module';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, JwtAuthGuard, ApiKeyGuard, UniversalAuthGuard],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, JwtAuthGuard, ApiKeyGuard, UniversalAuthGuard],
     exports: [AuthService, JwtAuthGuard, ApiKeyGuard, UniversalAuthGuard],
 })
 export class AuthModule { }

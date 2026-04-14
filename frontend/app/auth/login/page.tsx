@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Zap, Mail, Lock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import GoogleButton from '@/components/auth/GoogleButton';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -100,6 +101,17 @@ export default function LoginPage() {
                         </button>
                     </div>
                 </form>
+
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/10"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-surface px-2 text-gray-500">Ou continue com</span>
+                    </div>
+                </div>
+
+                <GoogleButton />
 
                 <div className="text-center mt-4">
                     <p className="text-gray-400">

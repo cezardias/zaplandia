@@ -8,6 +8,11 @@ import { UserRole } from './entities/user.entity';
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
+    @Get('me')
+    async getMe(@Request() req) {
+        return req.user; // O Request já possui o usuário injetado pelo JwtAuthGuard
+    }
+
     @Get()
     async findAll(@Request() req) {
         const { tenantId, role } = req.user;

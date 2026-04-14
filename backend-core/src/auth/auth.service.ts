@@ -66,4 +66,27 @@ export class AuthService {
 
         return user;
     }
+
+    async googleLogin(profile: any) {
+        if (!profile) {
+            throw new UnauthorizedException('Perfil do Google não fornecido.');
+        }
+
+        let user = await this.usersService.findOneByEmail(profile.email);
+
+        if (!user) {
+            // Auto-register new user via Google
+            user = await this.register({
+                email: profile.email,
+                name: `${profile.firstName} ${profile.lastName}`,
+                password: Math.random().toString(36).slice(-12), // Generate random password for safety
+                companyName: `Negócio de ${profile.firstName}`,
+            });
+            console.log(`[GOOGLE] Novo cadastro automático via Google: ${user.email}`);
+        } else {
+            console.log(`[GOOGLE] Login realizado com sucesso: ${user.email}`);
+        }
+
+        return this.login(user);
+    }
 }

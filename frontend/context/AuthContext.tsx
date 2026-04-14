@@ -15,6 +15,7 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     login: (token: string, user: User) => void;
+    loginWithToken: (token: string) => Promise<void>;
     logout: () => void;
     isLoading: boolean;
 }
@@ -46,6 +47,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/dashboard');
     };
 
+    const loginWithToken = async (newToken: string) => {
+        setIsLoading(true);
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : '');
+            const res = await fetch(`${apiUrl}/api/users/me`, {
+                headers: { 'Authorization': `Bearer ${newToken}` }
+            });
+
+            if (res.ok) {
+                const userData = await res.json();
+                setToken(newToken);
+                setUser(userData);
+                localStorage.setItem('zap_token', newToken);
+                localStorage.setItem('zap_user', JSON.stringify(userData));
+                return;
+            }
+            throw new Error('Token inválido ou expirado.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const logout = () => {
         setToken(null);
         setUser(null);
@@ -55,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, token, login, loginWithToken, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );
