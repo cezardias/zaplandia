@@ -232,7 +232,7 @@ export default function AdminPaymentsPage() {
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition"
                                     placeholder="••••••••••••••••"
                                 />
-                                <p className="text-[10px] text-gray-500 pl-1 italic">Pegue esta chave no painel do BTG -> Meus Aplicativos -> Webhooks</p>
+                                <p className="text-[10px] text-gray-500 pl-1 italic">Pegue esta chave no painel do BTG - Meus Aplicativos - Webhooks</p>
                             </div>
 
                             {message.text && (
