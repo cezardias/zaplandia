@@ -25,11 +25,19 @@ export class UsersService implements OnModuleInit {
                 await this.usersRepository.query(`ALTER TYPE users_role_enum ADD VALUE IF NOT EXISTS 'superadmin'`);
             } catch (e) { /* ignore */ }
 
-            // ✅ Tenants Schema Upgrade (Trial/Plans)
+            // ✅ Tenants Schema Upgrade (Trial/Plans/Billing Info)
             console.log('[SCHEMA] Checking for missing columns in tenants table...');
             await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "planType" VARCHAR DEFAULT 'trial'`);
             await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "subscriptionStatus" VARCHAR DEFAULT 'trial'`);
             await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "paidUntil" TIMESTAMP`);
+            
+            // New Billing Fields
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "responsibleName" VARCHAR`);
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "responsibleCpf" VARCHAR`);
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "cnpj" VARCHAR`);
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "razaoSocial" VARCHAR`);
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "responsiblePhone" VARCHAR`);
+            await this.tenantsRepository.query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "responsibleEmail" VARCHAR`);
             
             await this.seedSuperAdmin();
         } catch (e) {

@@ -10,7 +10,13 @@ import {
     ArrowRight, 
     Clock, 
     AlertCircle,
-    CheckCircle2
+    CheckCircle2,
+    Building2,
+    UserCircle,
+    Mail,
+    PhoneCall,
+    IdCard,
+    X
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -22,6 +28,19 @@ export default function BillingPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [transaction, setTransaction] = useState<any>(null);
     const [copied, setCopied] = useState(false);
+    
+    // Billing Info Form State
+    const [showBillingModal, setShowBillingModal] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [billingForm, setBillingForm] = useState({
+        cnpj: '',
+        razaoSocial: '',
+        responsibleName: '',
+        responsibleCpf: '',
+        responsiblePhone: '',
+        responsibleEmail: ''
+    });
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -34,13 +53,126 @@ export default function BillingPage() {
             const res = await fetch(`${baseUrl}/api/billing/status`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (res.ok) setStatus(await res.json());
+            if (res.ok) {
+                const data = await res.json();
+                setStatus(data);
+                if (data.billingInfo) {
+                    setBillingForm({
+                        cnpj: data.billingInfo.cnpj || '',
+                        razaoSocial: data.billingInfo.razaoSocial || '',
+                        responsibleName: data.billingInfo.responsibleName || '',
+                        responsibleCpf: data.billingInfo.responsibleCpf || '',
+                        responsiblePhone: data.billingInfo.responsiblePhone || '',
+                        responsibleEmail: data.billingInfo.responsibleEmail || ''
+                    });
+                }
+            }
         } catch (error) {
             console.error('Erro ao buscar status:', error);
         }
     };
 
-    const handlePayment = async () => {
+    const validateCPF = (cpf: string) => {
+        const cleanCPF = cpf.replace(/\D/g, '');
+        if (cleanCPF.length !== 11) return false;
+        if (/^(\d)\1+$/.test(cleanCPF)) return false;
+        
+        let sum = 0;
+        let rest;
+        for (let i = 1; i <= 9; i++) sum = sum + parseInt(cleanCPF.substring(i-1, i)) * (11 - i);
+        rest = (sum * 10) % 11;
+        if ((rest === 10) || (rest === 11)) rest = 0;
+        if (rest !== parseInt(cleanCPF.substring(9, 10))) return false;
+        
+        sum = 0;
+        for (let i = 1; i <= 10; i++) sum = sum + parseInt(cleanCPF.substring(i-1, i)) * (12 - i);
+        rest = (sum * 10) % 11;
+        if ((rest === 10) || (rest === 11)) rest = 0;
+        if (rest !== parseInt(cleanCPF.substring(10, 11))) return false;
+        
+        return true;
+    };
+
+    const validateCNPJ = (cnpj: string) => {
+        const cleanCNPJ = cnpj.replace(/\D/g, '');
+        if (cleanCNPJ.length !== 14) return false;
+        if (/^(\d)\1+$/.test(cleanCNPJ)) return false;
+        
+        // Strict CNPJ validation logic
+        let size = cleanCNPJ.length - 2;
+        let numbers = cleanCNPJ.substring(0, size);
+        let digits = cleanCNPJ.substring(size);
+        let sum = 0;
+        let pos = size - 7;
+        for (let i = size; i >= 1; i--) {
+            sum += parseInt(numbers.charAt(size - i)) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+        if (result !== parseInt(digits.charAt(0))) return false;
+        
+        size = size + 1;
+        numbers = cleanCNPJ.substring(0, size);
+        sum = 0;
+        pos = size - 7;
+        for (let i = size; i >= 1; i--) {
+            sum += parseInt(numbers.charAt(size - i)) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+        if (result !== parseInt(digits.charAt(1))) return false;
+        
+        return true;
+    };
+
+    const handleSaveBillingInfo = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        const errors: Record<string, string> = {};
+        if (!billingForm.razaoSocial) errors.razaoSocial = 'Razão Social é obrigatória';
+        if (!validateCNPJ(billingForm.cnpj)) errors.cnpj = 'CNPJ inválido';
+        if (!billingForm.responsibleName) errors.responsibleName = 'Nome do responsável é obrigatório';
+        if (!validateCPF(billingForm.responsibleCpf)) errors.responsibleCpf = 'CPF inválido';
+        if (!billingForm.responsibleEmail.includes('@')) errors.responsibleEmail = 'E-mail inválido';
+        if (billingForm.responsiblePhone.length < 10) errors.responsiblePhone = 'Telefone inválido';
+        
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+
+        setIsSavingProfile(true);
+        try {
+            const res = await fetch(`${baseUrl}/api/billing/tenant`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(billingForm)
+            });
+            if (res.ok) {
+                setShowBillingModal(false);
+                await fetchStatus();
+                // Proceed with payment after saving info
+                handlePaymentAction();
+            }
+        } catch (error) {
+            console.error('Erro ao salvar dados:', error);
+        } finally {
+            setIsSavingProfile(false);
+        }
+    };
+
+    const handlePayment = () => {
+        if (!status?.isProfileComplete) {
+            setShowBillingModal(true);
+            return;
+        }
+        handlePaymentAction();
+    };
+
+    const handlePaymentAction = async () => {
         setIsGenerating(true);
         setTransaction(null);
         try {
@@ -218,6 +350,156 @@ export default function BillingPage() {
                     </div>
                 )}
             </div>
+
+            {/* Billing Info Modal */}
+            {showBillingModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-surface border border-white/10 w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                        {/* Header */}
+                        <div className="p-8 border-b border-white/5 bg-primary/5 flex justify-between items-center">
+                            <div className="flex items-center space-x-4">
+                                <div className="p-4 bg-primary/10 rounded-2xl text-primary">
+                                    <Building2 size={32} />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black tracking-tight">Dados de Faturamento</h2>
+                                    <p className="text-gray-400 text-sm">Preencha as informações para ativar seu plano premium.</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowBillingModal(false)} className="p-2 hover:bg-white/10 rounded-xl transition">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Form Body */}
+                        <form onSubmit={handleSaveBillingInfo} className="p-8 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* CNPJ */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                        <Building2 size={12} /> CNPJ da Empresa
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="00.000.000/0000-00"
+                                        className={`w-full bg-white/5 border ${formErrors.cnpj ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none transition`}
+                                        value={billingForm.cnpj}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '').substring(0, 14);
+                                            // Apply mask 00.000.000/0000-00
+                                            let masked = val;
+                                            if (val.length > 2) masked = val.substring(0, 2) + '.' + val.substring(2);
+                                            if (val.length > 5) masked = masked.substring(0, 6) + '.' + masked.substring(6);
+                                            if (val.length > 8) masked = masked.substring(0, 10) + '/' + masked.substring(10);
+                                            if (val.length > 12) masked = masked.substring(0, 15) + '-' + masked.substring(15);
+                                            setBillingForm({...billingForm, cnpj: masked});
+                                        }}
+                                    />
+                                    {formErrors.cnpj && <p className="text-[10px] text-red-500 font-bold">{formErrors.cnpj}</p>}
+                                </div>
+
+                                {/* Razão Social */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                        <Building2 size={12} /> Razão Social
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Nome Empresarial Completo"
+                                        className={`w-full bg-white/5 border ${formErrors.razaoSocial ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none transition`}
+                                        value={billingForm.razaoSocial}
+                                        onChange={(e) => setBillingForm({...billingForm, razaoSocial: e.target.value})}
+                                    />
+                                    {formErrors.razaoSocial && <p className="text-[10px] text-red-500 font-bold">{formErrors.razaoSocial}</p>}
+                                </div>
+
+                                {/* Nome Responsável */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                        <UserCircle size={12} /> Nome do Responsável
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Nome Completo"
+                                        className={`w-full bg-white/5 border ${formErrors.responsibleName ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none transition`}
+                                        value={billingForm.responsibleName}
+                                        onChange={(e) => setBillingForm({...billingForm, responsibleName: e.target.value})}
+                                    />
+                                    {formErrors.responsibleName && <p className="text-[10px] text-red-500 font-bold">{formErrors.responsibleName}</p>}
+                                </div>
+
+                                {/* CPF Responsável */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                        <IdCard size={12} /> CPF do Responsável
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="000.000.000-00"
+                                        className={`w-full bg-white/5 border ${formErrors.responsibleCpf ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none transition`}
+                                        value={billingForm.responsibleCpf}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '').substring(0, 11);
+                                            let masked = val;
+                                            if (val.length > 3) masked = val.substring(0, 3) + '.' + val.substring(3);
+                                            if (val.length > 6) masked = masked.substring(0, 7) + '.' + masked.substring(7);
+                                            if (val.length > 9) masked = masked.substring(0, 11) + '-' + masked.substring(11);
+                                            setBillingForm({...billingForm, responsibleCpf: masked});
+                                        }}
+                                    />
+                                    {formErrors.responsibleCpf && <p className="text-[10px] text-red-500 font-bold">{formErrors.responsibleCpf}</p>}
+                                </div>
+
+                                {/* Email Contato */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                        <Mail size={12} /> E-mail de Contato
+                                    </label>
+                                    <input 
+                                        type="email" 
+                                        placeholder="responsavel@empresa.com"
+                                        className={`w-full bg-white/5 border ${formErrors.responsibleEmail ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none transition`}
+                                        value={billingForm.responsibleEmail}
+                                        onChange={(e) => setBillingForm({...billingForm, responsibleEmail: e.target.value})}
+                                    />
+                                    {formErrors.responsibleEmail && <p className="text-[10px] text-red-500 font-bold">{formErrors.responsibleEmail}</p>}
+                                </div>
+
+                                {/* Telefone Contato */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                        <PhoneCall size={12} /> Telefone (DDI + DDD)
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="+55 11 99999-9999"
+                                        className={`w-full bg-white/5 border ${formErrors.responsiblePhone ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-5 py-4 text-sm focus:border-primary outline-none transition`}
+                                        value={billingForm.responsiblePhone}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            let masked = '+' + val;
+                                            if (val.length > 2) masked = '+' + val.substring(0, 2) + ' ' + val.substring(2);
+                                            if (val.length > 4) masked = '+' + val.substring(0, 2) + ' ' + val.substring(2, 4) + ' ' + val.substring(4);
+                                            if (val.length > 9) masked = '+' + val.substring(0, 2) + ' ' + val.substring(2, 4) + ' ' + val.substring(4, 9) + '-' + val.substring(9);
+                                            setBillingForm({...billingForm, responsiblePhone: masked});
+                                        }}
+                                    />
+                                    {formErrors.responsiblePhone && <p className="text-[10px] text-red-500 font-bold">{formErrors.responsiblePhone}</p>}
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit"
+                                disabled={isSavingProfile}
+                                className="w-full bg-primary hover:bg-primary-dark text-white py-5 rounded-2xl font-black text-lg transition flex items-center justify-center gap-3 shadow-xl shadow-primary/40 mt-4 group"
+                            >
+                                {isSavingProfile ? 'Salvando...' : 'Salvar Dados e Prosseguir'}
+                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

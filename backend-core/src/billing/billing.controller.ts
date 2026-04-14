@@ -27,6 +27,12 @@ export class BillingController {
         return this.billingService.initiatePayment(req.user.tenantId, body.plan, body.method);
     }
 
+    @UseGuards(UniversalAuthGuard)
+    @Post('tenant')
+    async updateTenantInfo(@Request() req: any, @Body() data: any) {
+        return this.billingService.updateTenantBillingInfo(req.user.tenantId, data);
+    }
+
     @Post('webhook')
     async webhook(@Body() body: any) {
         // BTG Webhook Logic

@@ -27,14 +27,48 @@ export class BillingService {
         const now = new Date();
         const trialRemaining = Math.max(0, Math.ceil((tenant.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
+        // Check if all mandatory billing fields are present
+        const isProfileComplete = !!(
+            tenant.cnpj && 
+            tenant.razaoSocial && 
+            tenant.responsibleName && 
+            tenant.responsibleCpf && 
+            tenant.responsiblePhone && 
+            tenant.responsibleEmail
+        );
+
         return {
             planType: tenant.planType,
             status: tenant.subscriptionStatus,
             paidUntil: tenant.paidUntil,
             trialEndsAt: tenant.trialEndsAt,
             trialRemainingDays: trialRemaining,
-            isExpired: (tenant.paidUntil && tenant.paidUntil < now) || (tenant.trialEndsAt < now && tenant.subscriptionStatus === 'trial')
+            isExpired: (tenant.paidUntil && tenant.paidUntil < now) || (tenant.trialEndsAt < now && tenant.subscriptionStatus === 'trial'),
+            isProfileComplete,
+            billingInfo: {
+                cnpj: tenant.cnpj,
+                razaoSocial: tenant.razaoSocial,
+                responsibleName: tenant.responsibleName,
+                responsibleCpf: tenant.responsibleCpf,
+                responsiblePhone: tenant.responsiblePhone,
+                responsibleEmail: tenant.responsibleEmail,
+            }
         };
+    }
+
+    async updateTenantBillingInfo(tenantId: string, data: any) {
+        const tenant = await this.tenantRepository.findOne({ where: { id: tenantId } });
+        if (!tenant) throw new NotFoundException('Tenant não encontrado.');
+
+        // Update with new billing fields
+        tenant.cnpj = data.cnpj;
+        tenant.razaoSocial = data.razaoSocial;
+        tenant.responsibleName = data.responsibleName;
+        tenant.responsibleCpf = data.responsibleCpf;
+        tenant.responsiblePhone = data.responsiblePhone;
+        tenant.responsibleEmail = data.responsibleEmail;
+
+        return this.tenantRepository.save(tenant);
     }
 
     async initiatePayment(tenantId: string, planType: 'monthly' | 'annual', method: 'pix' | 'credit_card') {

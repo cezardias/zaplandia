@@ -32,6 +32,24 @@ export class Tenant {
     @Column({ type: 'timestamp', nullable: true })
     paidUntil: Date;
 
+    @Column({ nullable: true })
+    responsibleName: string;
+
+    @Column({ nullable: true })
+    responsibleCpf: string;
+
+    @Column({ nullable: true })
+    cnpj: string;
+
+    @Column({ nullable: true })
+    razaoSocial: string;
+
+    @Column({ nullable: true })
+    responsiblePhone: string;
+
+    @Column({ nullable: true })
+    responsibleEmail: string;
+
     @CreateDateColumn()
     createdAt: Date;
 }
