@@ -4,7 +4,7 @@ import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Brackets } from 'typeorm';
+import { Repository, Like, Brackets, Not } from 'typeorm';
 import { Contact, Message } from './entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { Campaign } from '../campaigns/entities/campaign.entity';
@@ -634,15 +634,40 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     const metaPhoneId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
 
                     // CRITICAL: Meta Cloud API ONLY supports real phone numbers (max 14 digits).
-                    // If target is a LID (@lid), we MUST skip Meta and use Evolution.
+                    // If target is a LID (@lid), try to resolve real phone from a Meta-sourced contact duplicate
                     const isLid = targetNumber.includes('@lid') || cleanTarget.length > 14;
 
-                    if (metaAccessToken && metaPhoneId && !isLid) {
-                        this.logger.log(`[META_WA] Attempting Official API send to ${cleanTarget}`);
+                    // Attempt to resolve real phone for LID contacts via Meta contact lookup
+                    let metaTargetNumber = cleanTarget;
+                    if (isLid && contact) {
+                        // Look for a non-LID contact with same name or that messaged via meta/whatsapp recently
+                        const metaContact = await this.contactRepository.findOne({
+                            where: [
+                                { tenantId, name: contact.name, provider: 'whatsapp', externalId: Like('%@s.whatsapp.net') },
+                                { tenantId, phone: contact.phone, provider: 'whatsapp', externalId: Not(Like('%@lid')) },
+                            ]
+                        });
+                        if (metaContact?.phone && metaContact.phone.length <= 15) {
+                            metaTargetNumber = metaContact.phone.replace(/\D/g, '');
+                            this.logger.log(`[LID_RESOLVE] Resolved LID ${cleanTarget} -> real phone ${metaTargetNumber} via contact ${metaContact.id}`);
+                        } else if (contact.phone && !contact.phone.includes('@lid') && contact.phone.replace(/\D/g, '').length <= 15) {
+                            // phone field itself might already be clean if it was updated
+                            metaTargetNumber = contact.phone.replace(/\D/g, '');
+                        }
+                    }
+
+                    // Normalize Brazilian numbers for Meta
+                    if (metaTargetNumber.startsWith('0')) metaTargetNumber = metaTargetNumber.substring(1);
+                    if (metaTargetNumber.length === 11 && !metaTargetNumber.startsWith('55')) metaTargetNumber = `55${metaTargetNumber}`;
+
+                    const canUseMeta = metaAccessToken && metaPhoneId && (!isLid || metaTargetNumber.length <= 15);
+
+                    if (canUseMeta) {
+                        this.logger.log(`[META_WA] Attempting Official API send to ${metaTargetNumber}${isLid ? ' (resolved from LID)' : ''}`);
                         try {
-                            const response = await this.metaApiService.sendTextMessage(tenantId, cleanTarget, content);
+                            const response = await this.metaApiService.sendTextMessage(tenantId, metaTargetNumber, content);
                             if (response?.messages?.[0]?.id) {
-                                this.logger.log(`[META_WA] SENT SUCCESS via Official API to ${cleanTarget}`);
+                                this.logger.log(`[META_WA] SENT SUCCESS via Official API to ${metaTargetNumber}`);
                                 message.wamid = response.messages[0].id;
                                 message.status = 'SENT';
                                 message.provider = 'whatsapp';
@@ -653,7 +678,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                             this.logger.warn(`[META_WA] ROUTING FAILURE: ${metaErr.message}. Attempting Evolution fallback...`);
                         }
                     } else {
-                        const reason = isLid ? 'LID detected' : 'Missing Meta Credentials';
+                        const reason = isLid ? `LID detected, could not resolve real phone (got: ${metaTargetNumber})` : 'Missing Meta Credentials';
                         this.logger.debug(`[CRM_SEND] Skipping Meta API: ${reason}`);
                     }
 
