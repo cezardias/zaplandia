@@ -325,17 +325,30 @@ export default function MetaApiPage() {
                                 <AlertCircle className="w-4 h-4" />
                                 <span>Precisa de Ajuda?</span>
                             </h3>
-                            <p className="text-xs text-blue-400/80 leading-relaxed mb-4">
-                                Para integrar, você precisa criar um App na plataforma Meta for Developers e configurar o WhatsApp.
-                            </p>
-                            <a
-                                href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
-                                target="_blank"
-                                className="text-xs font-bold text-blue-400 flex items-center space-x-1 hover:underline"
-                            >
-                                <span>Ver documentação</span>
-                                <ExternalLink className="w-3 h-3" />
-                            </a>
+                            <div className="space-y-4">
+                                <p className="text-xs text-blue-400/80 leading-relaxed">
+                                    Para integrar, você precisa criar um App na plataforma Meta for Developers e configurar o WhatsApp.
+                                </p>
+                                
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black uppercase text-blue-400/60">Token Permanente:</p>
+                                    <ol className="text-[10px] text-blue-400/80 list-decimal pl-4 space-y-1">
+                                        <li>Vá em <b>Configurações do Negócio</b>.</li>
+                                        <li>Em <b>Usuários do Sistema</b>, adicione um novo usuário Admin.</li>
+                                        <li>Clique em <b>Gerar Novo Token</b> e escolha o App Zaplandia.</li>
+                                        <li>Marque <u>whatsapp_business_messaging</u> e <u>whatsapp_business_management</u>.</li>
+                                    </ol>
+                                </div>
+
+                                <a
+                                    href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
+                                    target="_blank"
+                                    className="text-xs font-bold text-blue-400 flex items-center space-x-1 hover:underline"
+                                >
+                                    <span>Documentação Oficial</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
