@@ -67,6 +67,8 @@ export class WebhooksController {
         this.logger.warn(`[META_VERIFY] ❌ Verification failed. Expected: ${expectedToken}, Got: ${token}`);
         return res.status(403).send('Forbidden');
 
+    }
+
     // Handle Meta payloads (Instagram focus)
     @Post('meta')
     @HttpCode(HttpStatus.OK)
