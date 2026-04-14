@@ -46,7 +46,7 @@ export default function BillingPage() {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     
     // Admin Config State
-    const [adminConfig, setAdminConfig] = useState<any>({ btgClientId: '', btgClientSecret: '', btgPixKey: '', btgWebhookSecret: '', isSandbox: false });
+    const [adminConfig, setAdminConfig] = useState<any>({ btgClientId: '', btgClientSecret: '', btgPixKey: '', btgWebhookSecret: '' });
     const [isSavingConfig, setIsSavingConfig] = useState(false);
     const [showConfigSuccess, setShowConfigSuccess] = useState(false);
 
@@ -579,19 +579,9 @@ export default function BillingPage() {
                         <div className="p-3 bg-yellow-500/10 text-yellow-500 rounded-xl">
                             <ShieldCheck size={24} />
                         </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-2xl font-bold">Configurações Gerenciais</h2>
-                                <p className="text-gray-400 text-sm italic">Ambiente restrito • BTG Pactual Gateway</p>
-                            </div>
-                            <button 
-                                type="button"
-                                onClick={() => setAdminConfig({ ...adminConfig, isSandbox: !adminConfig.isSandbox })}
-                                className={`text-[10px] font-bold px-3 py-1 rounded-full border transition flex items-center gap-2 ${adminConfig.isSandbox ? 'bg-orange-500/10 border-orange-500/50 text-orange-500' : 'bg-green-500/10 border-green-500/50 text-green-500'}`}
-                            >
-                                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${adminConfig.isSandbox ? 'bg-orange-500' : 'bg-green-500'}`}></span>
-                                {adminConfig.isSandbox ? 'MODO SANDBOX' : 'MODO PRODUÇÃO'}
-                            </button>
+                        <div>
+                            <h2 className="text-2xl font-bold">Configurações Gerenciais</h2>
+                            <p className="text-gray-400 text-sm italic">Ambiente restrito • BTG Pactual Gateway</p>
                         </div>
                     </div>
 
