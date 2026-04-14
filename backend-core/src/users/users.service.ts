@@ -25,13 +25,55 @@ export class UsersService implements OnModuleInit {
                 await this.usersRepository.query(`ALTER TYPE users_role_enum ADD VALUE IF NOT EXISTS 'superadmin'`);
             } catch (e) { /* ignore */ }
 
-            // ✅ Payment Methods Enum Upgrade
+            // ✅ ENSURE TABLES EXIST (since synchronize: false)
+            console.log('[SCHEMA] Ensuring billing tables exist...');
+            
+            // 1. Create billing_configs table
+            await this.usersRepository.query(`
+                CREATE TABLE IF NOT EXISTS "billing_configs" (
+                    "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                    "btgClientId" character varying,
+                    "btgClientSecret" character varying,
+                    "smtpHost" character varying DEFAULT 'cal.zaplandia.com.br',
+                    "smtpPort" integer DEFAULT 587,
+                    "smtpUser" character varying DEFAULT 'financeiro@zaplandia.com.br',
+                    "smtpPass" character varying,
+                    "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+                    CONSTRAINT "PK_billing_configs" PRIMARY KEY ("id")
+                )
+            `);
+
+            // 2. Create migrations for types if they don't exist
             try {
                 await this.usersRepository.query(`ALTER TYPE transactions_method_enum ADD VALUE IF NOT EXISTS 'debit_card'`);
-            } catch (e) { /* ignore */ }
+            } catch (e) { 
+                try {
+                    await this.usersRepository.query(`CREATE TYPE "transactions_method_enum" AS ENUM('pix', 'boleto', 'credit_card', 'debit_card')`);
+                } catch (err) { /* ignore */ }
+            }
 
             try {
                 await this.usersRepository.query(`ALTER TYPE transactions_method_enum ADD VALUE IF NOT EXISTS 'boleto'`);
+            } catch (e) { /* ignore */ }
+
+            // 3. Create transactions table
+            try {
+                await this.usersRepository.query(`
+                    CREATE TABLE IF NOT EXISTS "transactions" (
+                        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                        "tenantId" uuid NOT NULL,
+                        "amount" decimal(10,2) NOT NULL,
+                        "method" character varying NOT NULL,
+                        "status" character varying NOT NULL DEFAULT 'pending',
+                        "installments" integer,
+                        "btgPaymentId" character varying,
+                        "checkoutUrl" character varying,
+                        "pixQrCode" text,
+                        "pixCopyPaste" text,
+                        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+                        CONSTRAINT "PK_transactions" PRIMARY KEY ("id")
+                    )
+                `);
             } catch (e) { /* ignore */ }
 
             // ✅ Tenants Schema Upgrade (Trial/Plans/Billing Info)

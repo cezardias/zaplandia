@@ -50,7 +50,7 @@ export default function BillingPage() {
     const [isSavingConfig, setIsSavingConfig] = useState(false);
     const [showConfigSuccess, setShowConfigSuccess] = useState(false);
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : '');
 
     useEffect(() => {
         fetchStatus();
