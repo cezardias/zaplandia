@@ -142,6 +142,7 @@ export default function BillingPage() {
         }
 
         setIsSavingProfile(true);
+        setFormErrors({});
         try {
             const res = await fetch(`${baseUrl}/api/billing/tenant`, {
                 method: 'POST',
@@ -151,14 +152,19 @@ export default function BillingPage() {
                 },
                 body: JSON.stringify(billingForm)
             });
+            
             if (res.ok) {
                 setShowBillingModal(false);
                 await fetchStatus();
                 // Proceed with payment after saving info
                 handlePaymentAction();
+            } else {
+                const errorData = await res.json();
+                setFormErrors({ server: errorData.message || 'Erro ao salvar os dados no servidor. Verifique se o sistema foi reiniciado.' });
             }
         } catch (error) {
             console.error('Erro ao salvar dados:', error);
+            setFormErrors({ server: 'Erro de conexão com o servidor.' });
         } finally {
             setIsSavingProfile(false);
         }
@@ -373,6 +379,13 @@ export default function BillingPage() {
 
                         {/* Form Body */}
                         <form onSubmit={handleSaveBillingInfo} className="p-8 space-y-6">
+                            {formErrors.server && (
+                                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500 text-sm animate-in shake duration-300">
+                                    <AlertCircle size={20} />
+                                    <span className="font-medium">{formErrors.server}</span>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* CNPJ */}
                                 <div className="space-y-2">
