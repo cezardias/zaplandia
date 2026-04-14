@@ -25,7 +25,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPaymentsPage() {
     const { token } = useAuth();
-    const [config, setConfig] = useState({ btgClientId: '', btgClientSecret: '', btgPixKey: '', btgWebhookSecret: '' });
+    const [config, setConfig] = useState({ btgClientId: '', btgClientSecret: '', btgPixKey: '', btgWebhookSecret: '', isSandbox: false });
     const [revenueData, setRevenueData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -182,11 +182,20 @@ export default function AdminPaymentsPage() {
                 {/* BTG Config Sidebar */}
                 <div className="space-y-8">
                     <div className="bg-surface border border-white/5 rounded-3xl p-8 shadow-xl sticky top-8">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 bg-yellow-500/20 rounded-lg">
-                                <Key className="text-yellow-500" size={18} />
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-yellow-500/20 rounded-lg">
+                                    <Key className="text-yellow-500" size={18} />
+                                </div>
+                                <h3 className="font-bold">Configuração BTG</h3>
                             </div>
-                            <h3 className="font-bold">Configuração BTG</h3>
+                            <button 
+                                onClick={() => setConfig({ ...config, isSandbox: !config.isSandbox })}
+                                className={`text-[10px] font-bold px-3 py-1 rounded-full border transition flex items-center gap-2 ${config.isSandbox ? 'bg-orange-500/10 border-orange-500/50 text-orange-500' : 'bg-green-500/10 border-green-500/50 text-green-500'}`}
+                            >
+                                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${config.isSandbox ? 'bg-orange-500' : 'bg-green-500'}`}></span>
+                                {config.isSandbox ? 'MODO SANDBOX' : 'MODO PRODUÇÃO'}
+                            </button>
                         </div>
 
                         <form onSubmit={handleSaveConfig} className="space-y-5">
