@@ -124,6 +124,15 @@ export class WebhooksController {
                         tenantId = cred?.tenantId || undefined;
                     }
 
+                    // Fallback to searching inside META_APP_CONFIG JSON
+                    if (!tenantId) {
+                        const configCred = await this.apiCredentialRepository.createQueryBuilder('c')
+                            .where("c.key_name = 'META_APP_CONFIG'")
+                            .andWhere("c.key_value LIKE :val", { val: `%${wabaIdInPayload}%` })
+                            .getOne();
+                        tenantId = configCred?.tenantId || undefined;
+                    }
+
                     if (!tenantId) {
                         this.logger.warn(`[META_WEBHOOK] No tenant found for WABA ID: ${wabaIdInPayload}`);
                         continue;
@@ -233,16 +242,17 @@ export class WebhooksController {
                     const pageCred = await this.integrationsService.findCredentialByValue('INSTAGRAM_PAGE_ID', pageId);
                     let tenantId = pageCred?.tenantId;
 
-                    // Fallback: look for Meta integration linked to this page
+                    // Fallback: search inside META_APP_CONFIG JSON for instagramBusinessId
                     if (!tenantId) {
-                        const instaIntegration = await this.integrationRepository.findOne({
-                            where: { provider: 'instagram' as any }
-                        });
-                        tenantId = instaIntegration?.tenantId;
+                        const configCred = await this.apiCredentialRepository.createQueryBuilder('c')
+                            .where("c.key_name = 'META_APP_CONFIG'")
+                            .andWhere("c.key_value LIKE :val", { val: `%${pageId}%` })
+                            .getOne();
+                        tenantId = configCred?.tenantId || undefined;
                     }
 
                     if (!tenantId) {
-                        this.logger.warn(`[INSTAGRAM_WEBHOOK] No tenant found for Page ID: ${pageId}. Configure INSTAGRAM_PAGE_ID credential.`);
+                        this.logger.warn(`[INSTAGRAM_WEBHOOK] No tenant found for Page ID: ${pageId}. Configure INSTAGRAM_PAGE_ID or META_APP_CONFIG.`);
                         continue;
                     }
 

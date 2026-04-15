@@ -515,6 +515,12 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
             if (integration?.provider === 'whatsapp' && integration.credentials?.META_ACCESS_TOKEN) {
                 // Official Meta Sending
                 await this.metaApiService.sendTextMessage(tenantId, targetNumber, aiResponse);
+            } else if (integration?.provider === 'instagram' || useContact.provider === 'instagram') {
+                // Instagram Sending
+                // targetNumber in Instagram context is the PSID (sender.id from webhook)
+                // If it contains @suffix, remove it
+                const psid = targetNumber.split('@')[0];
+                await this.metaApiService.sendInstagramMessage(tenantId, psid, aiResponse);
             } else {
                 // Evolution API Sending (Default Fallback)
                 await this.evolutionApiService.sendText(tenantId, useInstance, targetNumber, aiResponse);

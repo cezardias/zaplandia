@@ -470,20 +470,14 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         // 3. Call target Social API
         if (finalProvider === 'instagram') {
             try {
-                const metaConfig = await this.integrationsService.getCredential(tenantId, 'META_APP_CONFIG');
-                if (metaConfig) {
-                    const { pageAccessToken } = JSON.parse(metaConfig);
-
-                    if (pageAccessToken && contact?.externalId) {
-                        this.logger.log(`[CRM_SEND] Sending Instagram message to ${contact.externalId}`);
-                        await axios.post(`https://graph.facebook.com/v19.0/me/messages?access_token=${pageAccessToken}`, {
-                            recipient: { id: contact.externalId },
-                            message: { text: content }
-                        });
-                    }
+                if (contact?.externalId) {
+                    this.logger.log(`[CRM_SEND] Routing Instagram message to MetaApiService for PSID ${contact.externalId}`);
+                    await this.metaApiService.sendInstagramMessage(tenantId, contact.externalId.split('@')[0], content);
+                } else {
+                    throw new Error('Contact missing externalId (PSID) for Instagram sending');
                 }
             } catch (err: any) {
-                this.logger.error(`[CRM_SEND] Failed to send Instagram message: ${err.response?.data?.error?.message || err.message}`);
+                this.logger.error(`[CRM_SEND] Failed to send Instagram message: ${err.message}`);
             }
         } else if (finalProvider === 'whatsapp') {
             try {

@@ -38,6 +38,8 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         linkedin_client_secret: '',
         meta_page_access_token: '',
         meta_instagram_business_id: '',
+        instagram_app_id: '',
+        instagram_app_secret: '',
         meta_verify_token: 'zaplandia_verify_token',
         whatsapp_phone_number_id: '',
         whatsapp_business_account_id: '',
@@ -97,6 +99,8 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     next.fb_app_secret = parsed.secret || '';
                     next.meta_page_access_token = parsed.pageAccessToken || '';
                     next.meta_instagram_business_id = parsed.instagramBusinessId || '';
+                    next.instagram_app_id = parsed.instagramAppId || '';
+                    next.instagram_app_secret = parsed.instagramAppSecret || '';
                     next.meta_verify_token = parsed.verifyToken || '';
                     next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
                     next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
@@ -244,6 +248,29 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                         />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">ID do app do Instagram</label>
+                            <input
+                                type="text"
+                                value={keys.instagram_app_id}
+                                onChange={(e) => setKeys({ ...keys, instagram_app_id: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                                placeholder="Instagram App ID"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">Chave secreta do app do Instagram</label>
+                            <input
+                                type="password"
+                                value={keys.instagram_app_secret}
+                                onChange={(e) => setKeys({ ...keys, instagram_app_secret: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                                placeholder="Instagram App Secret"
+                            />
+                        </div>
+                    </div>
+
                     {/* WhatsApp Permanent Token - inside Meta section */}
                     <div className="pt-4 border-t border-white/10">
                         <label className="text-sm text-white/60 mb-2 block">Token Permanente do System User (EAAW...)</label>
@@ -262,6 +289,8 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                                 secret: keys.fb_app_secret,
                                 pageAccessToken: keys.meta_page_access_token,
                                 instagramBusinessId: keys.meta_instagram_business_id,
+                                instagramAppId: keys.instagram_app_id,
+                                instagramAppSecret: keys.instagram_app_secret,
                                 verifyToken: keys.meta_verify_token,
                                 whatsappPhoneNumberId: keys.whatsapp_phone_number_id,
                                 whatsappBusinessAccountId: keys.whatsapp_business_account_id

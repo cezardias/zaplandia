@@ -10,17 +10,33 @@ export class MetaApiService {
     constructor(private readonly integrationsService: IntegrationsService) { }
 
     private async getCredentials(tenantId: string) {
-        const accessToken = await this.integrationsService.getCredential(tenantId, 'META_ACCESS_TOKEN');
-        const wabaId = await this.integrationsService.getCredential(tenantId, 'META_WABA_ID');
-        const phoneNumberId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID');
+        // Individual keys (Priority 1)
+        let accessToken = await this.integrationsService.getCredential(tenantId, 'META_ACCESS_TOKEN', true);
+        let wabaId = await this.integrationsService.getCredential(tenantId, 'META_WABA_ID', true);
+        let phoneNumberId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
+        let instagramBusinessId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+
+        // Try load from JSON config (Priority 2)
+        const metaAppConfig = await this.integrationsService.getCredential(tenantId, 'META_APP_CONFIG', true);
+        if (metaAppConfig) {
+            try {
+                const parsed = JSON.parse(metaAppConfig);
+                if (!accessToken) accessToken = parsed.pageAccessToken || parsed.accessToken;
+                if (!wabaId) wabaId = parsed.whatsappBusinessAccountId || parsed.wabaId;
+                if (!phoneNumberId) phoneNumberId = parsed.whatsappPhoneNumberId || parsed.phoneNumberId;
+                if (!instagramBusinessId) instagramBusinessId = parsed.instagramBusinessId;
+            } catch (e) {
+                this.logger.warn(`Failed to parse META_APP_CONFIG for tenant ${tenantId}`);
+            }
+        }
 
         if (!accessToken) {
-            throw new Error('META_ACCESS_TOKEN not configured');
+            throw new Error('META_ACCESS_TOKEN not configured (nor found in META_APP_CONFIG)');
         }
 
         this.logger.debug(`[META_AUTH] Using token starting with: ${accessToken.substring(0, 5)}...`);
 
-        return { accessToken, wabaId, phoneNumberId };
+        return { accessToken, wabaId, phoneNumberId, instagramBusinessId };
     }
 
     async testConnection(tenantId: string) {
@@ -146,11 +162,13 @@ export class MetaApiService {
      */
     async sendInstagramMessage(tenantId: string, recipientPsid: string, text: string) {
         try {
-            const { accessToken } = await this.getCredentials(tenantId);
+            const { accessToken, instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
 
             // Instagram page ID for the tenant
-            const pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
-            if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
+            let pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            if (!pageId) pageId = configIbId; // Fallback to ID from META_APP_CONFIG
+            
+            if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant (check META_APP_CONFIG)');
 
             const payload = {
                 recipient: { id: recipientPsid },
@@ -158,7 +176,7 @@ export class MetaApiService {
                 messaging_type: 'RESPONSE',
             };
 
-            this.logger.log(`[INSTAGRAM_SEND] Sending DM to PSID ${recipientPsid} via Page ${pageId}`);
+            this.logger.log(`[INSTAGRAM_SEND] Sending DM to PSID ${recipientPsid} via Page/IGBA ${pageId}`);
 
             const response = await axios.post(
                 `${this.baseUrl}/${pageId}/messages`,
