@@ -52,9 +52,9 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         n8n_webhook_url: '',
         erp_zaplandia_key: '',
         openrouter_key: '',
-        rifa_api_key: '',
         rifa_api_url: '',
         n8n_provider_config: '',
+        instagram_token: '',
     });
 
     const [openrouterCredits, setOpenrouterCredits] = useState<{ total_credits: number, total_usage: number } | null>(null);
@@ -102,6 +102,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     if (parsed.instagramBusinessId) next.meta_instagram_business_id = parsed.instagramBusinessId;
                     if (parsed.instagramAppId) next.instagram_app_id = parsed.instagramAppId;
                     if (parsed.instagramAppSecret) next.instagram_app_secret = parsed.instagramAppSecret;
+                    if (parsed.instagramAccessToken) next.instagram_token = parsed.instagramAccessToken;
                     if (parsed.verifyToken) next.meta_verify_token = parsed.verifyToken;
                     if (parsed.whatsappPhoneNumberId) next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId;
                     if (parsed.whatsappBusinessAccountId) next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId;
@@ -277,7 +278,13 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                             />
                         </div>
                         <div>
-                            {/* Empty space or another field if needed */}
+                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">Token de Acesso do Instagram (Page Access Token)</label>
+                            <textarea
+                                value={keys.instagram_token}
+                                onChange={(e) => setKeys({ ...keys, instagram_token: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary min-h-[80px]"
+                                placeholder="EAAK..."
+                            />
                         </div>
                     </div>
 
@@ -322,6 +329,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                                 secret: keys.fb_app_secret,
                                 pageAccessToken: keys.meta_page_access_token,
                                 instagramBusinessId: keys.meta_instagram_business_id,
+                                instagramAccessToken: keys.instagram_token,
                                 instagramAppId: keys.instagram_app_id,
                                 instagramAppSecret: keys.instagram_app_secret,
                                 verifyToken: keys.meta_verify_token,
