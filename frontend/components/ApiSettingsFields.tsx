@@ -95,15 +95,15 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             if (item.key_name === 'META_APP_CONFIG') {
                 try {
                     const parsed = JSON.parse(item.key_value);
-                    next.fb_app_id = parsed.appId || '';
-                    next.fb_app_secret = parsed.secret || '';
-                    next.meta_page_access_token = parsed.pageAccessToken || '';
-                    next.meta_instagram_business_id = parsed.instagramBusinessId || '';
-                    next.instagram_app_id = parsed.instagramAppId || '';
-                    next.instagram_app_secret = parsed.instagramAppSecret || '';
-                    next.meta_verify_token = parsed.verifyToken || '';
-                    next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId || '';
-                    next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
+                    if (parsed.appId) next.fb_app_id = parsed.appId;
+                    if (parsed.secret) next.fb_app_secret = parsed.secret;
+                    if (parsed.pageAccessToken) next.meta_page_access_token = parsed.pageAccessToken;
+                    if (parsed.instagramBusinessId) next.meta_instagram_business_id = parsed.instagramBusinessId;
+                    if (parsed.instagramAppId) next.instagram_app_id = parsed.instagramAppId;
+                    if (parsed.instagramAppSecret) next.instagram_app_secret = parsed.instagramAppSecret;
+                    if (parsed.verifyToken) next.meta_verify_token = parsed.verifyToken;
+                    if (parsed.whatsappPhoneNumberId) next.whatsapp_phone_number_id = parsed.whatsappPhoneNumberId;
+                    if (parsed.whatsappBusinessAccountId) next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId;
                 } catch (e) { }
             }
             if (item.key_name === 'WHATSAPP_TOKEN' || item.key_name === 'META_ACCESS_TOKEN') {
