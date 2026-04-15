@@ -221,7 +221,9 @@ export class WebhooksController {
                                 if (n8nResponse) {
                                     const resBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
                                     for (const r of resBuffer) {
-                                        const text = r.textMessage || r.text || r.message;
+                                        let text = r.textMessage || r.text || r.message;
+                                        if (text && typeof text !== 'string') text = JSON.stringify(text);
+
                                         if (text) await this.crmService.sendMessage(tenantId, contact.id, text);
                                     }
                                 }
@@ -347,7 +349,9 @@ export class WebhooksController {
                                 if (n8nResponse) {
                                     const resBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
                                     for (const r of resBuffer) {
-                                        const replyText = r.textMessage || r.text || r.message;
+                                        let replyText = r.textMessage || r.text || r.message;
+                                        if (replyText && typeof replyText !== 'string') replyText = JSON.stringify(replyText);
+
                                         if (replyText) {
                                             try {
                                                 await this.metaApiService.sendInstagramMessage(tenantId, senderId, replyText);
