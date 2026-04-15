@@ -106,7 +106,20 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     next.whatsapp_business_account_id = parsed.whatsappBusinessAccountId || '';
                 } catch (e) { }
             }
-            if (item.key_name === 'WHATSAPP_TOKEN') next.whatsapp_token = item.key_value;
+            if (item.key_name === 'WHATSAPP_TOKEN' || item.key_name === 'META_ACCESS_TOKEN') {
+                if (!next.whatsapp_token) next.whatsapp_token = item.key_value;
+                if (!next.meta_page_access_token) next.meta_page_access_token = item.key_value;
+            }
+            if (item.key_name === 'META_WABA_ID' && !next.whatsapp_business_account_id) {
+                next.whatsapp_business_account_id = item.key_value;
+            }
+            if (item.key_name === 'META_PHONE_NUMBER_ID' && !next.whatsapp_phone_number_id) {
+                next.whatsapp_phone_number_id = item.key_value;
+            }
+            if (item.key_name === 'INSTAGRAM_PAGE_ID' && !next.meta_instagram_business_id) {
+                next.meta_instagram_business_id = item.key_value;
+            }
+            
             if (item.key_name === 'GEMINI_API_KEY') next.gemini_key = item.key_value;
             if (item.key_name === 'TELEGRAM_TOKEN') next.telegram_token = item.key_value;
             if (item.key_name === 'YOUTUBE_API_KEY') next.youtube_api_key = item.key_value;
