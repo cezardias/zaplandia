@@ -638,15 +638,15 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                         const metaContact = await this.contactRepository.findOne({
                             where: [
                                 { tenantId, name: contact.name, provider: 'whatsapp', externalId: Like('%@s.whatsapp.net') },
-                                { tenantId, phone: contact.phone, provider: 'whatsapp', externalId: Not(Like('%@lid')) },
+                                { tenantId, phoneNumber: contact.phoneNumber, provider: 'whatsapp', externalId: Not(Like('%@lid')) },
                             ]
                         });
-                        if (metaContact?.phone && metaContact.phone.length <= 15) {
-                            metaTargetNumber = metaContact.phone.replace(/\D/g, '');
+                        if (metaContact?.phoneNumber && metaContact.phoneNumber.length <= 15) {
+                            metaTargetNumber = metaContact.phoneNumber.replace(/\D/g, '');
                             this.logger.log(`[LID_RESOLVE] Resolved LID ${cleanTarget} -> real phone ${metaTargetNumber} via contact ${metaContact.id}`);
-                        } else if (contact.phone && !contact.phone.includes('@lid') && contact.phone.replace(/\D/g, '').length <= 15) {
-                            // phone field itself might already be clean if it was updated
-                            metaTargetNumber = contact.phone.replace(/\D/g, '');
+                        } else if (contact.phoneNumber && !contact.phoneNumber.includes('@lid') && contact.phoneNumber.replace(/\D/g, '').length <= 15) {
+                            // phoneNumber field itself might already be clean if it was updated
+                            metaTargetNumber = contact.phoneNumber.replace(/\D/g, '');
                         }
                     }
 

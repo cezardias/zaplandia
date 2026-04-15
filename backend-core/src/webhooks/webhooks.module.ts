@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Contact, Message } from '../crm/entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { Integration } from '../integrations/entities/integration.entity';
+import { ApiCredential } from '../integrations/entities/api-credential.entity';
 
 import { ApiKeyGuard } from '../auth/guards/api-key.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,7 +18,7 @@ import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
         CrmModule,
         IntegrationsModule,
         AiModule,
-        TypeOrmModule.forFeature([Contact, Message, CampaignLead, Integration])
+        TypeOrmModule.forFeature([Contact, Message, CampaignLead, Integration, ApiCredential])
     ],
     controllers: [WebhooksController],
     providers: [ApiKeyGuard, JwtAuthGuard, UniversalAuthGuard],

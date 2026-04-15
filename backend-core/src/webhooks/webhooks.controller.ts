@@ -13,6 +13,7 @@ import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { MetaApiService } from '../integrations/meta-api.service';
+import { ApiCredential } from '../integrations/entities/api-credential.entity';
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -33,6 +34,8 @@ export class WebhooksController {
         private leadRepository: Repository<CampaignLead>,
         @InjectRepository(Integration)
         private integrationRepository: Repository<Integration>,
+        @InjectRepository(ApiCredential)
+        private apiCredentialRepository: Repository<ApiCredential>,
         private readonly communicationService: CommunicationService,
     ) { }
 
