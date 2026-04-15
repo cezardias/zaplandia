@@ -221,7 +221,7 @@ export class WebhooksController {
                                 if (n8nResponse) {
                                     const resBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
                                     for (const r of resBuffer) {
-                                        let text = r.textMessage || r.text || r.message;
+                                        let text = r.output || (typeof r.message === 'object' ? r.message.text : null) || r.textMessage || r.text || r.message;
                                         if (text && typeof text !== 'string') text = JSON.stringify(text);
 
                                         if (text) await this.crmService.sendMessage(tenantId, contact.id, text);
@@ -349,11 +349,12 @@ export class WebhooksController {
                                 if (n8nResponse) {
                                     const resBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
                                     for (const r of resBuffer) {
-                                        let replyText = r.textMessage || r.text || r.message;
+                                        let replyText = r.output || (typeof r.message === 'object' ? r.message.text : null) || r.textMessage || r.text || r.message;
                                         if (replyText && typeof replyText !== 'string') replyText = JSON.stringify(replyText);
 
                                         if (replyText) {
                                             try {
+                                                this.logger.log(`[INSTAGRAM_WEBHOOK] Sending N8N reply (First 50 chars): ${replyText.substring(0, 50)}...`);
                                                 await this.metaApiService.sendInstagramMessage(tenantId, senderId, replyText);
                                             } catch (sendErr: any) {
                                                 this.logger.error(`[INSTAGRAM_WEBHOOK] Failed to send N8N reply: ${sendErr.message}`);
