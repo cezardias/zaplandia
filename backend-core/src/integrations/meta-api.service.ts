@@ -179,7 +179,7 @@ export class MetaApiService {
             this.logger.log(`[INSTAGRAM_SEND] Sending DM to PSID ${recipientPsid} via Page/IGBA ${pageId}`);
 
             const response = await axios.post(
-                `${this.baseUrl}/${pageId}/messages`,
+                `${this.baseUrl}/me/messages`,
                 payload,
                 { params: { access_token: accessToken } }
             );
