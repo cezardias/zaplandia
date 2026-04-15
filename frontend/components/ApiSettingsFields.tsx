@@ -52,6 +52,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         n8n_webhook_url: '',
         erp_zaplandia_key: '',
         openrouter_key: '',
+        rifa_api_key: '',
         rifa_api_url: '',
         n8n_provider_config: '',
         instagram_token: '',
