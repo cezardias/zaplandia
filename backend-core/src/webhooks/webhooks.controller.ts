@@ -240,22 +240,26 @@ export class WebhooksController {
             try {
                 for (const entry of entries) {
                     const pageId = entry.id; // This is the Facebook Page ID linked to Instagram
+                    this.logger.log(`[INSTAGRAM_WEBHOOK] Entry ID: ${pageId}. Object: ${payload.object}`);
 
                     // --- MULTITENANT: find tenant by INSTAGRAM_PAGE_ID credential ---
                     const pageCred = await this.integrationsService.findCredentialByValue('INSTAGRAM_PAGE_ID', pageId);
                     let tenantId = pageCred?.tenantId;
 
-                    // Fallback: search inside META_APP_CONFIG JSON for instagramBusinessId
+                    if (tenantId) this.logger.debug(`[INSTAGRAM_WEBHOOK] Tenant ${tenantId} found by direct INSTAGRAM_PAGE_ID match.`);
+
+                    // Fallback: search inside ALL credentials for this value (wide search)
                     if (!tenantId) {
+                        this.logger.debug(`[INSTAGRAM_WEBHOOK] No direct match. Searching inside all JSON configs (LIKE %${pageId}%)...`);
                         const configCred = await this.apiCredentialRepository.createQueryBuilder('c')
-                            .where("c.key_name = 'META_APP_CONFIG'")
-                            .andWhere("c.key_value LIKE :val", { val: `%${pageId}%` })
+                            .where("c.key_value LIKE :val", { val: `%${pageId}%` })
                             .getOne();
                         tenantId = configCred?.tenantId || undefined;
+                        if (tenantId) this.logger.debug(`[INSTAGRAM_WEBHOOK] Tenant ${tenantId} found by LIKE match in key ${configCred?.key_name}.`);
                     }
 
                     if (!tenantId) {
-                        this.logger.warn(`[INSTAGRAM_WEBHOOK] No tenant found for Page ID: ${pageId}. Configure INSTAGRAM_PAGE_ID or META_APP_CONFIG.`);
+                        this.logger.warn(`[INSTAGRAM_WEBHOOK] Still no tenant found for Page ID: ${pageId}. Search query didn't find any match.`);
                         continue;
                     }
 
