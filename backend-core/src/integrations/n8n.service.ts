@@ -14,6 +14,21 @@ export class N8nService {
             
             let webhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
 
+            // Multi-provider routing
+            const providerConfigStr = await this.integrationsService.getCredential(tenantId, 'N8N_PROVIDER_CONFIG');
+            if (providerConfigStr) {
+                try {
+                    const providerConfig = JSON.parse(providerConfigStr);
+                    const provider = payload?.provider || payload?.type?.split('.')[0];
+                    if (provider && providerConfig[provider]) {
+                        this.logger.log(`[TRIGGER_N8N] Using specific webhook for provider ${provider}: ${providerConfig[provider]}`);
+                        webhookUrl = providerConfig[provider];
+                    }
+                } catch (e) {
+                    this.logger.error(`[TRIGGER_N8N] Failed to parse provider config for tenant ${tenantId}`);
+                }
+            }
+
             if (!webhookUrl) {
                 this.logger.warn(`[TRIGGER_N8N] Webhook NOT configured for tenant ${tenantId}. Skipping.`);
                 return;
@@ -46,6 +61,7 @@ export class N8nService {
             const data = error.response?.data;
             this.logger.error(`[TRIGGER_N8N] FAILURE: Error calling n8n for tenant ${tenantId}. Status: ${status}. Error: ${error.message}`);
             if (data) this.logger.debug(`[TRIGGER_N8N] Error Detail: ${JSON.stringify(data)}`);
+            return null;
         }
     }
 }

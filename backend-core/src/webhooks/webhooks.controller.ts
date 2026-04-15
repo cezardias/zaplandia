@@ -484,6 +484,7 @@ export class WebhooksController {
                 if (!isOutbound && n8nActive) {
                     this.logger.log(`[EVOLUTION_WEBHOOK] Triggering n8n for ${contact.name} (Tenant: ${tenantId})`);
                     const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
+                        provider: 'evolution',
                         type: 'whatsapp.message', sender: remoteJid, content, contact_id: contact.id, name: pushName, message_id: message.id
                     }, existingIntegration);
                     

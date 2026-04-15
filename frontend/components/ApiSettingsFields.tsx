@@ -54,6 +54,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         openrouter_key: '',
         rifa_api_key: '',
         rifa_api_url: '',
+        n8n_provider_config: '',
     });
 
     const [openrouterCredits, setOpenrouterCredits] = useState<{ total_credits: number, total_usage: number } | null>(null);
@@ -123,6 +124,9 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             if (item.key_name === 'GEMINI_API_KEY') next.gemini_key = item.key_value;
             if (item.key_name === 'TELEGRAM_TOKEN') next.telegram_token = item.key_value;
             if (item.key_name === 'YOUTUBE_API_KEY') next.youtube_api_key = item.key_value;
+            if (item.key_name === 'N8N_WEBHOOK_URL') next.n8n_webhook_url = item.key_value;
+            if (item.key_name === 'N8N_PROVIDER_CONFIG') next.n8n_provider_config = item.key_value;
+
             if (item.key_name === 'LINKEDIN_CONFIG') {
                 try {
                     const parsed = JSON.parse(item.key_value);
@@ -259,6 +263,22 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
                             placeholder="WABA ID"
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">Instagram Business ID (ID da Página)</label>
+                            <input
+                                type="text"
+                                value={keys.meta_instagram_business_id}
+                                onChange={(e) => setKeys({ ...keys, meta_instagram_business_id: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                                placeholder="ID Numérico da Página no FB"
+                            />
+                        </div>
+                        <div>
+                            {/* Empty space or another field if needed */}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -437,20 +457,56 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     <span>Automação n8n</span>
                 </h2>
                 <div className="space-y-4">
-                    <input
-                        type="text"
-                        value={keys.n8n_webhook_url}
-                        onChange={(e) => setKeys({ ...keys, n8n_webhook_url: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                        placeholder="n8n Webhook URL"
-                    />
+                    <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl mb-4">
+                        <p className="text-sm text-orange-300 font-bold mb-2">Webhook Padrão (Fallback)</p>
+                        <input
+                            type="text"
+                            value={keys.n8n_webhook_url}
+                            onChange={(e) => setKeys({ ...keys, n8n_webhook_url: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                            placeholder="URL Global n8n"
+                        />
+                    </div>
+                    
+                    <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                        <p className="text-xs text-white/60 font-bold mb-3 uppercase tracking-wider">Webhooks por Provedor (Avançado)</p>
+                        <div className="space-y-3">
+                            {['whatsapp', 'instagram', 'evolution', 'telegram', 'mercadolivre'].map(provider => (
+                                <div key={provider} className="flex flex-col space-y-1">
+                                    <label className="text-[10px] text-white/40 font-bold uppercase ml-1">{provider}</label>
+                                    <input
+                                        type="text"
+                                        value={(() => {
+                                            try {
+                                                const config = JSON.parse(keys.n8n_provider_config || '{}');
+                                                return config[provider] || '';
+                                            } catch(e) { return ''; }
+                                        })()}
+                                        onChange={(e) => {
+                                            const currentConfig = (() => {
+                                                try { return JSON.parse(keys.n8n_provider_config || '{}'); } catch(e) { return {}; }
+                                            })();
+                                            const newConfig = { ...currentConfig, [provider]: e.target.value };
+                                            setKeys({ ...keys, n8n_provider_config: JSON.stringify(newConfig) });
+                                        }}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-orange-500"
+                                        placeholder={`URL n8n para ${provider}`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     <button
-                        onClick={() => handleSave('N8N_WEBHOOK_URL', keys.n8n_webhook_url)}
+                        onClick={async () => {
+                            await handleSave('N8N_WEBHOOK_URL', keys.n8n_webhook_url);
+                            await handleSave('N8N_PROVIDER_CONFIG', keys.n8n_provider_config);
+                        }}
                         disabled={isLoading}
-                        className="w-full bg-primary hover:bg-primary-dark py-2 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
+                        className="w-full bg-orange-600 hover:bg-orange-700 py-3 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
                     >
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        <span>Salvar n8n</span>
+                        <span>Salvar Configuração n8n</span>
                     </button>
                 </div>
             </section>
