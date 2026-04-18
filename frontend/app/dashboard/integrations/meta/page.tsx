@@ -534,7 +534,7 @@ export default function MetaApiPage() {
                                                 placeholder="••••••••"
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">Encontrada em Configurações > Painel no seu App da Meta.</p>
+                                            <p className="text-[10px] text-gray-500">Encontrada em Configurações &gt; Painel no seu App da Meta.</p>
                                         </div>
                                     </div>
                                 </div>
