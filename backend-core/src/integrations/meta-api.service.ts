@@ -16,6 +16,8 @@ export class MetaApiService {
         let phoneNumberId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
         let instagramBusinessId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
         let instagramAccessToken = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_ACCESS_TOKEN', true);
+        let instagramAppId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_APP_ID', true);
+        let instagramAppSecret = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_APP_SECRET', true);
 
         // Try load from JSON config (Priority 2)
         const metaAppConfig = await this.integrationsService.getCredential(tenantId, 'META_APP_CONFIG', true);
@@ -27,6 +29,8 @@ export class MetaApiService {
                 if (!phoneNumberId) phoneNumberId = parsed.whatsappPhoneNumberId || parsed.phoneNumberId;
                 if (!instagramBusinessId) instagramBusinessId = parsed.instagramBusinessId;
                 if (!instagramAccessToken) instagramAccessToken = parsed.instagramAccessToken;
+                if (!instagramAppId) instagramAppId = parsed.instagramAppId;
+                if (!instagramAppSecret) instagramAppSecret = parsed.instagramAppSecret;
             } catch (e) {
                 this.logger.warn(`Failed to parse META_APP_CONFIG for tenant ${tenantId}`);
             }
@@ -42,7 +46,7 @@ export class MetaApiService {
             this.logger.debug(`[META_AUTH] Using Instagram specific token starting with: ${instagramAccessToken.substring(0, 5)}...`);
         }
 
-        return { accessToken, wabaId, phoneNumberId, instagramBusinessId, instagramAccessToken };
+        return { accessToken, wabaId, phoneNumberId, instagramBusinessId, instagramAccessToken, instagramAppId, instagramAppSecret };
     }
 
     async testConnection(tenantId: string) {

@@ -40,7 +40,10 @@ export default function MetaApiPage() {
         META_WABA_ID: '',
         META_PHONE_NUMBER_ID: '',
         INSTAGRAM_ACCESS_TOKEN: '',
-        INSTAGRAM_PAGE_ID: ''
+        INSTAGRAM_PAGE_ID: '',
+        INSTAGRAM_APP_NAME: '',
+        INSTAGRAM_APP_ID: '',
+        INSTAGRAM_APP_SECRET: ''
     });
 
     const [profile, setProfile] = useState<any>(null);
@@ -80,7 +83,10 @@ export default function MetaApiPage() {
                     META_WABA_ID: data.find((c: any) => c.key_name === 'META_WABA_ID')?.key_value || '',
                     META_PHONE_NUMBER_ID: data.find((c: any) => c.key_name === 'META_PHONE_NUMBER_ID')?.key_value || '',
                     INSTAGRAM_ACCESS_TOKEN: data.find((c: any) => c.key_name === 'INSTAGRAM_ACCESS_TOKEN')?.key_value || '',
-                    INSTAGRAM_PAGE_ID: data.find((c: any) => c.key_name === 'INSTAGRAM_PAGE_ID')?.key_value || ''
+                    INSTAGRAM_PAGE_ID: data.find((c: any) => c.key_name === 'INSTAGRAM_PAGE_ID')?.key_value || '',
+                    INSTAGRAM_APP_NAME: data.find((c: any) => c.key_name === 'INSTAGRAM_APP_NAME')?.key_value || '',
+                    INSTAGRAM_APP_ID: data.find((c: any) => c.key_name === 'INSTAGRAM_APP_ID')?.key_value || '',
+                    INSTAGRAM_APP_SECRET: data.find((c: any) => c.key_name === 'INSTAGRAM_APP_SECRET')?.key_value || ''
                 };
                 setCreds(metaCreds);
             }
@@ -494,6 +500,41 @@ export default function MetaApiPage() {
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
                                             <p className="text-[10px] text-gray-500">O ID da Página do Facebook ou conta do Instagram vinculada.</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Nome do App (Instagram)</label>
+                                                <input
+                                                    type="text"
+                                                    value={creds.INSTAGRAM_APP_NAME}
+                                                    onChange={(e) => setCreds({ ...creds, INSTAGRAM_APP_NAME: e.target.value })}
+                                                    placeholder="Ex: Meu App Insta"
+                                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">ID do App (Instagram)</label>
+                                                <input
+                                                    type="text"
+                                                    value={creds.INSTAGRAM_APP_ID}
+                                                    onChange={(e) => setCreds({ ...creds, INSTAGRAM_APP_ID: e.target.value })}
+                                                    placeholder="Ex: 125148..."
+                                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Chave Secreta do App (App Secret)</label>
+                                            <input
+                                                type="password"
+                                                value={creds.INSTAGRAM_APP_SECRET}
+                                                onChange={(e) => setCreds({ ...creds, INSTAGRAM_APP_SECRET: e.target.value })}
+                                                placeholder="••••••••"
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                            />
+                                            <p className="text-[10px] text-gray-500">Encontrada em Configurações > Painel no seu App da Meta.</p>
                                         </div>
                                     </div>
                                 </div>
