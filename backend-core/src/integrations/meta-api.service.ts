@@ -15,10 +15,10 @@ export class MetaApiService {
         let wabaId = await this.integrationsService.getCredential(tenantId, 'META_WABA_ID', true);
         let phoneNumberId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
         let instagramBusinessId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+        let instagramAccessToken = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_ACCESS_TOKEN', true);
 
         // Try load from JSON config (Priority 2)
         const metaAppConfig = await this.integrationsService.getCredential(tenantId, 'META_APP_CONFIG', true);
-        let instagramAccessToken = null;
         if (metaAppConfig) {
             try {
                 const parsed = JSON.parse(metaAppConfig);
@@ -26,17 +26,21 @@ export class MetaApiService {
                 if (!wabaId) wabaId = parsed.whatsappBusinessAccountId || parsed.wabaId;
                 if (!phoneNumberId) phoneNumberId = parsed.whatsappPhoneNumberId || parsed.phoneNumberId;
                 if (!instagramBusinessId) instagramBusinessId = parsed.instagramBusinessId;
-                instagramAccessToken = parsed.instagramAccessToken;
+                if (!instagramAccessToken) instagramAccessToken = parsed.instagramAccessToken;
             } catch (e) {
                 this.logger.warn(`Failed to parse META_APP_CONFIG for tenant ${tenantId}`);
             }
         }
 
         if (!accessToken) {
-            throw new Error('META_ACCESS_TOKEN not configured (nor found in META_APP_CONFIG)');
+            this.logger.warn(`[META_API] META_ACCESS_TOKEN (WhatsApp) not configured for tenant ${tenantId}`);
+        } else {
+            this.logger.debug(`[META_AUTH] Using WhatsApp token starting with: ${accessToken.substring(0, 5)}...`);
         }
 
-        this.logger.debug(`[META_AUTH] Using token starting with: ${accessToken.substring(0, 5)}...`);
+        if (instagramAccessToken) {
+            this.logger.debug(`[META_AUTH] Using Instagram specific token starting with: ${instagramAccessToken.substring(0, 5)}...`);
+        }
 
         return { accessToken, wabaId, phoneNumberId, instagramBusinessId, instagramAccessToken };
     }
@@ -210,7 +214,14 @@ export class MetaApiService {
      */
     async getInstagramUserProfile(tenantId: string, psid: string): Promise<{ name: string; username?: string } | null> {
         try {
-            const { accessToken } = await this.getCredentials(tenantId);
+            const { accessToken: defaultToken, instagramAccessToken } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+            
+            if (!accessToken) {
+                this.logger.warn(`[INSTAGRAM_PROFILE] No access token available for tenant ${tenantId}`);
+                return null;
+            }
+
             const response = await axios.get(
                 `${this.baseUrl}/${psid}`,
                 { params: { access_token: accessToken, fields: 'name,username' } }

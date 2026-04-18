@@ -38,7 +38,9 @@ export default function MetaApiPage() {
     const [creds, setCreds] = useState({
         META_ACCESS_TOKEN: '',
         META_WABA_ID: '',
-        META_PHONE_NUMBER_ID: ''
+        META_PHONE_NUMBER_ID: '',
+        INSTAGRAM_ACCESS_TOKEN: '',
+        INSTAGRAM_PAGE_ID: ''
     });
 
     const [profile, setProfile] = useState<any>(null);
@@ -76,7 +78,9 @@ export default function MetaApiPage() {
                 const metaCreds = {
                     META_ACCESS_TOKEN: data.find((c: any) => c.key_name === 'META_ACCESS_TOKEN')?.key_value || '',
                     META_WABA_ID: data.find((c: any) => c.key_name === 'META_WABA_ID')?.key_value || '',
-                    META_PHONE_NUMBER_ID: data.find((c: any) => c.key_name === 'META_PHONE_NUMBER_ID')?.key_value || ''
+                    META_PHONE_NUMBER_ID: data.find((c: any) => c.key_name === 'META_PHONE_NUMBER_ID')?.key_value || '',
+                    INSTAGRAM_ACCESS_TOKEN: data.find((c: any) => c.key_name === 'INSTAGRAM_ACCESS_TOKEN')?.key_value || '',
+                    INSTAGRAM_PAGE_ID: data.find((c: any) => c.key_name === 'INSTAGRAM_PAGE_ID')?.key_value || ''
                 };
                 setCreds(metaCreds);
             }
@@ -458,6 +462,39 @@ export default function MetaApiPage() {
                                             placeholder="Ex: 987654321..."
                                             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                         />
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 border-t border-white/5">
+                                    <h3 className="text-sm font-bold text-primary mb-4 flex items-center space-x-2">
+                                        <RefreshCw className="w-4 h-4" />
+                                        <span>Configurações Específicas para Instagram</span>
+                                    </h3>
+                                    
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Instagram Access Token (Opcional se igual ao Meta)</label>
+                                            <input
+                                                type="password"
+                                                value={creds.INSTAGRAM_ACCESS_TOKEN}
+                                                onChange={(e) => setCreds({ ...creds, INSTAGRAM_ACCESS_TOKEN: e.target.value })}
+                                                placeholder="EAAB... (Deixe em branco para usar o token acima)"
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                            />
+                                            <p className="text-[10px] text-gray-500">Se o seu Instagram estiver em outro aplicativo ou exigir token diferente.</p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Instagram Page/Business ID</label>
+                                            <input
+                                                type="text"
+                                                value={creds.INSTAGRAM_PAGE_ID}
+                                                onChange={(e) => setCreds({ ...creds, INSTAGRAM_PAGE_ID: e.target.value })}
+                                                placeholder="Ex: 178414..."
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                            />
+                                            <p className="text-[10px] text-gray-500">O ID da Página do Facebook ou conta do Instagram vinculada.</p>
+                                        </div>
                                     </div>
                                 </div>
 
