@@ -484,22 +484,22 @@ export default function MetaApiPage() {
                                                 type="password"
                                                 value={creds.INSTAGRAM_ACCESS_TOKEN}
                                                 onChange={(e) => setCreds({ ...creds, INSTAGRAM_ACCESS_TOKEN: e.target.value })}
-                                                placeholder="EAAB... (Deixe em branco para usar o token acima)"
+                                                placeholder="EAAB... (Recomendado deixar em branco para usar o do WhatsApp)"
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">Se o seu Instagram estiver em outro aplicativo ou exigir token diferente.</p>
+                                            <p className="text-[10px] text-gray-500">Deve ser um Token de Página (EAAB...). Tokens IGAAR... NÃO funcionam para mensagens.</p>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Instagram Page/Business ID</label>
+                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">ID da Conta do Instagram (Page ID)</label>
                                             <input
                                                 type="text"
                                                 value={creds.INSTAGRAM_PAGE_ID}
                                                 onChange={(e) => setCreds({ ...creds, INSTAGRAM_PAGE_ID: e.target.value })}
-                                                placeholder="Ex: 178414..."
+                                                placeholder="Ex: 1784... (ID da conta, não do App)"
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">O ID da Página do Facebook ou conta do Instagram vinculada.</p>
+                                            <p className="text-[10px] text-gray-500">O ID numérico da conta do Instagram Business (geralmente começa com 178).</p>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
