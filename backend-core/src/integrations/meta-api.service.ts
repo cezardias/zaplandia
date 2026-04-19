@@ -5,11 +5,11 @@ import axios from 'axios';
 @Injectable()
 export class MetaApiService {
     private readonly logger = new Logger(MetaApiService.name);
-    private readonly baseUrl = 'https://graph.facebook.com/v21.0';
+    private readonly baseUrl = 'https://graph.facebook.com/v19.0';
 
     constructor(private readonly integrationsService: IntegrationsService) { }
 
-    private async getCredentials(tenantId: string) {
+    public async getCredentials(tenantId: string) {
         // Individual keys (Priority 1)
         let accessToken = await this.integrationsService.getCredential(tenantId, 'META_ACCESS_TOKEN', true);
         let wabaId = await this.integrationsService.getCredential(tenantId, 'META_WABA_ID', true);
@@ -24,11 +24,14 @@ export class MetaApiService {
         if (metaAppConfig) {
             try {
                 const parsed = JSON.parse(metaAppConfig);
-                if (!accessToken) accessToken = parsed.pageAccessToken || parsed.accessToken;
+                // WhatsApp fallbacks
+                if (!accessToken) accessToken = parsed.accessToken || parsed.pageAccessToken;
                 if (!wabaId) wabaId = parsed.whatsappBusinessAccountId || parsed.wabaId;
                 if (!phoneNumberId) phoneNumberId = parsed.whatsappPhoneNumberId || parsed.phoneNumberId;
+                
+                // Instagram fallbacks
                 if (!instagramBusinessId) instagramBusinessId = parsed.instagramBusinessId;
-                if (!instagramAccessToken) instagramAccessToken = parsed.instagramAccessToken;
+                if (!instagramAccessToken) instagramAccessToken = parsed.instagramAccessToken || parsed.pageAccessToken || parsed.accessToken;
                 if (!instagramAppId) instagramAppId = parsed.instagramAppId;
                 if (!instagramAppSecret) instagramAppSecret = parsed.instagramAppSecret;
             } catch (e) {

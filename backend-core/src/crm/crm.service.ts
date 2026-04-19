@@ -624,8 +624,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                     this.logger.log(`[CRM_SEND] Routing Request - Target: ${targetNumber} -> Normalized: ${cleanTarget}`);
 
                     // 1. SMART ROUTING: Prioritize Meta API if credentials exist
-                    const metaAccessToken = await this.integrationsService.getCredential(tenantId, 'META_ACCESS_TOKEN', true);
-                    const metaPhoneId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
+                    const { accessToken: metaAccessToken, phoneNumberId: metaPhoneId } = await this.metaApiService.getCredentials(tenantId);
 
                     // CRITICAL: Meta Cloud API ONLY supports real phone numbers (max 14 digits).
                     // If target is a LID (@lid), try to resolve real phone from a Meta-sourced contact duplicate
