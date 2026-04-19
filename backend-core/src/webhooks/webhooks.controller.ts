@@ -211,9 +211,14 @@ export class WebhooksController {
                             contact.lastMessage = content;
                             await this.contactRepository.save(contact);
 
-                            const hasN8n = !!(await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true));
+                            const n8nWebhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
+                            const hasN8n = !!n8nWebhookUrl;
+                            this.logger.debug(`[META_WA] Check n8n: hasUrl=${hasN8n}, contactEnabled=${contact.n8nEnabled}`);
+                            
                             if (hasN8n && contact.n8nEnabled !== false) {
+                                this.logger.log(`[META_WA] Triggering n8n for ${contact.name} (Tenant: ${tenantId}) -> ${n8nWebhookUrl}`);
                                 const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
+                                    provider: 'whatsapp',
                                     type: 'whatsapp.message', sender: from, content,
                                     contact_id: contact.id, name: contact.name, message_id: message.id
                                 }, integration);
