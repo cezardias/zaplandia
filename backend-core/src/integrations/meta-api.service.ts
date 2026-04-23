@@ -184,6 +184,10 @@ export class MetaApiService {
             
             if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant (check META_APP_CONFIG)');
 
+            let cleanToken = accessToken ? accessToken.toString().trim().replace(/['"]+/g, '') : '';
+            this.logger.log(`[INSTAGRAM_SEND] Token prefix: ${cleanToken.substring(0, 7)}... Length: ${cleanToken.length}`);
+
+
             const payload = {
                 recipient: { id: recipientPsid },
                 message: { text },
@@ -199,7 +203,7 @@ export class MetaApiService {
             const response = await axios.post(
                 activeUrl,
                 payload,
-                { params: { access_token: accessToken } }
+                { params: { access_token: cleanToken } }
             );
 
             this.logger.log(`[INSTAGRAM_SEND] SUCCESS: ${JSON.stringify(response.data)}`);
