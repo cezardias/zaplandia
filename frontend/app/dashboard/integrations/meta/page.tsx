@@ -122,7 +122,7 @@ export default function MetaApiPage() {
                             placeholder="Ex: 1023485..." 
                             className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-12 pr-4 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
                             value={phoneId}
-                            onChange={(e) => setphoneId?.(e.target.value)}
+                            onChange={(e) => setPhoneId(e.target.value)}
                           />
                         </div>
                       </div>
