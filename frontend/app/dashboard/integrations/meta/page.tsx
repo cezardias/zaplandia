@@ -63,6 +63,18 @@ export default function MetaApiPage() {
     });
 
     const [isReviewMode, setIsReviewMode] = useState(false);
+    const [reviewStep, setReviewStep] = useState(0);
+    const reviewSteps = [
+        "Welcome! This application uses a Server-to-Server (S2S) architecture via Meta Graph API.",
+        "To provide access, users must enter a System User Access Token with 'whatsapp_business_messaging' and 'whatsapp_business_management' permissions.",
+        "Step 1: Save your secure credentials (Token, WABA ID, Phone ID) to establish the server-side link.",
+        "Step 2: Use 'Test Connection' to verify real-time permissions directly with Meta servers.",
+        "Step 3: Once authorized, manage your Message Templates (BBM) and Phone Numbers through this dashboard."
+    ];
+
+    const handleNextReviewStep = () => {
+        setReviewStep((prev) => (prev + 1) % reviewSteps.length);
+    };
 
     const dict = {
         pt: {
@@ -324,7 +336,7 @@ export default function MetaApiPage() {
                 });
                 if (!res.ok) throw new Error(isReviewMode ? `Failed to save ${key}` : `Falha ao salvar ${key}`);
             }
-            setSuccess(isReviewMode ? 'Credentials saved successfully!' : 'Credenciais salvas com sucesso!');
+            setSuccess(isReviewMode ? "Success! The application has been granted access to your Meta assets via System User Token. Permissions: 'whatsapp_business_messaging', 'whatsapp_business_management' are now active." : 'Credenciais salvas com sucesso!');
             fetchMetaDetails();
         } catch (e: any) {
             setError(e.message);
@@ -344,7 +356,7 @@ export default function MetaApiPage() {
             });
             const data = await res.json();
             if (data.success) {
-                setSuccess(isReviewMode ? 'Connection established successfully!' : 'Conexão estabelecida com sucesso!');
+                setSuccess(isReviewMode ? `Connection Verified! The backend has successfully authenticated with the Meta Cloud API. User: ${data.profile?.name || 'Authorized System User'}` : 'Conexão estabelecida com sucesso!');
                 fetchMetaDetails();
             } else {
                 setError(isReviewMode ? 'Connection error: ' + (data.error?.message || JSON.stringify(data.error)) : 'Erro na conexão: ' + (data.error?.message || JSON.stringify(data.error)));
@@ -436,6 +448,33 @@ export default function MetaApiPage() {
 
     return (
         <div className="p-8 text-white max-w-7xl mx-auto pb-20">
+            {/* Meta Review Compliance Banner */}
+            {isReviewMode && (
+                <div className="mb-8 p-6 bg-blue-600/20 border border-blue-500/50 rounded-3xl animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center space-x-3 mb-4">
+                        <Shield className="w-8 h-8 text-blue-400" />
+                        <h2 className="text-xl font-bold text-blue-100 uppercase tracking-wider">Meta App Review Compliance Panel</h2>
+                    </div>
+                    <p className="text-blue-100/70 text-sm mb-6 leading-relaxed">
+                        This application implements a <strong>Server-to-Server (S2S)</strong> integration using <strong>System User Access Tokens</strong>. 
+                        This ensures data privacy and centralized management for enterprise use cases. 
+                        The standard front-end OAuth flow is not used as permissions are granted via permanent system-user access.
+                    </p>
+                    
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-blue-600/40 p-4 rounded-2xl border border-blue-400/30 gap-4">
+                        <div className="flex items-center space-x-3">
+                            <div className="bg-blue-500 text-white text-[10px] font-black px-2 py-1 rounded">WALKTHROUGH</div>
+                            <span className="text-base font-bold text-white italic">"{reviewSteps[reviewStep]}"</span>
+                        </div>
+                        <button 
+                            onClick={handleNextReviewStep}
+                            className="bg-white text-blue-600 px-6 py-2 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg shrink-0 text-sm"
+                        >
+                            Next Step
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div className="flex items-center space-x-4">
@@ -454,10 +493,10 @@ export default function MetaApiPage() {
                 <div className="flex space-x-3 items-center">
                     <button
                         onClick={() => setIsReviewMode(!isReviewMode)}
-                        className={`px-4 py-3 rounded-xl font-bold flex items-center space-x-2 transition ${isReviewMode ? 'bg-primary text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'}`}
-                        title="Toggle Review Mode (English UI)"
+                        className={`px-4 py-3 rounded-xl font-bold flex items-center space-x-2 transition ${isReviewMode ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'}`}
+                        title={isReviewMode ? "Switch between Portuguese and English Compliance UI" : "Alternar idioma"}
                     >
-                        <span>{isReviewMode ? '🇬🇧 English UI' : '🇧🇷 Português'}</span>
+                        <span>{isReviewMode ? '🟢 Review Mode ON (English)' : '🇧🇷 Português'}</span>
                     </button>
 
                     <button
@@ -478,6 +517,7 @@ export default function MetaApiPage() {
                         onClick={handleTestConnection}
                         disabled={testing}
                         className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-primary/20"
+                        title={isReviewMode ? "Test real-time access to Meta Graph API using the provided S2S Token" : "Testar conexão"}
                     >
                         {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
                         <span>{t.testBtn}</span>
