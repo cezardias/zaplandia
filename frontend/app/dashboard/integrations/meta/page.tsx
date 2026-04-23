@@ -153,7 +153,7 @@ export default function MetaApiPage() {
                 };
                 
                 processFbResponse();
-            }, { scope: 'email,public_profile,whatsapp_business_management,whatsapp_business_messaging' });
+            }, { scope: 'email,public_profile,business_management,whatsapp_business_management,whatsapp_business_messaging' });
             
         } catch(e: any) {
             setError('Erro ao iniciar Facebook SDK: ' + e.message);
