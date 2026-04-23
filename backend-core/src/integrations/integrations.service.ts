@@ -135,9 +135,17 @@ export class IntegrationsService {
             order: { createdAt: 'DESC' } // Use createdAt as fallback for build compatibility
         });
 
-        if (tenantCred?.key_value) {
-            this.logger.log(`[GET_CRED] SUCCESS: Found tenant-specific "${keyName}" for tenant ${tenantId}`);
-            return tenantCred.key_value;
+        if (tenantCred) {
+            // Se o tenant salvou uma string vazia explícita (ex: o usuário apagou no painel)
+            // Não devemos fazer fallback para token global, e sim retornar vazio.
+            if (tenantCred.key_value === '') {
+                this.logger.log(`[GET_CRED] SUCCESS: Tenant explicitly cleared "${keyName}". Returning empty.`);
+                return '';
+            }
+            if (tenantCred.key_value) {
+                this.logger.log(`[GET_CRED] SUCCESS: Found tenant-specific "${keyName}" for tenant ${tenantId}`);
+                return tenantCred.key_value;
+            }
         }
 
         // 2. Fallback: get GLOBAL credential (tenantId = null)

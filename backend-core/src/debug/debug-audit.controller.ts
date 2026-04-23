@@ -33,7 +33,19 @@ export class DebugAuditController {
         return {
             users: await this.userRepo.find({ select: ['id', 'email', 'tenantId'], take: 5 }),
             integrations: await this.integrationRepo.find({ select: ['id', 'tenantId', 'provider'], take: 5 }),
-            credentials: await this.integrationRepo.manager.query('SELECT key_name, "tenantId" FROM api_credentials LIMIT 10')
+            credentials: await this.integrationRepo.manager.query('SELECT key_name, "tenantId" FROM api_credential LIMIT 10')
         };
+    }
+
+    @Get('meta-tokens')
+    async getMetaTokens() {
+        const query = await this.integrationRepo.manager.query(`SELECT key_name, key_value FROM api_credential WHERE key_name LIKE '%TOKEN%' AND "tenantId" = 'd9f1a1e0-e13c-4205-9cb7-8fd8a22ef0c9'`);
+        return query.map((q: any) => ({
+            key: q.key_name,
+            rawString: q.key_value,
+            length: q.key_value ? q.key_value.length : 0,
+            hasSpaces: q.key_value ? q.key_value.includes(' ') : false,
+            startsWith: q.key_value ? q.key_value.substring(0, 10) : 'none'
+        }));
     }
 }
