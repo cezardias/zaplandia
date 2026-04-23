@@ -9,11 +9,9 @@ import { Repository, Like, Brackets, Not } from 'typeorm';
 import { Contact, Message } from './entities/crm.entity';
 import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { Campaign } from '../campaigns/entities/campaign.entity';
-import { N8nService } from '../integrations/n8n.service';
-import { IntegrationsService } from '../integrations/integrations.service';
+import { N8nService, IntegrationsService } from '../integrations';
 
-import { EvolutionApiService } from '../integrations/evolution-api.service';
-import { MetaApiService } from '../integrations/meta-api.service';
+import { EvolutionApiService, MetaApiService } from '../integrations';
 import * as fs from 'fs';
 import * as path from 'path';
 
