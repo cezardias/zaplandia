@@ -81,7 +81,7 @@ export default function MetaApiPage() {
                 window.fbAsyncInit = function() {
                     // @ts-ignore
                     window.FB.init({
-                        appId      : process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '914041180709087',
+                        appId      : '914041180709087',
                         cookie     : true,
                         xfbml      : true,
                         version    : 'v18.0'
