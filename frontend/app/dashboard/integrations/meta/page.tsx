@@ -163,9 +163,18 @@ export default function MetaApiPage() {
                                             break;
                                         }
                                     }
+                                    if (!instaId) {
+                                        debugStr += ' | IG: Nenhuma página ligada ao Instagram.';
+                                    }
+                                } else {
+                                    if (pagesData.error) {
+                                        debugStr += ' | IG Erro: ' + pagesData.error.message;
+                                    } else {
+                                        debugStr += ' | IG: Nenhuma Página do Facebook encontrada na sua conta Google/Meta.';
+                                    }
                                 }
-                            } catch (igErr) {
-                                console.log('Não foi possível buscar Instagram', igErr);
+                            } catch (igErr: any) {
+                                debugStr += ' | IG Crash: ' + igErr.message;
                             }
 
                             setCreds(prev => ({ 
@@ -176,8 +185,10 @@ export default function MetaApiPage() {
                                 ...(instaId && { META_INSTAGRAM_PAGE_ID: instaId })
                             }));
 
-                            if (wabaId || instaId) {
+                            if (wabaId && instaId) {
                                 setSuccess('Token e IDs extraídos com sucesso (WhatsApp/Instagram)! Clique em Salvar.');
+                            } else if (wabaId) {
+                                setSuccess('Token e IDs do WhatsApp extraídos com sucesso! ' + (debugStr ? debugStr : ' Sem Instagram associado.'));
                             } else {
                                 setSuccess('Token capturado!' + debugStr + ' Preencha os IDs abaixo manualmente para continuar.');
                             }
