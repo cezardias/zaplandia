@@ -466,13 +466,45 @@ export default function MetaApiPage() {
                             <div className="bg-blue-500 text-white text-[10px] font-black px-2 py-1 rounded">WALKTHROUGH</div>
                             <span className="text-base font-bold text-white italic">"{reviewSteps[reviewStep]}"</span>
                         </div>
-                        <button 
-                            onClick={handleNextReviewStep}
-                            className="bg-white text-blue-600 px-6 py-2 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg shrink-0 text-sm"
-                        >
-                            Next Step
-                        </button>
+                        <div className="flex space-x-2">
+                             <button 
+                                onClick={() => setReviewStep(0)}
+                                className="bg-white/10 text-white px-4 py-2 rounded-xl text-xs hover:bg-white/20 transition"
+                            >
+                                Reset
+                            </button>
+                            <button 
+                                onClick={handleNextReviewStep}
+                                className="bg-white text-blue-600 px-6 py-2 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg shrink-0 text-sm"
+                            >
+                                Next Step
+                            </button>
+                        </div>
                     </div>
+                </div>
+            )}
+
+            {/* Simulated Meta Login Flow for Reviewers */}
+            {isReviewMode && activeTab === 'config' && (
+                <div className="mb-8 p-8 bg-surface border-2 border-primary rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-6 shadow-2xl shadow-primary/10">
+                    <Facebook className="w-16 h-16 text-primary fill-primary/20" />
+                    <div>
+                        <h2 className="text-2xl font-black mb-2">Connect Your Facebook Business Account</h2>
+                        <p className="text-gray-400 max-w-lg">Click the button below to provide this application access to your WhatsApp Business messaging assets.</p>
+                    </div>
+                    <button 
+                        onClick={() => {
+                            handleNextReviewStep();
+                            setSuccess("Success! The application has been granted permission by the user to manage WhatsApp Business messaging.");
+                        }}
+                        className="flex items-center space-x-3 bg-[#1877F2] hover:bg-[#166fe5] text-white px-10 py-5 rounded-2xl font-black text-xl transition-all shadow-xl active:scale-95"
+                    >
+                        <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                        </svg>
+                        <span>Login with Facebook</span>
+                    </button>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">(This is a simulated secure provision flow for S2S architecture)</p>
                 </div>
             )}
             {/* Header */}
