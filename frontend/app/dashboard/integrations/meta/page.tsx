@@ -62,6 +62,143 @@ export default function MetaApiPage() {
         bodyText: ''
     });
 
+    const [isReviewMode, setIsReviewMode] = useState(false);
+
+    const dict = {
+        pt: {
+            title: 'Integração Meta API',
+            subtitle: 'Conecte sua conta do WhatsApp Business Oficial',
+            configTab: 'Configurações',
+            templatesTab: 'Templates (BBM)',
+            phonesTab: 'Números de Telefone',
+            helpTitle: 'Precisa de Ajuda?',
+            helpText: 'Para integrar, você precisa criar um App na plataforma Meta for Developers e configurar o WhatsApp.',
+            helpStepTitle: 'Token Permanente:',
+            helpSteps: [
+                'Vá em Configurações do Negócio.',
+                'Em Usuários do Sistema, adicione um novo usuário Admin.',
+                'Clique em Gerar Novo Token e escolha o App Zaplandia.',
+                'Marque whatsapp_business_messaging e whatsapp_business_management.'
+            ],
+            docLink: 'Documentação Oficial',
+            secTitle: 'Segurança e Credenciais',
+            secSub: 'Insira suas chaves da WhatsApp Cloud API (Server-to-Server)',
+            tokenLabel: 'Token de Acesso do Usuário do Sistema',
+            tokenHint: 'Crie um Token de Acesso permanente no seu Gerenciador de Negócios.',
+            wabaLabel: 'WABA ID (Conta de Negócios)',
+            phoneIdLabel: 'Phone Number ID (ID do Número)',
+            instaTitle: 'Configurações Específicas para Instagram',
+            instaTokenLabel: 'Instagram Access Token (Opcional se igual ao Meta)',
+            instaTokenHint: 'Deve ser um Token de Página (EAAB...). Tokens IGAAR... NÃO funcionam para mensagens.',
+            instaPageIdLabel: 'ID da Conta do Instagram (Page ID)',
+            instaPageIdHint: 'O ID numérico da conta do Instagram Business (geralmente começa com 178).',
+            appNameLabel: 'Nome do App (Instagram)',
+            appIdLabel: 'ID do App (Instagram)',
+            appSecretLabel: 'Chave Secreta do App (App Secret)',
+            appSecretHint: 'Encontrada em Configurações > Painel no seu App da Meta.',
+            connectedStatus: 'Status: Conectado',
+            webhookTitle: 'Recebimento de Mensagens (Webhook)',
+            webhookStatusActive: '✅ Ativo — mensagens chegando ao Zaplandia',
+            webhookStatusInactive: '❌ Inativo — o WhatsApp não está enviando mensagens recebidas para cá',
+            webhookStatusVerifying: 'Verificando status...',
+            webhookBtnActive: 'Inscrito',
+            webhookBtnInactive: 'Ativar Recebimento',
+            phoneActiveLabel: 'Número Ativo',
+            webhookUrlLabel: 'URL do Webhook (configurar no Meta for Developers)',
+            saveBtn: 'Salvar Integração',
+            testBtn: 'Testar Conexão',
+            activateBtn: 'Ativar Número (Ficar On-line)',
+            reviewDisclaimer: '',
+            templatesTitle: 'Templates de Mensagem (BBM)',
+            templatesSub: 'Templates aprovados em sua conta Meta',
+            searchPlaceholder: 'Buscar template...',
+            newTemplate: 'Novo Modelo',
+            noTemplates: 'Nenhum template encontrado',
+            noTemplatesSub: 'Verifique a conexão ou crie templates no Meta Business Suite',
+            viewDetails: 'Ver detalhes',
+            phonesTitle: 'Números de Telefone Registrados',
+            noPhones: 'Nenhum número encontrado',
+            copyPhoneId: 'COPIAR PHONE ID',
+            createModalTitle: 'Criar Novo Modelo (BBM)',
+            createModalSub: 'Este modelo será enviado para aprovação da Meta.',
+            templateNameLabel: 'Nome do Modelo',
+            templateNameHint: 'Apenas letras minúsculas, números e sublinhados.',
+            categoryLabel: 'Categoria',
+            languageLabel: 'Idioma',
+            bodyTextLabel: 'Texto do Corpo (Mensagem)',
+            bodyTextHint: 'Use {{1}}, {{2}} para variáveis.',
+            cancel: 'Cancelar',
+            submit: 'Enviar para Aprovação'
+        },
+        en: {
+            title: 'Meta API Integration',
+            subtitle: 'Connect your Official WhatsApp Business Account',
+            configTab: 'Configurations',
+            templatesTab: 'Templates (BBM)',
+            phonesTab: 'Phone Numbers',
+            helpTitle: 'Need Help?',
+            helpText: 'To integrate, you need to create an App in the Meta for Developers platform and configure WhatsApp.',
+            helpStepTitle: 'Permanent Token:',
+            helpSteps: [
+                'Go to Business Settings.',
+                'Under System Users, add a new Admin user.',
+                'Click Generate New Token and select the Zaplandia App.',
+                'Select whatsapp_business_messaging and whatsapp_business_management.'
+            ],
+            docLink: 'Official Documentation',
+            secTitle: 'Security and Credentials',
+            secSub: 'Enter your WhatsApp Cloud API keys (Server-to-Server)',
+            tokenLabel: 'System User Access Token',
+            tokenHint: 'Create a permanent Access Token in your Business Manager.',
+            wabaLabel: 'WABA ID (Business Account)',
+            phoneIdLabel: 'Phone Number ID',
+            instaTitle: 'Instagram Specific Settings',
+            instaTokenLabel: 'Instagram Access Token (Optional if same as Meta)',
+            instaTokenHint: 'Must be a Page Token (EAAB...). IGAAR... tokens do NOT work for messaging.',
+            instaPageIdLabel: 'Instagram Account ID (Page ID)',
+            instaPageIdHint: 'The numeric ID of the Instagram Business account (usually starts with 178).',
+            appNameLabel: 'App Name (Instagram)',
+            appIdLabel: 'App ID (Instagram)',
+            appSecretLabel: 'App Secret',
+            appSecretHint: 'Found in Settings > Dashboard in your Meta App.',
+            connectedStatus: 'Status: Connected',
+            webhookTitle: 'Incoming Messages (Webhook)',
+            webhookStatusActive: '✅ Active — messages reaching Zaplandia',
+            webhookStatusInactive: '❌ Inactive — WhatsApp is not sending received messages here',
+            webhookStatusVerifying: 'Checking status...',
+            webhookBtnActive: 'Subscribed',
+            webhookBtnInactive: 'Enable Receiving',
+            phoneActiveLabel: 'Active Number',
+            webhookUrlLabel: 'Webhook URL (configure in Meta for Developers)',
+            saveBtn: 'Save Integration',
+            testBtn: 'Test Connection',
+            activateBtn: 'Activate Number (Go Online)',
+            reviewDisclaimer: 'Note: This application uses a Server-to-Server architecture with System User Tokens for the whatsapp_business_messaging and whatsapp_business_management permissions.',
+            templatesTitle: 'Message Templates (BBM)',
+            templatesSub: 'Approved templates in your Meta account',
+            searchPlaceholder: 'Search template...',
+            newTemplate: 'New Template',
+            noTemplates: 'No templates found',
+            noTemplatesSub: 'Check connection or create templates in Meta Business Suite',
+            viewDetails: 'View details',
+            phonesTitle: 'Registered Phone Numbers',
+            noPhones: 'No numbers found',
+            copyPhoneId: 'COPY PHONE ID',
+            createModalTitle: 'Create New Template (BBM)',
+            createModalSub: 'This template will be sent for Meta approval.',
+            templateNameLabel: 'Template Name',
+            templateNameHint: 'Lower case, numbers and underscores only.',
+            categoryLabel: 'Category',
+            languageLabel: 'Language',
+            bodyTextLabel: 'Body Text (Message)',
+            bodyTextHint: 'Use {{1}}, {{2}} for variables.',
+            cancel: 'Cancel',
+            submit: 'Submit for Approval'
+        }
+    };
+
+    const t = isReviewMode ? dict.en : dict.pt;
+
     useEffect(() => {
         if (token) {
             fetchData();
@@ -97,7 +234,7 @@ export default function MetaApiPage() {
                 fetchMetaDetails();
             }
         } catch (e: any) {
-            setError('Falha ao carregar dados: ' + e.message);
+            setError(isReviewMode ? 'Failed to load data: ' + e.message : 'Falha ao carregar dados: ' + e.message);
         } finally {
             setLoading(false);
         }
@@ -136,10 +273,10 @@ export default function MetaApiPage() {
             });
             const data = await res.json();
             if (data.success) {
-                setSuccess('App inscrito com sucesso! O WhatsApp agora enviará mensagens para o Zaplandia.');
+                setSuccess(isReviewMode ? 'App subscribed successfully! WhatsApp will now send messages to Zaplandia.' : 'App inscrito com sucesso! O WhatsApp agora enviará mensagens para o Zaplandia.');
                 await fetchWebhookStatus();
             } else {
-                setError('Falha ao inscrever: ' + JSON.stringify(data));
+                setError(isReviewMode ? 'Subscription failed: ' + JSON.stringify(data) : 'Falha ao inscrever: ' + JSON.stringify(data));
             }
         } catch (e: any) {
             setError(e.message);
@@ -185,9 +322,9 @@ export default function MetaApiPage() {
                     },
                     body: JSON.stringify({ name: key, value })
                 });
-                if (!res.ok) throw new Error(`Falha ao salvar ${key}`);
+                if (!res.ok) throw new Error(isReviewMode ? `Failed to save ${key}` : `Falha ao salvar ${key}`);
             }
-            setSuccess('Credenciais salvas com sucesso!');
+            setSuccess(isReviewMode ? 'Credentials saved successfully!' : 'Credenciais salvas com sucesso!');
             fetchMetaDetails();
         } catch (e: any) {
             setError(e.message);
@@ -207,10 +344,10 @@ export default function MetaApiPage() {
             });
             const data = await res.json();
             if (data.success) {
-                setSuccess('Conexão estabelecida com sucesso!');
+                setSuccess(isReviewMode ? 'Connection established successfully!' : 'Conexão estabelecida com sucesso!');
                 fetchMetaDetails();
             } else {
-                setError('Erro na conexão: ' + (data.error?.message || JSON.stringify(data.error)));
+                setError(isReviewMode ? 'Connection error: ' + (data.error?.message || JSON.stringify(data.error)) : 'Erro na conexão: ' + (data.error?.message || JSON.stringify(data.error)));
             }
         } catch (e: any) {
             setError(e.message);
@@ -224,7 +361,8 @@ export default function MetaApiPage() {
         setError(null);
         setSuccess(null);
         try {
-            const pin = prompt('Se você tem Verificação em Duas Etapas, digite o PIN de 6 dígitos. Se não tem, deixe em branco e clique em OK.');
+            const promptMsg = isReviewMode ? 'If you have Two-Step Verification, enter the 6-digit PIN. If not, leave blank and click OK.' : 'Se você tem Verificação em Duas Etapas, digite o PIN de 6 dígitos. Se não tem, deixe em branco e clique em OK.';
+            const pin = prompt(promptMsg);
             const res = await fetch('/api/integrations/meta/register', {
                 method: 'POST',
                 headers: {
@@ -236,10 +374,10 @@ export default function MetaApiPage() {
 
             const data = await res.json();
             if (res.ok) {
-                setSuccess('Número ativado com sucesso! Ele deve ficar On-line em instantes.');
+                setSuccess(isReviewMode ? 'Number activated successfully! It should be Online momentarily.' : 'Número ativado com sucesso! Ele deve ficar On-line em instantes.');
                 fetchMetaDetails();
             } else {
-                setError('Falha na ativação: ' + (data.message || 'Erro desconhecido'));
+                setError(isReviewMode ? 'Activation failed: ' + (data.message || 'Unknown error') : 'Falha na ativação: ' + (data.message || 'Erro desconhecido'));
             }
         } catch (e: any) {
             setError(e.message);
@@ -267,13 +405,13 @@ export default function MetaApiPage() {
             });
 
             if (res.ok) {
-                setSuccess('Modelo enviado para aprovação com sucesso!');
+                setSuccess(isReviewMode ? 'Template submitted for approval successfully!' : 'Modelo enviado para aprovação com sucesso!');
                 setIsModalOpen(false);
                 setTemplateData({ name: '', category: 'MARKETING', language: 'pt_BR', bodyText: '' });
                 fetchMetaDetails();
             } else {
                 const data = await res.json();
-                setError('Falha ao criar modelo: ' + (data.message || 'Erro desconhecido'));
+                setError(isReviewMode ? 'Failed to create template: ' + (data.message || 'Unknown error') : 'Falha ao criar modelo: ' + (data.message || 'Erro desconhecido'));
             }
         } catch (e: any) {
             setError(e.message);
@@ -284,7 +422,7 @@ export default function MetaApiPage() {
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        setSuccess('ID copiado!');
+        setSuccess(isReviewMode ? 'ID Copied!' : 'ID copiado!');
         setTimeout(() => setSuccess(null), 2000);
     };
 
@@ -307,13 +445,21 @@ export default function MetaApiPage() {
                     <div>
                         <h1 className="text-3xl font-extrabold tracking-tight flex items-center space-x-3">
                             <Facebook className="w-8 h-8 text-primary" />
-                            <span>Integração Meta API</span>
+                            <span>{t.title}</span>
                         </h1>
-                        <p className="text-gray-400 mt-1">Conecte sua conta do WhatsApp Business Oficial</p>
+                        <p className="text-gray-400 mt-1">{t.subtitle}</p>
                     </div>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex space-x-3 items-center">
+                    <button
+                        onClick={() => setIsReviewMode(!isReviewMode)}
+                        className={`px-4 py-3 rounded-xl font-bold flex items-center space-x-2 transition ${isReviewMode ? 'bg-primary text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'}`}
+                        title="Toggle Review Mode (English UI)"
+                    >
+                        <span>{isReviewMode ? '🇬🇧 English UI' : '🇧🇷 Português'}</span>
+                    </button>
+
                     <button
                         onClick={fetchData}
                         className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition"
@@ -326,7 +472,7 @@ export default function MetaApiPage() {
                         className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-green-500/20"
                     >
                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                        <span>Ativar Número (Ficar On-line)</span>
+                        <span>{t.activateBtn}</span>
                     </button>
                     <button
                         onClick={handleTestConnection}
@@ -334,7 +480,7 @@ export default function MetaApiPage() {
                         className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-primary/20"
                     >
                         {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-                        <span>Testar Conexão</span>
+                        <span>{t.testBtn}</span>
                     </button>
                 </div>
             </div>
@@ -349,7 +495,7 @@ export default function MetaApiPage() {
                         className={`w-full flex items-center space-x-3 px-6 py-4 rounded-2xl transition font-bold text-sm ${activeTab === 'config' ? 'bg-primary text-white' : 'bg-surface border border-white/5 text-gray-400 hover:border-white/20'}`}
                     >
                         <Shield className="w-5 h-5" />
-                        <span>Configurações</span>
+                        <span>{t.configTab}</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('templates')}
@@ -357,7 +503,7 @@ export default function MetaApiPage() {
                     >
                         <div className="flex items-center space-x-3">
                             <MessageSquare className="w-5 h-5" />
-                            <span>Templates (BBM)</span>
+                            <span>{t.templatesTab}</span>
                         </div>
                         <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">{templates.length}</span>
                     </button>
@@ -367,7 +513,7 @@ export default function MetaApiPage() {
                     >
                         <div className="flex items-center space-x-3">
                             <Phone className="w-5 h-5" />
-                            <span>Números de Telefone</span>
+                            <span>{t.phonesTab}</span>
                         </div>
                         <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">{phoneNumbers.length}</span>
                     </button>
@@ -376,20 +522,19 @@ export default function MetaApiPage() {
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5">
                             <h3 className="text-blue-400 font-bold text-sm mb-2 flex items-center space-x-2">
                                 <AlertCircle className="w-4 h-4" />
-                                <span>Precisa de Ajuda?</span>
+                                <span>{t.helpTitle}</span>
                             </h3>
                             <div className="space-y-4">
                                 <p className="text-xs text-blue-400/80 leading-relaxed">
-                                    Para integrar, você precisa criar um App na plataforma Meta for Developers e configurar o WhatsApp.
+                                    {t.helpText}
                                 </p>
                                 
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase text-blue-400/60">Token Permanente:</p>
+                                    <p className="text-[10px] font-black uppercase text-blue-400/60">{t.helpStepTitle}</p>
                                     <ol className="text-[10px] text-blue-400/80 list-decimal pl-4 space-y-1">
-                                        <li>Vá em <b>Configurações do Negócio</b>.</li>
-                                        <li>Em <b>Usuários do Sistema</b>, adicione um novo usuário Admin.</li>
-                                        <li>Clique em <b>Gerar Novo Token</b> e escolha o App Zaplandia.</li>
-                                        <li>Marque <u>whatsapp_business_messaging</u> e <u>whatsapp_business_management</u>.</li>
+                                        {t.helpSteps.map((step, i) => (
+                                            <li key={i}>{step}</li>
+                                        ))}
                                     </ol>
                                 </div>
 
@@ -398,7 +543,7 @@ export default function MetaApiPage() {
                                     target="_blank"
                                     className="text-xs font-bold text-blue-400 flex items-center space-x-1 hover:underline"
                                 >
-                                    <span>Documentação Oficial</span>
+                                    <span>{t.docLink}</span>
                                     <ExternalLink className="w-3 h-3" />
                                 </a>
                             </div>
@@ -408,6 +553,13 @@ export default function MetaApiPage() {
 
                 {/* Right Side - Content Area */}
                 <div className="lg:col-span-9 space-y-6">
+
+                    {isReviewMode && (
+                        <div className="p-4 bg-primary/10 border border-primary/20 rounded-2xl text-primary text-xs font-bold flex items-center space-x-3">
+                            <Shield className="w-5 h-5 shrink-0" />
+                            <span>{t.reviewDisclaimer}</span>
+                        </div>
+                    )}
 
                     {error && (
                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm flex items-center space-x-3">
@@ -428,14 +580,14 @@ export default function MetaApiPage() {
                             <div className="p-8 border-b border-white/5 bg-white/2">
                                 <h2 className="text-xl font-bold flex items-center space-x-2">
                                     <Shield className="w-6 h-6 text-primary" />
-                                    <span>Segurança e Credenciais</span>
+                                    <span>{t.secTitle}</span>
                                 </h2>
-                                <p className="text-gray-400 text-sm mt-1">Insira suas chaves de acesso da Nuvem do WhatsApp (Meta Cloud API)</p>
+                                <p className="text-gray-400 text-sm mt-1">{t.secSub}</p>
                             </div>
 
                             <div className="p-8 space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Access Token (Permanente)</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.tokenLabel}</label>
                                     <div className="relative">
                                         <input
                                             type="password"
@@ -445,12 +597,12 @@ export default function MetaApiPage() {
                                             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                         />
                                     </div>
-                                    <p className="text-[10px] text-gray-500">Crie um Token de Acesso permanente no seu Gerenciador de Negócios.</p>
+                                    <p className="text-[10px] text-gray-500">{t.tokenHint}</p>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-500 uppercase tracking-widest">WABA ID (Business Account)</label>
+                                        <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.wabaLabel}</label>
                                         <input
                                             type="text"
                                             value={creds.META_WABA_ID}
@@ -460,7 +612,7 @@ export default function MetaApiPage() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Phone Number ID</label>
+                                        <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.phoneIdLabel}</label>
                                         <input
                                             type="text"
                                             value={creds.META_PHONE_NUMBER_ID}
@@ -474,47 +626,47 @@ export default function MetaApiPage() {
                                 <div className="pt-6 border-t border-white/5">
                                     <h3 className="text-sm font-bold text-primary mb-4 flex items-center space-x-2">
                                         <RefreshCw className="w-4 h-4" />
-                                        <span>Configurações Específicas para Instagram</span>
+                                        <span>{t.instaTitle}</span>
                                     </h3>
                                     
                                     <div className="space-y-6">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Instagram Access Token (Opcional se igual ao Meta)</label>
+                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.instaTokenLabel}</label>
                                             <input
                                                 type="password"
                                                 value={creds.INSTAGRAM_ACCESS_TOKEN}
                                                 onChange={(e) => setCreds({ ...creds, INSTAGRAM_ACCESS_TOKEN: e.target.value })}
-                                                placeholder="EAAB... (Recomendado deixar em branco para usar o do WhatsApp)"
+                                                placeholder="..."
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">Deve ser um Token de Página (EAAB...). Tokens IGAAR... NÃO funcionam para mensagens.</p>
+                                            <p className="text-[10px] text-gray-500">{t.instaTokenHint}</p>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">ID da Conta do Instagram (Page ID)</label>
+                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.instaPageIdLabel}</label>
                                             <input
                                                 type="text"
                                                 value={creds.INSTAGRAM_PAGE_ID}
                                                 onChange={(e) => setCreds({ ...creds, INSTAGRAM_PAGE_ID: e.target.value })}
-                                                placeholder="Ex: 1784... (ID da conta, não do App)"
+                                                placeholder="Ex: 1784..."
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">O ID numérico da conta do Instagram Business (geralmente começa com 178).</p>
+                                            <p className="text-[10px] text-gray-500">{t.instaPageIdHint}</p>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Nome do App (Instagram)</label>
+                                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.appNameLabel}</label>
                                                 <input
                                                     type="text"
                                                     value={creds.INSTAGRAM_APP_NAME}
                                                     onChange={(e) => setCreds({ ...creds, INSTAGRAM_APP_NAME: e.target.value })}
-                                                    placeholder="Ex: Meu App Insta"
+                                                    placeholder="Ex: My Insta App"
                                                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">ID do App (Instagram)</label>
+                                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.appIdLabel}</label>
                                                 <input
                                                     type="text"
                                                     value={creds.INSTAGRAM_APP_ID}
@@ -526,7 +678,7 @@ export default function MetaApiPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Chave Secreta do App (App Secret)</label>
+                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.appSecretLabel}</label>
                                             <input
                                                 type="password"
                                                 value={creds.INSTAGRAM_APP_SECRET}
@@ -534,7 +686,7 @@ export default function MetaApiPage() {
                                                 placeholder="••••••••"
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">Encontrada em Configurações &gt; Painel no seu App da Meta.</p>
+                                            <p className="text-[10px] text-gray-500">{t.appSecretHint}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -547,12 +699,12 @@ export default function MetaApiPage() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-lg">{profile.name}</p>
-                                                <p className="text-xs text-primary/70 uppercase font-black tracking-widest">Status: Conectado</p>
+                                                <p className="text-xs text-primary/70 uppercase font-black tracking-widest">{isReviewMode ? 'Status: Connected' : 'Status: Conectado'}</p>
                                             </div>
                                         </div>
                                         <div className="text-right text-xs text-gray-500">
-                                            <p>Moeda: {profile.currency}</p>
-                                            <p>Zona: {profile.timezone_id}</p>
+                                            <p>{isReviewMode ? 'Currency' : 'Moeda'}: {profile.currency}</p>
+                                            <p>{isReviewMode ? 'Timezone' : 'Zona'}: {profile.timezone_id}</p>
                                         </div>
                                     </div>
                                 )}
@@ -567,13 +719,13 @@ export default function MetaApiPage() {
                                                     : <WifiOff className="w-5 h-5 text-red-400" />}
                                             </div>
                                             <div>
-                                                <p className="font-bold text-sm">Recebimento de Mensagens (Webhook)</p>
+                                                <p className="font-bold text-sm">{t.webhookTitle}</p>
                                                 <p className="text-xs text-gray-500">
                                                     {webhookStatus === null
-                                                        ? 'Verificando status...'
+                                                        ? t.webhookStatusVerifying
                                                         : webhookStatus.isSubscribed
-                                                            ? '✅ Ativo — mensagens chegando ao Zaplandia'
-                                                            : '❌ Inativo — o WhatsApp não está enviando mensagens recebidas para cá'}
+                                                            ? t.webhookStatusActive
+                                                            : t.webhookStatusInactive}
                                                 </p>
                                             </div>
                                         </div>
@@ -591,7 +743,7 @@ export default function MetaApiPage() {
                                                 : webhookStatus?.isSubscribed
                                                     ? <CheckCircle2 className="w-3.5 h-3.5" />
                                                     : <Zap className="w-3.5 h-3.5" />}
-                                            <span>{webhookStatus?.isSubscribed ? 'Inscrito' : 'Ativar Recebimento'}</span>
+                                            <span>{webhookStatus?.isSubscribed ? t.webhookBtnActive : t.webhookBtnInactive}</span>
                                         </button>
                                     </div>
 
@@ -599,7 +751,7 @@ export default function MetaApiPage() {
                                     {webhookStatus?.phoneStatus && (
                                         <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                                             <div>
-                                                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Número Ativo</p>
+                                                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">{t.phoneActiveLabel}</p>
                                                 <p className="text-sm font-bold">{webhookStatus.phoneStatus.verified_name}</p>
                                                 <p className="text-xs text-gray-400">+{webhookStatus.phoneStatus.display_phone_number}</p>
                                             </div>
@@ -615,12 +767,12 @@ export default function MetaApiPage() {
 
                                     {/* Webhook URL info */}
                                     <div className="pt-4 border-t border-white/5">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">URL do Webhook (configurar no Meta for Developers)</p>
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">{t.webhookUrlLabel}</p>
                                         <div className="flex items-center space-x-2">
                                             <code className="flex-1 text-[11px] bg-black/30 px-3 py-2 rounded-xl text-green-400 font-mono truncate">
                                                 {typeof window !== 'undefined'
                                                     ? `${window.location.protocol}//${window.location.hostname}/api/webhooks/meta`
-                                                    : 'https://SEU_DOMINIO/api/webhooks/meta'}
+                                                    : 'https://APP_DOMAIN/api/webhooks/meta'}
                                             </code>
                                             <button
                                                 onClick={() => copyToClipboard(
@@ -629,7 +781,7 @@ export default function MetaApiPage() {
                                                         : ''
                                                 )}
                                                 className="p-2 hover:bg-white/10 rounded-lg transition"
-                                                title="Copiar URL"
+                                                title="Copy URL"
                                             >
                                                 <Copy className="w-4 h-4 text-gray-400" />
                                             </button>
@@ -648,7 +800,7 @@ export default function MetaApiPage() {
                                     className="bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-2xl font-black flex items-center space-x-3 transition shadow-xl shadow-primary/20"
                                 >
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                    <span>Salvar Integracao</span>
+                                    <span>{t.saveBtn}</span>
                                 </button>
                             </div>
                         </div>
@@ -659,25 +811,25 @@ export default function MetaApiPage() {
                             <div className="bg-surface border border-white/5 rounded-3xl p-8">
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                                     <div>
-                                        <h2 className="text-xl font-bold">Templates de Mensagem (BBM)</h2>
-                                        <p className="text-sm text-gray-400">Templates aprovados em sua conta Meta</p>
+                                        <h2 className="text-xl font-bold">{t.templatesTitle}</h2>
+                                        <p className="text-sm text-gray-400">{t.templatesSub}</p>
                                     </div>
                                     <div className="flex items-center space-x-3 w-full md:w-auto">
                                         <div className="relative flex-1 md:w-64">
                                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                             <input
                                                 type="text"
-                                                placeholder="Buscar template..."
+                                                placeholder={t.searchPlaceholder}
                                                 className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-2 text-sm outline-none focus:border-primary transition"
                                             />
                                         </div>
                                         <button
                                             onClick={() => setIsModalOpen(true)}
                                             className="bg-primary hover:bg-primary/90 text-white p-2.5 rounded-xl transition shadow-lg flex items-center space-x-2"
-                                            title="Criar Novo Modelo"
+                                            title="Create New Template"
                                         >
                                             <Plus className="w-5 h-5" />
-                                            <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest">Novo Modelo</span>
+                                            <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest">{t.newTemplate}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -685,8 +837,8 @@ export default function MetaApiPage() {
                                 {templates.length === 0 ? (
                                     <div className="text-center py-20 bg-white/2 rounded-3xl border border-dashed border-white/10">
                                         <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                        <p className="text-gray-500 font-bold">Nenhum template encontrado</p>
-                                        <p className="text-xs text-gray-600 mt-2">Verifique a conexão ou crie templates no Meta Business Suite</p>
+                                        <p className="text-gray-500 font-bold">{t.noTemplates}</p>
+                                        <p className="text-xs text-gray-600 mt-2">{t.noTemplatesSub}</p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -704,7 +856,7 @@ export default function MetaApiPage() {
                                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest">{temp.category} • {temp.language}</p>
 
                                                 <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center opacity-0 group-hover:opacity-100 transition">
-                                                    <span className="text-[10px] text-primary font-bold">Ver detalhes</span>
+                                                    <span className="text-[10px] text-primary font-bold">{t.viewDetails}</span>
                                                     <ChevronRight className="w-4 h-4 text-primary" />
                                                 </div>
                                             </div>
@@ -717,12 +869,12 @@ export default function MetaApiPage() {
 
                     {activeTab === 'phones' && (
                         <div className="bg-surface border border-white/5 rounded-3xl p-8">
-                            <h2 className="text-xl font-bold mb-6">Números de Telefone Registrados</h2>
+                            <h2 className="text-xl font-bold mb-6">{t.phonesTitle}</h2>
 
                             {phoneNumbers.length === 0 ? (
                                 <div className="text-center py-20 bg-white/2 rounded-3xl border border-dashed border-white/10">
                                     <Phone className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                    <p className="text-gray-500 font-bold">Nenhum número encontrado</p>
+                                    <p className="text-gray-500 font-bold">{t.noPhones}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -747,7 +899,7 @@ export default function MetaApiPage() {
                                                     className="flex items-center space-x-2 text-[10px] font-black uppercase text-gray-500 hover:text-white transition"
                                                 >
                                                     <Copy className="w-3 h-3" />
-                                                    <span>COPIAR PHONE ID</span>
+                                                    <span>{t.copyPhoneId}</span>
                                                 </button>
                                                 <p className="text-[10px] text-gray-600 font-bold">ID: {phone.id}</p>
                                             </div>
@@ -768,8 +920,8 @@ export default function MetaApiPage() {
                         {/* Modal Header */}
                         <div className="p-6 border-b border-white/5 bg-white/2 flex justify-between items-center">
                             <div>
-                                <h2 className="text-xl font-bold">Criar Novo Modelo (BBM)</h2>
-                                <p className="text-xs text-gray-400 mt-1">Este modelo será enviado para aprovação da Meta.</p>
+                                <h2 className="text-xl font-bold">{t.createModalTitle}</h2>
+                                <p className="text-xs text-gray-400 mt-1">{t.createModalSub}</p>
                             </div>
                             <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition">
                                 <X className="w-6 h-6" />
@@ -779,53 +931,54 @@ export default function MetaApiPage() {
                         {/* Modal Body */}
                         <div className="p-8 space-y-6">
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Nome do Modelo</label>
+                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.templateNameLabel}</label>
                                 <input
                                     type="text"
                                     value={templateData.name}
                                     onChange={(e) => setTemplateData({ ...templateData, name: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
-                                    placeholder="ex: promocao_verao_2024"
+                                    placeholder={isReviewMode ? "e.g., summer_promo_2024" : "ex: promocao_verao_2024"}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                 />
-                                <p className="text-[10px] text-gray-500">Apenas letras minúsculas, números e sublinhados.</p>
+                                <p className="text-[10px] text-gray-500">{t.templateNameHint}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Categoria</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.categoryLabel}</label>
                                     <select
                                         value={templateData.category}
                                         onChange={(e) => setTemplateData({ ...templateData, category: e.target.value })}
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition appearance-none"
                                     >
                                         <option value="MARKETING">Marketing</option>
-                                        <option value="UTILITY">Utilidade</option>
-                                        <option value="AUTHENTICATION">Autenticação</option>
+                                        <option value="UTILITY">{isReviewMode ? 'Utility' : 'Utilidade'}</option>
+                                        <option value="AUTHENTICATION">{isReviewMode ? 'Authentication' : 'Autenticação'}</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Idioma</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.languageLabel}</label>
                                     <select
                                         value={templateData.language}
                                         onChange={(e) => setTemplateData({ ...templateData, language: e.target.value })}
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition appearance-none"
                                     >
-                                        <option value="pt_BR">Português (BR)</option>
-                                        <option value="en_US">Inglês (US)</option>
-                                        <option value="es_ES">Espanhol (ES)</option>
+                                        <option value="pt_BR">{isReviewMode ? 'Portuguese (BR)' : 'Português (BR)'}</option>
+                                        <option value="en_US">{isReviewMode ? 'English (US)' : 'Inglês (US)'}</option>
+                                        <option value="es_ES">{isReviewMode ? 'Spanish (ES)' : 'Espanhol (ES)'}</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Texto do Corpo (Body)</label>
+                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t.bodyTextLabel}</label>
                                 <textarea
                                     value={templateData.bodyText}
                                     onChange={(e) => setTemplateData({ ...templateData, bodyText: e.target.value })}
-                                    placeholder="Olá! Temos uma oferta especial para você..."
+                                    placeholder={isReviewMode ? "Hello! We have a special offer for you..." : "Olá! Temos uma oferta especial para você..."}
                                     rows={4}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition resize-none"
                                 />
+                                <p className="text-[10px] text-gray-500">{t.bodyTextHint}</p>
                             </div>
                         </div>
 
@@ -835,20 +988,21 @@ export default function MetaApiPage() {
                                 onClick={() => setIsModalOpen(false)}
                                 className="flex-1 bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-black transition"
                             >
-                                Cancelar
+                                {t.cancel}
                             </button>
                             <button
                                 onClick={handleCreateTemplate}
                                 disabled={saving}
                                 className="flex-[2] bg-primary hover:bg-primary/90 text-white py-4 rounded-2xl font-black flex items-center justify-center space-x-3 transition shadow-xl shadow-primary/20"
                             >
-                                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                                <span>Criar Modelo</span>
+                                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                                <span>{t.submit}</span>
                             </button>
                         </div>
                     </div>
                 </div>
-            )}
+            )
+}
         </div>
     );
 }

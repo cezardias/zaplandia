@@ -10,7 +10,12 @@ export declare class AuthController {
             name: any;
             role: any;
             tenantId: any;
+            teamId: any;
         };
     }>;
     register(createUserDto: any): Promise<import("../users/entities/user.entity").User>;
+    googleAuth(req: any): Promise<void>;
+    googleAuthRedirect(req: any, res: any): Promise<any>;
+    facebookAuth(req: any): Promise<void>;
+    facebookAuthRedirect(req: any, res: any): Promise<any>;
 }

@@ -62,17 +62,17 @@ export default function DashboardLayout({
     const menuItems = [
         { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Omni Inbox', icon: <MessageSquare size={20} />, path: '/dashboard/inbox', roles: ['superadmin', 'admin', 'user', 'agent'] },
-        { name: 'Assistente IA', icon: <Zap size={20} />, path: '/dashboard/ai-assistant', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'AI Assistant', icon: <Zap size={20} />, path: '/dashboard/ai-assistant', roles: ['superadmin', 'admin', 'user'] },
         { name: 'WhatsApp Manager', icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Meta API', icon: <Facebook size={20} />, path: '/dashboard/integrations/meta', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Governança Meta', icon: <ShieldCheck size={20} />, path: '/dashboard/governance', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'CRM Contatos', icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
-        { name: 'Equipes', icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Meta Governance', icon: <ShieldCheck size={20} />, path: '/dashboard/governance', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Contacts CRM', icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: 'Teams', icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
         { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Configurações', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Pagamentos', icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
-        { name: 'Desenvolvedor', icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Central de Ajuda', icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: 'Settings', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Payments', icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
+        { name: 'Developer', icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Help Center', icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
 
     const filteredMenuItems = menuItems.filter(item => 

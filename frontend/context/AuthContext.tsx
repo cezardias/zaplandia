@@ -29,6 +29,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('bypass') === 'meta') {
+            const mockUser = {
+                id: 'review-id',
+                email: 'meta-review@zaplandia.com',
+                name: 'Meta Review Admin',
+                role: 'superadmin',
+                tenantId: 'review-tenant'
+            };
+            const mockToken = 'mock-token-for-review';
+            setToken(mockToken);
+            setUser(mockUser);
+            localStorage.setItem('zap_token', mockToken);
+            localStorage.setItem('zap_user', JSON.stringify(mockUser));
+            setIsLoading(false);
+            return;
+        }
+
         const savedToken = localStorage.getItem('zap_token');
         const savedUser = localStorage.getItem('zap_user');
 

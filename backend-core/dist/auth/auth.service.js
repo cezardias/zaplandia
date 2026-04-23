@@ -34,10 +34,12 @@ let AuthService = class AuthService {
     }
     async login(user) {
         const payload = {
-            email: user.email,
             sub: user.id,
+            email: user.email,
+            name: user.name,
             role: user.role,
-            tenantId: user.tenantId
+            tenantId: user.tenantId,
+            teamId: user.teamId
         };
         return {
             access_token: this.jwtService.sign(payload),
@@ -47,6 +49,7 @@ let AuthService = class AuthService {
                 name: user.name,
                 role: user.role,
                 tenantId: user.tenantId,
+                teamId: user.teamId,
             }
         };
     }
@@ -68,6 +71,44 @@ let AuthService = class AuthService {
         });
         console.log(`[SECURITY] New user registered: ${user.email} | TenantId: ${user.tenantId}`);
         return user;
+    }
+    async googleLogin(profile) {
+        if (!profile) {
+            throw new common_1.UnauthorizedException('Perfil do Google não fornecido.');
+        }
+        let user = await this.usersService.findOneByEmail(profile.email);
+        if (!user) {
+            user = await this.register({
+                email: profile.email,
+                name: `${profile.firstName} ${profile.lastName}`,
+                password: Math.random().toString(36).slice(-12),
+                companyName: `Negócio de ${profile.firstName}`,
+            });
+            console.log(`[GOOGLE] Novo cadastro automático via Google: ${user.email}`);
+        }
+        else {
+            console.log(`[GOOGLE] Login realizado com sucesso: ${user.email}`);
+        }
+        return this.login(user);
+    }
+    async facebookLogin(profile) {
+        if (!profile) {
+            throw new common_1.UnauthorizedException('Perfil do Facebook não fornecido.');
+        }
+        let user = await this.usersService.findOneByEmail(profile.email);
+        if (!user) {
+            user = await this.register({
+                email: profile.email,
+                name: `${profile.firstName} ${profile.lastName}`,
+                password: Math.random().toString(36).slice(-12),
+                companyName: `Negócio de ${profile.firstName}`,
+            });
+            console.log(`[META] Novo cadastro automático via Facebook: ${user.email}`);
+        }
+        else {
+            console.log(`[META] Login realizado com sucesso: ${user.email}`);
+        }
+        return this.login(user);
     }
 };
 exports.AuthService = AuthService;

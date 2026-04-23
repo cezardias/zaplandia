@@ -13,7 +13,30 @@ export declare class AuthService {
             name: any;
             role: any;
             tenantId: any;
+            teamId: any;
         };
     }>;
     register(data: any): Promise<import("../users/entities/user.entity").User>;
+    googleLogin(profile: any): Promise<{
+        access_token: string;
+        user: {
+            id: any;
+            email: any;
+            name: any;
+            role: any;
+            tenantId: any;
+            teamId: any;
+        };
+    }>;
+    facebookLogin(profile: any): Promise<{
+        access_token: string;
+        user: {
+            id: any;
+            email: any;
+            name: any;
+            role: any;
+            tenantId: any;
+            teamId: any;
+        };
+    }>;
 }

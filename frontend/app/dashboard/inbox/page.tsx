@@ -759,7 +759,7 @@ export default function OmniInboxPage() {
                                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
-                                {tab === 'all' ? 'Todos' : tab}
+                                {tab === 'all' ? 'All' : tab}
                             </button>
                         ))}
                     </div>
@@ -768,7 +768,7 @@ export default function OmniInboxPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <input
                             type="text"
-                            placeholder="Buscar conversas..."
+                            placeholder="Search chats..."
                             className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-primary transition"
                         />
                     </div>
@@ -782,7 +782,7 @@ export default function OmniInboxPage() {
                     ) : filteredContacts.length === 0 ? (
                         <div className="p-8 text-center">
                             <Clock className="w-12 h-12 mx-auto mb-4 opacity-10 text-gray-500" />
-                            <p className="text-gray-500 text-sm mb-6">Nenhuma conversa encontrada na conta atual.</p>
+                            <p className="text-gray-500 text-sm mb-6">No conversations found in the current account.</p>
 
                             {user?.role === 'superadmin' && (
                                 <button
