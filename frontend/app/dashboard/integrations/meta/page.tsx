@@ -120,6 +120,7 @@ export default function MetaApiPage() {
                             let wabaId = '';
                             let phoneId = '';
                             let instaId = '';
+                            let instaToken = '';
                             let debugStr = '';
 
                             if (bizData.data && bizData.data.length > 0) {
@@ -160,6 +161,7 @@ export default function MetaApiPage() {
                                         const igData = await igRes.json();
                                         if (igData.instagram_business_account) {
                                             instaId = igData.instagram_business_account.id;
+                                            instaToken = page.access_token; // Page Access Token required for IG DM
                                             break;
                                         }
                                     }
@@ -182,7 +184,8 @@ export default function MetaApiPage() {
                                 META_ACCESS_TOKEN: fbToken,
                                 ...(wabaId && { META_WABA_ID: wabaId }),
                                 ...(phoneId && { META_PHONE_NUMBER_ID: phoneId }),
-                                ...(instaId && { INSTAGRAM_PAGE_ID: instaId })
+                                ...(instaId && { INSTAGRAM_PAGE_ID: instaId }),
+                                ...(instaToken && { INSTAGRAM_ACCESS_TOKEN: instaToken })
                             }));
 
                             if (wabaId && instaId) {
