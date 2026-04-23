@@ -182,7 +182,7 @@ export default function MetaApiPage() {
                                 META_ACCESS_TOKEN: fbToken,
                                 ...(wabaId && { META_WABA_ID: wabaId }),
                                 ...(phoneId && { META_PHONE_NUMBER_ID: phoneId }),
-                                ...(instaId && { META_INSTAGRAM_PAGE_ID: instaId })
+                                ...(instaId && { INSTAGRAM_PAGE_ID: instaId })
                             }));
 
                             if (wabaId && instaId) {
