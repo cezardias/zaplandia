@@ -119,6 +119,7 @@ export default function MetaApiPage() {
                             
                             let wabaId = '';
                             let phoneId = '';
+                            let instaId = '';
                             let debugStr = '';
 
                             if (bizData.data && bizData.data.length > 0) {
@@ -149,15 +150,34 @@ export default function MetaApiPage() {
                                 }
                             }
 
+                            // Tentativa de buscar conta do Instagram via Pages
+                            try {
+                                const pagesRes = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${fbToken}`);
+                                const pagesData = await pagesRes.json();
+                                if (pagesData.data && pagesData.data.length > 0) {
+                                    for (const page of pagesData.data) {
+                                        const igRes = await fetch(`https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${fbToken}`);
+                                        const igData = await igRes.json();
+                                        if (igData.instagram_business_account) {
+                                            instaId = igData.instagram_business_account.id;
+                                            break;
+                                        }
+                                    }
+                                }
+                            } catch (igErr) {
+                                console.log('Não foi possível buscar Instagram', igErr);
+                            }
+
                             setCreds(prev => ({ 
                                 ...prev, 
                                 META_ACCESS_TOKEN: fbToken,
                                 ...(wabaId && { META_WABA_ID: wabaId }),
-                                ...(phoneId && { META_PHONE_NUMBER_ID: phoneId })
+                                ...(phoneId && { META_PHONE_NUMBER_ID: phoneId }),
+                                ...(instaId && { META_INSTAGRAM_PAGE_ID: instaId })
                             }));
 
-                            if (wabaId) {
-                                setSuccess('Token e IDs do WhatsApp extraídos automaticamente com sucesso! Clique em Salvar.');
+                            if (wabaId || instaId) {
+                                setSuccess('Token e IDs extraídos com sucesso (WhatsApp/Instagram)! Clique em Salvar.');
                             } else {
                                 setSuccess('Token capturado!' + debugStr + ' Preencha os IDs abaixo manualmente para continuar.');
                             }
@@ -171,7 +191,7 @@ export default function MetaApiPage() {
                 };
                 
                 processFbResponse();
-            }, { scope: 'email,public_profile,business_management,whatsapp_business_management,whatsapp_business_messaging', auth_type: 'rerequest' });
+            }, { scope: 'email,public_profile,business_management,whatsapp_business_management,whatsapp_business_messaging,pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_messages', auth_type: 'rerequest' });
             
         } catch(e: any) {
             setError('Erro ao iniciar Facebook SDK: ' + e.message);
