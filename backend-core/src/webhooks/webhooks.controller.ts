@@ -223,7 +223,7 @@ export class WebhooksController {
                             this.logger.debug(`[META_WA] Check n8n: hasUrl=${hasN8n}, contactEnabled=${contact.n8nEnabled}`);
                             
                             if (hasN8n && contact.n8nEnabled !== false) {
-                                this.logger.log(`[META_WA] Triggering n8n for ${contact.name} (Tenant: ${tenantId}) -> ${n8nWebhookUrl}`);
+                                this.logger.log(`[META_WA] Triggering n8n for ${contact.name} (Tenant: ${tenantId}) -> (Using global or provider mapping)`);
                                 const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
                                     provider: 'whatsapp',
                                     type: 'whatsapp.message', sender: from, content,
