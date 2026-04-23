@@ -51,8 +51,17 @@ export class AuthController {
     @Get('facebook/callback')
     @UseGuards(AuthGuard('facebook'))
     async facebookAuthRedirect(@Request() req, @Res() res: any) {
-        const result = await this.authService.facebookLogin(req.user);
-        const token = result.access_token;
-        return res.redirect(`https://zaplandia.com.br/auth/callback?token=${token}`);
+        console.log('Facebook Login Callback Triggered');
+        console.log('User data from Passport:', JSON.stringify(req.user, null, 2));
+
+        try {
+            const result = await this.authService.facebookLogin(req.user);
+            const token = result.access_token;
+            console.log('Facebook Login Success - Redirecting with token');
+            return res.redirect(`https://zaplandia.com.br/auth/callback?token=${token}`);
+        } catch (error) {
+            console.error('Facebook Login Service Error:', error);
+            return res.redirect(`https://zaplandia.com.br/auth/login?error=facebook_auth_failed`);
+        }
     }
 }
