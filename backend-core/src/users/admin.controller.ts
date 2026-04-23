@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Put, Delete, UseGuards, Request, Body, Param, ForbiddenException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CrmService } from '../crm/crm.service';
+import { CrmService } from '../crm';
 import { SupportService } from '../support/support.service';
 import { UsersService } from './users.service';
 import { IntegrationsService } from '../integrations/integrations.service';

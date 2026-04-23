@@ -1,5 +1,6 @@
 import { Injectable, Logger, BadRequestException, OnApplicationBootstrap, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
-import { CommunicationService } from '../communication/communication.service';
+import { CommunicationService } from '../communication';
+
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import axios from 'axios';
