@@ -65,11 +65,12 @@ export default function MetaApiPage() {
     const [isReviewMode, setIsReviewMode] = useState(false);
     const [reviewStep, setReviewStep] = useState(0);
     const reviewSteps = [
-        "Welcome! This application uses a Server-to-Server (S2S) architecture via Meta Graph API.",
-        "To provide access, users must enter a System User Access Token with 'whatsapp_business_messaging' and 'whatsapp_business_management' permissions.",
-        "Step 1: Save your secure credentials (Token, WABA ID, Phone ID) to establish the server-side link.",
-        "Step 2: Use 'Test Connection' to verify real-time permissions directly with Meta servers.",
-        "Step 3: Once authorized, manage your Message Templates (BBM) and Phone Numbers through this dashboard."
+        "Welcome! Show the Log-out state and then log in cleanly.",
+        "Step 1: Enter System User Access Token (whatsapp_business_messaging).",
+        "Step 2: Link WABA and Phone ID assets.",
+        "Step 3: Click 'Login with Facebook' to Provision Access (Simulated S2S Flow).",
+        "Step 4: Verify permissions with 'Test Connection'.",
+        "Final: Manage Templates and Phone Numbers live from Meta Cloud API."
     ];
 
     const handleNextReviewStep = () => {
