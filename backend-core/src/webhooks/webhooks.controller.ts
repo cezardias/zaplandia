@@ -211,8 +211,15 @@ export class WebhooksController {
                             contact.lastMessage = content;
                             await this.contactRepository.save(contact);
 
-                            const n8nWebhookUrl = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
-                            const hasN8n = !!n8nWebhookUrl;
+                            const globalN8n = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
+                            const providerConfigStr = await this.integrationsService.getCredential(tenantId, 'N8N_PROVIDER_CONFIG', true);
+                            let hasN8n = !!globalN8n;
+                            if (!hasN8n && providerConfigStr) {
+                                try {
+                                    const config = JSON.parse(providerConfigStr);
+                                    if (config['whatsapp']) hasN8n = true;
+                                } catch (e) {}
+                            }
                             this.logger.debug(`[META_WA] Check n8n: hasUrl=${hasN8n}, contactEnabled=${contact.n8nEnabled}`);
                             
                             if (hasN8n && contact.n8nEnabled !== false) {
@@ -339,7 +346,15 @@ export class WebhooksController {
                             this.logger.log(`[INSTAGRAM_WEBHOOK] ✅ DM from ${profileName} (${senderId}) saved and emitted`);
 
                             // N8N or AI response
-                            const hasN8n = !!(await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true));
+                            const globalN8n = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
+                            const providerConfigStr = await this.integrationsService.getCredential(tenantId, 'N8N_PROVIDER_CONFIG', true);
+                            let hasN8n = !!globalN8n;
+                            if (!hasN8n && providerConfigStr) {
+                                try {
+                                    const config = JSON.parse(providerConfigStr);
+                                    if (config['instagram']) hasN8n = true;
+                                } catch (e) {}
+                            }
                             if (hasN8n && contact.n8nEnabled !== false) {
                                 const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
                                     type: 'instagram.message',
