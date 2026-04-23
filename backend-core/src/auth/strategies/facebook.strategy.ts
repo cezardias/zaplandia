@@ -6,8 +6,8 @@ import { Strategy } from 'passport-facebook';
 export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     constructor() {
         super({
-            clientID: process.env.FACEBOOK_APP_ID || 'PENDING',
-            clientSecret: process.env.FACEBOOK_APP_SECRET || 'PENDING',
+            clientID: process.env.FACEBOOK_APP_ID || '760305269821467',
+            clientSecret: process.env.FACEBOOK_APP_SECRET || '6685a0cba55f2f49349222565cf37042',
             callbackURL: 'https://zaplandia.com.br/api/auth/facebook/callback',
             scope: ['email', 'public_profile'],
             profileFields: ['id', 'emails', 'name', 'photos'],
