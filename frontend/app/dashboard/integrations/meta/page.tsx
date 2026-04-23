@@ -113,32 +113,40 @@ export default function MetaApiPage() {
                         setSuccess('Acessando ativos da Meta... Aguarde.');
                         
                         try {
-                            const graphUrl = `https://graph.facebook.com/v18.0/me?fields=id,name,businesses{id,name,owned_whatsapp_business_accounts{id,name,phone_numbers},client_whatsapp_business_accounts{id,name,phone_numbers}}&access_token=${fbToken}`;
-                            const res = await fetch(graphUrl);
-                            const data = await res.json();
+                            // Buscamos os negócios separadamente
+                            const bizRes = await fetch(`https://graph.facebook.com/v18.0/me/businesses?access_token=${fbToken}`);
+                            const bizData = await bizRes.json();
                             
                             let wabaId = '';
                             let phoneId = '';
                             let debugStr = '';
-                            
-                            if (data.businesses && data.businesses.data && data.businesses.data.length > 0) {
-                                const business = data.businesses.data[0];
-                                const ownedWabas = business.owned_whatsapp_business_accounts?.data || [];
-                                const clientWabas = business.client_whatsapp_business_accounts?.data || [];
+
+                            if (bizData.data && bizData.data.length > 0) {
+                                const businessId = bizData.data[0].id;
                                 
-                                const allWabas = [...ownedWabas, ...clientWabas];
+                                // Buscamos as contas do WhatsApp desse negócio
+                                const wabaRes = await fetch(`https://graph.facebook.com/v18.0/${businessId}/owned_whatsapp_business_accounts?access_token=${fbToken}`);
+                                const wabaData = await wabaRes.json();
                                 
-                                if (allWabas.length > 0) {
-                                    const waba = allWabas[0];
-                                    wabaId = waba.id;
-                                    if (waba.phone_numbers && waba.phone_numbers.data && waba.phone_numbers.data.length > 0) {
-                                        phoneId = waba.phone_numbers.data[0].id;
+                                if (wabaData.data && wabaData.data.length > 0) {
+                                    wabaId = wabaData.data[0].id;
+                                    
+                                    // Buscamos o phone number desse WABA
+                                    const phoneRes = await fetch(`https://graph.facebook.com/v18.0/${wabaId}/phone_numbers?access_token=${fbToken}`);
+                                    const phoneData = await phoneRes.json();
+                                    
+                                    if (phoneData.data && phoneData.data.length > 0) {
+                                        phoneId = phoneData.data[0].id;
                                     }
                                 } else {
-                                    debugStr = ' - Zero contas achadas. ' + JSON.stringify(data).substring(0, 50);
+                                    debugStr = ' - Nenhuma WABA encontrada no negócio.';
                                 }
                             } else {
-                                debugStr = ' - Sem negócios na GraphAPI. ' + JSON.stringify(data).substring(0, 50);
+                                if (bizData.error) {
+                                     debugStr = ' - Falha na GraphAPI: ' + bizData.error.message;
+                                } else {
+                                     debugStr = ' - Nenhum negócio atrelado a este usuário foi encontrado.';
+                                }
                             }
 
                             setCreds(prev => ({ 
@@ -148,14 +156,14 @@ export default function MetaApiPage() {
                                 ...(phoneId && { META_PHONE_NUMBER_ID: phoneId })
                             }));
 
-                            const msg = wabaId 
-                                ? 'Token e Dados (WABA, Phone) extraídos com sucesso! Clique em Salvar.' 
-                                : 'Token! Sem WABA' + debugStr;
-                            
-                            setSuccess(msg);
+                            if (wabaId) {
+                                setSuccess('Token e IDs do WhatsApp extraídos automaticamente com sucesso! Clique em Salvar.');
+                            } else {
+                                setSuccess('Token capturado!' + debugStr + ' Preencha os IDs abaixo manualmente para continuar.');
+                            }
                         } catch(err) {
                             setCreds(prev => ({ ...prev, META_ACCESS_TOKEN: fbToken }));
-                            setSuccess('Token capturado! Erro na GraphAPI. ' + String(err).substring(0, 50));
+                            setSuccess('Token capturado com sucesso! (Autopreenchimento falhou). Preencha manualmente.');
                         }
                     } else {
                         setError('Login cancelado ou não autorizado.');
