@@ -106,49 +106,53 @@ export default function MetaApiPage() {
             }
 
             // @ts-ignore
-            window.FB.login(async (response: any) => {
-                if (response.authResponse) {
-                    const fbToken = response.authResponse.accessToken;
-                    setSuccess('Acessando ativos da Meta... Aguarde.');
-                    
-                    try {
-                        const graphUrl = `https://graph.facebook.com/v18.0/me?fields=id,name,businesses{id,name,owned_whatsapp_business_accounts{id,name,phone_numbers}}&access_token=${fbToken}`;
-                        const res = await fetch(graphUrl);
-                        const data = await res.json();
+            window.FB.login((response: any) => {
+                const processFbResponse = async () => {
+                    if (response.authResponse) {
+                        const fbToken = response.authResponse.accessToken;
+                        setSuccess('Acessando ativos da Meta... Aguarde.');
                         
-                        let wabaId = '';
-                        let phoneId = '';
-                        
-                        if (data.businesses && data.businesses.data && data.businesses.data.length > 0) {
-                            const business = data.businesses.data[0];
-                            if (business.owned_whatsapp_business_accounts && business.owned_whatsapp_business_accounts.data && business.owned_whatsapp_business_accounts.data.length > 0) {
-                                const waba = business.owned_whatsapp_business_accounts.data[0];
-                                wabaId = waba.id;
-                                if (waba.phone_numbers && waba.phone_numbers.data && waba.phone_numbers.data.length > 0) {
-                                    phoneId = waba.phone_numbers.data[0].id;
+                        try {
+                            const graphUrl = `https://graph.facebook.com/v18.0/me?fields=id,name,businesses{id,name,owned_whatsapp_business_accounts{id,name,phone_numbers}}&access_token=${fbToken}`;
+                            const res = await fetch(graphUrl);
+                            const data = await res.json();
+                            
+                            let wabaId = '';
+                            let phoneId = '';
+                            
+                            if (data.businesses && data.businesses.data && data.businesses.data.length > 0) {
+                                const business = data.businesses.data[0];
+                                if (business.owned_whatsapp_business_accounts && business.owned_whatsapp_business_accounts.data && business.owned_whatsapp_business_accounts.data.length > 0) {
+                                    const waba = business.owned_whatsapp_business_accounts.data[0];
+                                    wabaId = waba.id;
+                                    if (waba.phone_numbers && waba.phone_numbers.data && waba.phone_numbers.data.length > 0) {
+                                        phoneId = waba.phone_numbers.data[0].id;
+                                    }
                                 }
                             }
+
+                            setCreds(prev => ({ 
+                                ...prev, 
+                                META_ACCESS_TOKEN: fbToken,
+                                ...(wabaId && { META_WABA_ID: wabaId }),
+                                ...(phoneId && { META_PHONE_NUMBER_ID: phoneId })
+                            }));
+
+                            const msg = wabaId 
+                                ? 'Token e Dados (WABA, Phone ID) extraídos com sucesso! Clique em Salvar.' 
+                                : 'Token capturado! Não achamos Contas do WhatsApp vinculadas, preencha os IDs manualmente.';
+                            
+                            setSuccess(msg);
+                        } catch(err) {
+                            setCreds(prev => ({ ...prev, META_ACCESS_TOKEN: fbToken }));
+                            setSuccess('Token capturado, mas não foi possível buscar contas. Preencha os IDs.');
                         }
-
-                        setCreds(prev => ({ 
-                            ...prev, 
-                            META_ACCESS_TOKEN: fbToken,
-                            ...(wabaId && { META_WABA_ID: wabaId }),
-                            ...(phoneId && { META_PHONE_NUMBER_ID: phoneId })
-                        }));
-
-                        const msg = wabaId 
-                            ? 'Token e Dados (WABA, Phone ID) extraídos com sucesso! Clique em Salvar.' 
-                            : 'Token capturado! Não achamos Contas do WhatsApp vinculadas, preencha os IDs manualmente.';
-                        
-                        setSuccess(msg);
-                    } catch(err) {
-                        setCreds(prev => ({ ...prev, META_ACCESS_TOKEN: fbToken }));
-                        setSuccess('Token capturado, mas não foi possível buscar contas. Preencha os IDs.');
+                    } else {
+                        setError('Login cancelado ou não autorizado.');
                     }
-                } else {
-                    setError('Login cancelado ou não autorizado.');
-                }
+                };
+                
+                processFbResponse();
             }, { scope: 'email,public_profile,whatsapp_business_management,whatsapp_business_messaging' });
             
         } catch(e: any) {
