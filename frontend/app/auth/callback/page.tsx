@@ -12,22 +12,27 @@ function CallbackHandler() {
     useEffect(() => {
         const token = searchParams.get('token');
         if (token) {
+            console.log('Token received, validating...', token.substring(0, 15) + '...');
             loginWithToken(token).then(() => {
+                console.log('Token validated, redirecting to dashboard...');
                 router.push('/dashboard');
             }).catch((err) => {
                 console.error('Erro no callback de autenticação:', err);
-                router.push('/auth/login?error=auth_failed');
+                // Try hard navigation if router.push fails or is caught in a loop
+                window.location.href = '/auth/login?error=auth_failed';
             });
         } else {
+            console.log('No token in URL, redirecting to login...');
             router.push('/auth/login');
         }
-    }, [searchParams, router, loginWithToken]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
 
     return (
         <div className="flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             <p className="text-xl font-bold animate-pulse">Finalizando autenticação...</p>
-            <p className="text-gray-400 text-sm">Validando sua conta Google com o Zaplandia.</p>
+            <p className="text-gray-400 text-sm">Validando configuração na plataforma Zaplandia.</p>
         </div>
     );
 }
