@@ -11,7 +11,7 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
             callbackURL: 'https://zaplandia.com.br/api/auth/facebook/callback',
             scope: ['email', 'public_profile'],
             profileFields: ['id', 'emails', 'name', 'photos'],
-            graphApiVersion: 'v18.0',
+            graphAPIVersion: 'v18.0',
         });
     }
 
