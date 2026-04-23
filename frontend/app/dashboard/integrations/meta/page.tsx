@@ -13,7 +13,7 @@ import {
   FileText,
   Info
 } from 'lucide-react';
-import { toast } from 'sonner';
+
 
 export default function MetaApiPage() {
   const [wabaId, setWabaId] = useState('');
@@ -28,7 +28,7 @@ export default function MetaApiPage() {
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      toast.success('Configurações salvas! / Settings saved successfully!');
+      alert('Configurações salvas! / Settings saved successfully!');
     }, 1500);
   };
 
@@ -36,7 +36,7 @@ export default function MetaApiPage() {
     setTestStatus('loading');
     setTimeout(() => {
       setTestStatus('success');
-      toast.success('Conexão S2S Verificada! / S2S Connection Verified!');
+      alert('Conexão S2S Verificada! / S2S Connection Verified!');
     }, 2000);
   };
 
