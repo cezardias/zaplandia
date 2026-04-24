@@ -177,6 +177,7 @@ export class MetaApiService {
         try {
             const { accessToken: defaultToken, instagramBusinessId: configIbId, instagramAccessToken } = await this.getCredentials(tenantId);
             const accessToken = instagramAccessToken || defaultToken;
+            const instagramAppSecret = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_APP_SECRET', true);
 
             // Instagram page ID for the tenant
             let pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
@@ -187,14 +188,11 @@ export class MetaApiService {
             let cleanToken = accessToken ? accessToken.toString().trim().replace(/['"]+/g, '') : '';
             this.logger.log(`[INSTAGRAM_SEND] Token prefix: ${cleanToken.substring(0, 7)}... Length: ${cleanToken.length}`);
 
-
             const payload = {
                 recipient: { id: recipientPsid },
                 message: { text },
                 messaging_type: 'RESPONSE',
             };
-
-            this.logger.log(`[INSTAGRAM_SEND] Sending DM to PSID ${recipientPsid} via Page/IGBA ${pageId}`);
 
             const activeUrl = `https://graph.facebook.com/v19.0/${pageId}/messages`;
             this.logger.log(`[INSTAGRAM_SEND] Target URL: ${activeUrl}`);
@@ -203,6 +201,7 @@ export class MetaApiService {
             // Security: Calculate appsecret_proof if optional instagramAppSecret is provided
             let appsecret_proof: string | undefined = undefined;
             if (instagramAppSecret) {
+                const crypto = require('crypto');
                 appsecret_proof = crypto
                     .createHmac('sha256', instagramAppSecret.toString().trim())
                     .update(cleanToken)
