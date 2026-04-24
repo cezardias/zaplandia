@@ -511,7 +511,7 @@ export default function TermsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Navigation Sidebar */}
                 <div className="lg:col-span-3 space-y-3 animate-in fade-in slide-in-from-left-4 duration-700 delay-150">
-                    {Object.entries(t.tabs).map(([key, label]) => (
+                    {(Object.entries(t.tabs) as [string, string][]).map(([key, label]) => (
                         <button
                             key={key}
                             onClick={() => setActiveSection(key)}
