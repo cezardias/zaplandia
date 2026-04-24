@@ -36,7 +36,91 @@ export default function DashboardLayout({
     // Global Language State
     const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
 
+    const t: any = {
+        pt_BR: {
+            menu: {
+                dashboard: 'Painel',
+                inbox: 'Omni Inbox',
+                ai: 'Assistente IA',
+                whatsapp: 'Gestão WhatsApp',
+                meta: 'Integração Meta',
+                governance: 'Meta Governance',
+                crm: 'Contatos CRM',
+                teams: 'Equipes',
+                pipeline: 'Funil (Pipeline)',
+                settings: 'Configurações',
+                payments: 'Pagamentos',
+                developer: 'Desenvolvedor',
+                help: 'Central de Ajuda'
+            },
+            trial: 'Seu período de teste (Trial) está ativo. Aproveite todas as funções!',
+            logout: 'Sair',
+            choosePlan: 'ESCOLHER PLANO'
+        },
+        en_US: {
+            menu: {
+                dashboard: 'Dashboard',
+                inbox: 'Omni Inbox',
+                ai: 'AI Assistant',
+                whatsapp: 'WhatsApp Manager',
+                meta: 'Meta API',
+                governance: 'Meta Governance',
+                crm: 'Contacts CRM',
+                teams: 'Teams',
+                pipeline: 'Pipeline',
+                settings: 'Settings',
+                payments: 'Payments',
+                developer: 'Developer',
+                help: 'Help Center'
+            },
+            trial: 'Your trial period is active. Enjoy all features!',
+            logout: 'Logout',
+            choosePlan: 'CHOOSE PLAN'
+        },
+        pt_PT: {
+            menu: {
+                dashboard: 'Painel',
+                inbox: 'Omni Inbox',
+                ai: 'Assistente IA',
+                whatsapp: 'Gestão WhatsApp',
+                meta: 'Integração Meta',
+                governance: 'Meta Governance',
+                crm: 'Contactos CRM',
+                teams: 'Equipas',
+                pipeline: 'Funil (Pipeline)',
+                settings: 'Configurações',
+                payments: 'Pagamentos',
+                developer: 'Programador',
+                help: 'Central de Ajuda'
+            },
+            trial: 'O seu período de teste está ativo. Aproveite todas as funções!',
+            logout: 'Sair',
+            choosePlan: 'ESCOLHER PLANO'
+        },
+        it_IT: {
+            menu: {
+                dashboard: 'Dashboard',
+                inbox: 'Omni Inbox',
+                ai: 'Assistente AI',
+                whatsapp: 'Gestione WhatsApp',
+                meta: 'Integrazione Meta',
+                governance: 'Meta Governance',
+                crm: 'Contatti CRM',
+                teams: 'Squadre',
+                pipeline: 'Pipeline',
+                settings: 'Impostazioni',
+                payments: 'Pagamenti',
+                developer: 'Sviluppatore',
+                help: 'Centro Assistenza'
+            },
+            trial: 'Il tuo periodo di prova è attivo. Goditi tutte le funzioni!',
+            logout: 'Disconnetti',
+            choosePlan: 'SCEGLI PIANO'
+        }
+    };
+
     useEffect(() => {
+
         const saved = localStorage.getItem('zap_lang');
         if (saved) setLang(saved as any);
     }, []);
@@ -82,20 +166,21 @@ export default function DashboardLayout({
     }, [user, isLoading, router, pathname]);
 
     const menuItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Omni Inbox', icon: <MessageSquare size={20} />, path: '/dashboard/inbox', roles: ['superadmin', 'admin', 'user', 'agent'] },
-        { name: 'AI Assistant', icon: <Zap size={20} />, path: '/dashboard/ai-assistant', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'WhatsApp Manager', icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Meta API', icon: <Facebook size={20} />, path: '/dashboard/integrations/meta', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Meta Governance', icon: <ShieldCheck size={20} />, path: '/dashboard/governance', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Contacts CRM', icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
-        { name: 'Teams', icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Pipeline', icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Settings', icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Payments', icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
-        { name: 'Developer', icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
-        { name: 'Help Center', icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: t[lang].menu.dashboard, icon: <LayoutDashboard size={20} />, path: '/dashboard', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.inbox, icon: <MessageSquare size={20} />, path: '/dashboard/inbox', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: t[lang].menu.ai, icon: <Zap size={20} />, path: '/dashboard/ai-assistant', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.whatsapp, icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.meta, icon: <Facebook size={20} />, path: '/dashboard/integrations/meta', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.governance, icon: <ShieldCheck size={20} />, path: '/dashboard/governance', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.crm, icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: t[lang].menu.teams, icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.pipeline, icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.settings, icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.payments, icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
+        { name: t[lang].menu.developer, icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.help, icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
+
 
     const filteredMenuItems = menuItems.filter(item => 
         !item.roles || item.roles.includes(user?.role || '')
@@ -202,8 +287,9 @@ export default function DashboardLayout({
                         className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition font-medium text-sm"
                     >
                         <LogOut className="w-5 h-5" />
-                        <span>Sair do sistema</span>
+                        <span>{t[lang].logout}</span>
                     </button>
+
                 </div>
             </aside>
 
@@ -233,12 +319,13 @@ export default function DashboardLayout({
                     <div className="bg-primary/10 border-b border-primary/20 px-6 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs text-primary font-medium">
                             <AlertCircle size={14} />
-                            <span>Seu período de teste (Trial) está ativo. Aproveite todas as funções!</span>
+                            <span>{t[lang].trial}</span>
                         </div>
                         <Link href="/dashboard/billing" className="text-[10px] bg-primary text-white px-3 py-1 rounded-full hover:bg-primary-dark transition font-bold uppercase tracking-wider">
-                            Escolher Plano
+                            {t[lang].choosePlan}
                         </Link>
                     </div>
+
                 )}
                 <div className="flex-1">
                     {children}
