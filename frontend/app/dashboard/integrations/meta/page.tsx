@@ -22,8 +22,10 @@ import {
     X,
     Wifi,
     WifiOff,
-    Zap
+    Zap,
+    Lock
 } from 'lucide-react';
+
 
 export default function MetaApiPage() {
     const { token, user } = useAuth();
