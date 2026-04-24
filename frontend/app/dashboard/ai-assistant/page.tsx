@@ -2,14 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
     Sparkles, Save, RotateCcw, Play, Copy
 } from 'lucide-react';
 
 export default function AiAssistantPage() {
     const { user, token } = useAuth();
+    const { lang } = useLanguage();
     const [isLoading, setIsLoading] = useState(false);
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
 
     const t: any = {
         pt_BR: {

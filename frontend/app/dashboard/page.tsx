@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
     Users, PlayCircle, PauseCircle, Activity,
     DollarSign, UserX, BarChart3, Zap, Copy, FileText
@@ -10,11 +11,12 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 
 export default function DashboardPage() {
     const { user, token } = useAuth();
+    const { lang } = useLanguage();
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
 
     const t: any = {
         pt_BR: {
@@ -287,17 +289,8 @@ export default function DashboardPage() {
         }
     }, [token]);
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang');
-            if (current) setLang(current as any);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     useEffect(() => {
         if (token && selectedCampaignId) {

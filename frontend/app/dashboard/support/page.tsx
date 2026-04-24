@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
     Search,
     HelpCircle,
@@ -24,11 +25,12 @@ interface Article {
 
 export default function SupportPage() {
     const { token } = useAuth();
+    const { lang } = useLanguage();
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
 
     const t: any = {
         pt_BR: {
@@ -246,7 +248,191 @@ Zaplandia needs a token that doesn't expire:
             noResults: 'Nenhum artigo encontrado para a sua procura.',
             readProcedure: 'Ler Procedimento',
             footerNote: 'O conteúdo acima é gerado para auxiliar nos procedimentos do sistema Zaplandia.',
-            errorFetching: 'Erro ao procurar artigos:'
+            errorFetching: 'Erro ao procurar artigos:',
+            articles: {
+                'WhatsApp Oficial: Configuração Completa e Disparos': {
+                    title: 'WhatsApp Oficial: Configuração Completa e Disparos',
+                    content: `Guia definitivo para WhatsApp Cloud API (Oficial):
+
+1. **Meta for Developers**:
+   - Crie uma App do tipo "Business".
+   - Adicione o produto "WhatsApp".
+   - Vá a "Configuração" e obtenha o **WhatsApp Business Account ID** e o **Phone Number ID**.
+
+2. **Segurança e Tokens**:
+   - No Business Manager, crie um "System User".
+   - Atribua as permissões \`whatsapp_business_messaging\` e \`whatsapp_business_management\`.
+   - Gere um **Token Permanente**.
+
+3. **Configuração no Zaplandia**:
+   - Vá a **Configurações de API > WhatsApp**.
+   - Insira os IDs e o Token gerado.
+   - A sua conta está pronta para disparar campanhas no CRM.`
+                },
+                'FAQ: Como responder Facebook e Instagram no Omni Inbox': {
+                    title: 'FAQ: Como responder Facebook e Instagram no Omni Inbox',
+                    content: `Atendimento centralizado para redes sociais:
+
+- **Configuração**: Certifique-se de que a sua conta do Instagram é do tipo Business e está ligada a uma Página do Facebook que gere.
+- **Permissões**: Ao ligar ao Zaplandia, conceda permissão para aceder às mensagens da página e directs do Instagram.
+- **Uso no Omni Inbox**: 
+  - Todas as conversas aparecem numa fila única.
+  - O ícone ao lado do nome do contacto indica se a mensagem veio do Instagram ou Facebook.
+  - Pode enviar texto, emojis e imagens diretamente pelo painel.
+- **Agente IA**: A IA pode responder automaticamente a comentários em posts e mensagens privadas, conforme configurado no separador Canais.`
+                },
+                'Integração Mercado Livre: Perguntas e Vendas': {
+                    title: 'Integração Mercado Livre: Perguntas e Vendas',
+                    content: `Gira o seu e-commerce sem sair do Zaplandia:
+
+- **App ID e Client Secret**: Obtenha estas chaves no portal de developers do Mercado Livre (Dev Center).
+- **Callback URL**: Utilize o URL fornecido no ecrã de configuração do Zaplandia para o Redirect URI.
+- **Vantagens**:
+  - Responda a perguntas de anúncios em segundos.
+  - Receba notificações de vendas efetuadas.
+  - Centralize o suporte pós-venda no Omni Inbox.
+- **IA**: Configure a IA para sugerir respostas baseadas nas características dos seus produtos.`
+                },
+                'OLX: Chat e Propostas Automatizadas': {
+                    title: 'OLX: Chat e Propostas Automatizadas',
+                    content: `Integre os seus anúncios do OLX:
+
+- **Credenciais**: Insira o seu Client ID e Client Secret de developer do OLX.
+- **Atendimento**: Os chats dos seus anúncios aparecem no Omni Inbox do Zaplandia.
+- **IA**: Deixe o Agente IA lidar com as primeiras dúvidas sobre disponibilidade ("Ainda está disponível?") e propostas de valor, filtrando apenas leads realmente interessados para a sua equipa humana.`
+                },
+                'YouTube: Captação de Leads via Comentários': {
+                    title: 'YouTube: Captação de Leads via Comentários',
+                    content: `Venda mais através dos seus vídeos:
+
+- **Google Cloud Console**: Ative a YouTube Data API v3 e gere a sua API Key.
+- **Monitorização**: O Zaplandia faz o scan de comentários nos seus vídeos à procura de palavras-chave de interesse ou dúvidas.
+- **CRM**: Os contactos que comentam os seus vídeos são capturados e adicionados automaticamente ao CRM para que possa iniciar uma conversa via WhatsApp ou Direct.`
+                },
+                'Manual Geral: IA e Automação de Conversas': {
+                    title: 'Manual Geral: IA e Automação de Conversas',
+                    content: `Como funciona a IA do Zaplandia:
+
+- **Personalidade**: Defina como a IA deve falar (formal, amigável, técnica).
+- **Base de Conhecimento**: A IA lê os seus manuais e informações da empresa para responder a dúvidas de clientes.
+- **Transbordo**: Se a IA não souber responder ou o cliente pedir para falar com um humano, a conversa é marcada como prioridade no Omni Inbox.`
+                },
+                'WhatsApp Não Oficial: Conexão EvolutionAPI (QR Code)': {
+                    title: 'WhatsApp Não Oficial: Conexão EvolutionAPI (QR Code)',
+                    content: `Ligue qualquer número de WhatsApp sem a API oficial:
+
+1. **Aceda a Integrações**: Vá ao menu lateral "Integrações" e localize o card "WhatsApp Não Oficial (EvolutionAPI)".
+2. **Gerar Instância**: Clique em "Ligar". O sistema criará uma instância exclusiva para a sua empresa no servidor global.
+3. **Escaneie o QR Code**: Um QR Code aparecerá no ecrã. Abra o WhatsApp no seu telemóvel, vá a "Aparelhos Ligados" e leia o código.
+4. **Status**: Assim que o telemóvel ler o código, o Zaplandia atualizará o status para "LIGADO". Agora já pode receber mensagens no Omni Inbox e disparar campanhas.`
+                },
+                'Configurações de Admin: Servidor EvolutionAPI e n8n': {
+                    title: 'Configurações de Admin: Servidor EvolutionAPI e n8n',
+                    content: `Manual para Super Admins do sistema:
+
+1. **Acesso**: Vá a Dashboard > Configurações > API.
+2. **EvolutionAPI**:
+   - **URL**: Insira o endereço do seu servidor EvolutionAPI (ex: https://evo.oseudominio.com).
+   - **API Key**: Insira a chave global (Global Api Key) configurada no seu ficheiro .env da Evolution.
+3. **Webhook n8n**: 
+   - Insira o seu URL de Webhook do n8n (Production URL).
+   - Isto garante que todas as mensagens recebidas sejam enviadas para o seu fluxo de IA no n8n.
+4. **Guardar Tudo**: Utilize o botão "GUARDAR TUDO" no fundo para garantir que as chaves são aplicadas globalmente.`
+                },
+                'Campanhas do CRM: Seleção de Instância e Canais': {
+                    title: 'Campanhas do CRM: Seleção de Instância e Canais',
+                    content: `Como escolher qual WhatsApp utilizar em cada disparo:
+
+1. **Nova Campanha**: No menu CRM > Campanhas, clique em "Nova Campanha".
+2. **Canais**: Ao selecionar o canal "WhatsApp", aparecerá um novo campo de seleção.
+3. **Seleção de Instância**: 
+   - Se tiver várias ligações (ex: uma Oficial e uma EvolutionAPI), deve selecionar qual deve realizar o disparo para esta campanha específica.
+   - Isto permite separar disparos de marketing de disparos de suporte, por exemplo.
+4. **Finalização**: Siga os passos de Público e Mensagem para concluir a criação.`
+                },
+                'Integração Rifa API: Configuração e Uso': {
+                    title: 'Integração Rifa API: Configuração e Uso',
+                    content: `Ligue o seu sistema de rifas externo ao Zaplandia:
+
+1. **Obtenha os seus dados**: No seu painel de rifas, obtenha o **URL da API** (ex: https://rifas.meudominio.com) e gere uma **API Key**.
+2. **Configuração no Zaplandia**:
+   - Vá a **Configurações > API**.
+   - Localize a secção **Integração Rifa API**.
+   - Insira o **URL da API** e a sua **Chave** nos campos correspondentes.
+   - Clique em **GUARDAR**.
+3. **Ativação**:
+   - Vá ao menu lateral **Integrações**.
+   - Localize o card **Rifa API** e clique em **Ligar**.
+   - O status mudará para **LIGADO**.
+4. **Uso**: Agora o sistema pode consultar as suas rifas e números diretamente para automações.`
+                },
+                'IA: Automação para Venda de Rifas': {
+                    title: 'IA: Automação para Venda de Rifas',
+                    content: `Como o Agente IA o ajuda a vender mais rifas:
+
+O Agente IA do Zaplandia possui ferramentas nativas para interagir com a sua Rifa API:
+
+- **Consulta Automática**: Se um cliente perguntar "Quais rifas estão abertas?", a IA utiliza a ferramenta \`get_raffles\` para listar as opções reais.
+- **Verificação de Números**: Quando o cliente escolhe uma rifa, a IA pode listar os números disponíveis usando \`get_tickets\`.
+- **Reserva de Pedido**: A IA pode recolher o nome e WhatsApp do cliente e reservar os números escolhidos via \`create_raffle_order\`.
+
+**Dica**: Não precisa de configurar nada no prompt. Basta ter a **Rifa API Key** configurada e o Agente IA ativo no canal desejado.`
+                },
+                'Pausar Automação Individual (Omni Inbox)': {
+                    title: 'Pausar Automação Individual (Omni Inbox)',
+                    content: `Controlo total sobre o atendimento humano no Omni Inbox:
+
+1. **Localização**: Dentro de qualquer conversa, no cabeçalho superior direito.
+2. **Botão de Automação**:
+   - **Verde (Ativo)**: A IA e fluxos n8n estão a operar normalmente para este contacto.
+   - **Vermelho (Pausado)**: Todas as respostas automáticas estão bloqueadas para este contacto.
+3. **Quando usar**: Sempre que você (humano) assumir uma conversa e não quiser que a IA ou o n8n "atropelam" as suas respostas ou enviem mensagens automáticas enquanto negoceia.
+4. **Independência**: Pausar um contacto não afeta os outros; o resto do sistema continua automatizado.`
+                },
+                'Criar Modelos de Mensagem (WhatsApp Oficial)': {
+                    title: 'Criar Modelos de Mensagem (WhatsApp Oficial)',
+                    content: `Como gerir templates para a API Oficial (Meta):
+
+1. **Acesso**: Vá a **Integrações > Meta API** e selecione o separador **Modelos (BBM)**.
+2. **Nova Criação**: Clique no botão **NOVO MODELO**.
+3. **Configuração**:
+   - **Nome**: Use apenas letras minúsculas e underscores (ex: \`confirmacao_pedido\`).
+   - **Categoria**: Marketing (ofertas), Utilidade (avisos) ou Autenticação (tokens).
+   - **Corpo**: Texto principal da mensagem a ser enviada.
+4. **Aprovação**: Após clicar em "Criar", a Meta analisará o template. O status mudará de **PENDENTE** para **APROVADO** quando estiver pronto para uso em campanhas.`
+                },
+                'Meta API: Onde encontrar Token, WABA ID e Phone ID': {
+                    title: 'Meta API: Onde encontrar Token, WABA ID e Phone ID',
+                    content: `Configurar o WhatsApp Cloud (Meta) exige 3 valores principais. Veja como os obter:
+
+### 1. Criar a App na Meta
+- Aceda a [developers.facebook.com](https://developers.facebook.com).
+- Clique em "As Minhas Apps" > "Criar app".
+- Selecione o tipo **"Outro"** e depois **"Business"**.
+- No painel lateral, adicione o produto **"WhatsApp"**.
+
+### 2. Obter o Phone Number ID e WABA ID
+- No menu WhatsApp (dentro da sua app na Meta), clique em **"Configuração da API"**.
+- Lá verá:
+  - **Phone Number ID**: Geralmente começa com 10... ou 11...
+  - **WhatsApp Business Account ID (WABA ID)**: Logo abaixo.
+- Copie e cole estes valores no Zaplandia.
+
+### 3. Gerar o Token de Acesso Permanente (Essencial!)
+O Zaplandia precisa de um token que não expire:
+- Vá às **Definições do Negócio** no Facebook.
+- Em "Utilizadores" > **"System Users"**, clique em "Adicionar".
+- Crie um utilizador com função "Admin".
+- Clique em **"Gerar Novo Token"**.
+- Selecione a sua App Zaplandia e marque as permissões:
+  - \`whatsapp_business_messaging\`
+  - \`whatsapp_business_management\`
+- Copie o token gerado. **Só aparece uma vez!**
+- Cole no campo "Token de Acesso Permanente" no Zaplandia.
+
+**Dica**: Se usar o "Token Temporário" do ecrã de developer, a integração deixará de funcionar após 24 horas. Use sempre o Token de System User.`
+                }
+            }
         },
         it_IT: {
             title: 'Come possiamo aiutarti?',
@@ -257,7 +443,191 @@ Zaplandia needs a token that doesn't expire:
             noResults: 'Nessun articolo trovato per la tua ricerca.',
             readProcedure: 'Leggi Procedura',
             footerNote: 'Il contenuto sopra è generato per assistere nelle procedure del sistema Zaplandia.',
-            errorFetching: 'Errore durante la ricerca degli articoli:'
+            errorFetching: 'Errore durante la ricerca degli articoli:',
+            articles: {
+                'WhatsApp Oficial: Configuração Completa e Disparos': {
+                    title: 'WhatsApp Ufficiale: Configurazione Completa e Invii',
+                    content: `Guida definitiva alla WhatsApp Cloud API (Ufficiale):
+
+1. **Meta for Developers**:
+   - Crea un'App di tipo "Business".
+   - Aggiungi il prodotto "WhatsApp".
+   - Vai su "Configurazione" e ottieni il **WhatsApp Business Account ID** e il **Phone Number ID**.
+
+2. **Sicurezza e Token**:
+   - Nel Business Manager, crea un "System User".
+   - Assegna i permessi \`whatsapp_business_messaging\` e \`whatsapp_business_management\`.
+   - Genera un **Token Permanente**.
+
+3. **Configurazione in Zaplandia**:
+   - Vai su **Impostazioni API > WhatsApp**.
+   - Inserisci gli ID e il Token generato.
+   - Il tuo account è pronto per inviare campagne nel CRM.`
+                },
+                'FAQ: Como responder Facebook e Instagram no Omni Inbox': {
+                    title: 'FAQ: Come rispondere a Facebook e Instagram in Omni Inbox',
+                    content: `Servizio centralizzato per i social network:
+
+- **Configurazione**: Assicurati che il tuo account Instagram sia di tipo Business e collegato a una Pagina Facebook che gestisci.
+- **Permessi**: Quando ti colleghi a Zaplandia, concedi il permesso di accedere ai messaggi della pagina e ai direct di Instagram.
+- **Uso in Omni Inbox**: 
+  - Tutte le conversazioni appaiono in un'unica coda.
+  - L'icona accanto al nome del contatto indica se il messaggio proviene da Instagram o Facebook.
+  - Puoi inviare testo, emoji e immagini direttamente dal pannello.
+- **Agente IA**: L'IA può rispondere automaticamente ai commenti sui post e ai messaggi privati, come configurato nella scheda Canali.`
+                },
+                'Integração Mercado Livre: Perguntas e Vendas': {
+                    title: 'Integrazione Mercado Libre: Domande e Vendite',
+                    content: `Gestisci il tuo e-commerce senza uscire da Zaplandia:
+
+- **App ID e Client Secret**: Ottieni queste chiavi nel portale sviluppatori di Mercado Libre (Dev Center).
+- **Callback URL**: Usa l'URL fornito nella schermata di configurazione di Zaplandia per la Redirect URI.
+- **Vantaggi**:
+  - Rispondi alle domande sugli annunci in pochi secondi.
+  - Ricevi notifiche sulle vendite completate.
+  - Centralizza il supporto post-vendita in Omni Inbox.
+- **IA**: Configura l'IA per suggerire risposte in base alle caratteristiche dei tuoi prodotti.`
+                },
+                'OLX: Chat e Propostas Automatizadas': {
+                    title: 'OLX: Chat e Proposte Automatizzate',
+                    content: `Integra i tuoi annunci OLX:
+
+- **Credenziali**: Inserisci il tuo Client ID e Client Secret sviluppatore OLX.
+- **Servizio**: Le chat dei tuoi annunci appaiono in Omni Inbox di Zaplandia.
+- **IA**: Lascia che l'Agente IA gestisca le prime domande sulla disponibilità ("È ancora disponibile?") e le proposte di valore, filtrando solo i lead veramente interessati per il tuo team umano.`
+                },
+                'YouTube: Captação de Leads via Comentários': {
+                    title: 'YouTube: Acquisizione Lead tramite Commenti',
+                    content: `Vendi di più attraverso i tuoi video:
+
+- **Google Cloud Console**: Abilita la YouTube Data API v3 e genera la tua API Key.
+- **Monitoraggio**: Zaplandia scansiona i commenti sui tuoi video alla ricerca di parole chiave di interesse o dubbi.
+- **CRM**: I contatti che commentano i tuoi video vengono acquisiti e aggiunti automaticamente al CRM in modo da poter iniziare una conversazione via WhatsApp o Direct.`
+                },
+                'Manual Geral: IA e Automação de Conversas': {
+                    title: 'Manuale Generale: IA e Automazione delle Conversazioni',
+                    content: `Come funziona l'IA di Zaplandia:
+
+- **Personalità**: Definisci come l'IA deve parlare (formale, amichevole, tecnica).
+- **Base di Conoscenza**: L'IA legge i tuoi manuali e le informazioni aziendali per rispondere alle domande dei clienti.
+- **Trasferimento**: Se l'IA non sa come rispondere o il cliente chiede di parlare con un umano, la conversazione viene contrassegnata come prioritaria in Omni Inbox.`
+                },
+                'WhatsApp Não Oficial: Conexão EvolutionAPI (QR Code)': {
+                    title: 'WhatsApp Non Ufficiale: Connessione EvolutionAPI (QR Code)',
+                    content: `Collega qualsiasi numero WhatsApp senza l'API ufficiale:
+
+1. **Accedi a Integrazioni**: Vai al menu laterale "Integrazioni" e individua la scheda "WhatsApp Non Ufficiale (EvolutionAPI)".
+2. **Genera Istanza**: Clicca su "Connetti". Il sistema creerà un'istanza esclusiva per la tua azienda sul server globale.
+3. **Scansiona il QR Code**: Sullo schermo apparirà un QR Code. Apri WhatsApp sul tuo telefono, vai su "Dispositivi collegati" e inquadra il codice.
+4. **Stato**: Non appena il telefono legge il codice, Zaplandia aggiornerà lo stato in "CONNESSO". Ora puoi ricevere messaggi in Omni Inbox e inviare campagne.`
+                },
+                'Configurações de Admin: Servidor EvolutionAPI e n8n': {
+                    title: 'Impostazioni Admin: Server EvolutionAPI e n8n',
+                    content: `Manuale per i Super Admin di sistema:
+
+1. **Accesso**: Vai su Dashboard > Impostazioni > API.
+2. **EvolutionAPI**:
+   - **URL**: Inserisci l'indirizzo del tuo server EvolutionAPI (es: https://evo.tuodominio.com).
+   - **API Key**: Inserisci la chiave globale (Global Api Key) configurata nel file .env di Evolution.
+3. **Webhook n8n**: 
+   - Inserisci l'URL del tuo Webhook n8n (Production URL).
+   - Questo garantisce che tutti i messaggi ricevuti vengano inviati al tuo flusso IA in n8n.
+4. **Salva Tutto**: Usa il pulsante "SALVA TUTTO" in basso per assicurarti che le chiavi vengano applicate globalmente.`
+                },
+                'Campanhas do CRM: Seleção de Instância e Canais': {
+                    title: 'Campagne CRM: Selezione Istanza e Canali',
+                    content: `Come scegliere quale WhatsApp usare in ogni invio:
+
+1. **Nuova Campagna**: Nel menu CRM > Campagne, clicca su "Nuova Campagna".
+2. **Canali**: Quando selezioni il canale "WhatsApp", apparirà un nuovo campo di selezione.
+3. **Selezione Istanza**: 
+   - Se hai più collegamenti (es: uno Ufficiale e uno EvolutionAPI), devi selezionare quale deve eseguire l'invio per questa specifica campagna.
+   - Questo permette di separare gli invii di marketing dagli invii di supporto, ad esempio.
+4. **Finalizzazione**: Segui i passaggi Pubblico e Messaggio per completare la creazione.`
+                },
+                'Integração Rifa API: Configuração e Uso': {
+                    title: 'Integrazione Rifa API: Configurazione e Uso',
+                    content: `Collega il tuo sistema di lotterie esterno a Zaplandia:
+
+1. **Ottieni i tuoi dati**: Nel tuo pannello lotterie, ottieni l'**URL API** (es: https://rifas.miodominio.com) e genera una **API Key**.
+2. **Configurazione in Zaplandia**:
+   - Vai su **Impostazioni > API**.
+   - Individua la sezione **Integrazione Rifa API**.
+   - Inserisci l'**URL API** e la tua **Chiave** nei campi corrispondenti.
+   - Clicca su **SALVA**.
+3. **Attivazione**:
+   - Vai al menu laterale **Integrazioni**.
+   - Individua la scheda **Rifa API** e clicca su **Connetti**.
+   - Lo stato cambierà in **CONNESSO**.
+4. **Uso**: Ora il sistema può consultare le tue lotterie e i numeri direttamente per le automazioni.`
+                },
+                'IA: Automação para Venda de Rifas': {
+                    title: 'IA: Automazione per la Vendita di Lotterie',
+                    content: `Come l'Agente IA ti aiuta a vendere più lotterie:
+
+L'Agente IA di Zaplandia ha strumenti nativi per interagire con la tua Rifa API:
+
+- **Consultazione Automatica**: Se un cliente chiede "Quali lotterie sono aperte?", l'IA usa lo strumento \`get_raffles\` per elencare le opzioni reali.
+- **Verifica Biglietti**: Quando il cliente sceglie una lotteria, l'IA può elencare i numeri disponibili usando \`get_tickets\`.
+- **Prenotazione Ordine**: l'IA può raccogliere il nome e il WhatsApp del cliente e prenotare i numeri scelti tramite \`create_raffle_order\`.
+
+**Suggerimento**: Non è necessario configurare nulla nel prompt. Basta avere la **Rifa API Key** configurata e l'Agente IA attivo sul canale desiderato.`
+                },
+                'Pausar Automação Individual (Omni Inbox)': {
+                    title: 'Sospendi Automazione Individuale (Omni Inbox)',
+                    content: `Controllo totale sul servizio umano in Omni Inbox:
+
+1. **Posizione**: All'interno di qualsiasi conversazione, nell'intestazione in alto a destra.
+2. **Pulsante Automazione**:
+   - **Verde (Attivo)**: L'IA e i flussi n8n operano normalmente per questo contatto.
+   - **Rosso (Sospeso)**: Tutte le risposte automatiche sono bloccate per questo contatto.
+3. **Quando usare**: Ogni volta che tu (umano) prendi in carico una conversazione e non vuoi che l'IA o n8n "travolgano" le tue risposte o inviino messaggi automatici mentre negozi.
+4. **Indipendenza**: Sospendere un contatto non influisce sugli altri; il resto del sistema rimane automatizzato.`
+                },
+                'Criar Modelos de Mensagem (WhatsApp Oficial)': {
+                    title: 'Crea Modelli di Messaggio (WhatsApp Ufficiale)',
+                    content: `Come gestire i template per l'API Ufficiale (Meta):
+
+1. **Accesso**: Vai su **Integrazioni > Meta API** e seleziona la scheda **Modelli (BBM)**.
+2. **Nuova Creazione**: Clicca sul pulsante **NUOVO MODELLO**.
+3. **Configurazione**:
+   - **Nome**: Usa solo lettere minuscole e underscore (es: \`conferma_ordine\`).
+   - **Categoria**: Marketing (offerte), Utility (avvisi) o Autenticazione (token).
+   - **Corpo**: Testo principale del messaggio da inviare.
+4. **Approvazione**: Dopo aver cliccato su "Crea", Meta analizzerà il template. Lo stato cambierà da **PENDENTE** a **APPROVATO** quando sarà pronto per l'uso nelle campagne.`
+                },
+                'Meta API: Onde encontrar Token, WABA ID e Phone ID': {
+                    title: 'Meta API: Dove trovare Token, WABA ID e Phone ID',
+                    content: `La configurazione di WhatsApp Cloud (Meta) richiede 3 valori principali. Ecco come ottenerli:
+
+### 1. Creazione dell'App su Meta
+- Accedi a [developers.facebook.com](https://developers.facebook.com).
+- Clicca su "Le mie App" > "Crea app".
+- Seleziona il tipo **"Altro"** e poi **"Business"**.
+- Nel pannello laterale, aggiungi il prodotto **"WhatsApp"**.
+
+### 2. Ottenere il Phone Number ID e il WABA ID
+- Nel menu WhatsApp (all'interno della tua app su Meta), clicca su **"Configurazione API"**.
+- Lì vedrai:
+  - **Phone Number ID**: Di solito inizia con 10... o 11...
+  - **WhatsApp Business Account ID (WABA ID)**: Subito sotto.
+- Copia e incolla questi valori in Zaplandia.
+
+### 3. Generazione del Token di Accesso Permanente (Essenziale!)
+Zaplandia ha bisogno di un token che non scada:
+- Vai alle **Impostazioni del Business** su Facebook.
+- In "Utenti" > **"System Users"**, clicca su "Aggiungi".
+- Crea un utente con ruolo "Admin".
+- Clicca su **"Genera Nuovo Token"**.
+- Seleziona la tua App Zaplandia e spunta i permessi:
+  - \`whatsapp_business_messaging\`
+  - \`whatsapp_business_management\`
+- Copia il token generato. **Appare solo una volta!**
+- Incolla nel campo "Token di Accesso Permanente" in Zaplandia.
+
+**Suggerimento**: Se usi il "Token Temporaneo" dalla schermata sviluppatore, l'integrazione smetterà di funzionare dopo 24 ore. Usa sempre il Token System User.`
+                }
+            }
         }
     };
 
@@ -278,17 +648,8 @@ Zaplandia needs a token that doesn't expire:
         }
     };
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang');
-            if (current) setLang(current as any);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     useEffect(() => {
         if (token) fetchArticles();

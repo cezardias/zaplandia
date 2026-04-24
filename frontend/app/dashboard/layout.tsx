@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
     BarChart3,
     MessageSquare,
@@ -30,12 +31,10 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const { user, logout, isLoading } = useAuth();
+    const { lang, setLang, languages } = useLanguage();
     const pathname = usePathname();
     const router = useRouter();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-    // Global Language State
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
 
     const t: any = {
         pt_BR: {
@@ -105,7 +104,7 @@ export default function DashboardLayout({
             menu: {
                 dashboard: 'Dashboard',
                 inbox: 'Omni Inbox',
-                ai: 'Assistente AI',
+                ai: 'Assistente IA',
                 whatsapp: 'Gestione WhatsApp',
                 meta: 'Integrazione Meta',
                 crm: 'Contatti CRM',
@@ -124,24 +123,6 @@ export default function DashboardLayout({
         }
     };
 
-    useEffect(() => {
-
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
-    }, []);
-
-    const changeLang = (newLang: any) => {
-        setLang(newLang);
-        localStorage.setItem('zap_lang', newLang);
-        window.dispatchEvent(new Event('languageChange'));
-    };
-
-    const languages = [
-        { code: 'pt_BR', name: '🇧🇷 PT-BR' },
-        { code: 'en_US', name: '🇺🇸 EN-US' },
-        { code: 'pt_PT', name: '🇵🇹 PT-PT' },
-        { code: 'it_IT', name: '🇮🇹 IT-IT' }
-    ];
 
 
     // Close mobile menu when pathname changes
@@ -309,7 +290,7 @@ export default function DashboardLayout({
                     <div className="flex items-center space-x-4">
                         <select 
                             value={lang}
-                            onChange={(e) => changeLang(e.target.value)}
+                            onChange={(e) => setLang(e.target.value as any)}
                             className="bg-white/5 border border-white/10 rounded-xl text-xs px-3 py-2 outline-none text-white font-bold cursor-pointer hover:bg-white/10 transition"
                         >
                             {languages.map(l => <option key={l.code} value={l.code} className="bg-surface text-white">{l.name}</option>)}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
     Users, 
     Plus, 
@@ -25,7 +26,8 @@ interface Team {
 }
 
 export default function TeamsPage() {
-    const { token, user } = useAuth();
+    const { token } = useAuth();
+    const { lang } = useLanguage();
     const [teams, setTeams] = useState<Team[]>([]);
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +39,6 @@ export default function TeamsPage() {
     const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
     const [newAgentData, setNewAgentData] = useState({ name: '', email: '', password: '' });
     const [isSavingAgent, setIsSavingAgent] = useState(false);
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
 
     const t: any = {
         pt_BR: {
@@ -182,17 +183,8 @@ export default function TeamsPage() {
         }
     };
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang');
-            if (current) setLang(current as any);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     useEffect(() => {
         if (token) {

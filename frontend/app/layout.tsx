@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { SocketProvider } from "@/context/SocketContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,12 +21,14 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <AuthProvider>
-          <SocketProvider>
-            {children}
-            <WhatsAppButton />
-          </SocketProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <SocketProvider>
+              {children}
+              <WhatsAppButton />
+            </SocketProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
     Instagram,
     Facebook,
@@ -52,6 +53,7 @@ const PROVIDERS = [
 
 export default function IntegrationsPage() {
     const { token, user } = useAuth();
+    const { lang } = useLanguage();
     const router = useRouter();
     const [integrations, setIntegrations] = useState<Integration[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +63,6 @@ export default function IntegrationsPage() {
     const [isSavingAI, setIsSavingAI] = useState(false);
     const [showEvolutionModal, setShowEvolutionModal] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
 
     const t: any = {
         pt_BR: {
@@ -234,17 +235,8 @@ export default function IntegrationsPage() {
         }
     };
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang');
-            if (current) setLang(current as any);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     const PROVIDERS_LOCALIZED = [
         { id: 'facebook', name: t[lang].providers.facebook.name, icon: <Facebook className="w-8 h-8 text-blue-600" />, desc: t[lang].providers.facebook.desc },

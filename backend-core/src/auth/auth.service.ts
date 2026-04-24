@@ -77,12 +77,15 @@ export class AuthService {
 
         if (!user) {
             // Auto-register new user via Google
-            const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
+            const firstName = profile.firstName && profile.firstName !== 'undefined' ? profile.firstName : '';
+            const lastName = profile.lastName && profile.lastName !== 'undefined' ? profile.lastName : '';
+            const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuário Zaplândia';
+            
             user = await this.register({
                 email: profile.email,
-                name: fullName || 'Usuário Zaplândia',
-                password: Math.random().toString(36).slice(-12), // Generate random password for safety
-                companyName: `Negócio de ${profile.firstName || 'Zaplândia'}`,
+                name: fullName,
+                password: Math.random().toString(36).slice(-12),
+                companyName: `Negócio de ${firstName || 'Zaplândia'}`,
             });
             console.log(`[GOOGLE] Novo cadastro automático via Google: ${user.email}`);
         } else {
@@ -101,12 +104,15 @@ export class AuthService {
 
         if (!user) {
             // Auto-register new user via Facebook
-            const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
+            const firstName = profile.firstName && profile.firstName !== 'undefined' ? profile.firstName : '';
+            const lastName = profile.lastName && profile.lastName !== 'undefined' ? profile.lastName : '';
+            const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuário Zaplândia';
+
             user = await this.register({
                 email: profile.email,
-                name: fullName || 'Usuário Zaplândia',
+                name: fullName,
                 password: Math.random().toString(36).slice(-12),
-                companyName: `Negócio de ${profile.firstName || 'Zaplândia'}`,
+                companyName: `Negócio de ${firstName || 'Zaplândia'}`,
             });
             console.log(`[META] Novo cadastro automático via Facebook: ${user.email}`);
         } else {
