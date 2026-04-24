@@ -44,14 +44,14 @@ export default function DashboardLayout({
                 ai: 'Assistente IA',
                 whatsapp: 'Gestão WhatsApp',
                 meta: 'Integração Meta',
-                governance: 'Meta Governance',
                 crm: 'Contatos CRM',
                 teams: 'Equipes',
                 pipeline: 'Funil (Pipeline)',
                 settings: 'Configurações',
                 payments: 'Pagamentos',
                 developer: 'Desenvolvedor',
-                help: 'Central de Ajuda'
+                help: 'Central de Ajuda',
+                terms: 'Termos de Uso'
             },
             trial: 'Seu período de teste (Trial) está ativo. Aproveite todas as funções!',
             logout: 'Sair',
@@ -65,14 +65,14 @@ export default function DashboardLayout({
                 ai: 'AI Assistant',
                 whatsapp: 'WhatsApp Manager',
                 meta: 'Meta API',
-                governance: 'Meta Governance',
                 crm: 'Contacts CRM',
                 teams: 'Teams',
                 pipeline: 'Pipeline',
                 settings: 'Settings',
                 payments: 'Payments',
                 developer: 'Developer',
-                help: 'Help Center'
+                help: 'Help Center',
+                terms: 'Terms of Use'
             },
             trial: 'Your trial period is active. Enjoy all features!',
             logout: 'Logout',
@@ -86,14 +86,14 @@ export default function DashboardLayout({
                 ai: 'Assistente IA',
                 whatsapp: 'Gestão WhatsApp',
                 meta: 'Integração Meta',
-                governance: 'Meta Governance',
                 crm: 'Contactos CRM',
                 teams: 'Equipas',
                 pipeline: 'Funil (Pipeline)',
                 settings: 'Configurações',
                 payments: 'Pagamentos',
                 developer: 'Programador',
-                help: 'Central de Ajuda'
+                help: 'Central de Ajuda',
+                terms: 'Termos de Uso'
             },
             trial: 'O seu período de teste está ativo. Aproveite todas as funções!',
             logout: 'Sair',
@@ -107,14 +107,14 @@ export default function DashboardLayout({
                 ai: 'Assistente AI',
                 whatsapp: 'Gestione WhatsApp',
                 meta: 'Integrazione Meta',
-                governance: 'Meta Governance',
                 crm: 'Contatti CRM',
                 teams: 'Squadre',
                 pipeline: 'Pipeline',
                 settings: 'Impostazioni',
                 payments: 'Pagamenti',
                 developer: 'Sviluppatore',
-                help: 'Centro Assistenza'
+                help: 'Centro Assistenza',
+                terms: 'Termini di Utilizzo'
             },
             trial: 'Il tuo periodo di prova è attivo. Goditi tutte le funzioni!',
             logout: 'Disconnetti',
@@ -175,7 +175,6 @@ export default function DashboardLayout({
         { name: t[lang].menu.ai, icon: <Zap size={20} />, path: '/dashboard/ai-assistant', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.whatsapp, icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.meta, icon: <Facebook size={20} />, path: '/dashboard/integrations/meta', roles: ['superadmin', 'admin', 'user'] },
-        { name: t[lang].menu.governance, icon: <ShieldCheck size={20} />, path: '/dashboard/governance', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.crm, icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
         { name: t[lang].menu.teams, icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.pipeline, icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
@@ -183,6 +182,7 @@ export default function DashboardLayout({
         { name: t[lang].menu.payments, icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
         { name: t[lang].menu.developer, icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.help, icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: t[lang].menu.terms, icon: <FileText size={20} />, path: '/dashboard/terms', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
 
 
