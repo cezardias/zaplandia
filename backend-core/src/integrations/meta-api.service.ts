@@ -173,13 +173,13 @@ export class MetaApiService {
      * Requires instagram_manage_messages permission and the Page Access Token.
      * The recipient PSID comes from messaging.sender.id in the Instagram webhook payload.
      */
-    async sendInstagramMessage(tenantId: string, recipientPsid: string, text: string, forcedPageId?: string) {
+    async sendInstagramMessage(tenantId: string, recipientPsid: string, text: string, forcedPageId?: string | null) {
         try {
             const { accessToken: defaultToken, instagramBusinessId: configIbId, instagramAccessToken } = await this.getCredentials(tenantId);
             const accessToken = instagramAccessToken || defaultToken;
 
             // Instagram page ID for the tenant
-            let pageId = forcedPageId;
+            let pageId: string | null | undefined = forcedPageId;
             if (!pageId) {
                 pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
             }
