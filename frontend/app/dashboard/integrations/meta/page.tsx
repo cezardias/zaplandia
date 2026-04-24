@@ -616,7 +616,7 @@ export default function MetaApiPage() {
                         className={`w-full flex items-center space-x-3 px-6 py-4 rounded-2xl transition font-bold text-sm ${activeTab === 'config' ? 'bg-primary text-white' : 'bg-surface border border-white/5 text-gray-400 hover:border-white/20'}`}
                     >
                         <Shield className="w-5 h-5" />
-                        <span>{t[language].config}</span>
+                        <span>{t[lang].config}</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('templates')}
@@ -624,7 +624,7 @@ export default function MetaApiPage() {
                     >
                         <div className="flex items-center space-x-3">
                             <MessageSquare className="w-5 h-5" />
-                            <span>{t[language].templates}</span>
+                            <span>{t[lang].templates}</span>
                         </div>
                         <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">{templates.length}</span>
                     </button>
@@ -634,7 +634,7 @@ export default function MetaApiPage() {
                     >
                         <div className="flex items-center space-x-3">
                             <Phone className="w-5 h-5" />
-                            <span>{t[language].phones}</span>
+                            <span>{t[lang].phones}</span>
                         </div>
                         <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">{phoneNumbers.length}</span>
                     </button>
@@ -703,15 +703,15 @@ export default function MetaApiPage() {
                             <div className="p-8 space-y-6">
                                 <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 justify-between">
                                     <div className="space-y-1">
-                                        <h3 className="text-lg font-semibold text-white">{t[language].fbLogin}</h3>
-                                        <p className="text-sm text-gray-400">{t[language].fbDesc}</p>
+                                        <h3 className="text-lg font-semibold text-white">{t[lang].fbLogin}</h3>
+                                        <p className="text-sm text-gray-400">{t[lang].fbDesc}</p>
                                     </div>
                                     <button 
                                         onClick={handleFacebookLogin}
                                         className="flex items-center gap-2 bg-[#1877F2] hover:bg-[#166fe5] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:-translate-y-1 active:scale-95 whitespace-nowrap"
                                     >
                                         <Facebook className="w-5 h-5 fill-white" />
-                                        {t[language].fbLogin}
+                                        {t[lang].fbLogin}
                                     </button>
                                 </div>
 
@@ -928,7 +928,7 @@ export default function MetaApiPage() {
                                     className="bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-2xl font-black flex items-center space-x-3 transition shadow-xl shadow-primary/20"
                                 >
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                    <span>{t[language].save}</span>
+                                    <span>{t[lang].save}</span>
                                 </button>
                             </div>
                         </div>
