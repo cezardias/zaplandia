@@ -51,7 +51,191 @@ export default function SupportPage() {
             noResults: 'No articles found for your search.',
             readProcedure: 'Read Procedure',
             footerNote: 'The above content is generated to assist with Zaplandia system procedures.',
-            errorFetching: 'Error fetching articles:'
+            errorFetching: 'Error fetching articles:',
+            articles: {
+                'WhatsApp Oficial: Configuração Completa e Disparos': {
+                    title: 'Official WhatsApp: Complete Setup and Broadcasts',
+                    content: `Ultimate guide to WhatsApp Cloud API (Official):
+
+1. **Meta for Developers**:
+   - Create a "Business" type App.
+   - Add the "WhatsApp" product.
+   - Go to "Setup" and get the **WhatsApp Business Account ID** and the **Phone Number ID**.
+
+2. **Security and Tokens**:
+   - In the Business Manager, create a "System User".
+   - Assign the permissions \`whatsapp_business_messaging\` and \`whatsapp_business_management\`.
+   - Generate a **Permanent Token**.
+
+3. **Zaplandia Configuration**:
+   - Go to **API Settings > WhatsApp**.
+   - Enter the IDs and the generated Token.
+   - Your account is ready to broadcast campaigns in the CRM.`
+                },
+                'FAQ: Como responder Facebook e Instagram no Omni Inbox': {
+                    title: 'FAQ: How to answer Facebook and Instagram in Omni Inbox',
+                    content: `Centralized service for social networks:
+
+- **Setup**: Ensure your Instagram account is Business type and linked to a Facebook Page you manage.
+- **Permissions**: When connecting to Zaplandia, grant permission to access page messages and Instagram directs.
+- **Use in Omni Inbox**: 
+  - All conversations appear in a single queue.
+  - The icon next to the contact name indicates if the message came from Instagram or Facebook.
+  - You can send text, emojis, and images directly through the panel.
+- **AI Agent**: The AI can automatically reply to comments on posts and private messages, as configured in the Channels tab.`
+                },
+                'Integração Mercado Livre: Perguntas e Vendas': {
+                    title: 'Mercado Libre Integration: Questions and Sales',
+                    content: `Manage your e-commerce without leaving Zaplandia:
+
+- **App ID and Client Secret**: Obtain these keys in the Mercado Libre developer portal (Dev Center).
+- **Callback URL**: Use the URL provided in the Zaplandia configuration screen for the Redirect URI.
+- **Advantages**:
+  - Reply to listing questions in seconds.
+  - Receive notifications of completed sales.
+  - Centralize post-sales support in Omni Inbox.
+- **AI**: Configure the AI to suggest answers based on your products' characteristics.`
+                },
+                'OLX: Chat e Propostas Automatizadas': {
+                    title: 'OLX: Chat and Automated Proposals',
+                    content: `Integrate your OLX listings:
+
+- **Credentials**: Enter your OLX developer Client ID and Client Secret.
+- **Service**: Chats from your listings appear in Zaplandia's Omni Inbox.
+- **AI**: Let the AI Agent handle the first questions about availability ("Is it still available?") and value proposals, filtering only really interested leads for your human team.`
+                },
+                'YouTube: Captação de Leads via Comentários': {
+                    title: 'YouTube: Lead Capture via Comments',
+                    content: `Sell more through your videos:
+
+- **Google Cloud Console**: Enable YouTube Data API v3 and generate your API Key.
+- **Monitoring**: Zaplandia scans comments on your videos for keywords of interest or doubts.
+- **CRM**: Contacts who comment on your videos are captured and automatically added to the CRM so you can start a conversation via WhatsApp or Direct.`
+                },
+                'Manual Geral: IA e Automação de Conversas': {
+                    title: 'General Manual: AI and Conversation Automation',
+                    content: `How Zaplandia AI works:
+
+- **Personality**: Define how the AI should speak (formal, friendly, technical).
+- **Knowledge Base**: The AI reads your manuals and company information to answer customer questions.
+- **Transfer**: If the AI doesn't know how to answer or the customer asks to speak with a human, the conversation is marked as priority in Omni Inbox.`
+                },
+                'WhatsApp Não Oficial: Conexão EvolutionAPI (QR Code)': {
+                    title: 'Unofficial WhatsApp: EvolutionAPI Connection (QR Code)',
+                    content: `Connect any WhatsApp number without the official API:
+
+1. **Access Integrations**: Go to the "Integrations" side menu and locate the "WhatsApp Unofficial (EvolutionAPI)" card.
+2. **Generate Instance**: Click "Connect". The system will create an exclusive instance for your company on the global server.
+3. **Scan the QR Code**: A QR Code will appear on the screen. Open WhatsApp on your phone, go to "Linked Devices" and scan the code.
+4. **Status**: As soon as the phone reads the code, Zaplandia will update the status to "CONNECTED". Now you can receive messages in the Omni Inbox and broadcast campaigns.`
+                },
+                'Configurações de Admin: Servidor EvolutionAPI e n8n': {
+                    title: 'Admin Settings: EvolutionAPI Server and n8n',
+                    content: `Manual for System Super Admins:
+
+1. **Access**: Go to Dashboard > Settings > API.
+2. **EvolutionAPI**:
+   - **URL**: Enter your EvolutionAPI server address (ex: https://evo.yourdomain.com).
+   - **API Key**: Enter the global key (Global Api Key) configured in your Evolution .env file.
+3. **n8n Webhook**: 
+   - Enter your n8n Webhook URL (Production URL).
+   - This ensures that all received messages are sent to your AI flow in n8n.
+4. **Save All**: Use the "SAVE ALL" button at the bottom to ensure the keys are applied globally.`
+                },
+                'Campanhas do CRM: Seleção de Instância e Canais': {
+                    title: 'CRM Campaigns: Instance and Channel Selection',
+                    content: `How to choose which WhatsApp to use in each broadcast:
+
+1. **New Campaign**: In the CRM > Campaigns menu, click "New Campaign".
+2. **Channels**: When selecting the "WhatsApp" channel, a new selection field will appear.
+3. **Instance Selection**: 
+   - If you have multiple connections (ex: an Official and an EvolutionAPI), you must select which one should perform the broadcast for this specific campaign.
+   - This allows separating marketing broadcasts from support broadcasts, for example.
+4. **Finalization**: Follow the Audience and Message steps to complete the creation.`
+                },
+                'Integração Rifa API: Configuração e Uso': {
+                    title: 'Raffle API Integration: Setup and Use',
+                    content: `Connect your external raffle system to Zaplandia:
+
+1. **Get your data**: In your raffle panel, get the **API URL** (ex: https://raffles.mydomain.com) and generate an **API Key**.
+2. **Zaplandia Configuration**:
+   - Go to **Settings > API**.
+   - Locate the **Raffle API Integration** section.
+   - Enter the **API URL** and your **Key** in the corresponding fields.
+   - Click **SAVE**.
+3. **Activation**:
+   - Go to the **Integrations** side menu.
+   - Locate the **Raffle API** card and click **Connect**.
+   - The status will change to **CONNECTED**.
+4. **Use**: Now the system can consult your raffles and numbers directly for automations.`
+                },
+                'IA: Automação para Venda de Rifas': {
+                    title: 'AI: Automation for Raffle Sales',
+                    content: `How the AI Agent helps you sell more raffles:
+
+The Zaplandia AI Agent has native tools to interact with your Raffle API:
+
+- **Automatic Inquiry**: If a customer asks "Which raffles are open?", the AI uses the \`get_raffles\` tool to list the real options.
+- **Ticket Verification**: When the customer chooses a raffle, the AI can list available numbers using \`get_tickets\`.
+- **Order Reservation**: The AI can collect the name and WhatsApp of the customer and reserve the chosen numbers via \`create_raffle_order\`.
+
+**Tip**: You don't need to configure anything in the prompt. Just have the **Raffle API Key** configured and the AI Agent active on the desired channel.`
+                },
+                'Pausar Automação Individual (Omni Inbox)': {
+                    title: 'Pause Individual Automation (Omni Inbox)',
+                    content: `Full control over human service in Omni Inbox:
+
+1. **Location**: Inside any conversation, in the top right header.
+2. **Automation Button**:
+   - **Green (Active)**: AI and n8n flows are operating normally for this contact.
+   - **Red (Paused)**: All automatic replies are blocked for this contact.
+3. **When to use**: Whenever you (human) take over a conversation and don't want the AI or n8n to "run over" your answers or send automatic messages while you negotiate.
+4. **Independence**: Pausing one contact doesn't affect others; the rest of the system remains automated.`
+                },
+                'Criar Modelos de Mensagem (WhatsApp Oficial)': {
+                    title: 'Create Message Templates (Official WhatsApp)',
+                    content: `How to manage templates for the Official API (Meta):
+
+1. **Access**: Go to **Integrations > Meta API** and select the **Templates (BBM)** tab.
+2. **New Creation**: Click the **NEW TEMPLATE** button.
+3. **Configuration**:
+   - **Name**: Use only lowercase letters and underscores (ex: \`order_confirmation\`).
+   - **Category**: Marketing (offers), Utility (notices) or Authentication (tokens).
+   - **Body**: Main text of the message to be sent.
+4. **Approval**: After clicking "Create", Meta will analyze the template. The status will change from **PENDING** to **APPROVED** when it is ready for use in campaigns.`
+                },
+                'Meta API: Onde encontrar Token, WABA ID e Phone ID': {
+                    title: 'Meta API: Where to find Token, WABA ID and Phone ID',
+                    content: `Setting up WhatsApp Cloud (Meta) requires 3 main values. Here's how to get them:
+
+### 1. Creating the App on Meta
+- Access [developers.facebook.com](https://developers.facebook.com).
+- Click "My Apps" > "Create app".
+- Select the **"Other"** type and then **"Business"**.
+- In the side panel, add the **"WhatsApp"** product.
+
+### 2. Getting the Phone Number ID and WABA ID
+- In the WhatsApp menu (inside your app on Meta), click **"API Setup"**.
+- There you will see:
+  - **Phone Number ID**: Usually starts with 10... or 11...
+  - **WhatsApp Business Account ID (WABA ID)**: Right below.
+- Copy and paste these values into Zaplandia.
+
+### 3. Generating the Permanent Access Token (Essential!)
+Zaplandia needs a token that doesn't expire:
+- Go to your **Business Settings** on Facebook.
+- In "Users" > **"System Users"**, click "Add".
+- Create a user with "Admin" role.
+- Click **"Generate New Token"**.
+- Select your Zaplandia App and check permissions:
+  - \`whatsapp_business_messaging\`
+  - \`whatsapp_business_management\`
+- Copy the generated token. **It only appears once!**
+- Paste in the "Permanent Access Token" field in Zaplandia.
+
+**Tip**: If you use the "Temporary Token" from the developer screen, the integration will stop working after 24 hours. Always use the System User Token.`
+                }
+            }
         },
         pt_PT: {
             title: 'Como podemos ajudar?',
@@ -115,6 +299,19 @@ export default function SupportPage() {
         fetchArticles(search);
     };
 
+    const getLocalizedArticle = (article: Article) => {
+        if (lang === 'pt_BR') return article;
+        const localized = t[lang]?.articles?.[article.title];
+        if (localized) {
+            return {
+                ...article,
+                title: localized.title,
+                content: localized.content
+            };
+        }
+        return article;
+    };
+
     return (
         <div className="p-8 pb-20 max-w-6xl mx-auto">
             <div className="text-center mb-16">
@@ -151,23 +348,26 @@ export default function SupportPage() {
                         <p className="text-gray-400">{t[lang].noResults}</p>
                     </div>
                 ) : (
-                    articles.map(article => (
-                        <button
-                            key={article.id}
-                            onClick={() => setSelectedArticle(article)}
-                            className="bg-surface border border-white/5 rounded-3xl p-8 hover:border-primary/40 transition-all text-left group shadow-xl hover:-translate-y-1 duration-300"
-                        >
-                            <div className="p-3 bg-primary/10 rounded-2xl w-fit mb-6 group-hover:bg-primary/20 transition">
-                                <Book className="w-6 h-6 text-primary" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-3 leading-tight group-hover:text-primary transition">{article.title}</h3>
-                            <p className="text-sm text-gray-500 mb-6 truncate">{article.category}</p>
-                            <div className="flex items-center text-primary text-xs font-black uppercase tracking-widest bg-primary/5 w-fit px-4 py-2 rounded-xl group-hover:bg-primary/10 transition">
-                                <span>{t[lang].readProcedure}</span>
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </div>
-                        </button>
-                    ))
+                    articles.map(article => {
+                        const localized = getLocalizedArticle(article);
+                        return (
+                            <button
+                                key={article.id}
+                                onClick={() => setSelectedArticle(localized)}
+                                className="bg-surface border border-white/5 rounded-3xl p-8 hover:border-primary/40 transition-all text-left group shadow-xl hover:-translate-y-1 duration-300"
+                            >
+                                <div className="p-3 bg-primary/10 rounded-2xl w-fit mb-6 group-hover:bg-primary/20 transition">
+                                    <Book className="w-6 h-6 text-primary" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 leading-tight group-hover:text-primary transition">{localized.title}</h3>
+                                <p className="text-sm text-gray-500 mb-6 truncate">{localized.category}</p>
+                                <div className="flex items-center text-primary text-xs font-black uppercase tracking-widest bg-primary/5 w-fit px-4 py-2 rounded-xl group-hover:bg-primary/10 transition">
+                                    <span>{t[lang].readProcedure}</span>
+                                    <ChevronRight className="w-4 h-4 ml-1" />
+                                </div>
+                            </button>
+                        );
+                    })
                 )}
             </div>
 

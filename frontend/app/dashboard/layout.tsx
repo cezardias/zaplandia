@@ -280,11 +280,11 @@ export default function DashboardLayout({
                 <div className="p-4 border-t border-white/5 bg-surface">
                     <div className="flex items-center space-x-3 px-4 py-3 mb-2">
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                            {user?.name?.charAt(0)}
+                            {user?.name?.charAt(0) || 'U'}
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-bold truncate">{user?.name}</p>
-                            <p className="text-xs text-gray-500 truncate capitalize">{user?.role}</p>
+                            <p className="text-sm font-bold truncate">{user?.name || 'Usuário'}</p>
+                            <p className="text-xs text-gray-500 truncate capitalize">{user?.role || 'User'}</p>
                         </div>
                     </div>
                     <button
