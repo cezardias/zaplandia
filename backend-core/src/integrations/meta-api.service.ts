@@ -200,10 +200,24 @@ export class MetaApiService {
             this.logger.log(`[INSTAGRAM_SEND] Target URL: ${activeUrl}`);
             this.logger.debug(`[INSTAGRAM_SEND] Payload: ${JSON.stringify(payload)}`);
 
+            // Security: Calculate appsecret_proof if optional instagramAppSecret is provided
+            let appsecret_proof: string | undefined = undefined;
+            if (instagramAppSecret) {
+                appsecret_proof = crypto
+                    .createHmac('sha256', instagramAppSecret.toString().trim())
+                    .update(cleanToken)
+                    .digest('hex');
+            }
+
             const response = await axios.post(
                 activeUrl,
                 payload,
-                { params: { access_token: cleanToken } }
+                { 
+                    params: { 
+                        access_token: cleanToken,
+                        ...(appsecret_proof && { appsecret_proof })
+                    } 
+                }
             );
 
             this.logger.log(`[INSTAGRAM_SEND] SUCCESS: ${JSON.stringify(response.data)}`);
