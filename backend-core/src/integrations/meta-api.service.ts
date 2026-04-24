@@ -190,6 +190,7 @@ export class MetaApiService {
             const payload = {
                 recipient: { id: recipientPsid },
                 message: { text },
+                messaging_type: 'RESPONSE'
             };
 
             let activeUrl = '';
@@ -197,12 +198,12 @@ export class MetaApiService {
             // Check if it's an Instagram-scoped token (IGAAR...) or a Facebook/Page-scoped token (EAA...)
             if (cleanToken.startsWith('IGAAR')) {
                 // New endpoint suggested by Meta for Instagram Messaging API
-                activeUrl = `https://graph.instagram.com/v20.0/me/messages`;
+                activeUrl = `https://graph.instagram.com/v12.0/me/messages`;
                 this.logger.log(`[INSTAGRAM_SEND] Using Instagram-scoped API: ${activeUrl}`);
             } else {
                 // Standard Instagram Graph API via Facebook Page
                 if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant (required for EAA tokens)');
-                activeUrl = `https://graph.facebook.com/v20.0/${pageId}/messages`;
+                activeUrl = `https://graph.facebook.com/v12.0/${pageId}/messages`;
                 this.logger.log(`[INSTAGRAM_SEND] Using Facebook-scoped API: ${activeUrl}`);
             }
 
@@ -217,6 +218,7 @@ export class MetaApiService {
                     } 
                 }
             );
+
 
             this.logger.log(`[INSTAGRAM_SEND] SUCCESS: ${JSON.stringify(response.data)}`);
             return response.data;
@@ -246,9 +248,10 @@ export class MetaApiService {
             }
 
             const response = await axios.get(
-                `${this.baseUrl}/${psid}`,
+                `https://graph.facebook.com/v12.0/${psid}`,
                 { params: { access_token: accessToken, fields: 'name,username' } }
             );
+
             return response.data;
         } catch (error: any) {
             this.logger.warn(`[INSTAGRAM_PROFILE] Could not fetch profile for PSID ${psid}: ${error.message}`);
