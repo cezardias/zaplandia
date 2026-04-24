@@ -91,6 +91,7 @@ export default function MetaApiPage() {
             fbDesc: 'Gere um Token permanentemente usando o Login com Facebook.',
             wizardBtn: 'Modo Review',
             wizardActive: 'Modo Review Ativo',
+            wizardDesc: 'Use este modo para gravar o vídeo para a Meta. A interface está traduzida para facilitar a análise.',
             step1: 'Passo 1: Clique em Login do Facebook para conceder permissões.',
             step2: 'Passo 2: Salve as credenciais em sua conta.',
             step3: 'Passo 3: Teste a conexão para garantir que a API está ativa.'
@@ -107,6 +108,7 @@ export default function MetaApiPage() {
             fbDesc: 'Generate a permanent token using Facebook Login flow.',
             wizardBtn: 'Review Mode',
             wizardActive: 'Review Compliance Mode',
+            wizardDesc: 'Recording Mode active for Meta App Review. Interface in English.',
             step1: 'Step 1: Click Facebook Login to grant permissions.',
             step2: 'Step 2: Save the credentials to your account.',
             step3: 'Step 3: Test the connection to ensure API is active.'
@@ -123,6 +125,7 @@ export default function MetaApiPage() {
             fbDesc: 'Gere um Token permanentemente usando o Login com Facebook.',
             wizardBtn: 'Modo de Revisão',
             wizardActive: 'Modo de Revisão Ativo',
+            wizardDesc: 'Modo de gravação ativo para a Revisão da Meta. Interface em Português de Portugal.',
             step1: 'Passo 1: Clique em Login do Facebook para conceder permissões.',
             step2: 'Passo 2: Guarde as credenciais na sua conta.',
             step3: 'Passo 3: Teste a ligação para garantir que a API está ativa.'
@@ -139,6 +142,7 @@ export default function MetaApiPage() {
             fbDesc: 'Genera un token permanente utilizzando il flusso di login di Facebook.',
             wizardBtn: 'Modalità Revisione',
             wizardActive: 'Modalità di Revisione Attiva',
+            wizardDesc: 'Modalità di registrazione attiva per la Revisione Meta. Interfaccia in Italiano.',
             step1: 'Passaggio 1: Fai clic su Accedi con Facebook per concedere le autorizzazioni.',
             step2: 'Passaggio 2: Salva le credenziali sul tuo account.',
             step3: 'Passaggio 3: Testa la connessione per assicurarti que l\'API sia attiva.'
@@ -536,9 +540,9 @@ export default function MetaApiPage() {
                     <div>
                         <h1 className="text-3xl font-extrabold tracking-tight flex items-center space-x-3">
                             <Facebook className="w-8 h-8 text-primary" />
-                            <span>{t[language].title}</span>
+                            <span>{t[lang].title}</span>
                         </h1>
-                        <p className="text-gray-400 mt-1">{t[language].desc}</p>
+                        <p className="text-gray-400 mt-1">{t[lang].desc}</p>
                     </div>
                 </div>
 
@@ -586,16 +590,17 @@ export default function MetaApiPage() {
                             <Zap className="w-8 h-8 text-orange-500 fill-orange-500/20" />
                         </div>
                         <div className="flex-1">
-                            <h3 className="text-xl font-black text-orange-500 mb-2 uppercase tracking-tight">{t[language].wizardActive}</h3>
-                            <p className="text-sm text-orange-200/80 mb-6">{t[language].wizardDesc}</p>
+                            <h3 className="text-xl font-black text-orange-500 mb-2 uppercase tracking-tight">{t[lang].wizardActive}</h3>
+                            <p className="text-sm text-orange-200/80 mb-6">{t[lang].wizardDesc}</p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {[t[language].step1, t[language].step2, t[language].step3].map((step, idx) => (
+                                {[t[lang].step1, t[lang].step2, t[lang].step3].map((step: string, idx: number) => (
                                     <div key={idx} className="bg-black/20 p-4 rounded-xl border border-orange-500/10">
                                         <p className="text-xs font-bold text-orange-400">{step}</p>
                                     </div>
                                 ))}
                             </div>
+
                         </div>
                     </div>
                 </div>
