@@ -145,9 +145,22 @@ export default function MetaApiPage() {
             wizardDesc: 'Modalità di registrazione attiva per la Revisione Meta. Interfaccia in Italiano.',
             step1: 'Passaggio 1: Fai clic su Accedi con Facebook per concedere le autorizzazioni.',
             step2: 'Passaggio 2: Salva le credenziali sul tuo account.',
-            step3: 'Passaggio 3: Testa la connessione per assicurarti que l\'API sia attiva.'
+            step3: 'Passaggio 3: Testa la connessione per assicurarti que l\'API sia attiva.',
+            secTitle: 'Sicurezza e Credenziali',
+            secDesc: 'Inserisci le tue chiavi di accesso per il Cloud API di WhatsApp.',
+            instaTitle: 'Impostazioni specifiche per Instagram',
+            instaDesc: 'ID account aziendale Instagram (Opzionale se uguale a Meta).',
+            labelToken: 'Token di Accesso (Permanente)',
+            labelWaba: 'ID Account Aziendale (WABA)',
+            labelPhone: 'ID Numero di Telefono'
         }
     };
+
+    // Update dictionaries for other languages too
+    t.pt_BR = { ...t.pt_BR, secTitle: 'Segurança e Credenciais', secDesc: 'Insira suas chaves de acesso para o Cloud API do WhatsApp.', instaTitle: 'Configurações Específicas para Instagram', instaDesc: 'ID da conta Business do Instagram (Opcional se igual ao Meta).', labelToken: 'Token de Acesso (Permanente)', labelWaba: 'WABA ID (Conta Business)', labelPhone: 'ID do Número de Telefone', labelInstaToken: 'Token de Acesso Instagram (Opcional)', labelInstaPage: 'ID da Página (Instagram)', labelAppName: 'Nome do App', labelAppId: 'ID do App', labelAppSecret: 'Chave Secreta (App Secret)' };
+    t.en_US = { ...t.en_US, secTitle: 'Security & Credentials', secDesc: 'Enter your WhatsApp Cloud API access keys.', instaTitle: 'Instagram Specific Settings', instaDesc: 'Instagram Business Account ID (Optional if same as Meta).', labelToken: 'Access Token (Permanent)', labelWaba: 'WABA ID (Business Account)', labelPhone: 'Phone Number ID', labelInstaToken: 'Instagram Access Token (Optional)', labelInstaPage: 'Instagram Page ID', labelAppName: 'App Name', labelAppId: 'App ID', labelAppSecret: 'App Secret' };
+    t.pt_PT = { ...t.pt_PT, secTitle: 'Segurança e Credenciais', secDesc: 'Insira as suas chaves de acesso para a Cloud API do WhatsApp.', instaTitle: 'Configurações Específicas para Instagram', instaDesc: 'ID da conta Business do Instagram (Opcional se igual ao Meta).', labelToken: 'Token de Acesso (Permanente)', labelWaba: 'WABA ID (Conta Business)', labelPhone: 'ID do Número de Telefone', labelInstaToken: 'Token Instagram (Opcional)', labelInstaPage: 'ID da Página (Instagram)', labelAppName: 'Nome da App', labelAppId: 'ID da App', labelAppSecret: 'Chave Secreta (App Secret)' };
+
 
 
 
@@ -691,13 +704,13 @@ export default function MetaApiPage() {
                     )}
 
                     {activeTab === 'config' && (
-                        <div className="bg-surface border border-white/5 rounded-3xl overflow-hidden">
+                        <div className="bg-surface border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
                             <div className="p-8 border-b border-white/5 bg-white/2">
-                                <h2 className="text-xl font-bold flex items-center space-x-2">
+                                <h2 className="text-xl font-bold flex items-center space-x-3">
                                     <Shield className="w-6 h-6 text-primary" />
-                                    <span>Segurança e Credenciais</span>
+                                    <span>{t[lang].secTitle}</span>
                                 </h2>
-                                <p className="text-gray-400 text-sm mt-1">Insira suas chaves de acesso da Nuvem do WhatsApp (Meta Cloud API)</p>
+                                <p className="text-sm text-gray-400 mt-1">{t[lang].secDesc}</p>
                             </div>
 
                             <div className="p-8 space-y-6">
@@ -716,50 +729,50 @@ export default function MetaApiPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Access Token (Permanente)</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t[lang].labelToken}</label>
                                     <div className="relative">
                                         <input
                                             type="password"
                                             value={creds.META_ACCESS_TOKEN}
                                             onChange={(e) => setCreds({ ...creds, META_ACCESS_TOKEN: e.target.value })}
-                                            placeholder="EAAB..."
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                            placeholder="EAAG..."
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition font-mono"
                                         />
+                                        <Lock className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
                                     </div>
-                                    <p className="text-[10px] text-gray-500">Crie um Token de Acesso permanente no seu Gerenciador de Negócios ou use o botão acima.</p>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-500 uppercase tracking-widest">WABA ID (Business Account)</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t[lang].labelWaba}</label>
                                         <input
                                             type="text"
                                             value={creds.META_WABA_ID}
                                             onChange={(e) => setCreds({ ...creds, META_WABA_ID: e.target.value })}
-                                            placeholder="Ex: 1029384756..."
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                            placeholder="1234567890..."
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition font-mono"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Phone Number ID</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t[lang].labelPhone}</label>
                                         <input
                                             type="text"
                                             value={creds.META_PHONE_NUMBER_ID}
                                             onChange={(e) => setCreds({ ...creds, META_PHONE_NUMBER_ID: e.target.value })}
-                                            placeholder="Ex: 987654321..."
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
+                                            placeholder="1234567890..."
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition font-mono"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="pt-6 border-t border-white/5">
-                                    <h3 className="text-sm font-bold text-primary mb-4 flex items-center space-x-2">
-                                        <RefreshCw className="w-4 h-4" />
-                                        <span>Configurações Específicas para Instagram</span>
+                                <div className="pt-8 mt-8 border-t border-white/5">
+                                    <h3 className="text-sm font-black text-primary uppercase tracking-widest mb-6 flex items-center gap-2">
+                                        <Zap className="w-4 h-4" />
+                                        <span>{t[lang].instaTitle}</span>
                                     </h3>
                                     
                                     <div className="space-y-6">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Instagram Access Token (Opcional se igual ao Meta)</label>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t[lang].labelInstaToken}</label>
                                             <input
                                                 type="password"
                                                 value={creds.INSTAGRAM_ACCESS_TOKEN}
@@ -771,7 +784,7 @@ export default function MetaApiPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">ID da Conta do Instagram (Page ID)</label>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t[lang].labelInstaPage}</label>
                                             <input
                                                 type="text"
                                                 value={creds.INSTAGRAM_PAGE_ID}
@@ -784,7 +797,7 @@ export default function MetaApiPage() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Nome do App (Instagram)</label>
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t[lang].labelAppName}</label>
                                                 <input
                                                     type="text"
                                                     value={creds.INSTAGRAM_APP_NAME}
@@ -794,7 +807,7 @@ export default function MetaApiPage() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">ID do App (Instagram)</label>
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t[lang].labelAppId}</label>
                                                 <input
                                                     type="text"
                                                     value={creds.INSTAGRAM_APP_ID}
@@ -806,7 +819,7 @@ export default function MetaApiPage() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Chave Secreta do App (App Secret)</label>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t[lang].labelAppSecret}</label>
                                             <input
                                                 type="password"
                                                 value={creds.INSTAGRAM_APP_SECRET}

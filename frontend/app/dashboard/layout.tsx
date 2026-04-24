@@ -298,8 +298,9 @@ export default function DashboardLayout({
                 {/* Dashboard Header / Action Bar (Desktop) */}
                 <div className="hidden md:flex bg-surface/50 border-b border-white/5 px-8 py-4 items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-gray-500 italic">
-                         Dashboard / {pathname.split('/').pop()}
+                         {t[lang].menu.dashboard} / <span className="capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</span>
                     </div>
+
                     <div className="flex items-center space-x-4">
                         <select 
                             value={lang}
