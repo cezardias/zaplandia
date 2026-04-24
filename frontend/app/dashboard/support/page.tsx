@@ -28,6 +28,54 @@ export default function SupportPage() {
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
+    const t: any = {
+        pt_BR: {
+            title: 'Como podemos ajudar?',
+            subtitle: 'Pesquise em nossa base de conhecimento ou procure por categorias para dominar o Zaplandia.',
+            searchPlaceholder: 'Pesquisar por ferramentas, canais, integrações...',
+            searchButton: 'Buscar',
+            loading: 'Buscando conhecimento...',
+            noResults: 'Nenhum artigo encontrado para sua busca.',
+            readProcedure: 'Ler Procedimento',
+            footerNote: 'O conteúdo acima é gerado para auxiliar nos procedimentos do sistema Zaplandia.',
+            errorFetching: 'Erro ao buscar artigos:'
+        },
+        en_US: {
+            title: 'How can we help?',
+            subtitle: 'Search our knowledge base or browse by categories to master Zaplandia.',
+            searchPlaceholder: 'Search for tools, channels, integrations...',
+            searchButton: 'Search',
+            loading: 'Searching knowledge...',
+            noResults: 'No articles found for your search.',
+            readProcedure: 'Read Procedure',
+            footerNote: 'The above content is generated to assist with Zaplandia system procedures.',
+            errorFetching: 'Error fetching articles:'
+        },
+        pt_PT: {
+            title: 'Como podemos ajudar?',
+            subtitle: 'Pesquise na nossa base de conhecimento ou procure por categorias para dominar o Zaplandia.',
+            searchPlaceholder: 'Pesquisar por ferramentas, canais, integrações...',
+            searchButton: 'Procurar',
+            loading: 'A procurar conhecimento...',
+            noResults: 'Nenhum artigo encontrado para a sua procura.',
+            readProcedure: 'Ler Procedimento',
+            footerNote: 'O conteúdo acima é gerado para auxiliar nos procedimentos do sistema Zaplandia.',
+            errorFetching: 'Erro ao procurar artigos:'
+        },
+        it_IT: {
+            title: 'Come possiamo aiutarti?',
+            subtitle: 'Cerca nella nostra base di conoscenza o sfoglia per categorie per padroneggiare Zaplandia.',
+            searchPlaceholder: 'Cerca strumenti, canali, integrazioni...',
+            searchButton: 'Cerca',
+            loading: 'Ricerca conoscenza...',
+            noResults: 'Nessun articolo trovato per la tua ricerca.',
+            readProcedure: 'Leggi Procedura',
+            footerNote: 'Il contenuto sopra è generato per assistere nelle procedure del sistema Zaplandia.',
+            errorFetching: 'Errore durante la ricerca degli articoli:'
+        }
+    };
 
     const fetchArticles = async (query = '') => {
         setIsLoading(true);
@@ -40,11 +88,23 @@ export default function SupportPage() {
                 setArticles(data);
             }
         } catch (err) {
-            console.error('Erro ao buscar artigos:', err);
+            console.error(t[lang].errorFetching, err);
         } finally {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        const saved = localStorage.getItem('zap_lang');
+        if (saved) setLang(saved as any);
+
+        const handleLangChange = () => {
+            const current = localStorage.getItem('zap_lang');
+            if (current) setLang(current as any);
+        };
+        window.addEventListener('languageChange', handleLangChange);
+        return () => window.removeEventListener('languageChange', handleLangChange);
+    }, []);
 
     useEffect(() => {
         if (token) fetchArticles();
@@ -58,8 +118,8 @@ export default function SupportPage() {
     return (
         <div className="p-8 pb-20 max-w-6xl mx-auto">
             <div className="text-center mb-16">
-                <h1 className="text-5xl font-black mb-4 tracking-tight">Como podemos ajudar?</h1>
-                <p className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto">Pesquise em nossa base de conhecimento ou procure por categorias para dominar o Zaplandia.</p>
+                <h1 className="text-5xl font-black mb-4 tracking-tight">{t[lang].title}</h1>
+                <p className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto">{t[lang].subtitle}</p>
 
                 <form onSubmit={handleSearch} className="relative max-w-xl mx-auto">
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-500" />
@@ -67,14 +127,14 @@ export default function SupportPage() {
                         type="text"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Pesquisar por ferramentas, canais, integrações..."
+                        placeholder={t[lang].searchPlaceholder}
                         className="w-full bg-surface border border-white/10 rounded-3xl pl-14 pr-6 py-5 text-lg outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition shadow-2xl"
                     />
                     <button
                         type="submit"
                         className="absolute right-3 top-1/2 -translate-y-1/2 bg-primary px-6 py-3 rounded-2xl font-bold text-sm"
                     >
-                        Buscar
+                        {t[lang].searchButton}
                     </button>
                 </form>
             </div>
@@ -83,12 +143,12 @@ export default function SupportPage() {
                 {isLoading ? (
                     <div className="col-span-full py-20 flex flex-col items-center">
                         <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                        <p className="text-gray-500">Buscando conhecimento...</p>
+                        <p className="text-gray-500">{t[lang].loading}</p>
                     </div>
                 ) : articles.length === 0 ? (
                     <div className="col-span-full py-20 text-center">
                         <HelpCircle className="w-16 h-16 text-gray-500 opacity-20 mx-auto mb-6" />
-                        <p className="text-gray-400">Nenhum artigo encontrado para sua busca.</p>
+                        <p className="text-gray-400">{t[lang].noResults}</p>
                     </div>
                 ) : (
                     articles.map(article => (
@@ -103,7 +163,7 @@ export default function SupportPage() {
                             <h3 className="text-xl font-bold mb-3 leading-tight group-hover:text-primary transition">{article.title}</h3>
                             <p className="text-sm text-gray-500 mb-6 truncate">{article.category}</p>
                             <div className="flex items-center text-primary text-xs font-black uppercase tracking-widest bg-primary/5 w-fit px-4 py-2 rounded-xl group-hover:bg-primary/10 transition">
-                                <span>Ler Procedimento</span>
+                                <span>{t[lang].readProcedure}</span>
                                 <ChevronRight className="w-4 h-4 ml-1" />
                             </div>
                         </button>
@@ -133,7 +193,7 @@ export default function SupportPage() {
                             </div>
                         </div>
                         <div className="p-8 border-t border-white/5 bg-background/50 flex justify-center">
-                            <p className="text-gray-500 text-sm italic">O conteúdo acima é gerado para auxiliar nos procedimentos do sistema Zaplandia.</p>
+                            <p className="text-gray-500 text-sm italic">{t[lang].footerNote}</p>
                         </div>
                     </div>
                 </div>
