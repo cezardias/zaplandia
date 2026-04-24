@@ -320,14 +320,14 @@ export default function MetaApiPage() {
         setSuccess(null);
         try {
             for (const [key, value] of Object.entries(creds)) {
-                if (!value) continue;
+                // We send empty values as well to allow clearing credentials in the DB
                 const res = await fetch('/api/integrations/credentials', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name: key, value })
+                    body: JSON.stringify({ name: key, value: value || "" })
                 });
                 if (!res.ok) throw new Error(`Falha ao salvar ${key}`);
             }
