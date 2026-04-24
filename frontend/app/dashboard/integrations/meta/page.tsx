@@ -63,28 +63,39 @@ export default function MetaApiPage() {
     });
 
     // English Mode for App Review
-    const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+    const [lang, setLang] = useState('pt_BR');
     const [showWizard, setShowWizard] = useState(false);
 
-    const t = {
-        pt: {
+    useEffect(() => {
+        const saved = localStorage.getItem('zap_lang') || 'pt_BR';
+        setLang(saved);
+
+        const handleLangChange = () => {
+            const current = localStorage.getItem('zap_lang') || 'pt_BR';
+            setLang(current);
+        };
+        window.addEventListener('languageChange', handleLangChange);
+        return () => window.removeEventListener('languageChange', handleLangChange);
+    }, []);
+
+    const t: any = {
+        pt_BR: {
             title: 'Integração Meta API',
             desc: 'Conecte sua conta do WhatsApp Business Oficial',
             config: 'Configurações',
             templates: 'Templates (BBM)',
             phones: 'Números de Telefone',
-            save: 'Salvar Integracao',
+            save: 'Salvar Integração',
             test: 'Testar Conexão',
             fbLogin: 'Login com Facebook',
             fbDesc: 'Gere um Token permanentemente usando o Login com Facebook.',
-            wizardBtn: 'Ativar Modo Review (Inglês)',
+            wizardBtn: 'Modo Review',
             wizardActive: 'Modo Review Ativo',
-            wizardDesc: 'Use este modo para gravar o vídeo para a Meta. A interface está em Inglês.',
-            step1: 'Step 1: Click Facebook Login to grant permissions.',
-            step2: 'Step 2: Save the credentials to your account.',
-            step3: 'Step 3: Test the connection to ensure API is active.'
+            step1: 'Passo 1: Clique em Login do Facebook para conceder permissões.',
+            step2: 'Passo 2: Salve as credenciais em sua conta.',
+            step3: 'Passo 3: Teste a conexão para garantir que a API está ativa.'
         },
-        en: {
+        en_US: {
             title: 'Meta API Integration',
             desc: 'Connect your Official WhatsApp Business account',
             config: 'Configuration',
@@ -94,14 +105,46 @@ export default function MetaApiPage() {
             test: 'Test Connection',
             fbLogin: 'Login with Facebook',
             fbDesc: 'Generate a permanent token using Facebook Login flow.',
-            wizardBtn: 'Back to Portuguese',
+            wizardBtn: 'Review Mode',
             wizardActive: 'Review Compliance Mode',
-            wizardDesc: 'Recording Mode active for Meta App Review. Interface in English.',
             step1: 'Step 1: Click Facebook Login to grant permissions.',
             step2: 'Step 2: Save the credentials to your account.',
             step3: 'Step 3: Test the connection to ensure API is active.'
+        },
+        pt_PT: {
+            title: 'Integração Meta API',
+            desc: 'Ligue a sua conta do WhatsApp Business Oficial',
+            config: 'Configurações',
+            templates: 'Modelos (BBM)',
+            phones: 'Números de Telefone',
+            save: 'Guardar Integração',
+            test: 'Testar Ligação',
+            fbLogin: 'Login com Facebook',
+            fbDesc: 'Gere um Token permanentemente usando o Login com Facebook.',
+            wizardBtn: 'Modo de Revisão',
+            wizardActive: 'Modo de Revisão Ativo',
+            step1: 'Passo 1: Clique em Login do Facebook para conceder permissões.',
+            step2: 'Passo 2: Guarde as credenciais na sua conta.',
+            step3: 'Passo 3: Teste a ligação para garantir que a API está ativa.'
+        },
+        it_IT: {
+            title: 'Integrazione API Meta',
+            desc: 'Collega il tuo account WhatsApp Business ufficiale',
+            config: 'Impostazioni',
+            templates: 'Modelli (BBM)',
+            phones: 'Numeri di Telefono',
+            save: 'Salva Integrazione',
+            test: 'Test Connessione',
+            fbLogin: 'Accedi con Facebook',
+            fbDesc: 'Genera un token permanente utilizzando il flusso di login di Facebook.',
+            wizardBtn: 'Modalità Revisione',
+            wizardActive: 'Modalità di Revisione Attiva',
+            step1: 'Passaggio 1: Fai clic su Accedi con Facebook per concedere le autorizzazioni.',
+            step2: 'Passaggio 2: Salva le credenziali sul tuo account.',
+            step3: 'Passaggio 3: Testa la connessione per assicurarti que l\'API sia attiva.'
         }
     };
+
 
 
     useEffect(() => {
@@ -501,15 +544,13 @@ export default function MetaApiPage() {
 
                 <div className="flex space-x-3 items-center">
                     <button
-                        onClick={() => {
-                            setLanguage(language === 'pt' ? 'en' : 'pt');
-                            setShowWizard(!showWizard);
-                        }}
+                        onClick={() => setShowWizard(!showWizard)}
                         className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${showWizard ? 'bg-orange-500 text-white animate-pulse' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10'}`}
                     >
                         <Zap className="w-3.5 h-3.5" />
-                        {showWizard ? t[language].wizardActive : t[language].wizardBtn}
+                        {showWizard ? t[lang].wizardActive : t[lang].wizardBtn}
                     </button>
+
 
                     <button
                         onClick={fetchData}
@@ -523,7 +564,7 @@ export default function MetaApiPage() {
                         className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-green-500/20"
                     >
                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                        <span>{language === 'pt' ? 'Ativar Número' : 'Register Number'}</span>
+                        <span>{lang === 'en_US' ? 'Register Number' : 'Ativar Número'}</span>
                     </button>
                     <button
                         onClick={handleTestConnection}
@@ -531,8 +572,9 @@ export default function MetaApiPage() {
                         className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-primary/20"
                     >
                         {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-                        <span>{t[language].test}</span>
+                        <span>{t[lang].test}</span>
                     </button>
+
                 </div>
             </div>
 
