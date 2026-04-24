@@ -119,8 +119,8 @@ export default function DashboardLayout({
                     <Zap className="text-primary w-6 h-6 fill-primary" />
                     <span className="text-lg font-bold tracking-tight">ZAPLANDIA</span>
                 </div>
-                </div>
                 <div className="flex items-center space-x-3">
+
                     <select 
                         value={lang}
                         onChange={(e) => changeLang(e.target.value)}
