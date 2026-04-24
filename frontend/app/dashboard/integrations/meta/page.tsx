@@ -62,6 +62,48 @@ export default function MetaApiPage() {
         bodyText: ''
     });
 
+    // English Mode for App Review
+    const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+    const [showWizard, setShowWizard] = useState(false);
+
+    const t = {
+        pt: {
+            title: 'Integração Meta API',
+            desc: 'Conecte sua conta do WhatsApp Business Oficial',
+            config: 'Configurações',
+            templates: 'Templates (BBM)',
+            phones: 'Números de Telefone',
+            save: 'Salvar Integracao',
+            test: 'Testar Conexão',
+            fbLogin: 'Login com Facebook',
+            fbDesc: 'Gere um Token permanentemente usando o Login com Facebook.',
+            wizardBtn: 'Ativar Modo Review (Inglês)',
+            wizardActive: 'Modo Review Ativo',
+            wizardDesc: 'Use este modo para gravar o vídeo para a Meta. A interface está em Inglês.',
+            step1: 'Step 1: Click Facebook Login to grant permissions.',
+            step2: 'Step 2: Save the credentials to your account.',
+            step3: 'Step 3: Test the connection to ensure API is active.'
+        },
+        en: {
+            title: 'Meta API Integration',
+            desc: 'Connect your Official WhatsApp Business account',
+            config: 'Configuration',
+            templates: 'Message Templates',
+            phones: 'Phone Numbers',
+            save: 'Save Integration',
+            test: 'Test Connection',
+            fbLogin: 'Login with Facebook',
+            fbDesc: 'Generate a permanent token using Facebook Login flow.',
+            wizardBtn: 'Back to Portuguese',
+            wizardActive: 'Review Compliance Mode',
+            wizardDesc: 'Recording Mode active for Meta App Review. Interface in English.',
+            step1: 'Step 1: Click Facebook Login to grant permissions.',
+            step2: 'Step 2: Save the credentials to your account.',
+            step3: 'Step 3: Test the connection to ensure API is active.'
+        }
+    };
+
+
     useEffect(() => {
         if (token) {
             fetchData();
@@ -451,13 +493,24 @@ export default function MetaApiPage() {
                     <div>
                         <h1 className="text-3xl font-extrabold tracking-tight flex items-center space-x-3">
                             <Facebook className="w-8 h-8 text-primary" />
-                            <span>Integração Meta API</span>
+                            <span>{t[language].title}</span>
                         </h1>
-                        <p className="text-gray-400 mt-1">Conecte sua conta do WhatsApp Business Oficial</p>
+                        <p className="text-gray-400 mt-1">{t[language].desc}</p>
                     </div>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex space-x-3 items-center">
+                    <button
+                        onClick={() => {
+                            setLanguage(language === 'pt' ? 'en' : 'pt');
+                            setShowWizard(!showWizard);
+                        }}
+                        className={`px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${showWizard ? 'bg-orange-500 text-white animate-pulse' : 'bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10'}`}
+                    >
+                        <Zap className="w-3.5 h-3.5" />
+                        {showWizard ? t[language].wizardActive : t[language].wizardBtn}
+                    </button>
+
                     <button
                         onClick={fetchData}
                         className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition"
@@ -470,7 +523,7 @@ export default function MetaApiPage() {
                         className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-green-500/20"
                     >
                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                        <span>Ativar Número (Ficar On-line)</span>
+                        <span>{language === 'pt' ? 'Ativar Número' : 'Register Number'}</span>
                     </button>
                     <button
                         onClick={handleTestConnection}
@@ -478,10 +531,33 @@ export default function MetaApiPage() {
                         className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-primary/20"
                     >
                         {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-                        <span>Testar Conexão</span>
+                        <span>{t[language].test}</span>
                     </button>
                 </div>
             </div>
+
+            {/* Compliance Wizard / Legend Banner */}
+            {showWizard && (
+                <div className="mb-8 p-6 bg-orange-500/10 border-2 border-dashed border-orange-500/40 rounded-3xl animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-start space-x-4">
+                        <div className="p-3 bg-orange-500/20 rounded-2xl">
+                            <Zap className="w-8 h-8 text-orange-500 fill-orange-500/20" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-xl font-black text-orange-500 mb-2 uppercase tracking-tight">{t[language].wizardActive}</h3>
+                            <p className="text-sm text-orange-200/80 mb-6">{t[language].wizardDesc}</p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {[t[language].step1, t[language].step2, t[language].step3].map((step, idx) => (
+                                    <div key={idx} className="bg-black/20 p-4 rounded-xl border border-orange-500/10">
+                                        <p className="text-xs font-bold text-orange-400">{step}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -493,7 +569,7 @@ export default function MetaApiPage() {
                         className={`w-full flex items-center space-x-3 px-6 py-4 rounded-2xl transition font-bold text-sm ${activeTab === 'config' ? 'bg-primary text-white' : 'bg-surface border border-white/5 text-gray-400 hover:border-white/20'}`}
                     >
                         <Shield className="w-5 h-5" />
-                        <span>Configurações</span>
+                        <span>{t[language].config}</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('templates')}
@@ -501,7 +577,7 @@ export default function MetaApiPage() {
                     >
                         <div className="flex items-center space-x-3">
                             <MessageSquare className="w-5 h-5" />
-                            <span>Templates (BBM)</span>
+                            <span>{t[language].templates}</span>
                         </div>
                         <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">{templates.length}</span>
                     </button>
@@ -511,7 +587,7 @@ export default function MetaApiPage() {
                     >
                         <div className="flex items-center space-x-3">
                             <Phone className="w-5 h-5" />
-                            <span>Números de Telefone</span>
+                            <span>{t[language].phones}</span>
                         </div>
                         <span className="bg-white/20 px-2 py-0.5 rounded text-[10px]">{phoneNumbers.length}</span>
                     </button>
@@ -580,15 +656,15 @@ export default function MetaApiPage() {
                             <div className="p-8 space-y-6">
                                 <div className="bg-blue-600/10 border border-blue-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 justify-between">
                                     <div className="space-y-1">
-                                        <h3 className="text-lg font-semibold text-white">Login do Facebook para Empresas</h3>
-                                        <p className="text-sm text-gray-400">Gere um Token permanentemente usando o Login com Facebook.</p>
+                                        <h3 className="text-lg font-semibold text-white">{t[language].fbLogin}</h3>
+                                        <p className="text-sm text-gray-400">{t[language].fbDesc}</p>
                                     </div>
                                     <button 
                                         onClick={handleFacebookLogin}
                                         className="flex items-center gap-2 bg-[#1877F2] hover:bg-[#166fe5] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:-translate-y-1 active:scale-95 whitespace-nowrap"
                                     >
                                         <Facebook className="w-5 h-5 fill-white" />
-                                        Login com Facebook
+                                        {t[language].fbLogin}
                                     </button>
                                 </div>
 
@@ -805,7 +881,7 @@ export default function MetaApiPage() {
                                     className="bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-2xl font-black flex items-center space-x-3 transition shadow-xl shadow-primary/20"
                                 >
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                    <span>Salvar Integracao</span>
+                                    <span>{t[language].save}</span>
                                 </button>
                             </div>
                         </div>
