@@ -40,6 +40,110 @@ export default function CrmPage() {
     const [isLoading, setIsLoading] = useState(true);
     const { user, token } = useAuth();
     const router = useRouter();
+    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
+    const t: any = {
+        pt_BR: {
+            title: 'CRM de Contatos',
+            subtitle: 'Gerencie seus contatos de todos os canais em um só lugar.',
+            pipeline: 'Pipeline',
+            funnels: 'Funis',
+            campaigns: 'Campanhas',
+            support: 'Suporte',
+            newContact: 'Novo Contato',
+            totalContacts: 'Total de Contatos',
+            activeContacts: 'Contatos Ativos',
+            searchPlaceholder: 'Buscar por nome, telefone ou ID...',
+            filters: 'Filtros',
+            colName: 'Nome / Canal',
+            colMessage: 'Última Mensagem',
+            colDate: 'Data',
+            colActions: 'Ações',
+            loading: 'Carregando contatos...',
+            noContacts: 'Nenhum contato encontrado.',
+            noName: 'Sem nome',
+            noMessage: 'Nenhuma mensagem',
+            seedConfirm: 'Gerar dados de demonstração no CRM?',
+            seedSuccess: 'Dados gerados! Recarregando...',
+            seedError: 'Erro ao gerar dados.',
+            fetchError: 'Erro ao buscar contatos:'
+        },
+        en_US: {
+            title: 'Contacts CRM',
+            subtitle: 'Manage your contacts from all channels in one place.',
+            pipeline: 'Pipeline',
+            funnels: 'Funnels',
+            campaigns: 'Campaigns',
+            support: 'Support',
+            newContact: 'New Contact',
+            totalContacts: 'Total Contacts',
+            activeContacts: 'Active Contacts',
+            searchPlaceholder: 'Search by name, phone or ID...',
+            filters: 'Filters',
+            colName: 'Name / Channel',
+            colMessage: 'Last Message',
+            colDate: 'Date',
+            colActions: 'Actions',
+            loading: 'Loading contacts...',
+            noContacts: 'No contacts found.',
+            noName: 'No name',
+            noMessage: 'No message',
+            seedConfirm: 'Generate demo data in CRM?',
+            seedSuccess: 'Data generated! Reloading...',
+            seedError: 'Error generating data.',
+            fetchError: 'Error fetching contacts:'
+        },
+        pt_PT: {
+            title: 'CRM de Contactos',
+            subtitle: 'Gerencie os seus contactos de todos os canais num só lugar.',
+            pipeline: 'Pipeline',
+            funnels: 'Funis',
+            campaigns: 'Campanhas',
+            support: 'Suporte',
+            newContact: 'Novo Contacto',
+            totalContacts: 'Total de Contactos',
+            activeContacts: 'Contactos Ativos',
+            searchPlaceholder: 'Procurar por nome, telefone ou ID...',
+            filters: 'Filtros',
+            colName: 'Nome / Canal',
+            colMessage: 'Última Mensagem',
+            colDate: 'Data',
+            colActions: 'Ações',
+            loading: 'A carregar contactos...',
+            noContacts: 'Nenhum contacto encontrado.',
+            noName: 'Sem nome',
+            noMessage: 'Nenhuma mensagem',
+            seedConfirm: 'Gerar dados de demonstração no CRM?',
+            seedSuccess: 'Dados gerados! Recarregando...',
+            seedError: 'Erro ao gerar dados.',
+            fetchError: 'Erro ao procurar contactos:'
+        },
+        it_IT: {
+            title: 'CRM Contatti',
+            subtitle: 'Gestisci i tuoi contatti da tutti i canali in un unico posto.',
+            pipeline: 'Pipeline',
+            funnels: 'Funnel',
+            campaigns: 'Campagne',
+            support: 'Supporto',
+            newContact: 'Nuovo Contatto',
+            totalContacts: 'Totale Contatti',
+            activeContacts: 'Contatti Attivi',
+            searchPlaceholder: 'Cerca per nome, telefono o ID...',
+            filters: 'Filtri',
+            colName: 'Nome / Canale',
+            colMessage: 'Ultimo Messaggio',
+            colDate: 'Data',
+            colActions: 'Azioni',
+            loading: 'Caricamento contatti...',
+            noContacts: 'Nessun contatto trovato.',
+            noName: 'Senza nome',
+            noMessage: 'Nessun messaggio',
+            seedConfirm: 'Generare dati demo nel CRM?',
+            seedSuccess: 'Dati generati! Ricaricamento...',
+            seedError: 'Errore durante la generazione dei dati.',
+            fetchError: 'Errore durante la ricerca dei contatti:'
+        }
+    };
 
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -59,11 +163,23 @@ export default function CrmPage() {
                 setContacts(data);
             }
         } catch (err) {
-            console.error('Erro ao buscar contatos:', err);
+            console.error(t[lang].fetchError, err);
         } finally {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        const saved = localStorage.getItem('zap_lang');
+        if (saved) setLang(saved as any);
+
+        const handleLangChange = () => {
+            const current = localStorage.getItem('zap_lang');
+            if (current) setLang(current as any);
+        };
+        window.addEventListener('languageChange', handleLangChange);
+        return () => window.removeEventListener('languageChange', handleLangChange);
+    }, []);
 
     useEffect(() => {
         fetchContacts();
@@ -79,7 +195,7 @@ export default function CrmPage() {
     }, [searchTerm]);
 
     const handleSeed = async () => {
-        if (!confirm('Gerar dados de demonstração no CRM?')) return;
+        if (!confirm(t[lang].seedConfirm)) return;
         setIsLoading(true);
         try {
             const res = await fetch('/api/admin/seed', {
@@ -87,11 +203,11 @@ export default function CrmPage() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
-                alert('Dados gerados! Recarregando...');
+                alert(t[lang].seedSuccess);
                 fetchContacts();
             }
         } catch (err) {
-            alert('Erro ao gerar dados.');
+            alert(t[lang].seedError);
         } finally {
             setIsLoading(false);
         }
@@ -114,9 +230,9 @@ export default function CrmPage() {
                 <div>
                     <h1 className="text-3xl font-bold flex items-center space-x-3">
                         <Users className="w-8 h-8 text-primary" />
-                        <span>CRM de Contatos</span>
+                        <span>{t[lang].title}</span>
                     </h1>
-                    <p className="text-gray-400 mt-2">Gerencie seus contatos de todos os canais em um só lugar.</p>
+                    <p className="text-gray-400 mt-2">{t[lang].subtitle}</p>
                 </div>
 
                 <div className="flex space-x-3">
@@ -126,7 +242,7 @@ export default function CrmPage() {
                         className="flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2.5 rounded-xl transition font-bold border border-primary/20"
                     >
                         <Trello className="w-4 h-4" />
-                        <span>Pipeline</span>
+                        <span>{t[lang].pipeline}</span>
                     </button>
 
                     <button
@@ -134,7 +250,7 @@ export default function CrmPage() {
                         className="flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2.5 rounded-xl transition font-bold border border-primary/20"
                     >
                         <Database className="w-4 h-4" />
-                        <span>Funis</span>
+                        <span>{t[lang].funnels}</span>
                     </button>
 
                     <button
@@ -142,32 +258,32 @@ export default function CrmPage() {
                         className="flex items-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2.5 rounded-xl transition font-bold border border-primary/20"
                     >
                         <Send className="w-4 h-4" />
-                        <span>Campanhas</span>
+                        <span>{t[lang].campaigns}</span>
                     </button>
                     <button
                         onClick={() => router.push('/dashboard/support')}
                         className="flex items-center space-x-2 bg-surface hover:bg-white/5 text-gray-400 px-4 py-2.5 rounded-xl transition font-bold border border-white/5"
                     >
                         <HelpCircle className="w-4 h-4" />
-                        <span>Suporte</span>
+                        <span>{t[lang].support}</span>
                     </button>
                     <button
                         onClick={() => router.push('/dashboard/crm/new')}
                         className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center space-x-2 shadow-lg shadow-primary/20"
                     >
                         <UserPlus className="w-4 h-4" />
-                        <span>Novo Contato</span>
+                        <span>{t[lang].newContact}</span>
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-surface p-4 rounded-2xl border border-white/5">
-                    <p className="text-gray-500 text-sm">Total de Contatos</p>
+                    <p className="text-gray-500 text-sm">{t[lang].totalContacts}</p>
                     <p className="text-2xl font-bold mt-1">{contacts.length}</p>
                 </div>
                 <div className="bg-surface p-4 rounded-2xl border border-white/5">
-                    <p className="text-gray-500 text-sm">Contatos Ativos</p>
+                    <p className="text-gray-500 text-sm">{t[lang].activeContacts}</p>
                     <p className="text-2xl font-bold mt-1 text-green-500">{contacts.filter(c => c.lastMessage).length}</p>
                 </div>
                 {/* Add more stats here */}
@@ -181,14 +297,14 @@ export default function CrmPage() {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Buscar por nome, telefone ou ID..."
+                            placeholder={t[lang].searchPlaceholder}
                             className="w-full bg-background border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary transition"
                         />
                     </div>
                     <div className="flex items-center space-x-3">
                         <button className="flex items-center space-x-2 bg-background border border-white/10 px-4 py-2 rounded-xl text-sm hover:bg-white/5 transition">
                             <Filter className="w-4 h-4" />
-                            <span>Filtros</span>
+                            <span>{t[lang].filters}</span>
                         </button>
                     </div>
                 </div>
@@ -197,10 +313,10 @@ export default function CrmPage() {
                     <table className="w-full text-left">
                         <thead className="bg-black/20 text-xs uppercase tracking-wider text-gray-500">
                             <tr>
-                                <th className="px-6 py-4 font-medium">Nome / Canal</th>
-                                <th className="px-6 py-4 font-medium">Última Mensagem</th>
-                                <th className="px-6 py-4 font-medium">Data</th>
-                                <th className="px-6 py-4 font-medium">Ações</th>
+                                <th className="px-6 py-4 font-medium">{t[lang].colName}</th>
+                                <th className="px-6 py-4 font-medium">{t[lang].colMessage}</th>
+                                <th className="px-6 py-4 font-medium">{t[lang].colDate}</th>
+                                <th className="px-6 py-4 font-medium">{t[lang].colActions}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
@@ -208,14 +324,14 @@ export default function CrmPage() {
                                 <tr>
                                     <td colSpan={4} className="px-6 py-20 text-center">
                                         <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-                                        <p className="text-gray-500 mt-2">Carregando contatos...</p>
+                                        <p className="text-gray-500 mt-2">{t[lang].loading}</p>
                                     </td>
                                 </tr>
                             ) : contacts.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-20 text-center">
                                         <Users className="w-12 h-12 mx-auto mb-4 opacity-10" />
-                                        <p className="text-gray-500">Nenhum contato encontrado.</p>
+                                        <p className="text-gray-500">{t[lang].noContacts}</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -232,13 +348,13 @@ export default function CrmPage() {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold">{contact.name || 'Sem nome'}</p>
+                                                    <p className="font-bold">{contact.name || t[lang].noName}</p>
                                                     <p className="text-xs text-gray-500">{contact.externalId}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 max-w-xs">
-                                            <p className="text-sm text-gray-400 truncate">{contact.lastMessage || 'Nenhuma mensagem'}</p>
+                                            <p className="text-sm text-gray-400 truncate">{contact.lastMessage || t[lang].noMessage}</p>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {new Date(contact.updatedAt).toLocaleDateString()}

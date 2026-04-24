@@ -58,6 +58,162 @@ export default function OmniInboxPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
+    const t: any = {
+        pt_BR: {
+            title: 'Omni Inbox',
+            inbox: 'Caixa de Entrada',
+            allInboxes: 'Todas as Caixas',
+            aiAgent: 'IA do Agente',
+            n8nFlow: 'Fluxo n8n',
+            selectPrompt: 'Selecione um prompt...',
+            engineModel: 'Modelo do Motor',
+            all: 'Todos',
+            searchChats: 'Pesquisar conversas...',
+            noConversations: 'Nenhuma conversa encontrada nesta conta.',
+            generateTestData: 'Gerar Dados de Teste',
+            seedConfirm: 'Gerar dados de demonstração para o Inbox?',
+            seedSuccess: 'Dados gerados! Recarregando...',
+            seedError: 'Erro ao gerar dados.',
+            uploadError: 'Erro ao enviar arquivo. Tente novamente.',
+            sendError: 'Falha ao enviar mensagem',
+            finishService: 'Finalizar Atendimento',
+            finishConfirm: 'Deseja finalizar este atendimento e devolver para a Automação?',
+            transferTeam: 'Transferir Equipe',
+            noPrompt: 'Sem Prompt',
+            waitingAi: 'Aguardando IA...',
+            typeMessage: 'Digite uma mensagem...',
+            online: 'Online',
+            offline: 'Offline',
+            details: 'Detalhes do Contato',
+            phone: 'Telefone',
+            provider: 'Provedor',
+            instance: 'Instância',
+            aiControl: 'Controle de IA',
+            aiActive: 'IA Ativa',
+            aiPaused: 'IA Pausada',
+            n8nActive: 'n8n Ativo',
+            n8nPaused: 'n8n Pausado',
+            transferSuccess: 'Transferido com sucesso!',
+            transferError: 'Erro ao transferir.',
+            now: 'Agora'
+        },
+        en_US: {
+            title: 'Omni Inbox',
+            inbox: 'Inbox',
+            allInboxes: 'All Inboxes',
+            aiAgent: 'Agent AI',
+            n8nFlow: 'n8n Flow',
+            selectPrompt: 'Select a prompt...',
+            engineModel: 'Engine Model',
+            all: 'All',
+            searchChats: 'Search chats...',
+            noConversations: 'No conversations found in this account.',
+            generateTestData: 'Generate Test Data',
+            seedConfirm: 'Generate demo data for the Inbox?',
+            seedSuccess: 'Data generated! Reloading...',
+            seedError: 'Error generating data.',
+            uploadError: 'Error uploading file. Try again.',
+            sendError: 'Failed to send message',
+            finishService: 'Finish Service',
+            finishConfirm: 'Do you want to finish this service and return to Automation?',
+            transferTeam: 'Transfer Team',
+            noPrompt: 'No Prompt',
+            waitingAi: 'Waiting for AI...',
+            typeMessage: 'Type a message...',
+            online: 'Online',
+            offline: 'Offline',
+            details: 'Contact Details',
+            phone: 'Phone',
+            provider: 'Provider',
+            instance: 'Instance',
+            aiControl: 'AI Control',
+            aiActive: 'AI Active',
+            aiPaused: 'AI Paused',
+            n8nActive: 'n8n Active',
+            n8nPaused: 'n8n Paused',
+            transferSuccess: 'Transferred successfully!',
+            transferError: 'Transfer error.',
+            now: 'Now'
+        },
+        pt_PT: {
+            title: 'Omni Inbox',
+            inbox: 'Caixa de Entrada',
+            allInboxes: 'Todas as Caixas',
+            aiAgent: 'IA do Agente',
+            n8nFlow: 'Fluxo n8n',
+            selectPrompt: 'Selecione um prompt...',
+            engineModel: 'Modelo do Motor',
+            all: 'Todos',
+            searchChats: 'Pesquisar conversas...',
+            noConversations: 'Nenhuma conversa encontrada nesta conta.',
+            generateTestData: 'Gerar Dados de Teste',
+            seedConfirm: 'Gerar dados de demonstração para o Inbox?',
+            seedSuccess: 'Dados gerados! Recarregando...',
+            seedError: 'Erro ao gerar dados.',
+            uploadError: 'Erro ao enviar ficheiro. Tente novamente.',
+            sendError: 'Falha ao enviar mensagem',
+            finishService: 'Finalizar Atendimento',
+            finishConfirm: 'Deseja finalizar este atendimento e devolver para a Automação?',
+            transferTeam: 'Transferir Equipa',
+            noPrompt: 'Sem Prompt',
+            waitingAi: 'A aguardar IA...',
+            typeMessage: 'Digite uma mensagem...',
+            online: 'Online',
+            offline: 'Offline',
+            details: 'Detalhes do Contacto',
+            phone: 'Telefone',
+            provider: 'Provedor',
+            instance: 'Instância',
+            aiControl: 'Controlo de IA',
+            aiActive: 'IA Ativa',
+            aiPaused: 'IA Pausada',
+            n8nActive: 'n8n Ativo',
+            n8nPaused: 'n8n Pausado',
+            transferSuccess: 'Transferido com sucesso!',
+            transferError: 'Erro ao transferir.',
+            now: 'Agora'
+        },
+        it_IT: {
+            title: 'Omni Inbox',
+            inbox: 'Casella di posta',
+            allInboxes: 'Tutte le caselle',
+            aiAgent: 'IA Agente',
+            n8nFlow: 'Flusso n8n',
+            selectPrompt: 'Seleziona un prompt...',
+            engineModel: 'Modello del Motore',
+            all: 'Tutti',
+            searchChats: 'Cerca conversazioni...',
+            noConversations: 'Nessuna conversazione trovata in questo account.',
+            generateTestData: 'Genera Dati di Test',
+            seedConfirm: 'Generare dati demo per l\'Inbox?',
+            seedSuccess: 'Dati generati! Ricaricamento...',
+            seedError: 'Errore durante la generazione dei dati.',
+            uploadError: 'Errore durante il caricamento del file. Riprova.',
+            sendError: 'Invio messaggio fallito',
+            finishService: 'Concludi Servizio',
+            finishConfirm: 'Vuoi concludere questo servizio e tornare all\'automazione?',
+            transferTeam: 'Trasferisci Team',
+            noPrompt: 'Nessun Prompt',
+            waitingAi: 'In attesa dell\'IA...',
+            typeMessage: 'Scrivi un messaggio...',
+            online: 'Online',
+            offline: 'Offline',
+            details: 'Dettagli Contatto',
+            phone: 'Telefono',
+            provider: 'Provider',
+            instance: 'Istanza',
+            aiControl: 'Controllo IA',
+            aiActive: 'IA Attiva',
+            aiPaused: 'IA in Pausa',
+            n8nActive: 'n8n Attivo',
+            n8nPaused: 'n8n in Pausa',
+            transferSuccess: 'Trasferito con successo!',
+            transferError: 'Errore durante il trasferimento.',
+            now: 'Adesso'
+        }
+    };
     const { user, token } = useAuth();
     const { socket } = useSocket();
     const router = useRouter();
@@ -124,6 +280,18 @@ export default function OmniInboxPage() {
             console.error('Erro ao carregar instâncias:', err);
         }
     };
+
+    useEffect(() => {
+        const saved = localStorage.getItem('zap_lang');
+        if (saved) setLang(saved as any);
+
+        const handleLangChange = () => {
+            const current = localStorage.getItem('zap_lang');
+            if (current) setLang(current as any);
+        };
+        window.addEventListener('languageChange', handleLangChange);
+        return () => window.removeEventListener('languageChange', handleLangChange);
+    }, []);
 
     const fetchAiPrompts = async () => {
         if (!token) return;
@@ -282,7 +450,7 @@ export default function OmniInboxPage() {
 
 
     const handleSeed = async () => {
-        if (!confirm('Gerar dados de demonstração para o Inbox?')) return;
+        if (!confirm(t[lang].seedConfirm)) return;
         setIsLoading(true);
         try {
             const res = await fetch('/api/admin/seed', {
@@ -290,11 +458,11 @@ export default function OmniInboxPage() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
-                alert('Dados gerados! Recarregando...');
+                alert(t[lang].seedSuccess);
                 fetchChats();
             }
         } catch (err) {
-            alert('Erro ao gerar dados.');
+            alert(t[lang].seedError);
         } finally {
             setIsLoading(false);
         }
@@ -360,7 +528,7 @@ export default function OmniInboxPage() {
             });
         } catch (err) {
             console.error('Erro ao fazer upload:', err);
-            alert('Erro ao enviar arquivo. Tente novamente.');
+            alert(t[lang].uploadError);
         } finally {
             setIsUploading(false);
             // Reset input
@@ -406,8 +574,8 @@ export default function OmniInboxPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                alert(data.message || 'Falha ao enviar mensagem');
-                throw new Error(data.message || 'Falha ao enviar');
+                alert(data.message || t[lang].sendError);
+                throw new Error(data.message || t[lang].sendError);
             }
 
             setMessages([...messages, data]);
@@ -566,7 +734,7 @@ export default function OmniInboxPage() {
 
     const handleFinishService = async () => {
         if (!token || !selectedContact) return;
-        if (!confirm('Deseja finalizar este atendimento e devolver para a Automação?')) return;
+        if (!confirm(t[lang].finishConfirm)) return;
         
         try {
             const res = await fetch(`/api/crm/chats/${selectedContact.id}/finish`, {
@@ -620,20 +788,20 @@ export default function OmniInboxPage() {
             <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-white/5 flex-col`}>
                 <div className="p-4 border-b border-white/5 space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold">Omni Inbox</h2>
+                        <h2 className="text-xl font-bold">{t[lang].title}</h2>
                         {/* <button onClick={fetchChats} className="p-2 hover:bg-white/5 rounded-full"><Clock className="w-4 h-4"/></button> */}
                     </div>
 
                     {/* Instance Selector (WhatsApp Only) */}
                     {activeTab === 'whatsapp' && availableInstances.length > 0 && (
                         <div className="space-y-2">
-                            <label className="text-xs text-gray-400 font-medium">Caixa de Entrada</label>
+                            <label className="text-xs text-gray-400 font-medium">{t[lang].inbox}</label>
                             <select
                                 value={selectedInstance}
                                 onChange={(e) => setSelectedInstance(e.target.value)}
                                 className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                             >
-                                <option value="all">Todas as Caixas</option>
+                                <option value="all">{t[lang].allInboxes}</option>
                                 {availableInstances.map(inst => (
                                     <option key={inst.id} value={inst.id}>
                                         {inst.displayName}
@@ -647,10 +815,10 @@ export default function OmniInboxPage() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Bot className="w-4 h-4 text-primary" />
-                                            <span className="text-sm font-medium">IA do Agente</span>
+                                            <span className="text-sm font-medium">{t[lang].aiAgent}</span>
                                         </div>
                                         <button
-                                            title={aiEnabled ? "Desativar IA" : "Ativar IA"}
+                                            title={aiEnabled ? "Disable AI" : "Enable AI"}
                                             onClick={toggleAI}
                                             className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${aiEnabled ? 'bg-primary' : 'bg-gray-600'
                                                 }`}
@@ -665,10 +833,10 @@ export default function OmniInboxPage() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Terminal className="w-4 h-4 text-orange-500" />
-                                            <span className="text-sm font-medium">Fluxo n8n</span>
+                                            <span className="text-sm font-medium">{t[lang].n8nFlow}</span>
                                         </div>
                                         <button
-                                            title={n8nEnabled ? "Desativar n8n" : "Ativar n8n"}
+                                            title={n8nEnabled ? "Disable n8n" : "Enable n8n"}
                                             onClick={toggleN8n}
                                             className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${n8nEnabled ? 'bg-orange-500' : 'bg-gray-600'
                                                 }`}
@@ -707,7 +875,7 @@ export default function OmniInboxPage() {
                                             }}
                                             className="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
                                         >
-                                            <option value="">Selecione um prompt...</option>
+                                            <option value="">{t[lang].selectPrompt}</option>
                                             {aiPrompts.map(prompt => (
                                                 <option key={prompt.id} value={prompt.id}>
                                                     {prompt.name}
@@ -718,7 +886,7 @@ export default function OmniInboxPage() {
 
                                     {/* Gemini Model Selector */}
                                     {aiEnabled && <div className="space-y-3">
-                                        <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest">Modelo do Motor</label>
+                                        <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest">{t[lang].engineModel}</label>
                                         <AiModelSelector
                                             value={selectedAiModel}
                                             token={token || ''}
@@ -759,7 +927,7 @@ export default function OmniInboxPage() {
                                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
-                                {tab === 'all' ? 'All' : tab}
+                                {tab === 'all' ? t[lang].all : tab}
                             </button>
                         ))}
                     </div>
@@ -768,7 +936,7 @@ export default function OmniInboxPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <input
                             type="text"
-                            placeholder="Search chats..."
+                            placeholder={t[lang].searchChats}
                             className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-primary transition"
                         />
                     </div>
@@ -782,7 +950,7 @@ export default function OmniInboxPage() {
                     ) : filteredContacts.length === 0 ? (
                         <div className="p-8 text-center">
                             <Clock className="w-12 h-12 mx-auto mb-4 opacity-10 text-gray-500" />
-                            <p className="text-gray-500 text-sm mb-6">No conversations found in the current account.</p>
+                            <p className="text-gray-500 text-sm mb-6">{t[lang].noConversations}</p>
 
                             {user?.role === 'superadmin' && (
                                 <button
@@ -790,7 +958,7 @@ export default function OmniInboxPage() {
                                     className="w-full flex items-center justify-center space-x-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 py-3 rounded-xl transition font-bold text-xs uppercase tracking-widest"
                                 >
                                     <Database className="w-4 h-4" />
-                                    <span>Gerar Dados de Teste</span>
+                                    <span>{t[lang].generateTestData}</span>
                                 </button>
                             )}
                         </div>

@@ -19,6 +19,90 @@ export default function KanbanPage() {
     const [columns, setColumns] = useState<any>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isStagesLoading, setIsStagesLoading] = useState(true);
+    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
+    const t: any = {
+        pt_BR: {
+            title: 'Pipeline de Vendas',
+            subtitle: 'Gerencie seus leads e estágios de conversão',
+            addColumn: 'Adicionar Coluna',
+            campaign: 'Campanha:',
+            allCampaigns: 'Todas as Campanhas',
+            rename: 'Renomear',
+            delete: 'Excluir',
+            newColumn: 'Nova Coluna',
+            newColumnPrompt: 'Nome da nova coluna:',
+            deleteConfirm: 'Deseja excluir esta coluna? Os contatos nela serão mantidos, mas você precisará movê-los manualmente ou eles aparecerão na primeira coluna.',
+            noName: 'Sem nome',
+            leads: 'leads',
+            errorFetchingStages: '[KANBAN] Erro ao buscar estágios:',
+            errorFetchingContacts: '[KANBAN] Erro ao buscar contatos:',
+            errorLoadingCampaigns: '[KANBAN] Erro ao carregar campanhas:',
+            failedUpdateStage: 'Falha ao atualizar estágio',
+            failedAddStage: 'Falha ao adicionar estágio',
+            failedDeleteStage: 'Falha ao excluir estágio'
+        },
+        en_US: {
+            title: 'Sales Pipeline',
+            subtitle: 'Manage your leads and conversion stages',
+            addColumn: 'Add Column',
+            campaign: 'Campaign:',
+            allCampaigns: 'All Campaigns',
+            rename: 'Rename',
+            delete: 'Delete',
+            newColumn: 'New Column',
+            newColumnPrompt: 'Name of the new column:',
+            deleteConfirm: 'Do you want to delete this column? The contacts in it will be kept, but you will need to move them manually or they will appear in the first column.',
+            noName: 'No name',
+            leads: 'leads',
+            errorFetchingStages: '[KANBAN] Error fetching stages:',
+            errorFetchingContacts: '[KANBAN] Error fetching contacts:',
+            errorLoadingCampaigns: '[KANBAN] Error loading campaigns:',
+            failedUpdateStage: 'Failed to update stage',
+            failedAddStage: 'Failed to add stage',
+            failedDeleteStage: 'Failed to delete stage'
+        },
+        pt_PT: {
+            title: 'Pipeline de Vendas',
+            subtitle: 'Gerencie os seus leads e estágios de conversão',
+            addColumn: 'Adicionar Coluna',
+            campaign: 'Campanha:',
+            allCampaigns: 'Todas as Campanhas',
+            rename: 'Renomear',
+            delete: 'Eliminar',
+            newColumn: 'Nova Coluna',
+            newColumnPrompt: 'Nome da nova coluna:',
+            deleteConfirm: 'Deseja eliminar esta coluna? Os contactos nela serão mantidos, mas precisará de os mover manualmente ou eles aparecerão na primeira coluna.',
+            noName: 'Sem nome',
+            leads: 'leads',
+            errorFetchingStages: '[KANBAN] Erro ao procurar estágios:',
+            errorFetchingContacts: '[KANBAN] Erro ao procurar contactos:',
+            errorLoadingCampaigns: '[KANBAN] Erro ao carregar campanhas:',
+            failedUpdateStage: 'Falha ao atualizar estágio',
+            failedAddStage: 'Falha ao adicionar estágio',
+            failedDeleteStage: 'Falha ao eliminar estágio'
+        },
+        it_IT: {
+            title: 'Pipeline di Vendita',
+            subtitle: 'Gestisci i tuoi lead e le fasi di conversione',
+            addColumn: 'Aggiungi Colonna',
+            campaign: 'Campagna:',
+            allCampaigns: 'Tutte le Campagne',
+            rename: 'Rinomina',
+            delete: 'Elimina',
+            newColumn: 'Nuova Colonna',
+            newColumnPrompt: 'Nome della nuova colonna:',
+            deleteConfirm: 'Vuoi eliminare questa colonna? I contatti al suo interno saranno mantenuti, ma dovrai spostarli manualmente o appariranno nella prima colonna.',
+            noName: 'Senza nome',
+            leads: 'lead',
+            errorFetchingStages: '[KANBAN] Errore nel recupero delle fasi:',
+            errorFetchingContacts: '[KANBAN] Errore nel recupero dei contatti:',
+            errorLoadingCampaigns: '[KANBAN] Errore nel caricamento delle campagne:',
+            failedUpdateStage: 'Aggiornamento fase fallito',
+            failedAddStage: 'Aggiunta fase fallita',
+            failedDeleteStage: 'Eliminazione fase fallita'
+        }
+    };
 
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
@@ -38,7 +122,7 @@ export default function KanbanPage() {
                 setStages(data);
             }
         } catch (err) {
-            console.error('[KANBAN] Error fetching stages:', err);
+            console.error(t[lang].errorFetchingStages, err);
         } finally {
             setIsStagesLoading(false);
         }
@@ -65,7 +149,7 @@ export default function KanbanPage() {
                 organizeKanban(data, stages);
             }
         } catch (err) {
-            console.error('[KANBAN] Error fetching contacts:', err);
+            console.error(t[lang].errorFetchingContacts, err);
         } finally {
             setIsLoading(false);
         }
@@ -81,7 +165,7 @@ export default function KanbanPage() {
                 setCampaigns(data);
             }
         } catch (e) {
-            console.error('[KANBAN] Error loading campaigns:', e);
+            console.error(t[lang].errorLoadingCampaigns, e);
         }
     };
 
@@ -96,6 +180,18 @@ export default function KanbanPage() {
         });
         setColumns(cols);
     };
+
+    useEffect(() => {
+        const saved = localStorage.getItem('zap_lang');
+        if (saved) setLang(saved as any);
+
+        const handleLangChange = () => {
+            const current = localStorage.getItem('zap_lang');
+            if (current) setLang(current as any);
+        };
+        window.addEventListener('languageChange', handleLangChange);
+        return () => window.removeEventListener('languageChange', handleLangChange);
+    }, []);
 
     useEffect(() => {
         if (token) {
@@ -138,13 +234,13 @@ export default function KanbanPage() {
                     body: JSON.stringify({ stage: destination.droppableId })
                 });
             } catch (err) {
-                console.error('Failed to update stage', err);
+                console.error(t[lang].failedUpdateStage, err);
             }
         }
     };
 
     const handleAddColumn = async () => {
-        const name = prompt('Nome da nova coluna:');
+        const name = prompt(t[lang].newColumnPrompt);
         if (!name) return;
 
         try {
@@ -160,7 +256,7 @@ export default function KanbanPage() {
                 fetchStages();
             }
         } catch (err) {
-            console.error('Failed to add stage', err);
+            console.error(t[lang].failedAddStage, err);
         }
     };
 
@@ -179,12 +275,12 @@ export default function KanbanPage() {
                 fetchStages();
             }
         } catch (err) {
-            console.error('Failed to update stage', err);
+            console.error(t[lang].failedUpdateStage, err);
         }
     };
 
     const handleDeleteStage = async (id: string) => {
-        if (!confirm('Deseja excluir esta coluna? Os contatos nela serão mantidos, mas você precisará movê-los manualmente ou eles aparecerão na primeira coluna.')) return;
+        if (!confirm(t[lang].deleteConfirm)) return;
 
         try {
             const res = await fetch(`/api/crm/stages/${id}`, {
@@ -195,7 +291,7 @@ export default function KanbanPage() {
                 fetchStages();
             }
         } catch (err) {
-            console.error('Failed to delete stage', err);
+            console.error(t[lang].failedDeleteStage, err);
         }
     };
 
@@ -206,8 +302,8 @@ export default function KanbanPage() {
             <div className="px-4 sm:px-6 lg:px-8 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-white">Pipeline de Vendas</h1>
-                        <p className="mt-2 text-sm text-gray-400">Gerencie seus leads e estágios de conversão</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-white">{t[lang].title}</h1>
+                        <p className="mt-2 text-sm text-gray-400">{t[lang].subtitle}</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -216,25 +312,25 @@ export default function KanbanPage() {
                             className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2"
                         >
                             <Plus className="w-4 h-4" />
-                            <span>Adicionar Coluna</span>
+                            <span>{t[lang].addColumn}</span>
                         </button>
 
                         <div className="h-8 w-[1px] bg-white/10 mx-2" />
 
-                        <label className="text-sm text-gray-400">Campanha:</label>
+                        <label className="text-sm text-gray-400">{t[lang].campaign}</label>
                         <select
                             value={selectedCampaignId}
                             onChange={(e) => setSelectedCampaignId(e.target.value)}
                             className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm outline-none focus:border-primary transition min-w-[200px]"
                         >
-                            <option value="">Todas as Campanhas</option>
+                            <option value="">{t[lang].allCampaigns}</option>
                             {campaigns.map((campaign) => {
                                 const leadCount = Object.values(columns).reduce((acc: number, col: any) => {
                                     return acc + col.items.filter((item: any) => item.campaignId === campaign.id).length;
                                 }, 0);
                                 return (
                                     <option key={campaign.id} value={campaign.id}>
-                                        {campaign.name} ({leadCount} leads)
+                                        {campaign.name} ({leadCount} {t[lang].leads})
                                     </option>
                                 );
                             })}
@@ -292,14 +388,14 @@ export default function KanbanPage() {
                                                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 transition text-left"
                                             >
                                                 <Pencil className="w-4 h-4 text-primary" />
-                                                <span>Renomear</span>
+                                                <span>{t[lang].rename}</span>
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteStage(stage.id)}
                                                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition text-left"
                                             >
                                                 <Trash2 className="w-4 h-4" />
-                                                <span>Excluir</span>
+                                                <span>{t[lang].delete}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -323,7 +419,7 @@ export default function KanbanPage() {
                                                             style={provided.draggableProps.style}
                                                         >
                                                             <div className="flex justify-between items-start mb-2">
-                                                                <h3 className="font-bold text-sm truncate">{item.name || 'Sem nome'}</h3>
+                                                                <h3 className="font-bold text-sm truncate">{item.name || t[lang].noName}</h3>
                                                                 <span className="text-[10px] text-gray-500 uppercase">{item.provider}</span>
                                                             </div>
                                                             <p className="text-xs text-gray-400 line-clamp-2 mb-3 h-8">
@@ -353,7 +449,7 @@ export default function KanbanPage() {
                         className="w-80 min-w-[20rem] h-[100px] border-2 border-dashed border-white/10 rounded-2xl flex items-center justify-center text-gray-500 hover:text-white hover:border-primary/50 hover:bg-white/5 transition gap-2 group"
                     >
                         <Plus className="w-5 h-5 group-hover:scale-110 transition" />
-                        <span className="font-bold">Nova Coluna</span>
+                        <span className="font-bold">{t[lang].newColumn}</span>
                     </button>
                 </div>
             </DragDropContext>

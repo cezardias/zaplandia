@@ -77,11 +77,12 @@ export class AuthService {
 
         if (!user) {
             // Auto-register new user via Google
+            const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
             user = await this.register({
                 email: profile.email,
-                name: `${profile.firstName} ${profile.lastName}`,
+                name: fullName || 'Usuário Zaplândia',
                 password: Math.random().toString(36).slice(-12), // Generate random password for safety
-                companyName: `Negócio de ${profile.firstName}`,
+                companyName: `Negócio de ${profile.firstName || 'Zaplândia'}`,
             });
             console.log(`[GOOGLE] Novo cadastro automático via Google: ${user.email}`);
         } else {
@@ -100,11 +101,12 @@ export class AuthService {
 
         if (!user) {
             // Auto-register new user via Facebook
+            const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
             user = await this.register({
                 email: profile.email,
-                name: `${profile.firstName} ${profile.lastName}`,
+                name: fullName || 'Usuário Zaplândia',
                 password: Math.random().toString(36).slice(-12),
-                companyName: `Negócio de ${profile.firstName}`,
+                companyName: `Negócio de ${profile.firstName || 'Zaplândia'}`,
             });
             console.log(`[META] Novo cadastro automático via Facebook: ${user.email}`);
         } else {
