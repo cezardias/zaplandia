@@ -192,9 +192,20 @@ export class MetaApiService {
                 message: { text },
             };
 
-            // Using v20.0 which is more stable for IG Messaging and Removing appsecret_proof for now to debug
-            const activeUrl = `https://graph.facebook.com/v20.0/${pageId}/messages`;
-            this.logger.log(`[INSTAGRAM_SEND] Target URL: ${activeUrl}`);
+            let activeUrl = '';
+            
+            // Check if it's an Instagram-scoped token (IGAAR...) or a Facebook/Page-scoped token (EAA...)
+            if (cleanToken.startsWith('IGAAR')) {
+                // New endpoint suggested by Meta for Instagram Messaging API
+                activeUrl = `https://graph.instagram.com/v20.0/me/messages`;
+                this.logger.log(`[INSTAGRAM_SEND] Using Instagram-scoped API: ${activeUrl}`);
+            } else {
+                // Standard Instagram Graph API via Facebook Page
+                if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant (required for EAA tokens)');
+                activeUrl = `https://graph.facebook.com/v20.0/${pageId}/messages`;
+                this.logger.log(`[INSTAGRAM_SEND] Using Facebook-scoped API: ${activeUrl}`);
+            }
+
             this.logger.debug(`[INSTAGRAM_SEND] Payload: ${JSON.stringify(payload)}`);
 
             const response = await axios.post(
