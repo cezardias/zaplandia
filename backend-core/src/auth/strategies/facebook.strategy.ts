@@ -14,9 +14,11 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
                 'public_profile', 
                 'whatsapp_business_management', 
                 'whatsapp_business_messaging',
+                'business_management',
                 'instagram_basic',
                 'instagram_manage_messages',
                 'pages_show_list',
+                'pages_read_engagement',
                 'pages_manage_metadata'
             ],
             profileFields: ['id', 'emails', 'name', 'photos'],
