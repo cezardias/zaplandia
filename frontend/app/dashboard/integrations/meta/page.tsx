@@ -96,24 +96,218 @@ export default function MetaApiPage() {
             wizardDesc: 'Use este modo para gravar o vídeo para a Meta. A interface está traduzida para facilitar a análise.',
             step1: 'Passo 1: Clique em Login do Facebook para conceder permissões.',
             step2: 'Passo 2: Salve as credenciais em sua conta.',
-            step3: 'Passo 3: Teste a conexão para garantir que a API está ativa.'
+            step3: 'Passo 3: Teste a conexão para garantir que a API está ativa.',
+            secTitle: 'Segurança e Credenciais',
+            secDesc: 'Insira suas chaves de acesso para o Cloud API do WhatsApp.',
+            instaTitle: 'Configurações Específicas para Instagram',
+            instaDesc: 'ID da conta Business do Instagram (Opcional se igual ao Meta).',
+            labelToken: 'Token de Acesso (Permanente)',
+            labelWaba: 'WABA ID (Conta Business)',
+            labelPhone: 'ID do Número de Telefone',
+            labelInstaToken: 'Token de Acesso Instagram (Opcional)',
+            labelInstaPage: 'ID da Página (Instagram)',
+            labelAppName: 'Nome do App',
+            labelAppId: 'ID do App',
+            labelAppSecret: 'Chave Secreta (App Secret)',
+            registerBtn: 'Ativar Número',
+            helpTitle: 'Precisa de Ajuda?',
+            helpDesc: 'Para integrar, você precisa criar um App na plataforma Meta for Developers e configurar o WhatsApp.',
+            permToken: 'Token Permanente:',
+            permStep1: 'Vá em Configurações do Negócio.',
+            permStep2: 'Em Usuários do Sistema, adicione um novo usuário Admin.',
+            permStep3: 'Clique em Gerar Novo Token e escolha o App Zaplandia.',
+            permStep4: 'Marque whatsapp_business_messaging e whatsapp_business_management.',
+            officialDocs: 'Documentação Oficial',
+            webhookTitle: 'Recebimento de Mensagens (Webhook)',
+            webhookChecking: 'Verificando status...',
+            webhookActive: '✅ Ativo — mensagens chegando ao Zaplandia',
+            webhookInactive: '❌ Inativo — o WhatsApp não está enviando mensagens recebidas para cá',
+            webhookBtn: 'Ativar Recebimento',
+            webhookSubscribed: 'Inscrito',
+            phoneActive: 'Número Ativo',
+            webhookUrlLabel: 'URL do Webhook (configurar no Meta for Developers)',
+            copyUrl: 'Copiar URL',
+            tempTitle: 'Templates de Mensagem (BBM)',
+            tempDesc: 'Templates aprovados em sua conta Meta',
+            searchPlaceholder: 'Buscar template...',
+            newModelBtn: 'Novo Modelo',
+            noTemplates: 'Nenhum template encontrado',
+            noTemplatesDesc: 'Verifique a conexão ou crie templates no Meta Business Suite',
+            viewDetails: 'Ver detalhes',
+            registeredPhones: 'Números de Telefone Registrados',
+            noPhones: 'Nenhum número encontrado',
+            copyPhoneId: 'COPIAR PHONE ID',
+            createModelTitle: 'Criar Novo Modelo (BBM)',
+            createModelDesc: 'Este modelo será enviado para aprovação da Meta.',
+            modelName: 'Nome do Modelo',
+            modelNameHint: 'Apenas letras minúsculas, números e sublinhados.',
+            category: 'Categoria',
+            language: 'Idioma',
+            bodyText: 'Texto do Corpo (Body)',
+            cancel: 'Cancelar',
+            createBtn: 'Criar Modelo',
+            idCopied: 'ID copiado!',
+            successSaved: 'Credenciais salvas com sucesso!',
+            successConnected: 'Conexão estabelecida com sucesso!',
+            successActivated: 'Número ativado com sucesso! Ele deve ficar On-line em instantes.',
+            successTemplateCreated: 'Modelo enviado para aprovação com sucesso!',
+            errorNameRequired: 'Nome e Texto são obrigatórios',
+            instaTokenHint: 'Deve ser um Token de Página (EAAB...). Tokens IGAAR... NÃO funcionam para mensagens.',
+            instaTokenPlaceholder: 'EAAB... (Recomendado deixar em branco para usar o do WhatsApp)',
+            instaPageIdHint: 'O ID numérico da conta do Instagram Business (geralmente começa com 178).',
+            instaSecretHint: 'Encontrada em Configurações > Painel no seu App da Meta.',
+            connectedStatus: 'Status: Conectado',
+            currency: 'Moeda',
+            timezone: 'Zona',
+            status: 'Status',
+            marketing: 'Marketing',
+            utility: 'Utilidade',
+            authentication: 'Autenticação',
+            portuguese: 'Português (BR)',
+            english: 'Inglês (US)',
+            spanish: 'Espanhol (ES)',
+            placeholderAppName: 'Ex: Meu App Insta',
+            placeholderAppId: 'Ex: 125148...',
+            placeholderTemplate: 'ex: promocao_verao_2024',
+            placeholderBody: 'Olá! Temos uma oferta especial para você...',
+            verifyToken: 'Token de Verificação:',
+            fbAccessing: 'Acessando ativos da Meta... Aguarde.',
+            fbNoWaba: 'Nenhuma WABA encontrada no negócio.',
+            fbGraphError: 'Falha na GraphAPI:',
+            fbNoBiz: 'Nenhum negócio atrelado a este usuário foi encontrado.',
+            fbIgNoPage: 'Nenhuma página ligada ao Instagram.',
+            fbIgError: 'IG Erro:',
+            fbNoFbPage: 'Nenhuma Página do Facebook encontrada na sua conta Google/Meta.',
+            fbIgCrash: 'IG Crash:',
+            fbSuccessAll: 'Token e IDs extraídos com sucesso (WhatsApp/Instagram)! Clique em Salvar.',
+            fbSuccessWaba: 'Token e IDs do WhatsApp extraídos com sucesso!',
+            fbNoIgAssoc: 'Sem Instagram associado.',
+            fbTokenOnly: 'Token capturado!',
+            fbManualFill: 'Preencha os IDs abaixo manualmente para continuar.',
+            fbTokenCaptured: 'Token capturado com sucesso! (Autopreenchimento falhou). Preencha manualmente.',
+            fbLoginCancel: 'Login cancelado ou não autorizado.',
+            fbSdkIdError: 'Erro ao iniciar Facebook SDK:',
+            errorSave: 'Falha ao salvar',
+            errorConn: 'Erro na conexão:',
+            errorActivation: 'Falha na ativação:',
+            promptPin: 'Se você tem Verificação em Duas Etapas, digite o PIN de 6 dígitos. Se não tem, deixe em branco e clique em OK.',
+            errorFetch: 'Falha ao carregar dados:',
+            successSubscribed: 'App inscrito com sucesso! O WhatsApp agora enviará mensagens para o Zaplandia.',
+            errorSubscribing: 'Falha ao inscrever:'
         },
         en_US: {
             title: 'Meta API Integration',
-            desc: 'Connect your Official WhatsApp Business account',
+            desc: 'Connect your official WhatsApp Business account',
             config: 'Configuration',
-            templates: 'Message Templates',
+            templates: 'Templates (BBM)',
             phones: 'Phone Numbers',
             save: 'Save Integration',
             test: 'Test Connection',
             fbLogin: 'Login with Facebook',
             fbDesc: 'Generate a permanent token using Facebook Login flow.',
             wizardBtn: 'Review Mode',
-            wizardActive: 'Review Compliance Mode',
-            wizardDesc: 'Recording Mode active for Meta App Review. Interface in English.',
-            step1: 'Step 1: Click Facebook Login to grant permissions.',
-            step2: 'Step 2: Save the credentials to your account.',
-            step3: 'Step 3: Test the connection to ensure API is active.'
+            wizardActive: 'Review Mode Active',
+            wizardDesc: 'Recording mode active for Meta App Review. Interface in English.',
+            step1: 'Step 1: Click Login with Facebook to grant permissions.',
+            step2: 'Step 2: Save credentials to your account.',
+            step3: 'Step 3: Test connection to ensure API is live.',
+            secTitle: 'Security & Credentials',
+            secDesc: 'Enter your access keys for WhatsApp Cloud API.',
+            instaTitle: 'Instagram Specific Settings',
+            instaDesc: 'Instagram Business account ID (Optional if same as Meta).',
+            labelToken: 'Access Token (Permanent)',
+            labelWaba: 'WABA ID (Business Account)',
+            labelPhone: 'Phone Number ID',
+            labelInstaToken: 'Instagram Token (Optional)',
+            labelInstaPage: 'Page ID (Instagram)',
+            labelAppName: 'App Name',
+            labelAppId: 'App ID',
+            labelAppSecret: 'App Secret',
+            registerBtn: 'Activate Number',
+            helpTitle: 'Need Help?',
+            helpDesc: 'To integrate, you need to create an App on the Meta for Developers platform and configure WhatsApp.',
+            permToken: 'Permanent Token:',
+            permStep1: 'Go to Business Settings.',
+            permStep2: 'Under System Users, add a new Admin user.',
+            permStep3: 'Click Generate New Token and choose Zaplandia App.',
+            permStep4: 'Check whatsapp_business_messaging and whatsapp_business_management.',
+            officialDocs: 'Official Documentation',
+            webhookTitle: 'Message Receiving (Webhook)',
+            webhookChecking: 'Checking status...',
+            webhookActive: '✅ Active — messages reaching Zaplandia',
+            webhookInactive: '❌ Inactive — WhatsApp is not sending received messages here',
+            webhookBtn: 'Activate Receiving',
+            webhookSubscribed: 'Subscribed',
+            phoneActive: 'Active Number',
+            webhookUrlLabel: 'Webhook URL (configure in Meta for Developers)',
+            copyUrl: 'Copy URL',
+            tempTitle: 'Message Templates (BBM)',
+            tempDesc: 'Approved templates in your Meta account',
+            searchPlaceholder: 'Search template...',
+            newModelBtn: 'New Model',
+            noTemplates: 'No templates found',
+            noTemplatesDesc: 'Check connection or create templates in Meta Business Suite',
+            viewDetails: 'View details',
+            registeredPhones: 'Registered Phone Numbers',
+            noPhones: 'No numbers found',
+            copyPhoneId: 'COPY PHONE ID',
+            createModelTitle: 'Create New Template (BBM)',
+            createModelDesc: 'This template will be sent for Meta approval.',
+            modelName: 'Template Name',
+            modelNameHint: 'Lowercase letters, numbers and underscores only.',
+            category: 'Category',
+            language: 'Language',
+            bodyText: 'Body Text',
+            cancel: 'Cancel',
+            createBtn: 'Create Template',
+            idCopied: 'ID copied!',
+            successSaved: 'Credentials saved successfully!',
+            successConnected: 'Connection established successfully!',
+            successActivated: 'Number activated successfully! It should be online shortly.',
+            successTemplateCreated: 'Template sent for approval successfully!',
+            errorNameRequired: 'Name and Body are required',
+            instaTokenHint: 'Must be a Page Token (EAAB...). IGAAR... tokens DO NOT work for messaging.',
+            instaTokenPlaceholder: 'EAAB... (Recommended to leave blank to use WhatsApp token)',
+            instaPageIdHint: 'The numeric ID of the Instagram Business account (usually starts with 178).',
+            instaSecretHint: 'Found in Settings > Dashboard in your Meta App.',
+            connectedStatus: 'Status: Connected',
+            currency: 'Currency',
+            timezone: 'Timezone',
+            status: 'Status',
+            marketing: 'Marketing',
+            utility: 'Utility',
+            authentication: 'Authentication',
+            portuguese: 'Portuguese (BR)',
+            english: 'English (US)',
+            spanish: 'Spanish (ES)',
+            placeholderAppName: 'Ex: My Insta App',
+            placeholderAppId: 'Ex: 125148...',
+            placeholderTemplate: 'ex: summer_promo_2024',
+            placeholderBody: 'Hello! We have a special offer for you...',
+            verifyToken: 'Verify Token:',
+            fbAccessing: 'Accessing Meta assets... Please wait.',
+            fbNoWaba: 'No WABA found in business.',
+            fbGraphError: 'GraphAPI failure:',
+            fbNoBiz: 'No business linked to this user was found.',
+            fbIgNoPage: 'No page linked to Instagram.',
+            fbIgError: 'IG Error:',
+            fbNoFbPage: 'No Facebook Page found in your account.',
+            fbIgCrash: 'IG Crash:',
+            fbSuccessAll: 'Token and IDs successfully extracted (WhatsApp/Instagram)! Click Save.',
+            fbSuccessWaba: 'WhatsApp Token and IDs successfully extracted!',
+            fbNoIgAssoc: 'No Instagram associated.',
+            fbTokenOnly: 'Token captured!',
+            fbManualFill: 'Fill in the IDs below manually to continue.',
+            fbTokenCaptured: 'Token successfully captured! (Auto-fill failed). Fill in manually.',
+            fbLoginCancel: 'Login canceled or not authorized.',
+            fbSdkIdError: 'Error starting Facebook SDK:',
+            errorSave: 'Failed to save',
+            errorConn: 'Connection error:',
+            errorActivation: 'Activation failure:',
+            promptPin: 'If you have Two-Step Verification, enter the 6-digit PIN. If not, leave blank and click OK.',
+            errorFetch: 'Failed to load data:',
+            successSubscribed: 'App successfully subscribed! WhatsApp will now send messages to Zaplandia.',
+            errorSubscribing: 'Failed to subscribe:'
         },
         pt_PT: {
             title: 'Integração Meta API',
@@ -130,7 +324,104 @@ export default function MetaApiPage() {
             wizardDesc: 'Modo de gravação ativo para a Revisão da Meta. Interface em Português de Portugal.',
             step1: 'Passo 1: Clique em Login do Facebook para conceder permissões.',
             step2: 'Passo 2: Guarde as credenciais na sua conta.',
-            step3: 'Passo 3: Teste a ligação para garantir que a API está ativa.'
+            step3: 'Passo 3: Teste a ligação para garantir que a API está ativa.',
+            secTitle: 'Segurança e Credenciais',
+            secDesc: 'Insira as suas chaves de acesso para a Cloud API do WhatsApp.',
+            instaTitle: 'Configurações Específicas para Instagram',
+            instaDesc: 'ID da conta Business do Instagram (Opcional se igual ao Meta).',
+            labelToken: 'Token de Acesso (Permanente)',
+            labelWaba: 'WABA ID (Conta Business)',
+            labelPhone: 'ID do Número de Telefone',
+            labelInstaToken: 'Token Instagram (Opcional)',
+            labelInstaPage: 'ID da Página (Instagram)',
+            labelAppName: 'Nome da App',
+            labelAppId: 'ID da App',
+            labelAppSecret: 'Chave Secreta (App Secret)',
+            registerBtn: 'Ativar Número',
+            helpTitle: 'Precisa de Ajuda?',
+            helpDesc: 'Para integrar, precisa de criar uma App na plataforma Meta for Developers e configurar o WhatsApp.',
+            permToken: 'Token Permanente:',
+            permStep1: 'Vá a Configurações do Negócio.',
+            permStep2: 'Em Utilizadores do Sistema, adicione um novo utilizador Admin.',
+            permStep3: 'Clique em Gerar Novo Token e escolha a App Zaplandia.',
+            permStep4: 'Marque whatsapp_business_messaging e whatsapp_business_management.',
+            officialDocs: 'Documentação Oficial',
+            webhookTitle: 'Recebimento de Mensagens (Webhook)',
+            webhookChecking: 'A verificar status...',
+            webhookActive: '✅ Ativo — mensagens a chegar ao Zaplandia',
+            webhookInactive: '❌ Inativo — o WhatsApp não está a enviar mensagens recebidas para aqui',
+            webhookBtn: 'Ativar Recebimento',
+            webhookSubscribed: 'Inscrito',
+            phoneActive: 'Número Ativo',
+            webhookUrlLabel: 'URL do Webhook (configurar no Meta for Developers)',
+            copyUrl: 'Copiar URL',
+            tempTitle: 'Modelos de Mensagem (BBM)',
+            tempDesc: 'Modelos aprovados na sua conta Meta',
+            searchPlaceholder: 'Procurar modelo...',
+            newModelBtn: 'Novo Modelo',
+            noTemplates: 'Nenhum modelo encontrado',
+            noTemplatesDesc: 'Verifique a ligação ou crie modelos no Meta Business Suite',
+            viewDetails: 'Ver detalhes',
+            registeredPhones: 'Números de Telefone Registados',
+            noPhones: 'Nenhum número encontrado',
+            copyPhoneId: 'COPIAR PHONE ID',
+            createModelTitle: 'Criar Novo Modelo (BBM)',
+            createModelDesc: 'Este modelo será enviado para aprovação da Meta.',
+            modelName: 'Nome do Modelo',
+            modelNameHint: 'Apenas letras minúsculas, números e sublinhados.',
+            category: 'Categoria',
+            language: 'Idioma',
+            bodyText: 'Texto do Corpo (Body)',
+            cancel: 'Cancelar',
+            createBtn: 'Criar Modelo',
+            idCopied: 'ID copiado!',
+            successSaved: 'Credenciais guardadas com sucesso!',
+            successConnected: 'Ligação estabelecida com sucesso!',
+            successActivated: 'Número ativado com sucesso! Ficará Online em instantes.',
+            successTemplateCreated: 'Modelo enviado para aprovação com sucesso!',
+            errorNameRequired: 'Nome e Texto são obrigatórios',
+            instaTokenHint: 'Deve ser um Token de Página (EAAB...). Tokens IGAAR... NÃO funcionam para mensagens.',
+            instaTokenPlaceholder: 'EAAB... (Recomendado deixar em branco para usar o do WhatsApp)',
+            instaPageIdHint: 'O ID numérico da conta do Instagram Business (geralmente começa com 178).',
+            instaSecretHint: 'Encontrada em Configurações > Painel na sua App da Meta.',
+            connectedStatus: 'Status: Ligado',
+            currency: 'Moeda',
+            timezone: 'Fuso Horário',
+            status: 'Status',
+            marketing: 'Marketing',
+            utility: 'Utilidade',
+            authentication: 'Autenticação',
+            portuguese: 'Português (BR)',
+            english: 'Inglês (US)',
+            spanish: 'Espanhol (ES)',
+            placeholderAppName: 'Ex: Minha App Insta',
+            placeholderAppId: 'Ex: 125148...',
+            placeholderTemplate: 'ex: promocao_verao_2024',
+            placeholderBody: 'Olá! Temos uma oferta especial para si...',
+            verifyToken: 'Token de Verificação:',
+            fbAccessing: 'Acedendo aos ativos da Meta... Aguarde.',
+            fbNoWaba: 'Nenhuma WABA encontrada no negócio.',
+            fbGraphError: 'Falha na GraphAPI:',
+            fbNoBiz: 'Nenhum negócio associado a este utilizador foi encontrado.',
+            fbIgNoPage: 'Nenhuma página ligada ao Instagram.',
+            fbIgError: 'IG Erro:',
+            fbNoFbPage: 'Nenhuma Página do Facebook encontrada na sua conta.',
+            fbIgCrash: 'IG Crash:',
+            fbSuccessAll: 'Token e IDs extraídos com sucesso (WhatsApp/Instagram)! Clique em Guardar.',
+            fbSuccessWaba: 'Token e IDs do WhatsApp extraídos com sucesso!',
+            fbNoIgAssoc: 'Sem Instagram associado.',
+            fbTokenOnly: 'Token capturado!',
+            fbManualFill: 'Preencha os IDs abaixo manualmente para continuar.',
+            fbTokenCaptured: 'Token capturado com sucesso! (Autopreenchimento falhou). Preencha manualmente.',
+            fbLoginCancel: 'Login cancelado ou não autorizado.',
+            fbSdkIdError: 'Erro ao iniciar Facebook SDK:',
+            errorSave: 'Falha ao guardar',
+            errorConn: 'Erro na ligação:',
+            errorActivation: 'Falha na ativação:',
+            promptPin: 'Se tem Verificação em Duas Etapas, digite o PIN de 6 dígitos. Se não tem, deixe em branco e clique em OK.',
+            errorFetch: 'Falha ao carregar dados:',
+            successSubscribed: 'App inscrito com sucesso! O WhatsApp agora enviará mensagens para o Zaplandia.',
+            errorSubscribing: 'Falha ao inscrever:'
         },
         it_IT: {
             title: 'Integrazione API Meta',
@@ -153,15 +444,112 @@ export default function MetaApiPage() {
             instaTitle: 'Impostazioni specifiche per Instagram',
             instaDesc: 'ID account aziendale Instagram (Opzionale se uguale a Meta).',
             labelToken: 'Token di Accesso (Permanente)',
-            labelWaba: 'ID Account Aziendale (WABA)',
-            labelPhone: 'ID Numero di Telefono'
+            labelWaba: 'WABA ID (Account Business)',
+            labelPhone: 'ID Numero di Telefono',
+            labelInstaToken: 'Token Instagram (Opzionale)',
+            labelInstaPage: 'ID Pagina (Instagram)',
+            labelAppName: 'Nome App',
+            labelAppId: 'ID App',
+            labelAppSecret: 'App Secret (Chiave Segreta)',
+            registerBtn: 'Attiva Numero',
+            helpTitle: 'Serve Aiuto?',
+            helpDesc: 'Per integrare, devi creare un\'app sulla piattaforma Meta for Developers e configurare WhatsApp.',
+            permToken: 'Token Permanente:',
+            permStep1: 'Vai in Impostazioni Aziendali.',
+            permStep2: 'In Utenti di Sistema, aggiungi un nuovo utente Admin.',
+            permStep3: 'Fai clic su Genera Nuovo Token e scegli l\'App Zaplandia.',
+            permStep4: 'Seleziona whatsapp_business_messaging e whatsapp_business_management.',
+            officialDocs: 'Documentazione Ufficiale',
+            webhookTitle: 'Ricezione Messaggi (Webhook)',
+            webhookChecking: 'Verifica dello stato...',
+            webhookActive: '✅ Attivo — messaggi in arrivo a Zaplandia',
+            webhookInactive: '❌ Inattivo — WhatsApp non invia messaggi ricevuti qui',
+            webhookBtn: 'Attiva Ricezione',
+            webhookSubscribed: 'Iscritto',
+            phoneActive: 'Numero Ativo',
+            webhookUrlLabel: 'URL Webhook (da configurare in Meta for Developers)',
+            copyUrl: 'Copia URL',
+            tempTitle: 'Modelli di Messaggio (BBM)',
+            tempDesc: 'Modelli approvati nel tuo account Meta',
+            searchPlaceholder: 'Cerca modello...',
+            newModelBtn: 'Nuovo Modello',
+            noTemplates: 'Nessun modello trovato',
+            noTemplatesDesc: 'Controlla la connessione o crea modelli in Meta Business Suite',
+            viewDetails: 'Visualizza dettagli',
+            registeredPhones: 'Numeri di Telefono Registrati',
+            noPhones: 'Nessun numero trovato',
+            copyPhoneId: 'COPIA PHONE ID',
+            createModelTitle: 'Crea Nuovo Modello (BBM)',
+            createModelDesc: 'Questo modello sarà inviato per l\'approvazione di Meta.',
+            modelName: 'Nome Modello',
+            modelNameHint: 'Solo lettere minuscole, numeri e trattini bassi.',
+            category: 'Categoria',
+            language: 'Lingua',
+            bodyText: 'Testo del Corpo',
+            cancel: 'Annulla',
+            createBtn: 'Crea Modello',
+            idCopied: 'ID copiato!',
+            successSaved: 'Credenziali salvate con successo!',
+            successConnected: 'Connessione stabilita con successo!',
+            successActivated: 'Numero attivato con successo! Sarà online a breve.',
+            successTemplateCreated: 'Modello inviato per l\'approvazione con successo!',
+            errorNameRequired: 'Nome e testo sono obbligatori',
+            instaTokenHint: 'Deve essere un Token di Pagina (EAAB...). I token IGAAR... NON funzionano per i messaggi.',
+            instaTokenPlaceholder: 'EAAB... (Consigliato lasciare vuoto per usare il token WhatsApp)',
+            instaPageIdHint: 'L\'ID numerico dell\'account Instagram Business (solitamente inizia con 178).',
+            instaSecretHint: 'Trovato in Impostazioni > Dashboard nella tua App Meta.',
+            connectedStatus: 'Stato: Connesso',
+            currency: 'Valuta',
+            timezone: 'Fuso Orario',
+            status: 'Stato',
+            marketing: 'Marketing',
+            utility: 'Utilità',
+            authentication: 'Autenticazione',
+            portuguese: 'Portoghese (BR)',
+            english: 'Inglese (US)',
+            spanish: 'Spagnolo (ES)',
+            placeholderAppName: 'Es: Mia App Insta',
+            placeholderAppId: 'Es: 125148...',
+            placeholderTemplate: 'es: promo_estate_2024',
+            placeholderBody: 'Ciao! Abbiamo un\'offerta speciale per te...',
+            verifyToken: 'Verify Token:',
+            fbAccessing: 'Accesso agli asset Meta... Attendere.',
+            fbNoWaba: 'Nessun WABA trovato nel business.',
+            fbGraphError: 'Errore GraphAPI:',
+            fbNoBiz: 'Nessun business collegato a questo utente trovato.',
+            fbIgNoPage: 'Nessuna pagina collegata a Instagram.',
+            fbIgError: 'Errore IG:',
+            fbNoFbPage: 'Nessuna Pagina Facebook trovata nel tuo account.',
+            fbIgCrash: 'IG Crash:',
+            fbSuccessAll: 'Token e ID estratti con successo (WhatsApp/Instagram)! Clicca su Salva.',
+            fbSuccessWaba: 'Token e ID WhatsApp estratti con successo!',
+            fbNoIgAssoc: 'Nessun Instagram associato.',
+            fbTokenOnly: 'Token catturato!',
+            fbManualFill: 'Inserisci manualmente gli ID qui sotto per continuare.',
+            fbTokenCaptured: 'Token catturato con successo! (Autopieno fallito). Inserisci manualmente.',
+            fbLoginCancel: 'Accesso annullato o non autorizzato.',
+            fbSdkIdError: 'Errore durante l\'avvio di Facebook SDK:',
+            errorSave: 'Salvataggio fallito',
+            errorConn: 'Errore di connessione:',
+            errorActivation: 'Attivazione fallita:',
+            promptPin: 'Se hai la verifica in due passaggi, inserisci il PIN di 6 cifre. In caso contrario, lascia vuoto e fai clic su OK.',
+            errorFetch: 'Salvataggio fallito:',
+            successSubscribed: 'App registrata con successo! WhatsApp invierà ora i messaggi a Zaplandia.',
+            errorSubscribing: 'Registrazione fallita:'
         }
     };
 
-    // Update dictionaries for other languages too
-    t.pt_BR = { ...t.pt_BR, secTitle: 'Segurança e Credenciais', secDesc: 'Insira suas chaves de acesso para o Cloud API do WhatsApp.', instaTitle: 'Configurações Específicas para Instagram', instaDesc: 'ID da conta Business do Instagram (Opcional se igual ao Meta).', labelToken: 'Token de Acesso (Permanente)', labelWaba: 'WABA ID (Conta Business)', labelPhone: 'ID do Número de Telefone', labelInstaToken: 'Token de Acesso Instagram (Opcional)', labelInstaPage: 'ID da Página (Instagram)', labelAppName: 'Nome do App', labelAppId: 'ID do App', labelAppSecret: 'Chave Secreta (App Secret)' };
-    t.en_US = { ...t.en_US, secTitle: 'Security & Credentials', secDesc: 'Enter your WhatsApp Cloud API access keys.', instaTitle: 'Instagram Specific Settings', instaDesc: 'Instagram Business Account ID (Optional if same as Meta).', labelToken: 'Access Token (Permanent)', labelWaba: 'WABA ID (Business Account)', labelPhone: 'Phone Number ID', labelInstaToken: 'Instagram Access Token (Optional)', labelInstaPage: 'Instagram Page ID', labelAppName: 'App Name', labelAppId: 'App ID', labelAppSecret: 'App Secret' };
-    t.pt_PT = { ...t.pt_PT, secTitle: 'Segurança e Credenciais', secDesc: 'Insira as suas chaves de acesso para a Cloud API do WhatsApp.', instaTitle: 'Configurações Específicas para Instagram', instaDesc: 'ID da conta Business do Instagram (Opcional se igual ao Meta).', labelToken: 'Token de Acesso (Permanente)', labelWaba: 'WABA ID (Conta Business)', labelPhone: 'ID do Número de Telefone', labelInstaToken: 'Token Instagram (Opcional)', labelInstaPage: 'ID da Página (Instagram)', labelAppName: 'Nome da App', labelAppId: 'ID da App', labelAppSecret: 'Chave Secreta (App Secret)' };
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -198,7 +586,8 @@ export default function MetaApiPage() {
                     if (d.getElementById(id)) return;
                     js = d.createElement(s) as any; js.id = id;
                     // @ts-ignore
-                    js.src = "https://connect.facebook.net/pt_BR/sdk.js";
+                    const fbLocale = lang === 'en_US' ? 'en_US' : lang === 'it_IT' ? 'it_IT' : 'pt_BR';
+                    js.src = `https://connect.facebook.net/${fbLocale}/sdk.js`;
                     fjs.parentNode!.insertBefore(js, fjs);
                 }(document, 'script', 'facebook-jssdk'));
             });
@@ -214,7 +603,7 @@ export default function MetaApiPage() {
                 const processFbResponse = async () => {
                     if (response.authResponse) {
                         const fbToken = response.authResponse.accessToken;
-                        setSuccess('Acessando ativos da Meta... Aguarde.');
+                        setSuccess(t[lang].fbAccessing);
                         
                         try {
                             // Buscamos os negócios separadamente
@@ -245,13 +634,13 @@ export default function MetaApiPage() {
                                         phoneId = phoneData.data[0].id;
                                     }
                                 } else {
-                                    debugStr = ' - Nenhuma WABA encontrada no negócio.';
+                                    debugStr = ` - ${t[lang].fbNoWaba}`;
                                 }
                             } else {
                                 if (bizData.error) {
-                                     debugStr = ' - Falha na GraphAPI: ' + bizData.error.message;
+                                     debugStr = ` - ${t[lang].fbGraphError} ` + bizData.error.message;
                                 } else {
-                                     debugStr = ' - Nenhum negócio atrelado a este usuário foi encontrado.';
+                                     debugStr = ` - ${t[lang].fbNoBiz}`;
                                 }
                             }
 
@@ -270,17 +659,17 @@ export default function MetaApiPage() {
                                         }
                                     }
                                     if (!instaId) {
-                                        debugStr += ' | IG: Nenhuma página ligada ao Instagram.';
+                                        debugStr += ` | IG: ${t[lang].fbIgNoPage}`;
                                     }
                                 } else {
                                     if (pagesData.error) {
-                                        debugStr += ' | IG Erro: ' + pagesData.error.message;
+                                        debugStr += ` | ${t[lang].fbIgError} ` + pagesData.error.message;
                                     } else {
-                                        debugStr += ' | IG: Nenhuma Página do Facebook encontrada na sua conta Google/Meta.';
+                                        debugStr += ` | IG: ${t[lang].fbNoFbPage}`;
                                     }
                                 }
                             } catch (igErr: any) {
-                                debugStr += ' | IG Crash: ' + igErr.message;
+                                debugStr += ` | ${t[lang].fbIgCrash} ` + igErr.message;
                             }
 
                             setCreds(prev => ({ 
@@ -293,18 +682,18 @@ export default function MetaApiPage() {
                             }));
 
                             if (wabaId && instaId) {
-                                setSuccess('Token e IDs extraídos com sucesso (WhatsApp/Instagram)! Clique em Salvar.');
+                                setSuccess(t[lang].fbSuccessAll);
                             } else if (wabaId) {
-                                setSuccess('Token e IDs do WhatsApp extraídos com sucesso! ' + (debugStr ? debugStr : ' Sem Instagram associado.'));
+                                setSuccess(`${t[lang].fbSuccessWaba} ` + (debugStr ? debugStr : ` ${t[lang].fbNoIgAssoc}`));
                             } else {
-                                setSuccess('Token capturado!' + debugStr + ' Preencha os IDs abaixo manualmente para continuar.');
+                                setSuccess(`${t[lang].fbTokenOnly}` + debugStr + ` ${t[lang].fbManualFill}`);
                             }
                         } catch(err) {
                             setCreds(prev => ({ ...prev, META_ACCESS_TOKEN: fbToken }));
-                            setSuccess('Token capturado com sucesso! (Autopreenchimento falhou). Preencha manualmente.');
+                            setSuccess(t[lang].fbTokenCaptured);
                         }
                     } else {
-                        setError('Login cancelado ou não autorizado.');
+                        setError(t[lang].fbLoginCancel);
                     }
                 };
                 
@@ -312,7 +701,7 @@ export default function MetaApiPage() {
             }, { scope: 'email,public_profile,business_management,whatsapp_business_management,whatsapp_business_messaging,pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_messages', auth_type: 'rerequest' });
             
         } catch(e: any) {
-            setError('Erro ao iniciar Facebook SDK: ' + e.message);
+            setError(`${t[lang].fbSdkIdError} ` + e.message);
         }
     };
 
@@ -345,7 +734,7 @@ export default function MetaApiPage() {
                 fetchMetaDetails();
             }
         } catch (e: any) {
-            setError('Falha ao carregar dados: ' + e.message);
+            setError(t[lang].errorFetch + ' ' + e.message);
         } finally {
             setLoading(false);
         }
@@ -384,10 +773,10 @@ export default function MetaApiPage() {
             });
             const data = await res.json();
             if (data.success) {
-                setSuccess('App inscrito com sucesso! O WhatsApp agora enviará mensagens para o Zaplandia.');
+                setSuccess(t[lang].successSubscribed);
                 await fetchWebhookStatus();
             } else {
-                setError('Falha ao inscrever: ' + JSON.stringify(data));
+                setError(t[lang].errorSubscribing + ' ' + JSON.stringify(data));
             }
         } catch (e: any) {
             setError(e.message);
@@ -433,9 +822,9 @@ export default function MetaApiPage() {
                     },
                     body: JSON.stringify({ name: key, value: value || "" })
                 });
-                if (!res.ok) throw new Error(`Falha ao salvar ${key}`);
+                if (!res.ok) throw new Error(`${t[lang].errorSave} ${key}`);
             }
-            setSuccess('Credenciais salvas com sucesso!');
+            setSuccess(t[lang].successSaved);
             fetchMetaDetails();
         } catch (e: any) {
             setError(e.message);
@@ -455,10 +844,10 @@ export default function MetaApiPage() {
             });
             const data = await res.json();
             if (data.success) {
-                setSuccess('Conexão estabelecida com sucesso!');
+                setSuccess(t[lang].successConnected);
                 fetchMetaDetails();
             } else {
-                setError('Erro na conexão: ' + (data.error?.message || JSON.stringify(data.error)));
+                setError(t[lang].errorConn + ' ' + (data.error?.message || JSON.stringify(data.error)));
             }
         } catch (e: any) {
             setError(e.message);
@@ -472,7 +861,7 @@ export default function MetaApiPage() {
         setError(null);
         setSuccess(null);
         try {
-            const pin = prompt('Se você tem Verificação em Duas Etapas, digite o PIN de 6 dígitos. Se não tem, deixe em branco e clique em OK.');
+            const pin = prompt(t[lang].promptPin);
             const res = await fetch('/api/integrations/meta/register', {
                 method: 'POST',
                 headers: {
@@ -484,10 +873,10 @@ export default function MetaApiPage() {
 
             const data = await res.json();
             if (res.ok) {
-                setSuccess('Número ativado com sucesso! Ele deve ficar On-line em instantes.');
+                setSuccess(t[lang].successActivated);
                 fetchMetaDetails();
             } else {
-                setError('Falha na ativação: ' + (data.message || 'Erro desconhecido'));
+                setError(t[lang].errorActivation + ' ' + (data.message || 'Error'));
             }
         } catch (e: any) {
             setError(e.message);
@@ -498,7 +887,7 @@ export default function MetaApiPage() {
 
     const handleCreateTemplate = async () => {
         if (!templateData.name || !templateData.bodyText) {
-            setError('Nome e Texto são obrigatórios');
+            setError(t[lang].errorNameRequired);
             return;
         }
 
@@ -515,13 +904,13 @@ export default function MetaApiPage() {
             });
 
             if (res.ok) {
-                setSuccess('Modelo enviado para aprovação com sucesso!');
+                setSuccess(t[lang].successTemplateCreated);
                 setIsModalOpen(false);
                 setTemplateData({ name: '', category: 'MARKETING', language: 'pt_BR', bodyText: '' });
                 fetchMetaDetails();
             } else {
                 const data = await res.json();
-                setError('Falha ao criar modelo: ' + (data.message || 'Erro desconhecido'));
+                setError(t[lang].errorSubscribing + ' ' + (data.message || 'Error'));
             }
         } catch (e: any) {
             setError(e.message);
@@ -532,7 +921,7 @@ export default function MetaApiPage() {
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        setSuccess('ID copiado!');
+        setSuccess(t[lang].idCopied);
         setTimeout(() => setSuccess(null), 2000);
     };
 
@@ -583,7 +972,7 @@ export default function MetaApiPage() {
                         className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold flex items-center space-x-2 transition shadow-lg shadow-green-500/20"
                     >
                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                        <span>{lang === 'en_US' ? 'Register Number' : 'Ativar Número'}</span>
+                        <span>{t[lang].registerBtn}</span>
                     </button>
                     <button
                         onClick={handleTestConnection}
@@ -658,20 +1047,20 @@ export default function MetaApiPage() {
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5">
                             <h3 className="text-blue-400 font-bold text-sm mb-2 flex items-center space-x-2">
                                 <AlertCircle className="w-4 h-4" />
-                                <span>Precisa de Ajuda?</span>
+                                <span>{t[lang].helpTitle}</span>
                             </h3>
                             <div className="space-y-4">
                                 <p className="text-xs text-blue-400/80 leading-relaxed">
-                                    Para integrar, você precisa criar um App na plataforma Meta for Developers e configurar o WhatsApp.
+                                    {t[lang].helpDesc}
                                 </p>
                                 
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase text-blue-400/60">Token Permanente:</p>
+                                    <p className="text-[10px] font-black uppercase text-blue-400/60">{t[lang].permToken}</p>
                                     <ol className="text-[10px] text-blue-400/80 list-decimal pl-4 space-y-1">
-                                        <li>Vá em <b>Configurações do Negócio</b>.</li>
-                                        <li>Em <b>Usuários do Sistema</b>, adicione um novo usuário Admin.</li>
-                                        <li>Clique em <b>Gerar Novo Token</b> e escolha o App Zaplandia.</li>
-                                        <li>Marque <u>whatsapp_business_messaging</u> e <u>whatsapp_business_management</u>.</li>
+                                        <li>{t[lang].permStep1}</li>
+                                        <li>{t[lang].permStep2}</li>
+                                        <li>{t[lang].permStep3}</li>
+                                        <li>{t[lang].permStep4}</li>
                                     </ol>
                                 </div>
 
@@ -680,7 +1069,7 @@ export default function MetaApiPage() {
                                     target="_blank"
                                     className="text-xs font-bold text-blue-400 flex items-center space-x-1 hover:underline"
                                 >
-                                    <span>Documentação Oficial</span>
+                                    <span>{t[lang].officialDocs}</span>
                                     <ExternalLink className="w-3 h-3" />
                                 </a>
                             </div>
@@ -779,10 +1168,10 @@ export default function MetaApiPage() {
                                                 type="password"
                                                 value={creds.INSTAGRAM_ACCESS_TOKEN}
                                                 onChange={(e) => setCreds({ ...creds, INSTAGRAM_ACCESS_TOKEN: e.target.value })}
-                                                placeholder="EAAB... (Recomendado deixar em branco para usar o do WhatsApp)"
+                                                placeholder={t[lang].instaTokenPlaceholder}
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">Deve ser um Token de Página (EAAB...). Tokens IGAAR... NÃO funcionam para mensagens.</p>
+                                            <p className="text-[10px] text-gray-500">{t[lang].instaTokenHint}</p>
                                         </div>
 
                                         <div className="space-y-2">
@@ -794,7 +1183,7 @@ export default function MetaApiPage() {
                                                 placeholder="Ex: 1784... (ID da conta, não do App)"
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">O ID numérico da conta do Instagram Business (geralmente começa com 178).</p>
+                                            <p className="text-[10px] text-gray-500">{t[lang].instaPageIdHint}</p>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -804,7 +1193,7 @@ export default function MetaApiPage() {
                                                     type="text"
                                                     value={creds.INSTAGRAM_APP_NAME}
                                                     onChange={(e) => setCreds({ ...creds, INSTAGRAM_APP_NAME: e.target.value })}
-                                                    placeholder="Ex: Meu App Insta"
+                                                    placeholder={t[lang].placeholderAppName}
                                                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                                 />
                                             </div>
@@ -829,7 +1218,7 @@ export default function MetaApiPage() {
                                                 placeholder="••••••••"
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                             />
-                                            <p className="text-[10px] text-gray-500">Encontrada em Configurações &gt; Painel no seu App da Meta.</p>
+                                            <p className="text-[10px] text-gray-500">{t[lang].instaSecretHint}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -842,12 +1231,12 @@ export default function MetaApiPage() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-lg">{profile.name}</p>
-                                                <p className="text-xs text-primary/70 uppercase font-black tracking-widest">Status: Conectado</p>
+                                                <p className="text-xs text-primary/70 uppercase font-black tracking-widest">{t[lang].connectedStatus}</p>
                                             </div>
                                         </div>
                                         <div className="text-right text-xs text-gray-500">
-                                            <p>Moeda: {profile.currency}</p>
-                                            <p>Zona: {profile.timezone_id}</p>
+                                            <p>{t[lang].currency}: {profile.currency}</p>
+                                            <p>{t[lang].timezone}: {profile.timezone_id}</p>
                                         </div>
                                     </div>
                                 )}
@@ -862,13 +1251,13 @@ export default function MetaApiPage() {
                                                     : <WifiOff className="w-5 h-5 text-red-400" />}
                                             </div>
                                             <div>
-                                                <p className="font-bold text-sm">Recebimento de Mensagens (Webhook)</p>
+                                                <p className="font-bold text-sm">{t[lang].webhookTitle}</p>
                                                 <p className="text-xs text-gray-500">
                                                     {webhookStatus === null
-                                                        ? 'Verificando status...'
+                                                        ? t[lang].webhookChecking
                                                         : webhookStatus.isSubscribed
-                                                            ? '✅ Ativo — mensagens chegando ao Zaplandia'
-                                                            : '❌ Inativo — o WhatsApp não está enviando mensagens recebidas para cá'}
+                                                            ? t[lang].webhookActive
+                                                            : t[lang].webhookInactive}
                                                 </p>
                                             </div>
                                         </div>
@@ -886,7 +1275,7 @@ export default function MetaApiPage() {
                                                 : webhookStatus?.isSubscribed
                                                     ? <CheckCircle2 className="w-3.5 h-3.5" />
                                                     : <Zap className="w-3.5 h-3.5" />}
-                                            <span>{webhookStatus?.isSubscribed ? 'Inscrito' : 'Ativar Recebimento'}</span>
+                                            <span>{webhookStatus?.isSubscribed ? t[lang].webhookSubscribed : t[lang].webhookBtn}</span>
                                         </button>
                                     </div>
 
@@ -894,7 +1283,7 @@ export default function MetaApiPage() {
                                     {webhookStatus?.phoneStatus && (
                                         <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                                             <div>
-                                                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Número Ativo</p>
+                                                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">{t[lang].phoneActive}</p>
                                                 <p className="text-sm font-bold">{webhookStatus.phoneStatus.verified_name}</p>
                                                 <p className="text-xs text-gray-400">+{webhookStatus.phoneStatus.display_phone_number}</p>
                                             </div>
@@ -910,7 +1299,7 @@ export default function MetaApiPage() {
 
                                     {/* Webhook URL info */}
                                     <div className="pt-4 border-t border-white/5">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">URL do Webhook (configurar no Meta for Developers)</p>
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">{t[lang].webhookUrlLabel}</p>
                                         <div className="flex items-center space-x-2">
                                             <code className="flex-1 text-[11px] bg-black/30 px-3 py-2 rounded-xl text-green-400 font-mono truncate">
                                                 {typeof window !== 'undefined'
@@ -924,13 +1313,13 @@ export default function MetaApiPage() {
                                                         : ''
                                                 )}
                                                 className="p-2 hover:bg-white/10 rounded-lg transition"
-                                                title="Copiar URL"
+                                                title={t[lang].copyUrl}
                                             >
                                                 <Copy className="w-4 h-4 text-gray-400" />
                                             </button>
                                         </div>
                                         <p className="text-[10px] text-gray-600 mt-2">
-                                            Verify Token: <span className="text-gray-400 font-mono">zaplandia_verify_token</span>
+                                            {t[lang].verifyToken} <span className="text-gray-400 font-mono">zaplandia_verify_token</span>
                                         </p>
                                     </div>
                                 </div>
@@ -954,25 +1343,25 @@ export default function MetaApiPage() {
                             <div className="bg-surface border border-white/5 rounded-3xl p-8">
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                                     <div>
-                                        <h2 className="text-xl font-bold">Templates de Mensagem (BBM)</h2>
-                                        <p className="text-sm text-gray-400">Templates aprovados em sua conta Meta</p>
+                                        <h2 className="text-xl font-bold">{t[lang].tempTitle}</h2>
+                                        <p className="text-sm text-gray-400">{t[lang].tempDesc}</p>
                                     </div>
                                     <div className="flex items-center space-x-3 w-full md:w-auto">
                                         <div className="relative flex-1 md:w-64">
                                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                             <input
                                                 type="text"
-                                                placeholder="Buscar template..."
+                                                placeholder={t[lang].searchPlaceholder}
                                                 className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-2 text-sm outline-none focus:border-primary transition"
                                             />
                                         </div>
                                         <button
                                             onClick={() => setIsModalOpen(true)}
                                             className="bg-primary hover:bg-primary/90 text-white p-2.5 rounded-xl transition shadow-lg flex items-center space-x-2"
-                                            title="Criar Novo Modelo"
+                                            title={t[lang].newModelBtn}
                                         >
                                             <Plus className="w-5 h-5" />
-                                            <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest">Novo Modelo</span>
+                                            <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest">{t[lang].newModelBtn}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -980,8 +1369,8 @@ export default function MetaApiPage() {
                                 {templates.length === 0 ? (
                                     <div className="text-center py-20 bg-white/2 rounded-3xl border border-dashed border-white/10">
                                         <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                        <p className="text-gray-500 font-bold">Nenhum template encontrado</p>
-                                        <p className="text-xs text-gray-600 mt-2">Verifique a conexão ou crie templates no Meta Business Suite</p>
+                                        <p className="text-gray-500 font-bold">{t[lang].noTemplates}</p>
+                                        <p className="text-xs text-gray-600 mt-2">{t[lang].noTemplatesDesc}</p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -999,7 +1388,7 @@ export default function MetaApiPage() {
                                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest">{temp.category} • {temp.language}</p>
 
                                                 <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center opacity-0 group-hover:opacity-100 transition">
-                                                    <span className="text-[10px] text-primary font-bold">Ver detalhes</span>
+                                                    <span className="text-[10px] text-primary font-bold">{t[lang].viewDetails}</span>
                                                     <ChevronRight className="w-4 h-4 text-primary" />
                                                 </div>
                                             </div>
@@ -1012,12 +1401,12 @@ export default function MetaApiPage() {
 
                     {activeTab === 'phones' && (
                         <div className="bg-surface border border-white/5 rounded-3xl p-8">
-                            <h2 className="text-xl font-bold mb-6">Números de Telefone Registrados</h2>
+                            <h2 className="text-xl font-bold mb-6">{t[lang].registeredPhones}</h2>
 
                             {phoneNumbers.length === 0 ? (
                                 <div className="text-center py-20 bg-white/2 rounded-3xl border border-dashed border-white/10">
                                     <Phone className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                    <p className="text-gray-500 font-bold">Nenhum número encontrado</p>
+                                    <p className="text-gray-500 font-bold">{t[lang].noPhones}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -1042,7 +1431,7 @@ export default function MetaApiPage() {
                                                     className="flex items-center space-x-2 text-[10px] font-black uppercase text-gray-500 hover:text-white transition"
                                                 >
                                                     <Copy className="w-3 h-3" />
-                                                    <span>COPIAR PHONE ID</span>
+                                                    <span>{t[lang].copyPhoneId}</span>
                                                 </button>
                                                 <p className="text-[10px] text-gray-600 font-bold">ID: {phone.id}</p>
                                             </div>
@@ -1063,8 +1452,8 @@ export default function MetaApiPage() {
                         {/* Modal Header */}
                         <div className="p-6 border-b border-white/5 bg-white/2 flex justify-between items-center">
                             <div>
-                                <h2 className="text-xl font-bold">Criar Novo Modelo (BBM)</h2>
-                                <p className="text-xs text-gray-400 mt-1">Este modelo será enviado para aprovação da Meta.</p>
+                                <h2 className="text-xl font-bold">{t[lang].createModelTitle}</h2>
+                                <p className="text-xs text-gray-400 mt-1">{t[lang].createModelDesc}</p>
                             </div>
                             <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition">
                                 <X className="w-6 h-6" />
@@ -1074,50 +1463,50 @@ export default function MetaApiPage() {
                         {/* Modal Body */}
                         <div className="p-8 space-y-6">
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Nome do Modelo</label>
+                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t[lang].modelName}</label>
                                 <input
                                     type="text"
                                     value={templateData.name}
                                     onChange={(e) => setTemplateData({ ...templateData, name: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
-                                    placeholder="ex: promocao_verao_2024"
+                                    placeholder={t[lang].placeholderTemplate}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition"
                                 />
-                                <p className="text-[10px] text-gray-500">Apenas letras minúsculas, números e sublinhados.</p>
+                                <p className="text-[10px] text-gray-500">{t[lang].modelNameHint}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Categoria</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t[lang].category}</label>
                                     <select
                                         value={templateData.category}
                                         onChange={(e) => setTemplateData({ ...templateData, category: e.target.value })}
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition appearance-none"
                                     >
-                                        <option value="MARKETING">Marketing</option>
-                                        <option value="UTILITY">Utilidade</option>
-                                        <option value="AUTHENTICATION">Autenticação</option>
+                                        <option value="MARKETING">{t[lang].marketing}</option>
+                                        <option value="UTILITY">{t[lang].utility}</option>
+                                        <option value="AUTHENTICATION">{t[lang].authentication}</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Idioma</label>
+                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t[lang].language}</label>
                                     <select
                                         value={templateData.language}
                                         onChange={(e) => setTemplateData({ ...templateData, language: e.target.value })}
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition appearance-none"
                                     >
-                                        <option value="pt_BR">Português (BR)</option>
-                                        <option value="en_US">Inglês (US)</option>
-                                        <option value="es_ES">Espanhol (ES)</option>
+                                        <option value="pt_BR">{t[lang].portuguese}</option>
+                                        <option value="en_US">{t[lang].english}</option>
+                                        <option value="es_ES">{t[lang].spanish}</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Texto do Corpo (Body)</label>
+                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest">{t[lang].bodyText}</label>
                                 <textarea
                                     value={templateData.bodyText}
                                     onChange={(e) => setTemplateData({ ...templateData, bodyText: e.target.value })}
-                                    placeholder="Olá! Temos uma oferta especial para você..."
+                                    placeholder={t[lang].placeholderBody}
                                     rows={4}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm outline-none focus:border-primary transition resize-none"
                                 />
@@ -1130,7 +1519,7 @@ export default function MetaApiPage() {
                                 onClick={() => setIsModalOpen(false)}
                                 className="flex-1 bg-white/5 hover:bg-white/10 text-white py-4 rounded-2xl font-black transition"
                             >
-                                Cancelar
+                                {t[lang].cancel}
                             </button>
                             <button
                                 onClick={handleCreateTemplate}
@@ -1138,7 +1527,7 @@ export default function MetaApiPage() {
                                 className="flex-[2] bg-primary hover:bg-primary/90 text-white py-4 rounded-2xl font-black flex items-center justify-center space-x-3 transition shadow-xl shadow-primary/20"
                             >
                                 {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                                <span>Criar Modelo</span>
+                                <span>{t[lang].createBtn}</span>
                             </button>
                         </div>
                     </div>

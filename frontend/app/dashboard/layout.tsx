@@ -55,7 +55,8 @@ export default function DashboardLayout({
             },
             trial: 'Seu período de teste (Trial) está ativo. Aproveite todas as funções!',
             logout: 'Sair',
-            choosePlan: 'ESCOLHER PLANO'
+            choosePlan: 'ESCOLHER PLANO',
+            userManagement: 'Gestão de Usuários'
         },
         en_US: {
             menu: {
@@ -75,7 +76,8 @@ export default function DashboardLayout({
             },
             trial: 'Your trial period is active. Enjoy all features!',
             logout: 'Logout',
-            choosePlan: 'CHOOSE PLAN'
+            choosePlan: 'CHOOSE PLAN',
+            userManagement: 'User Management'
         },
         pt_PT: {
             menu: {
@@ -95,7 +97,8 @@ export default function DashboardLayout({
             },
             trial: 'O seu período de teste está ativo. Aproveite todas as funções!',
             logout: 'Sair',
-            choosePlan: 'ESCOLHER PLANO'
+            choosePlan: 'ESCOLHER PLANO',
+            userManagement: 'Gestão de Utilizadores'
         },
         it_IT: {
             menu: {
@@ -115,7 +118,8 @@ export default function DashboardLayout({
             },
             trial: 'Il tuo periodo di prova è attivo. Goditi tutte le funzioni!',
             logout: 'Disconnetti',
-            choosePlan: 'SCEGLI PIANO'
+            choosePlan: 'SCEGLI PIANO',
+            userManagement: 'Gestione Utenti'
         }
     };
 
@@ -267,7 +271,7 @@ export default function DashboardLayout({
                                 }`}
                         >
                             <ShieldCheck className="w-5 h-5" />
-                            <span>Gestão de Usuários</span>
+                            <span>{t[lang].userManagement}</span>
                         </Link>
                     )}
                 </nav>
