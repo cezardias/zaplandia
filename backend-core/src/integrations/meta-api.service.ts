@@ -394,4 +394,28 @@ export class MetaApiService {
             throw new Error(detailedMsg);
         }
     }
+    async deleteTemplate(tenantId: string, templateName: string) {
+        try {
+            const { accessToken, wabaId } = await this.getCredentials(tenantId);
+            if (!wabaId) throw new Error('META_WABA_ID not configured');
+
+            const response = await axios.delete(
+                `${this.baseUrl}/${wabaId}/message_templates`,
+                {
+                    params: {
+                        access_token: accessToken,
+                        name: templateName
+                    }
+                }
+            );
+
+            this.logger.log(`[META_TEMPLATE] Deleted template ${templateName} for WABA ${wabaId}: ${JSON.stringify(response.data)}`);
+            return response.data;
+        } catch (error: any) {
+            const errorData = error.response?.data?.error || {};
+            const detailedMsg = errorData.message || error.message;
+            this.logger.error(`[META_TEMPLATE] Failed to delete template ${templateName}: ${detailedMsg}`);
+            throw new Error(detailedMsg);
+        }
+    }
 }

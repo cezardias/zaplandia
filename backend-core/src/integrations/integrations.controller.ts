@@ -460,4 +460,10 @@ export class IntegrationsController {
     async subscribeMetaWebhook(@Request() req) {
         return this.metaApiService.setupWebhookSubscription(req.user.tenantId);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete('meta/templates/:name')
+    async deleteMetaTemplate(@Request() req, @Param('name') name: string) {
+        return this.metaApiService.deleteTemplate(req.user.tenantId, name);
+    }
 }

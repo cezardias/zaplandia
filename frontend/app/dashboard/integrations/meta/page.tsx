@@ -24,7 +24,8 @@ import {
     Wifi,
     WifiOff,
     Zap,
-    Lock
+    Lock,
+    Trash2
 } from 'lucide-react';
 
 
@@ -184,7 +185,12 @@ export default function MetaApiPage() {
             promptPin: 'Se você tem Verificação em Duas Etapas, digite o PIN de 6 dígitos. Se não tem, deixe em branco e clique em OK.',
             errorFetch: 'Falha ao carregar dados:',
             successSubscribed: 'App inscrito com sucesso! O WhatsApp agora enviará mensagens para o Zaplandia.',
-            errorSubscribing: 'Falha ao inscrever:'
+            errorSubscribing: 'Falha ao inscrever:',
+            deleteTemplate: 'Excluir Modelo',
+            confirmDelete: 'Tem certeza que deseja excluir este modelo? Esta ação não pode ser desfeita.',
+            errorDelete: 'Falha ao excluir modelo:',
+            successDeleted: 'Modelo excluído com sucesso!',
+            deleting: 'Excluindo...'
         },
         en_US: {
             title: 'Meta API Integration',
@@ -298,7 +304,12 @@ export default function MetaApiPage() {
             promptPin: 'If you have Two-Step Verification, enter the 6-digit PIN. If not, leave blank and click OK.',
             errorFetch: 'Failed to load data:',
             successSubscribed: 'App successfully subscribed! WhatsApp will now send messages to Zaplandia.',
-            errorSubscribing: 'Failed to subscribe:'
+            errorSubscribing: 'Failed to subscribe:',
+            deleteTemplate: 'Delete Template',
+            confirmDelete: 'Are you sure you want to delete this template? This action cannot be undone.',
+            errorDelete: 'Failed to delete template:',
+            successDeleted: 'Template deleted successfully!',
+            deleting: 'Deleting...'
         },
         pt_PT: {
             title: 'Integração Meta API',
@@ -768,6 +779,32 @@ export default function MetaApiPage() {
         }
     };
 
+    const handleDeleteTemplate = async (name: string) => {
+        if (!window.confirm(t[lang].confirmDelete)) return;
+
+        setSaving(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            const res = await fetch(`/api/integrations/meta/templates/${name}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                setSuccess(t[lang].successDeleted);
+                fetchMetaDetails();
+            } else {
+                const data = await res.json();
+                setError(t[lang].errorDelete + ' ' + (data.message || 'Error'));
+            }
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         setSuccess(t[lang].idCopied);
@@ -1225,8 +1262,20 @@ export default function MetaApiPage() {
                                                 <p className="text-[10px] text-gray-500 uppercase tracking-widest">{temp.category} • {temp.language}</p>
 
                                                 <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center opacity-0 group-hover:opacity-100 transition">
-                                                    <span className="text-[10px] text-primary font-bold">{t[lang].viewDetails}</span>
-                                                    <ChevronRight className="w-4 h-4 text-primary" />
+                                                    <div className="flex items-center space-x-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteTemplate(temp.name);
+                                                            }}
+                                                            disabled={saving}
+                                                            className="p-2 hover:bg-red-500/10 text-gray-500 hover:text-red-500 rounded-lg transition"
+                                                            title={t[lang].deleteTemplate}
+                                                        >
+                                                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                                        </button>
+                                                        <ChevronRight className="w-4 h-4 text-primary" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
