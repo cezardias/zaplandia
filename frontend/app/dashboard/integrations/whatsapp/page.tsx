@@ -59,6 +59,278 @@ export default function WhatsAppInstancesPage() {
     const [hasN8nWebhook, setHasN8nWebhook] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
     const [dbIntegrations, setDbIntegrations] = useState<any[]>([]); // DB integrations for AI config
+    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
+    const t: any = {
+        pt_BR: {
+            title: 'Instâncias WhatsApp',
+            subtitle: 'Gerencie seus números conectados via EvolutionAPI',
+            update: 'Atualizar',
+            errorConfig: 'A EvolutionAPI ainda não foi configurada no sistema.',
+            configNow: 'Configurar Agora',
+            serverError: 'Erro no Servidor Evolution: O servidor retornou erro 500. Verifique se a URL e a Chave estão corretas ou se o servidor Evolution está instável.',
+            connError: 'Erro de conexão com o servidor',
+            newInstance: 'Nova Instância',
+            instancePlaceholder: 'Nome da instância (ex: vendas, suporte, marketing)',
+            createInstance: 'Criar Instância',
+            instanceNote: 'Cada instância representa um número de WhatsApp diferente que será conectado via QR Code.',
+            yourInstances: 'Suas Instâncias',
+            allUsers: 'Todos os Usuários',
+            noInstances: 'Nenhuma instância criada',
+            createFirst: 'Crie uma instância acima para conectar seu WhatsApp',
+            connected: 'Conectado',
+            disconnected: 'Desconectado',
+            waiting: 'Aguardando Conexão',
+            connectQr: 'Conectar (QR Code)',
+            associateCampaign: 'Associar a Campanha',
+            configure: 'Configurar',
+            delete: 'Excluir',
+            deleteConfirm: 'Tem certeza que deseja excluir a instância "{name}"?\n\nIsso irá desconectar o WhatsApp e remover todos os dados.',
+            qrCode: 'QR Code',
+            generatingQr: 'Gerando QR Code...',
+            scanQr: 'Escaneie com seu WhatsApp',
+            qrInstructions: 'WhatsApp > Menu > Aparelhos Conectados',
+            refreshQr: 'Atualizar QR Code',
+            instanceLabel: 'Instância',
+            qrLoadError: 'Não foi possível carregar o QR Code',
+            qrLoadErrorDesc: 'A API não retornou um código válido.',
+            tryAgain: 'Tentar Novamente',
+            connectYourWhatsapp: 'Conecte seu WhatsApp',
+            connectClick: 'Clique em "Conectar (QR Code)" em uma instância ao lado',
+            aiAgent: 'Agente de IA',
+            aiToggle: 'Ativar Automação de IA',
+            aiDesc: 'O robô responderá automaticamente às mensagens',
+            n8nToggle: 'Automação via n8n',
+            n8nDesc: 'Fluxos externos e webhooks',
+            agentPrompt: 'Prompt do Agente',
+            noPrompts: 'Nenhum prompt salvo. Crie prompts em Configurações > Agentes de IA primeiro.',
+            selectPrompt: 'Selecione um prompt...',
+            aiModel: 'Modelo de IA',
+            aiModelDesc: 'Escolha o modelo de IA (Gemini ou OpenRouter).',
+            cancel: 'Cancelar',
+            saveConfig: 'Salvar Configuração',
+            successCreate: 'Instância criada com sucesso!',
+            successDelete: 'Instância excluída com sucesso!',
+            successConnect: 'WhatsApp conectado com sucesso!',
+            successAi: 'Configuração de automação salva com sucesso!',
+            alreadyConnected: 'Esta instância já está conectada!',
+            n8nNotConfigured: 'Webhook do n8n não configurado. Deseja ir para as configurações agora?',
+            loadingInstances: 'Erro ao carregar instâncias',
+            fetchCredsError: 'Erro ao buscar credenciais:',
+            integrationNotFound: 'Integração não encontrada no banco de dados.',
+            toggleError: 'Erro ao alternar automação',
+            qrFetchError: 'Erro ao buscar QR Code',
+            nameRequired: 'Digite um nome para a instância',
+            deactivateAi: 'Desativar IA',
+            activateAi: 'Ativar IA',
+            deactivateN8n: 'Desativar n8n',
+            activateN8n: 'Ativar n8n'
+        },
+        en_US: {
+            title: 'WhatsApp Instances',
+            subtitle: 'Manage your connected numbers via EvolutionAPI',
+            update: 'Update',
+            errorConfig: 'EvolutionAPI has not been configured in the system yet.',
+            configNow: 'Configure Now',
+            serverError: 'Evolution Server Error: The server returned error 500. Check if the URL and Key are correct or if the Evolution server is unstable.',
+            connError: 'Server connection error',
+            newInstance: 'New Instance',
+            instancePlaceholder: 'Instance name (e.g., sales, support, marketing)',
+            createInstance: 'Create Instance',
+            instanceNote: 'Each instance represents a different WhatsApp number to be connected via QR Code.',
+            yourInstances: 'Your Instances',
+            allUsers: 'All Users',
+            noInstances: 'No instances created',
+            createFirst: 'Create an instance above to connect your WhatsApp',
+            connected: 'Connected',
+            disconnected: 'Disconnected',
+            waiting: 'Waiting for Connection',
+            connectQr: 'Connect (QR Code)',
+            associateCampaign: 'Associate with Campaign',
+            configure: 'Configure',
+            delete: 'Delete',
+            deleteConfirm: 'Are you sure you want to delete the instance "{name}"?\n\nThis will disconnect WhatsApp and remove all data.',
+            qrCode: 'QR Code',
+            generatingQr: 'Generating QR Code...',
+            scanQr: 'Scan with your WhatsApp',
+            qrInstructions: 'WhatsApp > Menu > Linked Devices',
+            refreshQr: 'Refresh QR Code',
+            instanceLabel: 'Instance',
+            qrLoadError: 'Could not load QR Code',
+            qrLoadErrorDesc: 'The API did not return a valid code.',
+            tryAgain: 'Try Again',
+            connectYourWhatsapp: 'Connect your WhatsApp',
+            connectClick: 'Click "Connect (QR Code)" on an instance to the left',
+            aiAgent: 'AI Agent',
+            aiToggle: 'Enable AI Automation',
+            aiDesc: 'The bot will automatically respond to messages',
+            n8nToggle: 'Automation via n8n',
+            n8nDesc: 'External flows and webhooks',
+            agentPrompt: 'Agent Prompt',
+            noPrompts: 'No prompts saved. Create prompts in Settings > AI Agents first.',
+            selectPrompt: 'Select a prompt...',
+            aiModel: 'AI Model',
+            aiModelDesc: 'Choose the AI model (Gemini or OpenRouter).',
+            cancel: 'Cancel',
+            saveConfig: 'Save Configuration',
+            successCreate: 'Instance created successfully!',
+            successDelete: 'Instance deleted successfully!',
+            successConnect: 'WhatsApp connected successfully!',
+            successAi: 'Automation configuration saved successfully!',
+            alreadyConnected: 'This instance is already connected!',
+            n8nNotConfigured: 'n8n Webhook not configured. Do you want to go to settings now?',
+            loadingInstances: 'Error loading instances',
+            fetchCredsError: 'Error fetching credentials:',
+            integrationNotFound: 'Integration not found in database.',
+            toggleError: 'Error toggling automation',
+            qrFetchError: 'Error fetching QR Code',
+            nameRequired: 'Enter a name for the instance',
+            deactivateAi: 'Deactivate AI',
+            activateAi: 'Activate AI',
+            deactivateN8n: 'Deactivate n8n',
+            activateN8n: 'Activate n8n'
+        },
+        pt_PT: {
+            title: 'Instâncias do WhatsApp',
+            subtitle: 'Gerencie os seus números ligados via EvolutionAPI',
+            update: 'Atualizar',
+            errorConfig: 'A EvolutionAPI ainda não foi configurada no sistema.',
+            configNow: 'Configurar Agora',
+            serverError: 'Erro no Servidor Evolution: O servidor devolveu erro 500. Verifique se o URL e a Chave estão corretos ou se o servidor Evolution está instável.',
+            connError: 'Erro de ligação com o servidor',
+            newInstance: 'Nova Instância',
+            instancePlaceholder: 'Nome da instância (ex: vendas, suporte, marketing)',
+            createInstance: 'Criar Instância',
+            instanceNote: 'Cada instância representa um número de WhatsApp diferente que será ligado via QR Code.',
+            yourInstances: 'As Suas Instâncias',
+            allUsers: 'Todos os Utilizadores',
+            noInstances: 'Nenhuma instância criada',
+            createFirst: 'Crie uma instância acima para ligar o seu WhatsApp',
+            connected: 'Ligado',
+            disconnected: 'Desligado',
+            waiting: 'A aguardar ligação',
+            connectQr: 'Ligar (QR Code)',
+            associateCampaign: 'Associar a Campanha',
+            configure: 'Configurar',
+            delete: 'Eliminar',
+            deleteConfirm: 'Tem a certeza que deseja eliminar a instância "{name}"?\n\nIsto irá desligar o WhatsApp e remover todos os dados.',
+            qrCode: 'QR Code',
+            generatingQr: 'A gerar QR Code...',
+            scanQr: 'Digitalize com o seu WhatsApp',
+            qrInstructions: 'WhatsApp > Menu > Dispositivos Ligados',
+            refreshQr: 'Atualizar QR Code',
+            instanceLabel: 'Instância',
+            qrLoadError: 'Não foi possível carregar o QR Code',
+            qrLoadErrorDesc: 'A API não devolveu um código válido.',
+            tryAgain: 'Tentar Novamente',
+            connectYourWhatsapp: 'Ligue o seu WhatsApp',
+            connectClick: 'Clique em "Ligar (QR Code)" numa instância ao lado',
+            aiAgent: 'Agente de IA',
+            aiToggle: 'Ativar Automação de IA',
+            aiDesc: 'O robô responderá automaticamente às mensagens',
+            n8nToggle: 'Automação via n8n',
+            n8nDesc: 'Fluxos externos e webhooks',
+            agentPrompt: 'Prompt do Agente',
+            noPrompts: 'Nenhum prompt guardado. Crie prompts em Definições > Agentes de IA primeiro.',
+            selectPrompt: 'Selecione um prompt...',
+            aiModel: 'Modelo de IA',
+            aiModelDesc: 'Escolha o modelo de IA (Gemini ou OpenRouter).',
+            cancel: 'Cancelar',
+            saveConfig: 'Guardar Configuração',
+            successCreate: 'Instância criada com sucesso!',
+            successDelete: 'Instância eliminada com sucesso!',
+            successConnect: 'WhatsApp ligado com sucesso!',
+            successAi: 'Configuração de automação guardada com sucesso!',
+            alreadyConnected: 'Esta instância já está ligada!',
+            n8nNotConfigured: 'Webhook do n8n não configurado. Deseja ir para as definições agora?',
+            loadingInstances: 'Erro ao carregar instâncias',
+            fetchCredsError: 'Erro ao procurar credenciais:',
+            integrationNotFound: 'Integração não encontrada na base de dados.',
+            toggleError: 'Erro ao alternar automação',
+            qrFetchError: 'Erro ao procurar QR Code',
+            nameRequired: 'Introduza um nome para a instância',
+            deactivateAi: 'Desativar IA',
+            activateAi: 'Ativar IA',
+            deactivateN8n: 'Desativar n8n',
+            activateN8n: 'Ativar n8n'
+        },
+        it_IT: {
+            title: 'Istanze WhatsApp',
+            subtitle: 'Gestisci i tuoi numeri collegati tramite EvolutionAPI',
+            update: 'Aggiorna',
+            errorConfig: 'EvolutionAPI non è ancora stata configurata nel sistema.',
+            configNow: 'Configura Ora',
+            serverError: 'Errore del Server Evolution: Il server ha restituito l\'errore 500. Controlla se l\'URL e la Chiave sono corretti o se il server Evolution è instabile.',
+            connError: 'Errore di connessione al server',
+            newInstance: 'Nuova Istanza',
+            instancePlaceholder: 'Nome istanza (es: vendite, supporto, marketing)',
+            createInstance: 'Crea Istanza',
+            instanceNote: 'Ogni istanza rappresenta un numero WhatsApp diverso da collegare tramite QR Code.',
+            yourInstances: 'Le Tue Istanze',
+            allUsers: 'Tutti gli Utenti',
+            noInstances: 'Nessuna istanza creata',
+            createFirst: 'Crea un\'istanza sopra per collegare il tuo WhatsApp',
+            connected: 'Collegato',
+            disconnected: 'Scollegato',
+            waiting: 'In attesa di connessione',
+            connectQr: 'Collega (QR Code)',
+            associateCampaign: 'Associa a Campagna',
+            configure: 'Configura',
+            delete: 'Elimina',
+            deleteConfirm: 'Sei sicuro di voler eliminare l\'istanza "{name}"?\n\nQuesto scollegherà WhatsApp e rimuoverà tutti i dati.',
+            qrCode: 'QR Code',
+            generatingQr: 'Generazione QR Code...',
+            scanQr: 'Scansiona con il tuo WhatsApp',
+            qrInstructions: 'WhatsApp > Menu > Dispositivi collegati',
+            refreshQr: 'Aggiorna QR Code',
+            instanceLabel: 'Istanza',
+            qrLoadError: 'Impossibile caricare il QR Code',
+            qrLoadErrorDesc: 'L\'API non ha restituito un codice valido.',
+            tryAgain: 'Riprova',
+            connectYourWhatsapp: 'Collega il tuo WhatsApp',
+            connectClick: 'Clicca su "Collega (QR Code)" su un\'istanza a sinistra',
+            aiAgent: 'Agente IA',
+            aiToggle: 'Attiva Automazione IA',
+            aiDesc: 'Il robot risponderà automaticamente ai messaggi',
+            n8nToggle: 'Automazione tramite n8n',
+            n8nDesc: 'Flussi esterni e webhook',
+            agentPrompt: 'Prompt dell\'Agente',
+            noPrompts: 'Nessun prompt salvato. Crea prima i prompt in Impostazioni > Agenti IA.',
+            selectPrompt: 'Seleziona un prompt...',
+            aiModel: 'Modello IA',
+            aiModelDesc: 'Scegli il modello IA (Gemini o OpenRouter).',
+            cancel: 'Annulla',
+            saveConfig: 'Salva Configurazione',
+            successCreate: 'Istanza creata con successo!',
+            successDelete: 'Istanza eliminata con successo!',
+            successConnect: 'WhatsApp collegato con successo!',
+            successAi: 'Configurazione automazione salvata con successo!',
+            alreadyConnected: 'Questa istanza è già collegata!',
+            n8nNotConfigured: 'Webhook n8n non configurato. Vuoi andare alle impostazioni ora?',
+            loadingInstances: 'Errore nel caricamento delle istanze',
+            fetchCredsError: 'Errore nel recupero delle credenziali:',
+            integrationNotFound: 'Integrazione non trovata nel database.',
+            toggleError: 'Errore nell\'attivazione dell\'automazione',
+            qrFetchError: 'Errore nel recupero del QR Code',
+            nameRequired: 'Inserisci un nome per l\'istanza',
+            deactivateAi: 'Disattiva IA',
+            activateAi: 'Attiva IA',
+            deactivateN8n: 'Disattiva n8n',
+            activateN8n: 'Attiva n8n'
+        }
+    };
+
+    useEffect(() => {
+        const saved = localStorage.getItem('zap_lang');
+        if (saved) setLang(saved as any);
+
+        const handleLangChange = () => {
+            const current = localStorage.getItem('zap_lang');
+            if (current) setLang(current as any);
+        };
+        window.addEventListener('languageChange', handleLangChange);
+        return () => window.removeEventListener('languageChange', handleLangChange);
+    }, []);
 
     useEffect(() => {
         if (token) {
@@ -80,7 +352,7 @@ export default function WhatsAppInstancesPage() {
                 setHasN8nWebhook(hasUrl);
             }
         } catch (err) {
-            console.error('Erro ao buscar credenciais:', err);
+            console.error(t[lang].fetchCredsError, err);
         }
     };
 
@@ -148,15 +420,15 @@ export default function WhatsAppInstancesPage() {
             });
 
             if (res.ok) {
-                setSuccessMessage(`Configuração de automação salva com sucesso!`);
+                setSuccessMessage(t[lang].successAi);
                 setAiModalInstance(null);
                 await fetchDbIntegrations(); // Refresh to show updated state
             } else {
                 const err = await res.json();
-                setError(`Erro ao salvar automação: ${err.message || JSON.stringify(err)}`);
+                setError(`${t[lang].toggleError}: ${err.message || JSON.stringify(err)}`);
             }
         } catch (e: any) {
-            setError(`Erro ao salvar automação: ${e.message}`);
+            setError(`${t[lang].toggleError}: ${e.message}`);
         } finally {
             setIsSavingAI(false);
         }
@@ -164,7 +436,7 @@ export default function WhatsAppInstancesPage() {
 
     const toggleAutomation = async (instanceName: string, type: 'ai' | 'n8n', currentState: boolean) => {
         if (type === 'n8n' && !hasN8nWebhook) {
-            if (confirm('Webhook do n8n não configurado. Deseja ir para as configurações agora?')) {
+            if (confirm(t[lang].n8nNotConfigured)) {
                 router.push('/dashboard/settings/api');
             }
             return;
@@ -178,7 +450,7 @@ export default function WhatsAppInstancesPage() {
                 i.instanceName === instanceName
             );
 
-            if (!dbInt) throw new Error('Integração não encontrada no banco de dados.');
+            if (!dbInt) throw new Error(t[lang].integrationNotFound);
 
             const res = await fetch(`/api/ai/integration/${dbInt.id}/toggle`, {
                 method: 'POST',
@@ -197,7 +469,7 @@ export default function WhatsAppInstancesPage() {
             if (res.ok) {
                 await fetchDbIntegrations();
             } else {
-                setError('Erro ao alternar automação');
+                setError(t[lang].toggleError);
             }
         } catch (err: any) {
             setError(err.message);
@@ -220,19 +492,19 @@ export default function WhatsAppInstancesPage() {
                 router.push('/auth/login');
             } else {
                 const errData = await res.json();
-                const errorMessage = errData.message || 'Erro ao carregar instâncias';
+                const errorMessage = errData.message || t[lang].loadingInstances;
 
                 // Handle "EvolutionAPI not configured" vs Server Error
-                if (errorMessage.includes('EvolutionAPI não configurada')) {
-                    setError('A EvolutionAPI ainda não foi configurada no sistema.');
+                if (errorMessage.includes('EvolutionAPI não configurada') || errorMessage.includes('not configured')) {
+                    setError(t[lang].errorConfig);
                 } else if (res.status === 500) {
-                    setError('Erro no Servidor Evolution: O servidor retornou erro 500. Verifique se a URL e a Chave estão corretas ou se o servidor Evolution está instável.');
+                    setError(t[lang].serverError);
                 } else {
                     setError(errorMessage);
                 }
             }
         } catch (err: any) {
-            setError(err.message || 'Erro de conexão com o servidor');
+            setError(err.message || t[lang].connError);
         } finally {
             setIsLoading(false);
         }
@@ -240,7 +512,7 @@ export default function WhatsAppInstancesPage() {
 
     const createInstance = async () => {
         if (!newInstanceName.trim()) {
-            setError('Digite um nome para a instância');
+            setError(t[lang].nameRequired);
             return;
         }
         setIsCreating(true);
@@ -259,7 +531,7 @@ export default function WhatsAppInstancesPage() {
             if (res.ok) {
                 const data = await res.json();
                 setNewInstanceName('');
-                setSuccessMessage('Instância criada com sucesso!');
+                setSuccessMessage(t[lang].successCreate);
                 await fetchInstances();
                 await fetchInstances();
                 // If QR code was returned, show it
@@ -278,10 +550,10 @@ export default function WhatsAppInstancesPage() {
                 }
             } else {
                 const errData = await res.json();
-                setError(errData.message || 'Erro ao criar instância');
+                setError(errData.message || t[lang].newInstance + ' error');
             }
         } catch (err: any) {
-            setError(err.message || 'Erro ao criar instância');
+            setError(err.message || t[lang].newInstance + ' error');
         } finally {
             setIsCreating(false);
         }
@@ -305,7 +577,7 @@ export default function WhatsAppInstancesPage() {
 
                         if (state === 'open' || state === 'connected') {
                             setQrCode(null); // Hide QR code
-                            setSuccessMessage('WhatsApp conectado com sucesso!');
+                            setSuccessMessage(t[lang].successConnect);
                             await fetchInstances(); // Refresh main list
                         }
                     }
@@ -334,7 +606,7 @@ export default function WhatsAppInstancesPage() {
                 if (data.base64) {
                     setQrCode(data.base64);
                 } else if (data.state === 'open' || data.status === 'open') {
-                    setSuccessMessage('Esta instância já está conectada!');
+                    setSuccessMessage(t[lang].alreadyConnected);
                     setQrCode(null);
                     await fetchInstances();
                 } else if (data.code) {
@@ -343,7 +615,7 @@ export default function WhatsAppInstancesPage() {
                 }
             } else {
                 const errData = await res.json();
-                setError(errData.message || 'Erro ao buscar QR Code');
+                setError(errData.message || t[lang].qrFetchError);
             }
         } catch (err: any) {
             setError(err.message);
@@ -353,7 +625,7 @@ export default function WhatsAppInstancesPage() {
     };
 
     const deleteInstance = async (instanceName: string) => {
-        if (!confirm(`Tem certeza que deseja excluir a instância "${getDisplayName(instanceName)}"?\n\nIsso irá desconectar o WhatsApp e remover todos os dados.`)) return;
+        if (!confirm(t[lang].deleteConfirm.replace('{name}', getDisplayName(instanceName)))) return;
         setError(null);
         try {
             const res = await fetch(`/api/integrations/evolution/instance/${encodeURIComponent(instanceName)}`, {
@@ -361,7 +633,7 @@ export default function WhatsAppInstancesPage() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
-                setSuccessMessage('Instância excluída com sucesso!');
+                setSuccessMessage(t[lang].successDelete);
                 await fetchInstances();
                 if (selectedInstance === instanceName) {
                     setSelectedInstance(null);
@@ -369,7 +641,7 @@ export default function WhatsAppInstancesPage() {
                 }
             } else {
                 const errData = await res.json();
-                setError(errData.message || 'Erro ao excluir instância');
+                setError(errData.message || t[lang].delete + ' error');
             }
         } catch (err: any) {
             setError(err.message);
@@ -396,21 +668,21 @@ export default function WhatsAppInstancesPage() {
             return (
                 <span className="flex items-center space-x-1.5 px-3 py-1 bg-green-500/20 text-green-500 rounded-full text-xs font-bold">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Conectado</span>
+                    <span>{t[lang].connected}</span>
                 </span>
             );
         } else if (status === 'close' || status === 'disconnected' || status === 'closed') {
             return (
                 <span className="flex items-center space-x-1.5 px-3 py-1 bg-red-500/20 text-red-500 rounded-full text-xs font-bold">
                     <XCircle className="w-3.5 h-3.5" />
-                    <span>Desconectado</span>
+                    <span>{t[lang].disconnected}</span>
                 </span>
             );
         }
         return (
             <span className="flex items-center space-x-1.5 px-3 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs font-bold">
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Aguardando Conexão</span>
+                <span>{t[lang].waiting}</span>
             </span>
         );
     };
@@ -429,9 +701,9 @@ export default function WhatsAppInstancesPage() {
                     <div>
                         <h1 className="text-3xl font-extrabold tracking-tight flex items-center space-x-3">
                             <Smartphone className="w-8 h-8 text-primary" />
-                            <span>Instâncias WhatsApp</span>
+                            <span>{t[lang].title}</span>
                         </h1>
-                        <p className="text-gray-400 mt-1">Gerencie seus números conectados via EvolutionAPI</p>
+                        <p className="text-gray-400 mt-1">{t[lang].subtitle}</p>
                     </div>
                 </div>
                 <button
@@ -439,7 +711,7 @@ export default function WhatsAppInstancesPage() {
                     className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/10 transition font-bold text-sm"
                 >
                     <RefreshCw className="w-4 h-4" />
-                    <span>Atualizar</span>
+                    <span>{t[lang].update}</span>
                 </button>
             </div>
 
@@ -453,7 +725,7 @@ export default function WhatsAppInstancesPage() {
                                 onClick={() => router.push('/dashboard/settings/api')}
                                 className="underline font-bold hover:text-red-300 ml-2"
                             >
-                                Configurar Agora
+                                {t[lang].configNow}
                             </button>
                         )}
                     </div>
@@ -474,14 +746,14 @@ export default function WhatsAppInstancesPage() {
                     <div className="bg-surface border border-white/10 rounded-2xl p-6">
                         <h2 className="text-lg font-bold mb-4 flex items-center space-x-2">
                             <Plus className="w-5 h-5 text-primary" />
-                            <span>Nova Instância</span>
+                            <span>{t[lang].newInstance}</span>
                         </h2>
                         <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                             <input
                                 type="text"
                                 value={newInstanceName}
                                 onChange={(e) => setNewInstanceName(e.target.value)}
-                                placeholder="Nome da instância (ex: vendas, suporte, marketing)"
+                                placeholder={t[lang].instancePlaceholder}
                                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-primary"
                                 onKeyDown={(e) => e.key === 'Enter' && createInstance()}
                             />
@@ -491,11 +763,11 @@ export default function WhatsAppInstancesPage() {
                                 className="bg-primary hover:bg-primary-dark px-8 py-3 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 transition whitespace-nowrap"
                             >
                                 {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                <span>Criar Instância</span>
+                                <span>{t[lang].createInstance}</span>
                             </button>
                         </div>
                         <p className="text-xs text-gray-500 mt-3">
-                            Cada instância representa um número de WhatsApp diferente que será conectado via QR Code.
+                            {t[lang].instanceNote}
                         </p>
                     </div>
 
@@ -504,7 +776,7 @@ export default function WhatsAppInstancesPage() {
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-bold flex items-center space-x-2">
                                 <Phone className="w-5 h-5 text-primary" />
-                                <span>Suas Instâncias ({instances.filter(inst => {
+                                <span>{t[lang].yourInstances} ({instances.filter(inst => {
                                     if (user?.role !== 'superadmin' || selectedTenantFilter === 'all') return true;
                                     return inst.tenantId === selectedTenantFilter;
                                 }).length})</span>
@@ -522,7 +794,7 @@ export default function WhatsAppInstancesPage() {
                                             onChange={(e) => setSelectedTenantFilter(e.target.value)}
                                             className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition"
                                         >
-                                            <option value="all">Todos os Usuários ({instances.length})</option>
+                                            <option value="all">{t[lang].allUsers} ({instances.length})</option>
                                             {tenants.map(tenantId => {
                                                 const count = instances.filter(i => i.tenantId === tenantId).length;
                                                 return (
@@ -545,8 +817,8 @@ export default function WhatsAppInstancesPage() {
                         ) : instances.length === 0 ? (
                             <div className="text-center py-12 text-gray-500">
                                 <Smartphone className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                <p className="text-lg font-bold">Nenhuma instância criada</p>
-                                <p className="text-sm mt-2">Crie uma instância acima para conectar seu WhatsApp</p>
+                                <p className="text-lg font-bold">{t[lang].noInstances}</p>
+                                <p className="text-sm mt-2">{t[lang].createFirst}</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -585,7 +857,7 @@ export default function WhatsAppInstancesPage() {
                                                         className="flex items-center space-x-2 bg-primary hover:bg-primary-dark px-4 py-2 rounded-lg text-sm font-bold transition"
                                                     >
                                                         <QrCode className="w-4 h-4" />
-                                                        <span>Conectar (QR Code)</span>
+                                                        <span>{t[lang].connectQr}</span>
                                                     </button>
                                                 )}
                                                 {isConnected && (() => {
@@ -604,13 +876,13 @@ export default function WhatsAppInstancesPage() {
                                                                 className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-bold transition border border-white/10"
                                                             >
                                                                 <Link2 className="w-4 h-4" />
-                                                                <span>Associar a Campanha</span>
+                                                                <span>{t[lang].associateCampaign}</span>
                                                             </button>
 
                                                             {/* quick automation toggles */}
                                                             <div className="flex items-center bg-black/20 rounded-lg p-1 border border-white/5 space-x-1">
                                                                 <button
-                                                                    title={aiIsActive ? "Desativar IA" : "Ativar IA"}
+                                                                    title={aiIsActive ? t[lang].deactivateAi : t[lang].activateAi}
                                                                     disabled={isToggling !== null}
                                                                     onClick={() => toggleAutomation(instanceName, 'ai', aiIsActive)}
                                                                     className={`p-1.5 rounded-md transition-all flex items-center space-x-1 ${aiIsActive ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-white/5 text-gray-500 opacity-60'}`}
@@ -619,7 +891,7 @@ export default function WhatsAppInstancesPage() {
                                                                     <span className="text-[10px] font-bold">IA</span>
                                                                 </button>
                                                                 <button
-                                                                    title={n8nIsActive ? "Desativar n8n" : "Ativar n8n"}
+                                                                    title={n8nIsActive ? t[lang].deactivateN8n : t[lang].activateN8n}
                                                                     disabled={isToggling !== null}
                                                                     onClick={() => toggleAutomation(instanceName, 'n8n', n8nIsActive)}
                                                                     className={`p-1.5 rounded-md transition-all flex items-center space-x-1 ${n8nIsActive ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' : 'bg-white/5 text-gray-500 opacity-60'}`}
@@ -637,7 +909,7 @@ export default function WhatsAppInstancesPage() {
                                                                     }`}
                                                             >
                                                                 <Settings className="w-4 h-4" />
-                                                                <span>Configurar</span>
+                                                                <span>{t[lang].configure}</span>
                                                             </button>
                                                         </>
                                                     );
@@ -647,7 +919,7 @@ export default function WhatsAppInstancesPage() {
                                                     className="flex items-center space-x-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-sm font-bold transition"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
-                                                    <span>Excluir</span>
+                                                    <span>{t[lang].delete}</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -663,14 +935,14 @@ export default function WhatsAppInstancesPage() {
                     <div className="bg-surface border border-white/10 rounded-2xl p-6 sticky top-8">
                         <h2 className="text-lg font-bold mb-4 flex items-center space-x-2">
                             <QrCode className="w-5 h-5 text-primary" />
-                            <span>QR Code</span>
+                            <span>{t[lang].qrCode}</span>
                         </h2>
 
                         <div className="flex flex-col items-center justify-center min-h-[350px]">
                             {qrLoading ? (
                                 <div className="text-center space-y-3">
                                     <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-                                    <p className="text-gray-400 text-sm">Gerando QR Code...</p>
+                                    <p className="text-gray-400 text-sm">{t[lang].generatingQr}</p>
                                 </div>
                             ) : qrCode ? (
                                 <div className="text-center space-y-4">
@@ -678,9 +950,9 @@ export default function WhatsAppInstancesPage() {
                                         <img src={qrCode} alt="QR Code" className="w-56 h-56" />
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="font-bold">Escaneie com seu WhatsApp</p>
+                                        <p className="font-bold">{t[lang].scanQr}</p>
                                         <p className="text-gray-400 text-xs">
-                                            WhatsApp {'>'} Menu {'>'} Aparelhos Conectados
+                                            {t[lang].qrInstructions}
                                         </p>
                                     </div>
                                     <button
@@ -688,10 +960,10 @@ export default function WhatsAppInstancesPage() {
                                         className="text-primary text-sm flex items-center space-x-1 mx-auto hover:underline"
                                     >
                                         <RefreshCw className="w-3 h-3" />
-                                        <span>Atualizar QR Code</span>
+                                        <span>{t[lang].refreshQr}</span>
                                     </button>
                                     <p className="text-gray-500 text-xs">
-                                        Instância: {selectedInstance && getDisplayName(selectedInstance)}
+                                        {t[lang].instanceLabel}: {selectedInstance && getDisplayName(selectedInstance)}
                                     </p>
                                 </div>
                             ) : selectedInstance && instances.find(i => (i.instance?.instanceName || i.instanceName || i.name) === selectedInstance && (getStatus(i) === 'open' || getStatus(i) === 'connected')) ? (
@@ -700,22 +972,22 @@ export default function WhatsAppInstancesPage() {
                                         <CheckCircle2 className="w-16 h-16 text-green-500" />
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-green-500 font-bold text-lg">Conectado!</p>
-                                        <p className="text-gray-400 text-sm">Esta instância já está ativa</p>
+                                        <p className="text-green-500 font-bold text-lg">{t[lang].connected}!</p>
+                                        <p className="text-gray-400 text-sm">{t[lang].alreadyConnected}</p>
                                     </div>
                                 </div>
                             ) : selectedInstance ? (
                                 <div className="text-center space-y-4 text-gray-500">
                                     <XCircle className="w-12 h-12 mx-auto opacity-30 text-red-400" />
                                     <div className="space-y-1">
-                                        <p className="font-bold text-red-400">Não foi possível carregar o QR Code</p>
-                                        <p className="text-xs">A API não retornou um código válido.</p>
+                                        <p className="font-bold text-red-400">{t[lang].qrLoadError}</p>
+                                        <p className="text-xs">{t[lang].qrLoadErrorDesc}</p>
                                         <button
                                             onClick={() => selectedInstance && fetchQrCode(selectedInstance)}
                                             className="text-primary text-sm flex items-center space-x-1 mx-auto hover:underline mt-2"
                                         >
                                             <RefreshCw className="w-3 h-3" />
-                                            <span>Tentar Novamente</span>
+                                            <span>{t[lang].tryAgain}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -723,8 +995,8 @@ export default function WhatsAppInstancesPage() {
                                 <div className="text-center space-y-4 text-gray-500">
                                     <QrCode className="w-16 h-16 mx-auto opacity-30" />
                                     <div className="space-y-1">
-                                        <p className="font-bold">Conecte seu WhatsApp</p>
-                                        <p className="text-sm">Clique em "Conectar (QR Code)" em uma instância ao lado</p>
+                                        <p className="font-bold">{t[lang].connectYourWhatsapp}</p>
+                                        <p className="text-sm">{t[lang].connectClick}</p>
                                     </div>
                                 </div>
                             )}
@@ -743,7 +1015,7 @@ export default function WhatsAppInstancesPage() {
                                         <Bot className="w-6 h-6 text-primary" />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-black">Agente de IA</h2>
+                                        <h2 className="text-xl font-black">{t[lang].aiAgent}</h2>
                                         <p className="text-gray-400 text-xs">{getDisplayName(aiModalInstance)}</p>
                                     </div>
                                 </div>
@@ -757,8 +1029,8 @@ export default function WhatsAppInstancesPage() {
                                 {/* Toggle */}
                                 <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                                     <div>
-                                        <p className="font-bold">Ativar Automação de IA</p>
-                                        <p className="text-xs text-gray-400">O robô responderá automaticamente às mensagens</p>
+                                        <p className="font-bold">{t[lang].aiToggle}</p>
+                                        <p className="text-xs text-gray-400">{t[lang].aiDesc}</p>
                                     </div>
                                     <button
                                         onClick={() => setAiConfig({ ...aiConfig, enabled: !aiConfig.enabled, n8nEnabled: false })}
@@ -774,15 +1046,15 @@ export default function WhatsAppInstancesPage() {
                                         <div className="flex items-center space-x-3">
                                             <Terminal className={`w-5 h-5 ${aiConfig.n8nEnabled ? 'text-orange-500' : 'text-gray-500'}`} />
                                             <div>
-                                                <p className="font-bold">Automação via n8n</p>
-                                                <p className="text-[10px] text-gray-400">Fluxos externos e webhooks</p>
+                                                <p className="font-bold">{t[lang].n8nToggle}</p>
+                                                <p className="text-[10px] text-gray-400">{t[lang].n8nDesc}</p>
                                             </div>
                                         </div>
                                         <button
-                                            title="Ativar/Desativar n8n"
+                                            title={aiConfig.n8nEnabled ? t[lang].deactivateN8n : t[lang].activateN8n}
                                             onClick={() => {
                                                 if (!hasN8nWebhook && !aiConfig.n8nEnabled) {
-                                                    if (confirm('Webhook do n8n não configurado. Deseja ir para as configurações agora?')) {
+                                                    if (confirm(t[lang].n8nNotConfigured)) {
                                                         router.push('/dashboard/settings/api');
                                                     }
                                                     return;
@@ -798,10 +1070,10 @@ export default function WhatsAppInstancesPage() {
 
                                 {/* Prompt Selector */}
                                 <div className="space-y-3">
-                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Prompt do Agente</label>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">{t[lang].agentPrompt}</label>
                                     {savedPrompts.length === 0 ? (
                                         <p className="text-xs text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
-                                            Nenhum prompt salvo. Crie prompts em <strong>Configurações &gt; Agentes de IA</strong> primeiro.
+                                            {t[lang].noPrompts}
                                         </p>
                                     ) : (
                                         <select
@@ -809,7 +1081,7 @@ export default function WhatsAppInstancesPage() {
                                             value={aiConfig.promptId}
                                             onChange={(e) => setAiConfig({ ...aiConfig, promptId: e.target.value })}
                                         >
-                                            <option value="">Selecione um prompt...</option>
+                                            <option value="">{t[lang].selectPrompt}</option>
                                             {savedPrompts.map(p => (
                                                 <option key={p.id} value={p.id}>{p.name}</option>
                                             ))}
@@ -825,14 +1097,14 @@ export default function WhatsAppInstancesPage() {
 
                                 {/* Gemini Model Selector */}
                                 <div className="space-y-3">
-                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">Modelo de IA</label>
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest">{t[lang].aiModel}</label>
                                     <AiModelSelector
                                         value={aiConfig.aiModel}
                                         token={token || ''}
                                         className="w-full"
                                         onChange={(newModel) => setAiConfig({ ...aiConfig, aiModel: newModel })}
                                     />
-                                    <p className="text-[10px] text-gray-500">Escolha o modelo de IA (Gemini ou OpenRouter).</p>
+                                    <p className="text-[10px] text-gray-500">{t[lang].aiModelDesc}</p>
                                 </div>
                             </div>
 
@@ -842,7 +1114,7 @@ export default function WhatsAppInstancesPage() {
                                     onClick={() => setAiModalInstance(null)}
                                     className="flex-1 px-4 py-3 rounded-2xl border border-white/10 font-bold hover:bg-white/5 transition text-sm"
                                 >
-                                    Cancelar
+                                    {t[lang].cancel}
                                 </button>
                                 <button
                                     onClick={handleSaveAI}
@@ -850,7 +1122,7 @@ export default function WhatsAppInstancesPage() {
                                     className="flex-[2] bg-primary hover:bg-primary-dark text-white px-4 py-3 rounded-2xl font-black shadow-lg shadow-primary/20 flex items-center justify-center space-x-2 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                                 >
                                     {isSavingAI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    <span>Salvar Configuração</span>
+                                    <span>{t[lang].saveConfig}</span>
                                 </button>
                             </div>
                         </div>
