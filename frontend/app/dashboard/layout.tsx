@@ -194,7 +194,7 @@ export default function DashboardLayout({
 
                     <select 
                         value={lang}
-                        onChange={(e) => changeLang(e.target.value)}
+                        onChange={(e) => setLang(e.target.value as any)}
                         className="bg-white/5 border border-white/10 rounded-lg text-[10px] px-2 py-1 outline-none text-white font-bold"
                     >
                         {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
