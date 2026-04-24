@@ -18,7 +18,8 @@ import {
     X,
     Terminal,
     CreditCard,
-    AlertCircle
+    AlertCircle,
+    FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
