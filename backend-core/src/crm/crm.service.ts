@@ -472,13 +472,35 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         if (finalProvider === 'instagram') {
             try {
                 if (contact?.externalId) {
-                    this.logger.log(`[CRM_SEND] Routing Instagram message to MetaApiService for PSID ${contact.externalId}`);
-                    await this.metaApiService.sendInstagramMessage(tenantId, contact.externalId.split('@')[0], content);
+                    const psid = contact.externalId.split('@')[0];
+                    this.logger.log(`[CRM_SEND] Routing Instagram message to MetaApiService for PSID ${psid} (Instance: ${contact.instance})`);
+                    const response = await this.metaApiService.sendInstagramMessage(tenantId, psid, content, contact.instance);
+                    
+                    if (response?.message_id || response?.recipient_id) {
+                        message.status = 'SENT';
+                        message.wamid = response.message_id || undefined;
+                        await this.messageRepository.save(message);
+                        
+                        // Emit status update
+                        this.communicationService.emitToTenant(tenantId, 'message_status', {
+                            messageId: message.id,
+                            status: 'SENT'
+                        });
+                    }
                 } else {
                     throw new Error('Contact missing externalId (PSID) for Instagram sending');
                 }
             } catch (err: any) {
                 this.logger.error(`[CRM_SEND] Failed to send Instagram message: ${err.message}`);
+                message.status = 'FAILED';
+                await this.messageRepository.save(message);
+                
+                // Emit status update
+                this.communicationService.emitToTenant(tenantId, 'message_status', {
+                    messageId: message.id,
+                    status: 'FAILED',
+                    error: err.message
+                });
             }
         } else if (finalProvider === 'whatsapp') {
             try {

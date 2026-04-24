@@ -36,6 +36,11 @@ export class IntegrationsController {
     async findAll(@Request() req) {
         console.log(`[SECURITY] User ${req.user.email} (${req.user.role}) listing integrations for tenant ${req.user.tenantId}`);
 
+        // 🔧 SYNC FIX: Ensure Meta credentials are synced to Integration table so they appear in Campaigns
+        if (req.user.tenantId) {
+            await this.integrationsService.syncMetaIntegration(req.user.tenantId);
+        }
+
         // 1. Fetch DB Integrations (Official Meta, Mercado Livre, etc.)
         const dbIntegrations = await this.integrationsService.findAllByTenant(req.user.tenantId, req.user.role);
 
@@ -361,7 +366,14 @@ export class IntegrationsController {
             console.log('[SAVE_CRED] Final tenantId:', tenantId, 'Key:', body.name);
         }
 
-        return this.integrationsService.saveApiCredential(finalTenantId, body.name, body.value);
+        const saved = await this.integrationsService.saveApiCredential(finalTenantId, body.name, body.value);
+
+        // 🔧 SYNC FIX: If Meta credentials are saved, sync to Integration table
+        if (tenantId && (body.name.startsWith('META_') || body.name.startsWith('INSTAGRAM_'))) {
+            await this.integrationsService.syncMetaIntegration(tenantId);
+        }
+
+        return saved;
     }
 
     @UseGuards(JwtAuthGuard)

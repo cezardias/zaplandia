@@ -375,7 +375,7 @@ export class WebhooksController {
                                         if (replyText) {
                                             try {
                                                 this.logger.log(`[INSTAGRAM_WEBHOOK] Sending N8N reply (First 50 chars): ${replyText.substring(0, 50)}...`);
-                                                await this.metaApiService.sendInstagramMessage(tenantId, senderId, replyText);
+                                                await this.metaApiService.sendInstagramMessage(tenantId, senderId, replyText, pageId);
                                             } catch (sendErr: any) {
                                                 this.logger.error(`[INSTAGRAM_WEBHOOK] Failed to send N8N reply: ${sendErr.message}`);
                                             }
@@ -388,7 +388,7 @@ export class WebhooksController {
                                     if (shouldRespond) {
                                         const aiResp = await this.aiService.generateResponse(contact, content, tenantId, pageId);
                                         if (aiResp) {
-                                            await this.metaApiService.sendInstagramMessage(tenantId, senderId, aiResp);
+                                            await this.metaApiService.sendInstagramMessage(tenantId, senderId, aiResp, pageId);
                                         }
                                     }
                                 } catch (aiErr: any) {

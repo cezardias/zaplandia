@@ -206,4 +206,52 @@ export class IntegrationsService {
         this.logger.log(`[API_KEY] Generated new API Key for tenant ${tenantId}`);
         return newKey;
     }
+
+    /**
+     * Syncs Meta API Credentials to the Integration table.
+     * This ensures that Meta configurations appear as selectable instances in Campaigns and other parts of the system.
+     */
+    async syncMetaIntegration(tenantId: string) {
+        if (!tenantId) return;
+
+        try {
+            const accessToken = await this.getCredential(tenantId, 'META_ACCESS_TOKEN', true);
+            const phoneNumberId = await this.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
+            const wabaId = await this.getCredential(tenantId, 'META_WABA_ID', true);
+
+            if (!accessToken || !phoneNumberId) {
+                this.logger.debug(`[SYNC_META] Skipping sync for tenant ${tenantId}: Missing token or phone number ID`);
+                return;
+            }
+
+            // Find if there's already a 'whatsapp' integration for this tenant
+            let integration = await this.integrationRepository.findOne({
+                where: { tenantId, provider: 'whatsapp' as any }
+            });
+
+            const credentials = {
+                META_ACCESS_TOKEN: accessToken,
+                META_PHONE_NUMBER_ID: phoneNumberId,
+                META_WABA_ID: wabaId
+            };
+
+            if (integration) {
+                this.logger.log(`[SYNC_META] Updating existing WhatsApp integration for tenant ${tenantId}`);
+                integration.credentials = { ...(integration.credentials || {}), ...credentials };
+                integration.status = IntegrationStatus.CONNECTED;
+                await this.integrationRepository.save(integration);
+            } else {
+                this.logger.log(`[SYNC_META] Creating new WhatsApp integration for tenant ${tenantId}`);
+                integration = this.integrationRepository.create({
+                    tenantId,
+                    provider: 'whatsapp' as any,
+                    credentials,
+                    status: IntegrationStatus.CONNECTED,
+                });
+                await this.integrationRepository.save(integration);
+            }
+        } catch (error) {
+            this.logger.error(`[SYNC_META] Failed to sync Meta integration for tenant ${tenantId}: ${error.message}`);
+        }
+    }
 }

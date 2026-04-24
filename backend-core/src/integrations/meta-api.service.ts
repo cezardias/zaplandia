@@ -5,7 +5,7 @@ import axios from 'axios';
 @Injectable()
 export class MetaApiService {
     private readonly logger = new Logger(MetaApiService.name);
-    private readonly baseUrl = 'https://graph.facebook.com/v19.0';
+    private readonly baseUrl = 'https://graph.facebook.com/v18.0';
 
     constructor(private readonly integrationsService: IntegrationsService) { }
 
@@ -173,16 +173,19 @@ export class MetaApiService {
      * Requires instagram_manage_messages permission and the Page Access Token.
      * The recipient PSID comes from messaging.sender.id in the Instagram webhook payload.
      */
-    async sendInstagramMessage(tenantId: string, recipientPsid: string, text: string) {
+    async sendInstagramMessage(tenantId: string, recipientPsid: string, text: string, forcedPageId?: string) {
         try {
             const { accessToken: defaultToken, instagramBusinessId: configIbId, instagramAccessToken } = await this.getCredentials(tenantId);
             const accessToken = instagramAccessToken || defaultToken;
 
             // Instagram page ID for the tenant
-            let pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            let pageId = forcedPageId;
+            if (!pageId) {
+                pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            }
             if (!pageId) pageId = configIbId; // Fallback to ID from META_APP_CONFIG
             
-            if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant (check META_APP_CONFIG)');
+            if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
 
             let cleanToken = accessToken ? accessToken.toString().trim().replace(/['"]+/g, '') : '';
             this.logger.log(`[INSTAGRAM_SEND] Token prefix: ${cleanToken.substring(0, 7)}... Length: ${cleanToken.length}`);
@@ -198,13 +201,12 @@ export class MetaApiService {
             // Check if it's an Instagram-scoped token (IGAAR...) or a Facebook/Page-scoped token (EAA...)
             if (cleanToken.startsWith('IGAAR')) {
                 // New endpoint suggested by Meta for Instagram Messaging API
-                activeUrl = `https://graph.instagram.com/v12.0/me/messages`;
+                activeUrl = `https://graph.instagram.com/v18.0/me/messages`;
                 this.logger.log(`[INSTAGRAM_SEND] Using Instagram-scoped API: ${activeUrl}`);
             } else {
                 // Standard Instagram Graph API via Facebook Page
-                if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant (required for EAA tokens)');
-                activeUrl = `https://graph.facebook.com/v12.0/${pageId}/messages`;
-                this.logger.log(`[INSTAGRAM_SEND] Using Facebook-scoped API: ${activeUrl}`);
+                activeUrl = `https://graph.facebook.com/v18.0/${pageId}/messages`;
+                this.logger.log(`[INSTAGRAM_SEND] Using Facebook-scoped API: ${activeUrl} (Page: ${pageId})`);
             }
 
             this.logger.debug(`[INSTAGRAM_SEND] Payload: ${JSON.stringify(payload)}`);
@@ -219,17 +221,20 @@ export class MetaApiService {
                 }
             );
 
-
             this.logger.log(`[INSTAGRAM_SEND] SUCCESS: ${JSON.stringify(response.data)}`);
             return response.data;
         } catch (error: any) {
             const errorData = error.response?.data?.error || {};
             const detailedMsg = errorData.message || error.message;
-            this.logger.error(`[INSTAGRAM_SEND] FAILED: ${detailedMsg}`);
+            const errorCode = errorData.code;
+            const errorSubcode = errorData.error_subcode;
+            
+            this.logger.error(`[INSTAGRAM_SEND] FAILED (Code ${errorCode}, Sub ${errorSubcode}): ${detailedMsg}`);
+            
             if (error.response?.data) {
                 this.logger.error(`[INSTAGRAM_SEND] Full Error: ${JSON.stringify(error.response.data)}`);
             }
-            throw error;
+            throw new Error(`Meta API Error: ${detailedMsg} (Code: ${errorCode})`);
         }
     }
 
@@ -248,7 +253,7 @@ export class MetaApiService {
             }
 
             const response = await axios.get(
-                `https://graph.facebook.com/v12.0/${psid}`,
+                `https://graph.facebook.com/v18.0/${psid}`,
                 { params: { access_token: accessToken, fields: 'name,username' } }
             );
 
