@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import {
     Search,
     Send,
@@ -53,12 +54,13 @@ interface Message {
 }
 
 export default function OmniInboxPage() {
+    const { lang } = useLanguage();
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
 
     const t: any = {
         pt_BR: {
@@ -281,17 +283,8 @@ export default function OmniInboxPage() {
         }
     };
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang');
-            if (current) setLang(current as any);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     const fetchAiPrompts = async () => {
         if (!token) return;

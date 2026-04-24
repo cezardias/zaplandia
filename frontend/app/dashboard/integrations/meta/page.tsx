@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from 'next/navigation';
 import {
     Loader2,
@@ -29,6 +30,7 @@ import {
 
 export default function MetaApiPage() {
     const { token, user } = useAuth();
+    const { lang } = useLanguage();
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
@@ -64,21 +66,10 @@ export default function MetaApiPage() {
         bodyText: ''
     });
 
-    // English Mode for App Review
-    const [lang, setLang] = useState('pt_BR');
     const [showWizard, setShowWizard] = useState(false);
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang') || 'pt_BR';
-        setLang(saved);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang') || 'pt_BR';
-            setLang(current);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     const t: any = {
         pt_BR: {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from 'next/navigation';
 import {
     Loader2,
@@ -39,6 +40,7 @@ interface WhatsAppInstance {
 
 export default function WhatsAppInstancesPage() {
     const { token, user } = useAuth();
+    const { lang } = useLanguage();
     const router = useRouter();
     const [instances, setInstances] = useState<WhatsAppInstance[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function WhatsAppInstancesPage() {
     const [hasN8nWebhook, setHasN8nWebhook] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
     const [dbIntegrations, setDbIntegrations] = useState<any[]>([]); // DB integrations for AI config
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
 
     const t: any = {
         pt_BR: {
@@ -320,17 +322,8 @@ export default function WhatsAppInstancesPage() {
         }
     };
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang');
-            if (current) setLang(current as any);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     useEffect(() => {
         if (token) {

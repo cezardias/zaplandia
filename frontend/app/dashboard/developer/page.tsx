@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
     Terminal, 
     Copy, 
@@ -16,12 +17,13 @@ import {
 
 export default function DeveloperPage() {
     const { user, token: authContextToken } = useAuth();
+    const { lang } = useLanguage();
     const [apiKey, setApiKey] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isRotating, setIsRotating] = useState(false);
     const [copiedKey, setCopiedKey] = useState(false);
     const [copiedUrl, setCopiedUrl] = useState(false);
-    const [lang, setLang] = useState<'pt_BR' | 'en_US' | 'pt_PT' | 'it_IT'>('pt_BR');
+
 
     const t: any = {
         pt_BR: {
@@ -154,17 +156,8 @@ export default function DeveloperPage() {
         }
     };
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang');
-            if (current) setLang(current as any);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     useEffect(() => {
         if (user) {

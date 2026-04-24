@@ -106,17 +106,8 @@ export default function AiAssistantPage() {
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
     const [generatedPlans, setGeneratedPlans] = useState<any[]>([]);
 
-    useEffect(() => {
-        const saved = localStorage.getItem('zap_lang');
-        if (saved) setLang(saved as any);
+    // Language sync handled by useLanguage()
 
-        const handleLangChange = () => {
-            const current = localStorage.getItem('zap_lang');
-            if (current) setLang(current as any);
-        };
-        window.addEventListener('languageChange', handleLangChange);
-        return () => window.removeEventListener('languageChange', handleLangChange);
-    }, []);
 
     useEffect(() => {
         if (token) fetchPrompts();
