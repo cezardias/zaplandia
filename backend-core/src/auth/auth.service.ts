@@ -77,13 +77,17 @@ export class AuthService {
 
         if (!user) {
             // Auto-register new user via Google
-            const firstName = profile.firstName && profile.firstName !== 'undefined' ? profile.firstName : '';
-            const lastName = profile.lastName && profile.lastName !== 'undefined' ? profile.lastName : '';
+            const rawFirstName = String(profile.firstName || '');
+            const rawLastName = String(profile.lastName || '');
+            
+            const firstName = (rawFirstName && rawFirstName !== 'undefined' && rawFirstName !== 'null') ? rawFirstName : '';
+            const lastName = (rawLastName && rawLastName !== 'undefined' && rawLastName !== 'null') ? rawLastName : '';
+            
             const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuário Zaplândia';
             
             user = await this.register({
                 email: profile.email,
-                name: fullName,
+                name: fullName.trim(),
                 password: Math.random().toString(36).slice(-12),
                 companyName: `Negócio de ${firstName || 'Zaplândia'}`,
             });
@@ -104,13 +108,17 @@ export class AuthService {
 
         if (!user) {
             // Auto-register new user via Facebook
-            const firstName = profile.firstName && profile.firstName !== 'undefined' ? profile.firstName : '';
-            const lastName = profile.lastName && profile.lastName !== 'undefined' ? profile.lastName : '';
+            const rawFirstName = String(profile.firstName || '');
+            const rawLastName = String(profile.lastName || '');
+            
+            const firstName = (rawFirstName && rawFirstName !== 'undefined' && rawFirstName !== 'null') ? rawFirstName : '';
+            const lastName = (rawLastName && rawLastName !== 'undefined' && rawLastName !== 'null') ? rawLastName : '';
+            
             const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuário Zaplândia';
 
             user = await this.register({
                 email: profile.email,
-                name: fullName,
+                name: fullName.trim(),
                 password: Math.random().toString(36).slice(-12),
                 companyName: `Negócio de ${firstName || 'Zaplândia'}`,
             });
