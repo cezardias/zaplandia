@@ -215,7 +215,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 });
 
                 if (matchedIntegration) {
-                    instanceName = matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
+                    instanceName = matchedIntegration.credentials?.META_PHONE_NUMBER_ID || matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
                 }
             }
 
@@ -328,7 +328,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 });
 
                 if (matchedIntegration) {
-                    instanceName = matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
+                    instanceName = matchedIntegration.credentials?.META_PHONE_NUMBER_ID || matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
                 }
             }
 
@@ -1077,7 +1077,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 });
 
                 if (matchedIntegration) {
-                    instanceName = matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
+                    instanceName = matchedIntegration.credentials?.META_PHONE_NUMBER_ID || matchedIntegration.credentials?.instanceName || matchedIntegration.settings?.instanceName || matchedIntegration.credentials?.name || instanceName;
                 }
             }
 
