@@ -310,7 +310,7 @@ export default function OmniInboxPage() {
             });
             if (res.ok) {
                 const creds = await res.json();
-                const hasUrl = creds.some((c: any) => c.key_name === 'N8N_WEBHOOK_URL' && c.key_value);
+                const hasUrl = creds.some((c: any) => (c.key_name === 'N8N_WEBHOOK_URL' || c.key_name === 'N8N_PROVIDER_CONFIG') && c.key_value);
                 setHasN8nWebhook(hasUrl);
             }
         } catch (err) {
