@@ -138,6 +138,13 @@ export class CampaignsService {
             }
 
             instanceName = await this.resolveInstanceName(campaign.integrationId, tenantId) || 'unknown';
+
+            // 🔧 SELF-HEALING: If instanceName is unknown and it's a Meta integration, try to sync first
+            if (instanceName === 'unknown' && provider === IntegrationProvider.WHATSAPP) {
+                this.logger.log(`[MOTOR] Instance unknown for Meta. Triggering emergency sync for tenant ${tenantId}...`);
+                await this.integrationsService.syncMetaIntegration(tenantId);
+                instanceName = await this.resolveInstanceName(campaign.integrationId, tenantId) || 'unknown';
+            }
         } else {
             // Fallback if integration not found but we somehow have ID
             instanceName = await this.resolveInstanceName(campaign.integrationId, tenantId) || 'unknown';

@@ -232,7 +232,8 @@ export class IntegrationsService {
             const credentials = {
                 META_ACCESS_TOKEN: accessToken,
                 META_PHONE_NUMBER_ID: phoneNumberId,
-                META_WABA_ID: wabaId
+                META_WABA_ID: wabaId,
+                instanceName: 'meta_official'
             };
 
             if (integration) {
