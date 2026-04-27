@@ -138,7 +138,8 @@ export default function DashboardLayout({
 
         // Check License Status (except for superadmin and billing/support pages)
         if (user && user.role !== 'superadmin' && !pathname.includes('/billing') && !pathname.includes('/support')) {
-            fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/billing/status`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : 'http://localhost:3001');
+            fetch(`${apiUrl}/api/billing/status`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('zap_token')}` }
             })
             .then(res => res.json())
