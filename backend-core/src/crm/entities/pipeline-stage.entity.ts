@@ -18,6 +18,9 @@ export class PipelineStage {
     @Column({ nullable: true })
     color: string;
 
+    @Column({ type: 'text', nullable: true })
+    qualificationCriteria: string;
+
     @ManyToOne(() => Tenant)
     tenant: Tenant;
 

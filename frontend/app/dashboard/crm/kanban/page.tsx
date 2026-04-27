@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Loader2, MoreHorizontal, MessageSquare, Plus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Loader2, MoreHorizontal, MessageSquare, Plus, Trash2, Pencil, Check, X, Target, Info } from 'lucide-react';
 
 interface Stage {
     id: string;
@@ -12,6 +12,7 @@ interface Stage {
     key: string;
     order: number;
     color?: string;
+    qualificationCriteria?: string;
 }
 
 export default function KanbanPage() {
@@ -42,7 +43,9 @@ export default function KanbanPage() {
             errorLoadingCampaigns: '[KANBAN] Erro ao carregar campanhas:',
             failedUpdateStage: 'Falha ao atualizar estágio',
             failedAddStage: 'Falha ao adicionar estágio',
-            failedDeleteStage: 'Falha ao excluir estágio'
+            failedDeleteStage: 'Falha ao excluir estágio',
+            qualificationPrompt: 'Defina os critérios de qualificação para este estágio:',
+            qualificationTitle: 'Qualificação'
         },
         en_US: {
             title: 'Sales Pipeline',
@@ -62,7 +65,9 @@ export default function KanbanPage() {
             errorLoadingCampaigns: '[KANBAN] Error loading campaigns:',
             failedUpdateStage: 'Failed to update stage',
             failedAddStage: 'Failed to add stage',
-            failedDeleteStage: 'Failed to delete stage'
+            failedDeleteStage: 'Failed to delete stage',
+            qualificationPrompt: 'Define the qualification criteria for this stage:',
+            qualificationTitle: 'Qualification'
         },
         pt_PT: {
             title: 'Pipeline de Vendas',
@@ -82,7 +87,9 @@ export default function KanbanPage() {
             errorLoadingCampaigns: '[KANBAN] Erro ao carregar campanhas:',
             failedUpdateStage: 'Falha ao atualizar estágio',
             failedAddStage: 'Falha ao adicionar estágio',
-            failedDeleteStage: 'Falha ao eliminar estágio'
+            failedDeleteStage: 'Falha ao eliminar estágio',
+            qualificationPrompt: 'Defina os critérios de qualificação para este estágio:',
+            qualificationTitle: 'Qualificação'
         },
         it_IT: {
             title: 'Pipeline di Vendita',
@@ -102,7 +109,9 @@ export default function KanbanPage() {
             errorLoadingCampaigns: '[KANBAN] Errore nel caricamento delle campagne:',
             failedUpdateStage: 'Aggiornamento fase fallito',
             failedAddStage: 'Aggiunta fase fallita',
-            failedDeleteStage: 'Eliminazione fase fallita'
+            failedDeleteStage: 'Eliminazione fase fallita',
+            qualificationPrompt: 'Definisci i criteri di qualificazione per questa fase:',
+            qualificationTitle: 'Qualificazione'
         }
     };
 
@@ -288,6 +297,27 @@ export default function KanbanPage() {
         }
     };
 
+    const handleUpdateQualification = async (stage: Stage) => {
+        const criteria = prompt(t[lang].qualificationPrompt, stage.qualificationCriteria || '');
+        if (criteria === null) return;
+
+        try {
+            const res = await fetch(`/api/crm/stages/${stage.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ qualificationCriteria: criteria })
+            });
+            if (res.ok) {
+                fetchStages();
+            }
+        } catch (err) {
+            console.error(t[lang].failedUpdateStage, err);
+        }
+    };
+
     if (isLoading || isStagesLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
     return (
@@ -390,9 +420,28 @@ export default function KanbanPage() {
                                                 <Trash2 className="w-4 h-4" />
                                                 <span>{t[lang].delete}</span>
                                             </button>
+                                            <div className="h-[1px] bg-white/5 my-1" />
+                                            <button
+                                                onClick={() => handleUpdateQualification(stage)}
+                                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-green-400 hover:bg-green-500/10 transition text-left"
+                                            >
+                                                <Target className="w-4 h-4" />
+                                                <span>{t[lang].qualificationTitle}</span>
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
+                                 </div>
+
+                                {stage.qualificationCriteria && (
+                                    <div className="px-4 py-2 bg-green-500/10 border-b border-green-500/20">
+                                        <div className="flex items-start gap-2">
+                                            <Info className="w-3 h-3 text-green-400 mt-0.5 shrink-0" />
+                                            <p className="text-[10px] text-green-300 italic leading-tight">
+                                                {stage.qualificationCriteria}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <Droppable droppableId={stage.key}>
                                     {(provided) => (
