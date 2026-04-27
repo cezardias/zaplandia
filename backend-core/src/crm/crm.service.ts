@@ -218,7 +218,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         await this.contactRepository.update(contactId, {
             lastMessage: content,
             updatedAt: new Date(),
-            provider: provider || contact?.provider || 'whatsapp' // Ensure provider is set
+            provider: provider || 'whatsapp' // Ensure provider is set
         });
 
         // Emit via socket so UI updates
