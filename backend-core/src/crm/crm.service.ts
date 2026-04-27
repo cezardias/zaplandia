@@ -19,6 +19,8 @@ import * as path from 'path';
 
 import { Integration, IntegrationProvider, IntegrationStatus } from '../integrations/entities/integration.entity';
 
+import { PipelineStage } from './entities/pipeline-stage.entity';
+
 @Injectable()
 export class CrmService implements OnApplicationBootstrap, OnModuleInit {
     private readonly logger = new Logger(CrmService.name);
@@ -33,6 +35,8 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         private campaignRepository: Repository<Campaign>,
         @InjectRepository(Integration)
         private integrationRepository: Repository<Integration>,
+        @InjectRepository(PipelineStage)
+        private stageRepository: Repository<PipelineStage>,
         private readonly n8nService: N8nService,
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
@@ -41,6 +45,57 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         private readonly communicationService: CommunicationService,
         @InjectQueue('campaign-queue') private readonly campaignQueue: Queue,
     ) { }
+
+    /**
+     * Automatically moves a contact to a new pipeline stage based on qualification criteria.
+     * @param tenantId The tenant ID
+     * @param contactId The contact ID
+     * @param action 'SENT' (outbound) or 'REPLY' (inbound)
+     */
+    async triggerLeadQualification(tenantId: string, contactId: string, action: 'SENT' | 'REPLY') {
+        try {
+            const stages = await this.stageRepository.find({ where: { tenantId } });
+            if (!stages || stages.length === 0) return;
+
+            const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
+            if (!contact) return;
+
+            let targetStageKey: string | null = null;
+
+            for (const stage of stages) {
+                if (!stage.qualificationCriteria) continue;
+                
+                const criteria = stage.qualificationCriteria.toLowerCase();
+                
+                if (action === 'SENT') {
+                    // Match terms like "enviada", "sent", "contatado"
+                    if (criteria.includes('enviada') || criteria.includes('sent') || criteria.includes('contatado')) {
+                        targetStageKey = stage.key;
+                        break;
+                    }
+                } else if (action === 'REPLY') {
+                    // Match terms like "respondeu", "reply", "negociação", "interessado"
+                    if (criteria.includes('respondeu') || criteria.includes('reply') || criteria.includes('negocia') || criteria.includes('interessa')) {
+                        targetStageKey = stage.key;
+                        break;
+                    }
+                }
+            }
+
+            if (targetStageKey && contact.stage !== targetStageKey) {
+                this.logger.log(`[QUALIFICATION] Moving contact ${contact.name} to stage ${targetStageKey} due to ${action}`);
+                await this.contactRepository.update(contact.id, { stage: targetStageKey });
+                
+                // Emit update via WebSocket
+                this.communicationService.emitToTenant(tenantId, 'contact_updated', {
+                    contactId: contact.id,
+                    stage: targetStageKey
+                });
+            }
+        } catch (error) {
+            this.logger.error(`[QUALIFICATION_ERROR] Failed to qualify lead: ${error.message}`);
+        }
+    }
 
     async onModuleInit() {
         this.logger.log('Iniciando sincronização de colunas do CRM...');
@@ -485,6 +540,9 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             ...message,
             contact: contact ? { id: contact.id, name: contact.name } : null
         });
+
+        // ✅ Trigger Pipeline Qualification Automation
+        await this.triggerLeadQualification(tenantId, contactId, 'SENT');
 
         // 2. Trigger n8n Webhook for automation (If not overridden by contact)
         if (contact && contact.n8nEnabled !== false) {

@@ -208,6 +208,9 @@ export class WebhooksController {
                                 contact: { id: contact.id, name: contact.name }
                             });
 
+                            // ✅ Trigger Pipeline Qualification Automation
+                            await this.crmService.triggerLeadQualification(tenantId, contact.id, 'REPLY');
+
                             contact.lastMessage = content;
                             await this.contactRepository.save(contact);
 
@@ -504,6 +507,9 @@ export class WebhooksController {
                     contact: { id: contact.id, name: contact.name }
                 });
                 
+                // ✅ Trigger Pipeline Qualification Automation
+                await this.crmService.triggerLeadQualification(tenantId, contact.id, isOutbound ? 'SENT' : 'REPLY');
+
                 // FIX: Use update instead of save to avoid overwriting automation settings (aiEnabled/n8nEnabled) with stale data
                 await this.contactRepository.update(contact.id, { lastMessage: content });
 
