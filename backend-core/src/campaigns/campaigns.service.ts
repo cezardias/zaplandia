@@ -226,9 +226,15 @@ export class CampaignsService {
                         cumulativeDelay = 0; // Immediate
                         this.logger.log(`[MOTOR] Marcando lead ${lead.id} como PRIORIDADE (delay: 0)`);
                     } else {
-                        // Random interval between 1 and 15 minutes (60k to 900k ms)
-                        const minInterval = 1 * 60 * 1000;
-                        const maxInterval = 15 * 60 * 1000;
+                        // Check provider for delay strategy
+                        const isMeta = integration?.provider === IntegrationProvider.WHATSAPP;
+                        
+                        // Random interval:
+                        // Evolution (Unofficial) -> 1 to 15 minutes (Anti-ban safety)
+                        // Meta (Official) -> 1 to 3 seconds (Fast sending)
+                        const minInterval = isMeta ? 1 * 1000 : 1 * 60 * 1000;
+                        const maxInterval = isMeta ? 3 * 1000 : 15 * 60 * 1000;
+                        
                         const interval = Math.floor(Math.random() * (maxInterval - minInterval + 1)) + minInterval;
                         cumulativeDelay += interval;
                     }
