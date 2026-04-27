@@ -180,9 +180,9 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
     }
 
     async onApplicationBootstrap() {
-        this.logger.log('Checking for messages that need instance backfill...');
-        // Auto-fix historical messages that are missing instance data
+        this.logger.log('Checking for messages and contacts that need metadata backfill...');
         try {
+            // Fix missing instances
             await this.messageRepository.query(`
                 UPDATE messages
                 SET instance = c.instance
@@ -191,7 +191,17 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                 AND messages.instance IS NULL
                 AND c.instance IS NOT NULL
             `);
-            this.logger.log('Automatic backfill of message instances completed.');
+
+            // FIX: Backfill missing providers on contacts based on their messages
+            await this.contactRepository.query(`
+                UPDATE contacts
+                SET provider = m.provider
+                FROM messages m
+                WHERE contacts.id = m."contactId"
+                AND (contacts.provider IS NULL OR contacts.provider = '')
+            `);
+
+            this.logger.log('Automatic backfill of metadata completed.');
         } catch (error) {
             this.logger.error('Failed to run automatic backfill:', error);
         }
@@ -224,7 +234,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         // Emit via socket so UI updates
         this.communicationService.emitToTenant(tenantId, 'new_message', {
             ...saved,
-            contact: { id: contactId } // Minimal contact info for UI
+            contact: { id: contactId, provider: provider || 'whatsapp' } 
         });
         
         return saved;

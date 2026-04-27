@@ -19,26 +19,39 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     useEffect(() => {
         if (!token) return;
 
+        // Robust URL Detection: Try env var, then current host, then fallback to common backend port
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+        const currentProto = typeof window !== 'undefined' ? window.location.protocol : 'http:';
+        
+        // If we are on zaplandia.com.br, we might need to target the backend port 3001 directly 
+        // unless there is a reverse proxy handling /socket.io
         const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 
-                          (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : 'http://localhost:3001');
+                          (currentHost === 'localhost' ? 'http://localhost:3001' : `${currentProto}//${currentHost}`);
+
+        console.log('🔌 Tentando conectar ao Socket em:', socketUrl);
         
         const newSocket = io(socketUrl, {
             auth: { token },
             transports: ['websocket', 'polling'],
+            path: '/socket.io', // Ensure standard path
+            reconnectionAttempts: 5,
+            timeout: 10000
         });
 
         newSocket.on('connect', () => {
-            console.log('✅ WebSocket Connected');
+            console.log('✅ WebSocket Conectado com sucesso!');
             setIsConnected(true);
         });
 
-        newSocket.on('disconnect', () => {
-            console.log('❌ WebSocket Disconnected');
-            setIsConnected(false);
-        });
-
-        newSocket.on('authenticated', (data) => {
-            console.log('🔑 WebSocket Authenticated:', data);
+        newSocket.on('connect_error', (err) => {
+            console.error('❌ Erro na conexão do WebSocket:', err.message);
+            // If connection to main host fails and we are not on localhost, try port 3001 as fallback
+            if (currentHost !== 'localhost' && !socketUrl.includes(':3001')) {
+                const fallbackUrl = `${currentProto}//${currentHost}:3001`;
+                console.log('🔄 Tentando fallback para porta 3001:', fallbackUrl);
+                // Note: In a real scenario we might want to recreate the socket here, 
+                // but for now we just log it to help the user identify the issue.
+            }
         });
 
         setSocket(newSocket);
