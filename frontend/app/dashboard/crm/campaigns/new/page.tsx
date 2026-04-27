@@ -220,6 +220,8 @@ export default function NewCampaignPage() {
     };
 
     const waIntegrations = availableIntegrations.filter(i => i.provider === 'whatsapp' || i.provider === 'evolution');
+    const selectedIntegration = availableIntegrations.find(i => i.id === formData.integrationId);
+    const isMeta = selectedIntegration?.provider === 'whatsapp';
 
     return (
         <div className="p-8 max-w-3xl mx-auto pb-20">
@@ -555,15 +557,26 @@ export default function NewCampaignPage() {
                             </div>
                         )}
 
-                        <div className="bg-yellow-500/10 border border-yellow-500/20 p-6 rounded-3xl flex items-start space-x-4">
-                            <div className="p-2 bg-yellow-500/20 rounded-xl">
-                                <Zap className="w-6 h-6 text-yellow-500" />
+                        <div className={`p-6 rounded-3xl flex items-start space-x-4 border ${isMeta ? 'bg-green-500/10 border-green-500/20' : 'bg-yellow-500/10 border-yellow-500/20'}`}>
+                            <div className={`p-2 rounded-xl ${isMeta ? 'bg-green-500/20' : 'bg-yellow-500/20'}`}>
+                                <Zap className={`w-6 h-6 ${isMeta ? 'text-green-500' : 'text-yellow-500'}`} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-yellow-500 text-lg">Modo de Segurança Anti-Bloqueio Ativo</h3>
+                                <h3 className={`font-bold text-lg ${isMeta ? 'text-green-500' : 'text-yellow-500'}`}>
+                                    {isMeta ? 'Conexão Oficial Meta Ativa' : 'Modo de Segurança Anti-Bloqueio Ativo'}
+                                </h3>
                                 <p className="text-sm text-gray-400 mt-1 leading-relaxed">
-                                    Para proteger seu chip, o sistema limitará o envio a <b>40 mensagens por dia</b> (aproximadamente 1 mensagem a cada 20 minutos).
-                                    Isso garante que sua campanha rode de forma segura e contínua.
+                                    {isMeta ? (
+                                        <>
+                                            Sua conta oficial permite o envio de até <b>1.000 mensagens por dia</b> (Tier 1). 
+                                            O limite é gerenciado pela própria Meta de acordo com o aquecimento do seu número.
+                                        </>
+                                    ) : (
+                                        <>
+                                            Para proteger seu chip, o sistema limitará o envio a <b>40 mensagens por dia</b> (aproximadamente 1 mensagem a cada 20 minutos).
+                                            Isso garante que sua campanha rode de forma segura e contínua.
+                                        </>
+                                    )}
                                 </p>
                             </div>
                         </div>
