@@ -171,7 +171,7 @@ export default function NewCampaignPage() {
             });
             if (res.ok) {
                 const data = await res.json();
-                setMetaTemplates(data);
+                setMetaTemplates(data.data || []);
             }
         } catch (err) {
             console.error('Erro ao buscar templates Meta:', err);
