@@ -105,7 +105,7 @@ export default function LandingPage() {
                     Começar 15 dias grátis <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
                   <a
-                    href="https://wa.me/5561999594493?text=Olá! Vim pelo site e gostaria de contratar o Zaplandia."
+                    href="https://wa.me/556193754617?text=Olá! Vim pelo site e gostaria de contratar o Zaplandia."
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-[#25D366] hover:bg-[#20ba59] text-white text-lg px-8 py-4 rounded-xl font-bold transition flex items-center justify-center shadow-lg shadow-green-500/20"
@@ -183,7 +183,7 @@ export default function LandingPage() {
                 Contratar Agora
               </Link>
               <a
-                href="https://wa.me/5561999594493?text=Olá! Quero tirar algumas dúvidas sobre os planos do Zaplandia."
+                href="https://wa.me/556193754617?text=Olá! Quero tirar algumas dúvidas sobre os planos do Zaplandia."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xl px-12 py-5 rounded-2xl font-bold transition"
