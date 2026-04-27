@@ -511,7 +511,12 @@ export class WebhooksController {
                 await this.crmService.triggerLeadQualification(tenantId, contact.id, isOutbound ? 'SENT' : 'REPLY');
 
                 // FIX: Use update instead of save to avoid overwriting automation settings (aiEnabled/n8nEnabled) with stale data
-                await this.contactRepository.update(contact.id, { lastMessage: content });
+                // 4. Record last message and update contact updatedAt for sorting
+                await this.contactRepository.update(contact.id, { 
+                    lastMessage: content,
+                    updatedAt: new Date(),
+                    provider: 'whatsapp'
+                });
 
                 // 3. n8n Dynamic Trigger - Must respect BOTH global and contact level settings
                 const n8nActive = existingIntegration?.n8nEnabled === true && contact.n8nEnabled !== false;

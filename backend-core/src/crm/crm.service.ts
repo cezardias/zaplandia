@@ -217,7 +217,8 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         // Update contact lastMessage and updatedAt so it pops to the top of Omni Inbox
         await this.contactRepository.update(contactId, {
             lastMessage: content,
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            provider: provider || contact?.provider || 'whatsapp' // Ensure provider is set
         });
 
         // Emit via socket so UI updates
@@ -539,6 +540,12 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         this.communicationService.emitToTenant(tenantId, 'new_message', {
             ...message,
             contact: contact ? { id: contact.id, name: contact.name } : null
+        });
+
+        // ✅ Update contact lastMessage and updatedAt for sorting
+        await this.contactRepository.update(contactId, {
+            lastMessage: content,
+            updatedAt: new Date()
         });
 
         // ✅ Trigger Pipeline Qualification Automation

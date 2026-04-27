@@ -770,6 +770,16 @@ export default function OmniInboxPage() {
         }
     };
 
+    const formatTime = (dateStr: string) => {
+        if (!dateStr) return '';
+        try {
+            const date = new Date(dateStr);
+            return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(date);
+        } catch (e) {
+            return '';
+        }
+    };
+
     const filteredContacts = contacts.filter(contact => {
         if (activeTab === 'all') return true;
         return contact.provider === activeTab;
@@ -982,7 +992,7 @@ export default function OmniInboxPage() {
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <p className="text-xs text-gray-500 truncate">{contact.lastMessage || 'Sem mensagens...'}</p>
-                                        <span className="text-[10px] text-gray-400">12:30</span>
+                                        <span className="text-[10px] text-gray-400">{formatTime(contact.updatedAt)}</span>
                                     </div>
                                 </div>
                             </button>
