@@ -258,6 +258,26 @@ O Zaplandia precisa de um token que não expire:
 - Cole no campo "Access Token (Permanente)" no Zaplandia.
 
 **Dica**: Se você usar o "Token Temporário" da tela de desenvolvedor, a integração parará de funcionar após 24 horas. Use sempre o Token do Usuário do Sistema.`,
+            },
+            {
+                title: 'CRM: Qualificação Automática de Leads',
+                category: 'CRM',
+                content: `Como configurar a movimentação automática de leads no Funil (Pipeline):
+
+1. **Configuração da Coluna**:
+   - Vá ao menu **Funil (Pipeline)**.
+   - Clique nos três pontinhos ao lado do nome da coluna e selecione **Qualificação**.
+   - Defina o critério para que um lead entre ou saia dessa coluna.
+
+2. **Palavras-Chave de Automação**:
+   - O sistema identifica palavras-chave para mover o lead automaticamente:
+   - **Enviada/Contatado**: Se você usar palavras como "enviada", "contatado" ou "sent", o lead será movido para esta coluna assim que uma mensagem for enviada para ele (manual ou campanha).
+   - **Respondeu/Negociação**: Se você usar palavras como "respondeu", "negociação", "reply" ou "interessado", o lead será movido automaticamente para esta coluna assim que o cliente responder à sua mensagem.
+
+3. **Vantagens**:
+   - Elimina o trabalho manual de arrastar leads.
+   - Mantém seu funil de vendas sempre atualizado em tempo real.
+   - Permite identificar rapidamente quais clientes já estão em fase de negociação.`,
             }
         ];
 

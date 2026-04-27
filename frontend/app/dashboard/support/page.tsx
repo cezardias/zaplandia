@@ -236,6 +236,25 @@ Zaplandia needs a token that doesn't expire:
 - Paste in the "Permanent Access Token" field in Zaplandia.
 
 **Tip**: If you use the "Temporary Token" from the developer screen, the integration will stop working after 24 hours. Always use the System User Token.`
+                },
+                'CRM: Qualificação Automática de Leads': {
+                    title: 'CRM: Automated Lead Qualification',
+                    content: `How to set up automatic lead movement in the Pipeline:
+
+1. **Column Setup**:
+   - Go to the **Pipeline** menu.
+   - Click the three dots next to the column name and select **Qualification**.
+   - Define the criteria for a lead to enter or leave this column.
+
+2. **Automation Keywords**:
+   - The system identifies keywords to move the lead automatically:
+   - **Sent/Contacted**: If you use words like "enviada", "contatado" or "sent", the lead will be moved to this column as soon as a message is sent to them (manual or campaign).
+   - **Replied/Negotiation**: If you use words like "respondeu", "negociação", "reply" or "interested", the lead will be automatically moved to this column as soon as the customer replies to your message.
+
+3. **Advantages**:
+   - Eliminates the manual work of dragging leads.
+   - Keeps your sales funnel always updated in real-time.
+   - Allows you to quickly identify which customers are already in the negotiation phase.`
                 }
             }
         },
@@ -431,6 +450,25 @@ O Zaplandia precisa de um token que não expire:
 - Cole no campo "Token de Acesso Permanente" no Zaplandia.
 
 **Dica**: Se usar o "Token Temporário" do ecrã de developer, a integração deixará de funcionar após 24 horas. Use sempre o Token de System User.`
+                },
+                'CRM: Qualificação Automática de Leads': {
+                    title: 'CRM: Qualificação Automática de Leads',
+                    content: `Como configurar a movimentação automática de leads no Funil (Pipeline):
+
+1. **Configuração da Coluna**:
+   - Vá ao menu **Funil (Pipeline)**.
+   - Clique nos três pontinhos ao lado do nome da coluna e selecione **Qualificação**.
+   - Defina o critério para que um lead entre ou saia dessa coluna.
+
+2. **Palavras-Chave de Automação**:
+   - O sistema identifica palavras-chave para mover o lead automaticamente:
+   - **Enviada/Contatado**: Se utilizar palavras como "enviada", "contatado" ou "sent", o lead será movido para esta coluna assim que uma mensagem for enviada para ele (manual ou campanha).
+   - **Respondeu/Negociação**: Se utilizar palavras como "respondeu", "negociação", "reply" ou "interessado", o lead será movido automaticamente para esta coluna assim que o cliente responder à sua mensagem.
+
+3. **Vantagens**:
+   - Elimina o trabalho manual de arrastar leads.
+   - Mantém o seu funil de vendas sempre atualizado em tempo real.
+   - Permite identificar rapidamente quais clientes já estão em fase de negociação.`
                 }
             }
         },
@@ -625,7 +663,26 @@ Zaplandia ha bisogno di un token che non scada:
 - Copia il token generato. **Appare solo una volta!**
 - Incolla nel campo "Token di Accesso Permanente" in Zaplandia.
 
-**Suggerimento**: Se usi il "Token Temporaneo" dalla schermata sviluppatore, l'integrazione smetterà di funzionare dopo 24 ore. Usa sempre il Token System User.`
+**Suggerimento**: Se usi il "Token Temporario" dalla schermata sviluppatore, l'integrazione smetterà di funzionare dopo 24 ore. Usa sempre il Token System User.`
+                },
+                'CRM: Qualificação Automática de Leads': {
+                    title: 'CRM: Qualificazione Automatica dei Lead',
+                    content: `Come configurare lo spostamento automatico dei lead nella Pipeline:
+
+1. **Configurazione della Colonna**:
+   - Vai al menu **Funil (Pipeline)**.
+   - Clicca sui tre puntini accanto al nome della colonna e seleziona **Qualificazione**.
+   - Definisci i criteri per cui un lead entra o esce da questa colonna.
+
+2. **Parole Chiave per l'Automazione**:
+   - Il sistema identifica le parole chiave per spostare il lead automaticamente:
+   - **Inviato/Contattato**: Se usi parole come "enviada", "contatado" o "sent", il lead verrà spostato in questa colonna non appena gli viene inviato un messaggio (manuale o campagna).
+   - **Risposta/Negoziazione**: Se usi parole come "respondeu", "negociação", "reply" o "interessado", il lead verrà spostato automaticamente in questa colonna non appena il cliente risponde al tuo messaggio.
+
+3. **Vantaggi**:
+   - Elimina il lavoro manuale di trascinamento dei lead.
+   - Mantiene il tuo funnel di vendita sempre aggiornato in tempo reale.
+   - Permite di identificare rapidamente quali clienti sono già in fase di negoziazione.`
                 }
             }
         }
