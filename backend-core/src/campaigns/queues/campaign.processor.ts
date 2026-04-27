@@ -135,6 +135,7 @@ export class CampaignProcessor {
         this.logger.debug(`[CAMPANHA] Phone normalizado: ${recipient} → ${cleanRecipient}`);
 
         try {
+            let messageId = '';
             // --- NEW: META API INTEGRATION FOR CAMPAIGNS ---
             const integration = await this.integrationsService.resolveInstance(tenantId, instanceName);
             if (integration?.provider === 'whatsapp' && integration.credentials?.META_ACCESS_TOKEN) {
@@ -148,40 +149,61 @@ export class CampaignProcessor {
                     [templateName, languageCode] = finalMessage.split(':');
                 }
 
-                await this.metaApiService.sendTemplateMessage(tenantId, recipient, templateName, languageCode);
-
-                // Update Lead Status
-                if (leadId) {
-                    await this.leadRepository.update(leadId, { status: LeadStatus.SENT, sentAt: new Date(), errorReason: null });
-                }
-
-                await this.usageService.increment(tenantId, instanceName, 'whatsapp_messages', 1);
-                return;
+                const response = await this.metaApiService.sendTemplateMessage(tenantId, recipient, templateName, languageCode);
+                messageId = response?.messages?.[0]?.id || '';
+            } else {
+                this.logger.log(`[ENVIANDO] Disparando mensagem para ${cleanRecipient}...`);
+                const response = await this.evolutionApiService.sendText(tenantId, instanceName, cleanRecipient, finalMessage);
+                messageId = response?.key?.id || '';
             }
 
-            this.logger.log(`[ENVIANDO] Disparando mensagem para ${cleanRecipient}...`);
-            await this.evolutionApiService.sendText(tenantId, instanceName, cleanRecipient, finalMessage);
+            // --- COMMON POST-SEND LOGIC ---
 
-            // Update Lead Status
+            // 1. Update Lead Status in Campaign
             if (leadId) {
                 await this.leadRepository.update(leadId, { status: LeadStatus.SENT, sentAt: new Date(), errorReason: null });
             }
 
-            // Update Contact Pipeline Stage (Automated)
+            // 2. Increment Usage Counter
+            await this.usageService.increment(tenantId, instanceName, 'whatsapp_messages', 1);
+
+            // 3. Ensure Contact & Update CRM Stage
             let cId = contactId;
             if (!cId && tenantId && cleanRecipient) {
                 const contact = await this.crmService.findOneByExternalId(tenantId, cleanRecipient);
-                if (contact) cId = contact.id;
+                if (contact) {
+                    cId = contact.id;
+                } else {
+                    // Auto-create contact if it doesn't exist in CRM
+                    const newContact = await this.crmService.ensureContact(tenantId, {
+                        name: leadName || leadToProcess?.name || 'Contato',
+                        phoneNumber: cleanRecipient,
+                        externalId: cleanRecipient,
+                        instance: instanceName,
+                        provider: 'whatsapp'
+                    });
+                    cId = newContact.id;
+                    this.logger.log(`[CRM] Novo contato criado para lead ${cleanRecipient} (ID: ${cId})`);
+                }
             }
 
             if (cId) {
-                // Self-healing: Update stage AND instance to ensure visibility
+                // Self-healing: Update stage AND instance to ensure visibility in Kanban and Inbox
                 await this.crmService.updateContact(tenantId, cId, { stage: 'CONTACTED', instance: instanceName });
-                this.logger.log(`[CRM] Lead ${cleanRecipient} atualizado para estágio 'CONTACTED' e instância '${instanceName}'`);
+                
+                // Record the message in Message table so it appears in Omni Inbox
+                await this.crmService.recordMessage(
+                    tenantId, 
+                    cId, 
+                    finalMessage, 
+                    'outbound', 
+                    'whatsapp', 
+                    instanceName, 
+                    messageId
+                );
+                
+                this.logger.log(`[CRM] Lead ${cleanRecipient} atualizado para 'CONTACTED' e mensagem registrada no Inbox.`);
             }
-
-            // Increment Counter in DB
-            await this.usageService.increment(tenantId, instanceName, 'whatsapp_messages', 1);
 
             this.logger.log(`[SUCESSO] Mensagem enviada com sucesso para ${cleanRecipient}`);
         } catch (error) {

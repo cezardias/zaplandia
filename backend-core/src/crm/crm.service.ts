@@ -142,6 +142,28 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         return this.contactRepository.findOne({ where: { id, tenantId } });
     }
 
+    async recordMessage(tenantId: string, contactId: string, content: string, direction: 'inbound' | 'outbound', provider: string, instance?: string, wamid?: string) {
+        const message = this.messageRepository.create({
+            tenantId,
+            contactId,
+            content,
+            direction,
+            provider,
+            instance,
+            wamid,
+            status: direction === 'outbound' ? 'SENT' : 'RECEIVED'
+        });
+        const saved = await this.messageRepository.save(message);
+        
+        // Emit via socket so UI updates
+        this.communicationService.emitToTenant(tenantId, 'new_message', {
+            ...saved,
+            contact: { id: contactId } // Minimal contact info for UI
+        });
+        
+        return saved;
+    }
+
 
     async getRecentChats(tenantId: string, user: { userId: string, role: string, teamId?: string }, filters?: { stage?: string; campaignId?: string; search?: string; instance?: string }) {
         const { userId, role, teamId } = user;
