@@ -155,6 +155,12 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         });
         const saved = await this.messageRepository.save(message);
         
+        // Update contact lastMessage and updatedAt so it pops to the top of Omni Inbox
+        await this.contactRepository.update(contactId, {
+            lastMessage: content,
+            updatedAt: new Date()
+        });
+
         // Emit via socket so UI updates
         this.communicationService.emitToTenant(tenantId, 'new_message', {
             ...saved,
@@ -190,7 +196,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(instanceName)) {
                 const integration = await this.integrationsService.findOne(instanceName, tenantId);
                 if (integration) {
-                    instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || instanceName;
+                    instanceName = integration.credentials?.instanceName || integration.settings?.instanceName || integration.credentials?.name || integration.credentials?.META_PHONE_NUMBER_ID || instanceName;
                 }
             } else {
                 // Fuzzy matching for canonical name resolution

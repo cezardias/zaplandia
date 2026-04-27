@@ -261,7 +261,7 @@ export default function OmniInboxPage() {
                 // Filter connected instances (Evolution and Meta)
                 const activeIntegrations = data.filter((i: any) =>
                     (i.provider === 'evolution' && (i.status === 'CONNECTED' || i.status === 'connected')) ||
-                    (i.provider === 'meta')
+                    ((i.provider === 'meta' || i.provider === 'whatsapp') && (i.status === 'CONNECTED' || i.status === 'connected'))
                 );
 
                 // Ensure we have a consistent name and identifier for filtering
@@ -271,7 +271,7 @@ export default function OmniInboxPage() {
                     
                     return {
                         ...i,
-                        displayName: i.name || nameInCreds || (i.provider === 'meta' ? 'Meta Oficial' : i.id),
+                        displayName: i.name || nameInCreds || (i.provider === 'meta' || i.provider === 'whatsapp' ? 'Meta Oficial' : i.id),
                         instanceName: i.instanceName || nameInCreds || phoneId || i.id
                     };
                 });
