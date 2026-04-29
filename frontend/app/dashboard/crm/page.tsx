@@ -228,7 +228,7 @@ export default function CrmPage() {
                     <p className="text-gray-400 mt-2">{t[lang].subtitle}</p>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex flex-wrap gap-3">
 
                     <button
                         onClick={() => router.push('/dashboard/crm/kanban')}

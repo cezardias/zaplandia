@@ -424,7 +424,7 @@ export default function DashboardPage() {
                         <h2 className="text-lg font-bold">{t[lang].globalActions}</h2>
                         <p className="text-sm text-gray-400">{t[lang].globalDesc}</p>
                     </div>
-                    <div className="flex space-x-4">
+                    <div className="flex flex-wrap gap-4">
                         <button className="bg-primary hover:bg-primary-dark transition text-white px-6 py-2 rounded-lg font-bold flex items-center space-x-2">
                             <Zap className="w-4 h-4" />
                             <span>{t[lang].generateLead}</span>
@@ -479,7 +479,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Campaign & Funnel Health */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-96">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-96">
                 {/* Desempenho da Campanha */}
                 <div className="bg-surface border border-white/10 rounded-2xl p-6 flex flex-col">
                     <div className="mb-4 flex justify-between items-center">
@@ -602,7 +602,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-gray-400">{t[lang].campaignControlDesc}</p>
                 </div>
                 {selectedCampaign && (
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-wrap items-center gap-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${selectedCampaign.status === 'running' ? 'bg-green-500/20 text-green-400 border-green-500/20' :
                             selectedCampaign.status === 'paused' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20' :
                                 'bg-gray-500/20 text-gray-400 border-gray-500/20'
@@ -615,7 +615,7 @@ export default function DashboardPage() {
                         </span>
                     </div>
                 )}
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                     <button
                         onClick={async () => {
                             if (stats?.limitRemaining === 0) {

@@ -329,7 +329,7 @@ export default function KanbanPage() {
                         <p className="mt-2 text-sm text-gray-400">{t[lang].subtitle}</p>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3 mt-4 sm:mt-0">
                         <button
                             onClick={handleAddColumn}
                             className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2"

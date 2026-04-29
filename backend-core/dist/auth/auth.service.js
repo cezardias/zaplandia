@@ -78,11 +78,16 @@ let AuthService = class AuthService {
         }
         let user = await this.usersService.findOneByEmail(profile.email);
         if (!user) {
+            const rawFirstName = String(profile.firstName || '');
+            const rawLastName = String(profile.lastName || '');
+            const firstName = (rawFirstName && rawFirstName !== 'undefined' && rawFirstName !== 'null') ? rawFirstName : '';
+            const lastName = (rawLastName && rawLastName !== 'undefined' && rawLastName !== 'null') ? rawLastName : '';
+            const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuário Zaplândia';
             user = await this.register({
                 email: profile.email,
-                name: `${profile.firstName} ${profile.lastName}`,
+                name: fullName.trim(),
                 password: Math.random().toString(36).slice(-12),
-                companyName: `Negócio de ${profile.firstName}`,
+                companyName: `Negócio de ${firstName || 'Zaplândia'}`,
             });
             console.log(`[GOOGLE] Novo cadastro automático via Google: ${user.email}`);
         }
@@ -97,11 +102,16 @@ let AuthService = class AuthService {
         }
         let user = await this.usersService.findOneByEmail(profile.email);
         if (!user) {
+            const rawFirstName = String(profile.firstName || '');
+            const rawLastName = String(profile.lastName || '');
+            const firstName = (rawFirstName && rawFirstName !== 'undefined' && rawFirstName !== 'null') ? rawFirstName : '';
+            const lastName = (rawLastName && rawLastName !== 'undefined' && rawLastName !== 'null') ? rawLastName : '';
+            const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Usuário Zaplândia';
             user = await this.register({
                 email: profile.email,
-                name: `${profile.firstName} ${profile.lastName}`,
+                name: fullName.trim(),
                 password: Math.random().toString(36).slice(-12),
-                companyName: `Negócio de ${profile.firstName}`,
+                companyName: `Negócio de ${firstName || 'Zaplândia'}`,
             });
             console.log(`[META] Novo cadastro automático via Facebook: ${user.email}`);
         }

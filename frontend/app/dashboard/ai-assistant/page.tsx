@@ -242,7 +242,7 @@ export default function AiAssistantPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex space-x-3">
+                    <div className="flex flex-wrap gap-3">
                         <button
                             onClick={handleSavePrompt}
                             className="flex items-center space-x-2 px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 rounded-lg transition text-sm font-bold"

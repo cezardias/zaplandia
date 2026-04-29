@@ -605,7 +605,7 @@ export default function IntegrationsPage() {
                             </div>
                         </div>
 
-                        <div className="p-8 bg-white/5 flex space-x-4">
+                        <div className="p-8 bg-white/5 flex flex-wrap gap-4">
                             <button
                                 onClick={() => setSelectedIntegration(null)}
                                 className="flex-1 px-6 py-4 rounded-2xl border border-white/10 font-bold hover:bg-white/5 transition"

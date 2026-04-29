@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,10 +24,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <LanguageProvider>
           <AuthProvider>
-            <SocketProvider>
-              {children}
-              <WhatsAppButton />
-            </SocketProvider>
+            <ThemeProvider>
+              <SocketProvider>
+                {children}
+                <WhatsAppButton />
+              </SocketProvider>
+            </ThemeProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

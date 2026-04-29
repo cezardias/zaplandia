@@ -354,7 +354,7 @@ export default function TeamsPage() {
                             <Layout className="w-5 h-5 text-primary" />
                             <span>{t[lang].newTeam}</span>
                         </h2>
-                        <div className="flex space-x-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <input 
                                 type="text" 
                                 value={newTeamName}
@@ -365,7 +365,7 @@ export default function TeamsPage() {
                             <button 
                                 onClick={createTeam}
                                 disabled={isCreating || !newTeamName}
-                                className="bg-primary hover:bg-primary-dark px-8 py-4 rounded-2xl font-bold transition flex items-center space-x-2 disabled:opacity-50 shadow-lg shadow-primary/20"
+                                className="bg-primary hover:bg-primary-dark px-8 py-4 rounded-2xl font-bold transition flex items-center justify-center space-x-2 disabled:opacity-50 shadow-lg shadow-primary/20"
                             >
                                 {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
                                 <span>{t[lang].createBtn}</span>

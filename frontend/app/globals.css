@@ -1,17 +1,58 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #6366f1;
-  --color-primary-dark: #4f46e5;
-  --color-accent: #06b6d4;
-  --color-background: #0f172a;
-  --color-surface: #1e293b;
+  --color-primary: var(--theme-primary, #6366f1);
+  --color-primary-dark: var(--theme-primary-dark, #4f46e5);
+  --color-accent: var(--theme-accent, #06b6d4);
+  --color-background: var(--theme-background, #0f172a);
+  --color-surface: var(--theme-surface, #1e293b);
+  /* Map Tailwind's default colors so we can override them */
+  --color-white: var(--theme-text-primary, #ffffff);
+  --color-gray-400: var(--theme-text-secondary, #9ca3af);
+  --color-gray-500: var(--theme-text-muted, #6b7280);
 }
 
 :root {
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 15, 23, 42;
   --background-end-rgb: 2, 6, 23;
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #9ca3af;
+  --theme-text-muted: #6b7280;
+}
+
+[data-theme="light-red"] {
+  --theme-primary: #ef4444; /* red-500 */
+  --theme-primary-dark: #dc2626; /* red-600 */
+  --theme-accent: #f87171; /* red-400 */
+  --theme-background: #ffffff;
+  --theme-surface: #f8fafc;
+  --foreground-rgb: 15, 23, 42; /* dark text */
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 248, 250, 252;
+  --theme-text-primary: #0f172a;
+  --theme-text-secondary: #475569;
+  --theme-text-muted: #64748b;
+}
+
+/* Auto-invert common dark mode utility classes for light theme */
+[data-theme="light-red"] .text-white { color: var(--theme-text-primary); }
+[data-theme="light-red"] .text-gray-400 { color: var(--theme-text-secondary); }
+[data-theme="light-red"] .text-gray-500 { color: var(--theme-text-muted); }
+[data-theme="light-red"] .bg-white\/5 { background-color: rgba(0,0,0,0.05); }
+[data-theme="light-red"] .bg-white\/10 { background-color: rgba(0,0,0,0.1); }
+[data-theme="light-red"] .border-white\/5 { border-color: rgba(0,0,0,0.05); }
+[data-theme="light-red"] .border-white\/10 { border-color: rgba(0,0,0,0.1); }
+[data-theme="light-red"] .border-white\/20 { border-color: rgba(0,0,0,0.2); }
+
+/* Ensure primary buttons retain white text */
+[data-theme="light-red"] .bg-primary, 
+[data-theme="light-red"] .bg-primary-dark {
+  color: #ffffff !important;
+}
+[data-theme="light-red"] .bg-primary .text-white,
+[data-theme="light-red"] .bg-primary-dark .text-white {
+  color: #ffffff !important;
 }
 
 body {
@@ -28,6 +69,6 @@ body {
 
 @layer base {
   * {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(var(--foreground-rgb), 0.1);
   }
 }

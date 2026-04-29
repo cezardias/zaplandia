@@ -20,10 +20,12 @@ import {
     Terminal,
     CreditCard,
     AlertCircle,
-    FileText
+    FileText,
+    Palette
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function DashboardLayout({
     children,
@@ -35,6 +37,7 @@ export default function DashboardLayout({
     const pathname = usePathname();
     const router = useRouter();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { theme, toggleTheme } = useTheme();
 
     const t: any = {
         pt_BR: {
@@ -192,7 +195,11 @@ export default function DashboardLayout({
                     <span className="text-lg font-bold tracking-tight">ZAPLANDIA</span>
                 </div>
                 <div className="flex items-center space-x-3">
-
+                    {user?.email === 'cezar.dias@gmail.com' && (
+                        <button onClick={toggleTheme} className="p-2 hover:bg-white/5 rounded-xl transition" title="Alternar Tema">
+                            <Palette size={20} className={theme === 'light-red' ? 'text-red-500' : 'text-primary'} />
+                        </button>
+                    )}
                     <select 
                         value={lang}
                         onChange={(e) => setLang(e.target.value as any)}
@@ -289,6 +296,11 @@ export default function DashboardLayout({
                     </div>
 
                     <div className="flex items-center space-x-4">
+                        {user?.email === 'cezar.dias@gmail.com' && (
+                            <button onClick={toggleTheme} className="p-2 hover:bg-white/5 rounded-xl transition" title="Alternar Tema">
+                                <Palette size={18} className={theme === 'light-red' ? 'text-red-500' : 'text-primary'} />
+                            </button>
+                        )}
                         <select 
                             value={lang}
                             onChange={(e) => setLang(e.target.value as any)}

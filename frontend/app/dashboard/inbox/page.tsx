@@ -1006,26 +1006,26 @@ export default function OmniInboxPage() {
                 {selectedContact ? (
                     <>
                         {/* Header */}
-                        <div className="p-4 border-b border-white/5 bg-surface/50 backdrop-blur-sm flex justify-between items-center">
-                            <div className="flex items-center space-x-3">
+                        <div className="p-4 border-b border-white/5 bg-surface/50 backdrop-blur-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="flex items-center space-x-3 w-full md:w-auto">
                                 <button 
                                     onClick={() => setSelectedContact(null)}
                                     className="md:hidden p-2 -ml-2 hover:bg-white/5 rounded-full text-gray-400"
                                 >
                                     <ArrowLeft size={20} />
                                 </button>
-                                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
+                                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary shrink-0">
                                     {selectedContact.name?.charAt(0) || 'C'}
                                 </div>
-                                <div>
-                                    <h3 className="font-bold">{selectedContact.name || 'Contato'}</h3>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="font-bold truncate">{selectedContact.name || 'Contato'}</h3>
                                     <div className="flex items-center space-x-2 text-xs text-green-500">
-                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                        <span>Online via {selectedContact.provider}</span>
+                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0"></div>
+                                        <span className="truncate">Online via {selectedContact.provider}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center space-x-4 text-gray-400">
+                            <div className="flex flex-wrap items-center gap-2 text-gray-400 w-full md:w-auto">
                                 <a
                                     href={`tel:${selectedContact.phoneNumber || selectedContact.externalId?.replace(/\D/g, '')}`}
                                     className="hover:text-white transition"
@@ -1046,7 +1046,7 @@ export default function OmniInboxPage() {
                                 <select
                                     value={selectedContact.assignedTeamId || ''}
                                     onChange={(e) => handleTeamTransfer(e.target.value || null)}
-                                    className="bg-black/20 border border-white/10 rounded-lg text-[10px] px-2 py-1 outline-none focus:border-primary transition max-w-[100px]"
+                                    className="bg-black/20 border border-white/10 rounded-lg text-[10px] px-2 py-1.5 outline-none focus:border-primary transition max-w-[100px]"
                                     title="Atribuir a uma equipe"
                                 >
                                     <option value="">Sem Equipe</option>
@@ -1074,16 +1074,16 @@ export default function OmniInboxPage() {
                                             setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } : c));
                                         }
                                     }}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg ${
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg ${
                                         contactAiEnabled === false && contactN8nEnabled === false
                                             ? 'bg-red-600 text-white border-b-4 border-red-800 active:border-b-0 active:translate-y-1'
                                             : 'bg-green-600/20 text-green-500 border border-green-500/30 hover:bg-green-500/30'
                                     }`}
                                 >
                                     <Bot className={`w-4 h-4 ${(contactAiEnabled === false && contactN8nEnabled === false) ? 'animate-pulse' : ''}`} />
-                                    <span>{(contactAiEnabled === false && contactN8nEnabled === false) ? 'Automação Pausada' : 'Automação Ativa'}</span>
+                                    <span className="hidden sm:inline">{(contactAiEnabled === false && contactN8nEnabled === false) ? 'Automação Pausada' : 'Automação Ativa'}</span>
                                 </button>
-                                <button className="hover:text-white transition"><MoreVertical className="w-5 h-5" /></button>
+                                <button className="hover:text-white transition p-1"><MoreVertical className="w-5 h-5" /></button>
                             </div>
                         </div>
 
