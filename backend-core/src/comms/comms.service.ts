@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CommunicationGateway } from './communication.gateway';
+import { CommsGateway } from './comms.gateway';
 
 @Injectable()
-export class CommunicationService {
-    private readonly logger = new Logger(CommunicationService.name);
+export class CommsService {
+    private readonly logger = new Logger(CommsService.name);
 
-    constructor(private readonly gateway: CommunicationGateway) {}
+    constructor(private readonly gateway: CommsGateway) {}
 
     /**
      * Sends a real-time event to all connected users of a specific tenant.

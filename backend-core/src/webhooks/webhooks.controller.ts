@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, UseGuards, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
-import { CommunicationService } from '../communication/communication.service';
+import { CommsService } from '../comms/comms.service';
 import { CrmService } from '../crm/crm.service';
 import { AiService } from '../ai/ai.service';
 import { IntegrationsService } from '../integrations/integrations.service';
@@ -36,7 +36,7 @@ export class WebhooksController {
         private integrationRepository: Repository<Integration>,
         @InjectRepository(ApiCredential)
         private apiCredentialRepository: Repository<ApiCredential>,
-        private readonly communicationService: CommunicationService,
+        private readonly communicationService: CommsService,
     ) { }
 
     // Meta (Face/Insta/WhatsApp) Webhook verification

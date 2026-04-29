@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
-import { CommunicationGateway } from './communication.gateway';
-import { CommunicationService } from './communication.service';
+import { CommsGateway } from './comms.gateway';
+import { CommsService } from './comms.service';
 import { JwtModule } from '@nestjs/jwt';
 
 @Global() // Make it available everywhere without explicit importing in each module
@@ -11,7 +11,7 @@ import { JwtModule } from '@nestjs/jwt';
       signOptions: { expiresIn: '7d' },
     }),
   ],
-  providers: [CommunicationGateway, CommunicationService],
-  exports: [CommunicationService],
+  providers: [CommsGateway, CommsService],
+  exports: [CommsService],
 })
-export class CommunicationModule {}
+export class CommsModule {}

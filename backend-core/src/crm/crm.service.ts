@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException, OnApplicationBootstrap, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
-import { CommunicationService } from '../communication/communication.service';
+import { CommsService } from '../comms/comms.service';
 
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
@@ -41,8 +41,8 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         private readonly integrationsService: IntegrationsService,
         private readonly evolutionApiService: EvolutionApiService,
         private readonly metaApiService: MetaApiService,
-        @Inject(forwardRef(() => CommunicationService))
-        private readonly communicationService: CommunicationService,
+        @Inject(forwardRef(() => CommsService))
+        private readonly communicationService: CommsService,
         @InjectQueue('campaign-queue') private readonly campaignQueue: Queue,
     ) { }
 

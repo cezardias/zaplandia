@@ -15,11 +15,11 @@ import { JwtService } from '@nestjs/jwt';
   },
   namespace: '/',
 })
-export class CommunicationGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class CommsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(CommunicationGateway.name);
+  private readonly logger = new Logger(CommsGateway.name);
 
   constructor(private readonly jwtService: JwtService) {}
 

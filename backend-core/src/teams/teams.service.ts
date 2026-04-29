@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, OnModuleInit, Logger, Inject, forwardRef } from '@nestjs/common';
-import { CommunicationService } from '../communication/communication.service';
+import { CommsService } from '../comms/comms.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './entities/team.entity';
@@ -16,8 +16,8 @@ export class TeamsService implements OnModuleInit {
         @InjectRepository(User)
         private usersRepository: Repository<User>,
         private crmService: CrmService,
-        @Inject(forwardRef(() => CommunicationService))
-        private readonly communicationService: CommunicationService,
+        @Inject(forwardRef(() => CommsService))
+        private readonly communicationService: CommsService,
     ) { }
 
     async onModuleInit() {
