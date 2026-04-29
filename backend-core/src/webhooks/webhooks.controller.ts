@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, UseGuards, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
-import { CommsService } from '../comms/comms.service';
+import { CommsService } from '@comms/comms.service';
 import { CrmService } from '../crm/crm.service';
 import { AiService } from '../ai/ai.service';
 import { IntegrationsService } from '../integrations/integrations.service';
