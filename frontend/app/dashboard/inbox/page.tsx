@@ -790,12 +790,12 @@ export default function OmniInboxPage() {
     });
 
     return (
-        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 bg-white rounded-xl border border-gray-100 overflow-hidden relative shadow-sm">
+        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 rounded-xl border border-gray-200 overflow-hidden relative shadow-sm" style={{ backgroundColor: '#ffffff', color: '#1a202c' }}>
             {/* Contact List */}
-            <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-gray-100 flex-col bg-white`}>
-                <div className="p-5 border-b border-gray-50 space-y-4">
+            <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-gray-200 flex-col`} style={{ backgroundColor: '#ffffff' }}>
+                <div className="p-5 border-b border-gray-200 space-y-4" style={{ backgroundColor: '#ffffff' }}>
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-semibold text-slate-800 tracking-tight">{t[lang].title}</h2>
+                        <h2 className="text-xl font-bold" style={{ color: '#111827' }}>{t[lang].title}</h2>
                     </div>
 
                     {/* Instance Selector (WhatsApp Only) */}
@@ -923,14 +923,14 @@ export default function OmniInboxPage() {
                     )}
 
                     {/* Tabs */}
-                    <div className="flex bg-slate-50 p-1 rounded-xl overflow-x-auto no-scrollbar gap-1 border border-slate-100">
+                    <div className="flex p-1 rounded-xl overflow-x-auto no-scrollbar gap-1 border border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
                         {['all', 'whatsapp', 'instagram', 'facebook'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all duration-200 whitespace-nowrap ${activeTab === tab
-                                    ? 'bg-white text-primary shadow-sm border border-slate-100'
-                                    : 'text-slate-400 hover:text-slate-600'
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all duration-200 whitespace-nowrap ${activeTab === tab
+                                    ? 'bg-white text-primary shadow-sm border border-gray-200'
+                                    : 'text-gray-400 hover:text-gray-600'
                                     }`}
                             >
                                 {tab === 'all' ? t[lang].all : tab}
@@ -974,9 +974,10 @@ export default function OmniInboxPage() {
                                 key={contact.id}
                                 onClick={() => setSelectedContact(contact)}
                                 className={`w-full flex items-center space-x-3 p-4 transition-all duration-200 border-b border-gray-50 ${selectedContact?.id === contact.id 
-                                    ? 'bg-slate-50 border-l-2 border-l-primary' 
-                                    : 'hover:bg-gray-50/50'
+                                    ? 'border-l-4 border-l-primary' 
+                                    : ''
                                     }`}
+                                style={{ backgroundColor: selectedContact?.id === contact.id ? '#fef2f2' : '#ffffff' }}
                             >
                                 <div className="relative">
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary/20 to-accent/20 flex items-center justify-center font-bold text-primary">
@@ -988,16 +989,11 @@ export default function OmniInboxPage() {
                                 </div>
                                 <div className="flex-1 text-left overflow-hidden">
                                     <div className="flex items-center gap-1">
-                                        <p className="font-bold truncate">{contact.name || 'Contato'}</p>
-                                        <div className="flex gap-0.5">
-                                            {contact.aiEnabled !== false && <span className="text-[10px]" title="IA Ativa">🤖</span>}
-                                            {contact.n8nEnabled !== false && <span className="text-[10px]" title="Fluxos Ativos">🔗</span>}
-                                            {(contact.aiEnabled === false || contact.n8nEnabled === false) && <span className="text-[10px]" title="Automação Parcialmente Pausada">⏸️</span>}
-                                        </div>
+                                        <p className="font-bold truncate" style={{ color: '#1f2937' }}>{contact.name || 'Contato'}</p>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p className="text-[11px] text-slate-400 truncate font-normal">{contact.lastMessage || 'Sem mensagens...'}</p>
-                                        <span className="text-[10px] text-slate-300 font-medium">{formatTime(contact.updatedAt)}</span>
+                                        <p className="text-[11px] truncate" style={{ color: '#6b7280' }}>{contact.lastMessage || 'Sem mensagens...'}</p>
+                                        <span className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>{formatTime(contact.updatedAt)}</span>
                                     </div>
                                 </div>
                             </button>
@@ -1007,32 +1003,32 @@ export default function OmniInboxPage() {
             </div>
 
             {/* Chat Area */}
-            <div className={`${selectedContact ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-[#f0f2f5] dark:bg-background/30`}>
+            <div className={`${selectedContact ? 'flex' : 'hidden md:flex'} flex-1 flex-col`} style={{ backgroundColor: '#f3f4f6' }}>
                 {selectedContact ? (
                     <>
                         {/* Header */}
-                        <div className="p-4 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-10 border-b border-slate-100">
+                        <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-10 border-b border-gray-200" style={{ backgroundColor: '#ffffff' }}>
                             <div className="flex items-center space-x-3 w-full md:w-auto">
                                 <button 
                                     onClick={() => setSelectedContact(null)}
-                                    className="md:hidden p-2 -ml-2 hover:bg-slate-50 rounded-full text-slate-400 transition"
+                                    className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-500"
                                 >
                                     <ArrowLeft size={18} />
                                 </button>
-                                <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center font-semibold text-slate-500 shrink-0 border border-slate-100">
+                                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-gray-400 shrink-0 border border-gray-200">
                                     {selectedContact.name?.charAt(0) || 'C'}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <h3 className="font-semibold text-slate-700 leading-tight truncate">{selectedContact.name || 'Contato'}</h3>
-                                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tight">
+                                    <h3 className="font-bold leading-tight truncate" style={{ color: '#111827' }}>{selectedContact.name || 'Contato'}</h3>
+                                    <span className="text-[10px] font-bold uppercase" style={{ color: '#9ca3af' }}>
                                         {selectedContact.provider}
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto bg-white">
                                 <button
                                     onClick={handleFinishService}
-                                    className="flex items-center space-x-1.5 bg-green-50 text-green-600 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-all font-semibold text-[10px] border border-green-200"
+                                    className="flex items-center space-x-1 bg-green-500 text-white px-3 py-1.5 rounded-lg transition-all font-bold text-[10px]"
                                 >
                                     <CheckCircle className="w-3.5 h-3.5" />
                                     <span>CONCLUIR</span>
@@ -1042,7 +1038,7 @@ export default function OmniInboxPage() {
                                 <select
                                     value={selectedContact.assignedTeamId || ''}
                                     onChange={(e) => handleTeamTransfer(e.target.value || null)}
-                                    className="bg-slate-50 border border-slate-200 rounded-lg text-[10px] px-3 py-1.5 outline-none focus:border-primary transition font-medium text-slate-600"
+                                    className="bg-white border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold text-gray-600"
                                 >
                                     <option value="">Sem Equipe</option>
                                     {teams.map(t => (
@@ -1067,10 +1063,10 @@ export default function OmniInboxPage() {
                                             setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } : c));
                                         }
                                     }}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all border ${
+                                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold border ${
                                         contactAiEnabled === false && contactN8nEnabled === false
-                                            ? 'bg-red-50 text-red-600 border-red-100'
-                                            : 'bg-primary/10 text-primary border-primary/20'
+                                            ? 'bg-red-500 text-white'
+                                            : 'bg-primary text-white'
                                     }`}
                                 >
                                     <Bot className="w-3.5 h-3.5" />
@@ -1080,16 +1076,18 @@ export default function OmniInboxPage() {
                         </div>
 
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6" style={{ backgroundColor: '#ffffff' }}>
                             {messages.map((msg) => (
                                 <div
                                     key={msg.id}
                                     className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
                                 >
-                                    <div className={`group relative max-w-[85%] md:max-w-[70%] p-3.5 rounded-2xl text-[13px] transition-all duration-200 ${msg.direction === 'outbound'
-                                        ? 'bg-primary text-white rounded-tr-none'
-                                        : 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-sm'
-                                        }`}>
+                                    <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-xl text-sm`} 
+                                        style={{ 
+                                            borderRadius: '15px',
+                                            backgroundColor: msg.direction === 'outbound' ? '#e11d48' : '#f3f4f6',
+                                            color: msg.direction === 'outbound' ? '#ffffff' : '#1f2937'
+                                        }}>
 
                                         {/* Media Rendering */}
                                         {msg.mediaUrl && (
