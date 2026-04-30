@@ -1159,18 +1159,18 @@ export default function OmniInboxPage() {
                             <div ref={messagesEndRef} />
                         </div>
                         {/* Input Area */}
-                        <div className="p-4 bg-white border-t border-slate-100 relative">
+                        <div className="p-4 border-t border-gray-100 relative" style={{ backgroundColor: '#ffffff' }}>
                             {/* File Upload Preview */}
                             {uploadedMedia && (
-                                <div className="mb-3 flex items-center bg-slate-50 p-2 rounded-xl w-fit relative group border border-slate-100">
+                                <div className="mb-3 flex items-center bg-gray-50 p-2 rounded-xl w-fit relative group border border-gray-100">
                                     {uploadedMedia.mimetype.startsWith('image/') ? (
                                         <img src={uploadedMedia.url} className="h-16 w-16 object-cover rounded-lg" />
                                     ) : (
-                                        <div className="h-16 w-16 flex items-center justify-center bg-white rounded-lg text-slate-400 font-bold border border-slate-100 text-[10px]">FILE</div>
+                                        <div className="h-16 w-16 flex items-center justify-center bg-white rounded-lg text-gray-400 font-bold border border-gray-100 text-[10px]">FILE</div>
                                     )}
                                     <button
                                         onClick={() => setUploadedMedia(null)}
-                                        className="absolute -top-1.5 -right-1.5 bg-slate-400 rounded-full p-1 shadow-sm hover:bg-slate-600 transition-colors"
+                                        className="absolute -top-1.5 -right-1.5 bg-gray-400 rounded-full p-1 shadow-sm hover:bg-gray-600 transition-colors"
                                     >
                                         <X size={10} className="text-white" />
                                     </button>
@@ -1178,26 +1178,27 @@ export default function OmniInboxPage() {
                             )}
 
                             <form onSubmit={handleSend} className="flex items-center gap-3">
-                                <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 flex items-center focus-within:border-slate-300 focus-within:bg-white transition-all">
+                                <div className="flex-1 border border-gray-200 rounded-2xl px-4 py-2.5 flex items-center transition-all" style={{ backgroundColor: '#f9fafb' }}>
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         placeholder="Digite aqui..."
-                                        className="flex-1 bg-transparent outline-none text-[13px] text-slate-700 placeholder-slate-400 font-medium"
+                                        className="flex-1 bg-transparent outline-none text-[13px] font-medium"
+                                        style={{ color: '#374151' }}
                                     />
                                     <div className="flex items-center gap-2 ml-2">
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
-                                            className="text-slate-400 hover:text-slate-600 transition-colors"
+                                            className="text-gray-400 hover:text-gray-600 transition-colors"
                                         >
                                             <Paperclip size={18} />
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                            className="text-slate-400 hover:text-slate-600 transition-colors"
+                                            className="text-gray-400 hover:text-gray-600 transition-colors"
                                         >
                                             <Smile size={18} />
                                         </button>
@@ -1206,7 +1207,8 @@ export default function OmniInboxPage() {
                                 <button
                                     type="submit"
                                     disabled={(!newMessage.trim() && !uploadedMedia) || isUploading}
-                                    className="bg-primary hover:opacity-90 text-white p-3 rounded-xl transition-all disabled:opacity-30"
+                                    className="text-white p-3 rounded-xl transition-all disabled:opacity-30 flex items-center justify-center shadow-lg shadow-red-500/20"
+                                    style={{ backgroundColor: '#ef4444' }}
                                 >
                                     <Send size={18} />
                                 </button>
