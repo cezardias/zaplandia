@@ -532,14 +532,14 @@ export default function TermsPage() {
                         </button>
                     ))}
 
-                    <div className="mt-8 p-6 bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 rounded-3xl">
+                    <div className="mt-8 p-6 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-3xl">
                         <div className="flex items-center space-x-3 mb-4">
-                            <div className="p-2 bg-blue-500/20 rounded-xl">
-                                <AlertCircle className="w-5 h-5 text-blue-400" />
+                            <div className="p-2 bg-primary/20 rounded-xl">
+                                <AlertCircle className="w-5 h-5 text-primary" />
                             </div>
-                            <h4 className="text-sm font-bold text-blue-400">Audit Ready</h4>
+                            <h4 className="text-sm font-bold text-primary">Audit Ready</h4>
                         </div>
-                        <p className="text-xs text-blue-300/60 leading-relaxed font-medium">
+                        <p className="text-xs text-primary/60 leading-relaxed font-medium">
                             Este documento foi estruturado para atender auditorias de conformidade Meta e órgãos reguladores de proteção de dados.
                         </p>
                     </div>
