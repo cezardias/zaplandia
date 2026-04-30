@@ -940,7 +940,7 @@ export default function OmniInboxPage() {
                         <input
                             type="text"
                             placeholder={t[lang].searchChats}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-primary transition"
+                            className="w-full bg-white/50 border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-primary transition text-gray-700"
                         />
                     </div>
                 </div>
@@ -1002,11 +1002,11 @@ export default function OmniInboxPage() {
             </div>
 
             {/* Chat Area */}
-            <div className={`${selectedContact ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-background/30`}>
+            <div className={`${selectedContact ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-[#f0f2f5] dark:bg-background/30`}>
                 {selectedContact ? (
                     <>
                         {/* Header */}
-                        <div className="p-4 border-b border-white/5 bg-surface/50 backdrop-blur-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="p-4 border-b border-gray-200 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div className="flex items-center space-x-3 w-full md:w-auto">
                                 <button 
                                     onClick={() => setSelectedContact(null)}
@@ -1018,8 +1018,8 @@ export default function OmniInboxPage() {
                                     {selectedContact.name?.charAt(0) || 'C'}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <h3 className="font-bold truncate">{selectedContact.name || 'Contato'}</h3>
-                                    <div className="flex items-center space-x-2 text-xs text-green-500">
+                                    <h3 className="font-bold truncate text-gray-800">{selectedContact.name || 'Contato'}</h3>
+                                    <div className="flex items-center space-x-2 text-xs text-green-600 font-medium">
                                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0"></div>
                                         <span className="truncate">Online via {selectedContact.provider}</span>
                                     </div>
@@ -1094,9 +1094,9 @@ export default function OmniInboxPage() {
                                     key={msg.id}
                                     className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
                                 >
-                                    <div className={`max-w-[70%] p-4 rounded-2xl text-sm ${msg.direction === 'outbound'
-                                        ? 'bg-primary text-white rounded-br-none'
-                                        : 'bg-surface border border-white/5 text-gray-200 rounded-bl-none'
+                                    <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-2xl text-sm shadow-sm ${msg.direction === 'outbound'
+                                        ? 'bg-primary text-white rounded-br-none shadow-primary/20'
+                                        : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
                                         }`}>
 
                                         {/* Media Rendering */}
@@ -1115,7 +1115,7 @@ export default function OmniInboxPage() {
                                         )}
 
                                         {msg.content}
-                                        <div className={`text-[10px] mt-2 opacity-50 ${msg.direction === 'outbound' ? 'text-right' : 'text-left'}`}>
+                                        <div className={`text-[10px] mt-2 font-medium ${msg.direction === 'outbound' ? 'text-white/70 text-right' : 'text-gray-400 text-left'}`}>
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     </div>
@@ -1125,7 +1125,7 @@ export default function OmniInboxPage() {
                         </div>
 
                         {/* Input */}
-                        <div className="p-4 bg-surface/50 border-t border-white/5 relative">
+                        <div className="p-4 bg-white border-t border-gray-200 relative">
                             {/* File Upload Preview */}
                             {uploadedMedia && (
                                 <div className="mb-4 flex items-center bg-white/5 p-2 rounded-xl w-fit relative group">
@@ -1159,13 +1159,13 @@ export default function OmniInboxPage() {
                             )}
 
                             <form onSubmit={handleSend} className="flex items-center space-x-4">
-                                <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center focus-within:border-primary transition">
+                                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 flex items-center focus-within:border-primary transition">
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         placeholder="Digite sua mensagem..."
-                                        className="flex-1 bg-transparent outline-none text-sm placeholder-gray-500"
+                                        className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
                                     />
                                     <button
                                         type="button"
