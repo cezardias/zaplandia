@@ -255,8 +255,31 @@ export class UsersService implements OnModuleInit {
         if (updateData.password) {
             updateData.password = await bcrypt.hash(updateData.password, 10);
         }
+
+        // Get the user to find their tenantId
+        const user = await this.usersRepository.findOne({ where: { id }, relations: ['tenant'] });
+        if (!user) return null;
+
+        // If trialEndsAt or paidUntil or other tenant fields are provided, update the tenant
+        const tenantFields = ['trialEndsAt', 'paidUntil', 'planType', 'subscriptionStatus', 'isActive'];
+        const tenantUpdate: any = {};
+        let shouldUpdateTenant = false;
+
+        tenantFields.forEach(field => {
+            if (updateData[field] !== undefined) {
+                tenantUpdate[field] = updateData[field];
+                shouldUpdateTenant = true;
+                delete updateData[field]; // Don't try to save tenant fields on user entity
+            }
+        });
+
+        if (shouldUpdateTenant && user.tenantId) {
+            console.log(`[ADMIN_UPDATE] Updating tenant ${user.tenantId} for user ${id}`);
+            await this.tenantsRepository.update(user.tenantId, tenantUpdate);
+        }
+
         await this.usersRepository.update(id, updateData);
-        return this.usersRepository.findOneBy({ id });
+        return this.usersRepository.findOne({ where: { id }, relations: ['tenant'] });
     }
 
     async remove(id: string): Promise<void> {

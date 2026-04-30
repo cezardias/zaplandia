@@ -18,6 +18,9 @@ interface UserData {
     tenant?: {
         id: string;
         name: string;
+        trialEndsAt?: string;
+        paidUntil?: string;
+        planType?: string;
     };
     createdAt: string;
 }
@@ -35,7 +38,8 @@ export default function UserManagementPage() {
         email: '',
         password: '',
         role: 'user',
-        tenantId: ''
+        tenantId: '',
+        trialEndsAt: ''
     });
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'profile' | 'apis'>('profile');
@@ -137,11 +141,12 @@ export default function UserManagementPage() {
                 email: user.email,
                 password: '',
                 role: user.role,
-                tenantId: user.tenantId || ''
+                tenantId: user.tenantId || '',
+                trialEndsAt: user.tenant?.trialEndsAt ? new Date(user.tenant.trialEndsAt).toISOString().split('T')[0] : ''
             });
         } else {
             setEditingUser(null);
-            setFormData({ name: '', email: '', password: '', role: 'user', tenantId: '' });
+            setFormData({ name: '', email: '', password: '', role: 'user', tenantId: '', trialEndsAt: '' });
         }
         setIsModalOpen(true);
         if (activeTab !== 'apis') setActiveTab('profile');
@@ -296,10 +301,10 @@ export default function UserManagementPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden scale-in-center flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden scale-in-center flex flex-col max-h-[90vh]">
                         <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-                            <h3 className="text-xl font-bold text-white flex items-center">
+                            <h3 className="text-xl font-bold text-foreground flex items-center">
                                 {editingUser ? <Edit className="w-5 h-5 mr-3 text-primary" /> : <UserPlus className="w-5 h-5 mr-3 text-primary" />}
                                 {editingUser ? 'Editar Usuário' : 'Novo Usuário'}
                             </h3>
@@ -346,7 +351,7 @@ export default function UserManagementPage() {
                                                 required
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-foreground transition placeholder:text-gray-600"
                                                 placeholder="Ex: Cezar Dias"
                                             />
                                         </div>
@@ -357,7 +362,7 @@ export default function UserManagementPage() {
                                                 required
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-foreground transition placeholder:text-gray-600"
                                                 placeholder="email@exemplo.com"
                                             />
                                         </div>
@@ -368,7 +373,7 @@ export default function UserManagementPage() {
                                                 required={!editingUser}
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition"
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-foreground transition placeholder:text-gray-600"
                                                 placeholder="••••••••"
                                             />
                                         </div>
@@ -377,13 +382,32 @@ export default function UserManagementPage() {
                                             <select
                                                 value={formData.role}
                                                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition appearance-none cursor-pointer"
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-foreground transition appearance-none cursor-pointer"
                                             >
-                                                <option value="user" className="bg-[#121214]">Usuário Comum</option>
-                                                <option value="admin" className="bg-[#121214]">Administrador</option>
-                                                <option value="superadmin" className="bg-[#121214]">Super Admin</option>
+                                                <option value="user" className="bg-surface text-foreground">Usuário Comum</option>
+                                                <option value="admin" className="bg-surface text-foreground">Administrador</option>
+                                                <option value="superadmin" className="bg-surface text-foreground">Super Admin</option>
                                             </select>
                                         </div>
+
+                                        {/* NOVO: Campo de Expiração de Acesso */}
+                                        {editingUser && (
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center">
+                                                    <Calendar className="w-3 h-3 mr-2 text-primary" />
+                                                    Expiração do Acesso (Trial/Plano)
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.trialEndsAt}
+                                                    onChange={(e) => setFormData({ ...formData, trialEndsAt: e.target.value })}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-foreground transition"
+                                                />
+                                                <p className="text-[10px] text-gray-500 mt-2 uppercase font-bold">
+                                                    Após esta data, o acesso do usuário será bloqueado automaticamente.
+                                                </p>
+                                            </div>
+                                        )}
                                         {/* Only show tenant selection for admin/superadmin roles */}
                                         {(formData.role === 'admin' || formData.role === 'superadmin') && (
                                             <div>
@@ -391,11 +415,11 @@ export default function UserManagementPage() {
                                                 <select
                                                     value={formData.tenantId}
                                                     onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-white transition appearance-none cursor-pointer"
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-primary outline-none text-foreground transition appearance-none cursor-pointer"
                                                 >
-                                                    <option value="" className="bg-[#121214]">Selecionar Tenant...</option>
+                                                    <option value="" className="bg-surface text-foreground">Selecionar Tenant...</option>
                                                     {tenants.map(t => (
-                                                        <option key={t.id} value={t.id} className="bg-[#121214]">{t.name}</option>
+                                                        <option key={t.id} value={t.id} className="bg-surface text-foreground">{t.name}</option>
                                                     ))}
                                                 </select>
                                                 <p className="text-xs text-gray-500 mt-2">
@@ -409,7 +433,7 @@ export default function UserManagementPage() {
                                         <button
                                             type="button"
                                             onClick={() => setIsModalOpen(false)}
-                                            className="flex-1 px-6 py-4 border border-white/10 rounded-xl text-white font-bold hover:bg-white/5 transition"
+                                            className="flex-1 px-6 py-4 border border-white/10 rounded-xl text-foreground font-bold hover:bg-white/5 transition"
                                         >
                                             Cancelar
                                         </button>
