@@ -232,6 +232,7 @@ export default function OmniInboxPage() {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const [activeTab, setActiveTab] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
     const [selectedInstance, setSelectedInstance] = useState<string>('all');
     const [availableInstances, setAvailableInstances] = useState<any[]>([]);
 
@@ -786,8 +787,16 @@ export default function OmniInboxPage() {
     };
 
     const filteredContacts = contacts.filter(contact => {
-        if (activeTab === 'all') return true;
-        return contact.provider === activeTab;
+        // 1. Tab Filter
+        const matchesTab = activeTab === 'all' || contact.provider === activeTab;
+        
+        // 2. Search Filter (Name or Phone)
+        const q = searchQuery.toLowerCase();
+        const matchesSearch = !q || 
+            (contact.name?.toLowerCase().includes(q)) || 
+            (contact.id?.toLowerCase().includes(q));
+
+        return matchesTab && matchesSearch;
     });
 
     return (
@@ -959,6 +968,8 @@ export default function OmniInboxPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t[lang].searchChats}
                             className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition text-gray-700"
                         />
