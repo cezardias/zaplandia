@@ -16,7 +16,7 @@ import { AiModule } from './ai/ai.module';
 import { UsageModule } from './usage/usage.module';
 import { AuditModule } from './audit/audit.module';
 import { TeamsModule } from './teams/teams.module';
-import { CommsModule } from '@comms/comms.module';
+import { CommsModule } from './comms/comms.module';
 import { BillingModule } from './billing/billing.module';
 import { MailModule } from './mail/mail.module';
 

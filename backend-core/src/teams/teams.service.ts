@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, OnModuleInit, Logger, Inject, forwardRef } from '@nestjs/common';
-import { CommsService } from '@comms/comms.service';
+import { CommsService } from '../comms/comms.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './entities/team.entity';

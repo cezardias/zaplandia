@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException, OnApplicationBootstrap, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
-import { CommsService } from '@comms/comms.service';
+import { CommsService } from '../comms/comms.service';
 
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
