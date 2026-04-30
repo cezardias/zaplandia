@@ -41,11 +41,11 @@ export default function DashboardLayout({
     const { theme, toggleTheme } = useTheme();
 
     const ZaplandiaLogo = ({ className = "w-8 h-8" }) => (
-        <div className={`${className} rounded-full overflow-hidden flex items-center justify-center bg-[#ef4444]`}>
+        <div className={`${className} rounded-full overflow-hidden flex items-center justify-center bg-[#ef4444] border border-white/10 shadow-inner`}>
             <img 
                 src="/logo_zaplandia.png" 
                 alt="Zaplandia" 
-                className="w-full h-full object-cover scale-[1.9]" 
+                className="w-full h-full object-cover scale-[3.5]" 
             />
         </div>
     );

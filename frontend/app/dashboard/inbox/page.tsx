@@ -769,7 +769,7 @@ export default function OmniInboxPage() {
         switch (provider) {
             case 'whatsapp': return (
                 <div className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center bg-[#ef4444]">
-                    <img src="/logo_zaplandia.png" alt="Zaplandia" className="w-full h-full object-cover scale-[1.9]" />
+                    <img src="/logo_zaplandia.png" alt="Zaplandia" className="w-full h-full object-cover scale-[3.5]" />
                 </div>
             );
             case 'instagram': return <Instagram className="w-4 h-4 text-pink-500" />;
