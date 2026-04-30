@@ -806,15 +806,16 @@ export default function OmniInboxPage() {
                             <div className="relative group/select">
                                 <button
                                     onClick={() => document.getElementById('instance-dropdown')?.classList.toggle('hidden')}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary font-bold transition-all flex justify-between items-center bg-white text-gray-700"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary font-bold transition-all flex justify-between items-center"
+                                    style={{ backgroundColor: '#ffffff', color: '#374151' }}
                                 >
                                     <span>{selectedInstance === 'all' ? t[lang].allInboxes : availableInstances.find(i => i.id === selectedInstance)?.displayName}</span>
-                                    <ChevronDown size={14} />
+                                    <ChevronDown size={14} className="text-gray-400" />
                                 </button>
-                                <div id="instance-dropdown" className="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                                <div id="instance-dropdown" className="hidden absolute top-full left-0 right-0 mt-1 border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
                                     <button
                                         onClick={() => { setSelectedInstance('all'); document.getElementById('instance-dropdown')?.classList.add('hidden'); }}
-                                        className={`w-full px-4 py-2 text-left text-sm font-bold hover:bg-primary hover:text-white transition-colors ${selectedInstance === 'all' ? 'bg-primary text-white' : 'text-gray-700'}`}
+                                        className={`w-full px-4 py-2 text-left text-sm font-bold transition-colors ${selectedInstance === 'all' ? 'bg-[#ef4444] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                     >
                                         {t[lang].allInboxes}
                                     </button>
@@ -822,7 +823,7 @@ export default function OmniInboxPage() {
                                         <button
                                             key={inst.id}
                                             onClick={() => { setSelectedInstance(inst.id); document.getElementById('instance-dropdown')?.classList.add('hidden'); }}
-                                            className={`w-full px-4 py-2 text-left text-sm font-bold hover:bg-primary hover:text-white transition-colors ${selectedInstance === inst.id ? 'bg-primary text-white' : 'text-gray-700'}`}
+                                            className={`w-full px-4 py-2 text-left text-sm font-bold transition-colors ${selectedInstance === inst.id ? 'bg-[#ef4444] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                         >
                                             {inst.displayName}
                                         </button>

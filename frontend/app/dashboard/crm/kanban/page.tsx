@@ -344,15 +344,16 @@ export default function KanbanPage() {
                         <div className="relative group/campaign">
                             <button
                                 onClick={() => document.getElementById('campaign-dropdown')?.classList.toggle('hidden')}
-                                className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm outline-none focus:border-primary transition min-w-[240px] flex justify-between items-center font-bold text-gray-700"
+                                className="border border-gray-200 rounded-lg px-4 py-2 text-sm outline-none focus:border-primary transition min-w-[240px] flex justify-between items-center font-bold"
+                                style={{ backgroundColor: '#ffffff', color: '#374151' }}
                             >
                                 <span>{selectedCampaignId === '' ? t[lang].allCampaigns : campaigns.find(c => c.id === selectedCampaignId)?.name}</span>
                                 <ChevronDown className="w-4 h-4 text-gray-400" />
                             </button>
-                            <div id="campaign-dropdown" className="hidden absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div id="campaign-dropdown" className="hidden absolute top-full right-0 mt-1 w-full border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
                                 <button
                                     onClick={() => { setSelectedCampaignId(''); document.getElementById('campaign-dropdown')?.classList.add('hidden'); }}
-                                    className={`w-full px-4 py-2 text-left text-sm font-bold hover:bg-[#ef4444] hover:text-white transition-colors ${selectedCampaignId === '' ? 'bg-[#ef4444] text-white' : 'text-gray-700'}`}
+                                    className={`w-full px-4 py-2 text-left text-sm font-bold transition-colors ${selectedCampaignId === '' ? 'bg-[#ef4444] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                 >
                                     {t[lang].allCampaigns}
                                 </button>
@@ -364,7 +365,7 @@ export default function KanbanPage() {
                                         <button
                                             key={campaign.id}
                                             onClick={() => { setSelectedCampaignId(campaign.id); document.getElementById('campaign-dropdown')?.classList.add('hidden'); }}
-                                            className={`w-full px-4 py-2 text-left text-sm font-bold hover:bg-[#ef4444] hover:text-white transition-colors ${selectedCampaignId === campaign.id ? 'bg-[#ef4444] text-white' : 'text-gray-700'}`}
+                                            className={`w-full px-4 py-2 text-left text-sm font-bold transition-colors ${selectedCampaignId === campaign.id ? 'bg-[#ef4444] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                         >
                                             {campaign.name} ({leadCount} {t[lang].leads})
                                         </button>

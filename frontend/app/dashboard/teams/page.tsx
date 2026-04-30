@@ -452,15 +452,16 @@ export default function TeamsPage() {
                                 <div className="relative group/userteam">
                                     <button
                                         onClick={() => document.getElementById(`user-team-dropdown-${u.id}`)?.classList.toggle('hidden')}
-                                        className="w-full border border-gray-200 rounded-xl px-4 py-2 text-xs outline-none focus:border-primary transition font-bold flex justify-between items-center bg-white text-gray-700"
+                                        className="w-full border border-gray-200 rounded-xl px-4 py-2 text-xs outline-none focus:border-primary transition font-bold flex justify-between items-center"
+                                        style={{ backgroundColor: '#ffffff', color: '#374151' }}
                                     >
                                         <span>{u.teamId ? teams.find(tm => tm.id === u.teamId)?.name : t[lang].noTeamLabel}</span>
                                         <ChevronDown size={12} className="text-gray-400" />
                                     </button>
-                                    <div id={`user-team-dropdown-${u.id}`} className="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                                    <div id={`user-team-dropdown-${u.id}`} className="hidden absolute top-full left-0 right-0 mt-1 border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
                                         <button
                                             onClick={() => { assignUser(u.id, null); document.getElementById(`user-team-dropdown-${u.id}`)?.classList.add('hidden'); }}
-                                            className={`w-full px-4 py-2 text-left text-xs font-bold hover:bg-primary hover:text-white transition-colors ${!u.teamId ? 'bg-primary text-white' : 'text-gray-700'}`}
+                                            className={`w-full px-4 py-2 text-left text-xs font-bold transition-colors ${!u.teamId ? 'bg-[#ef4444] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                         >
                                             {t[lang].noTeamLabel}
                                         </button>
@@ -468,7 +469,7 @@ export default function TeamsPage() {
                                             <button
                                                 key={team.id}
                                                 onClick={() => { assignUser(u.id, team.id); document.getElementById(`user-team-dropdown-${u.id}`)?.classList.add('hidden'); }}
-                                                className={`w-full px-4 py-2 text-left text-xs font-bold hover:bg-primary hover:text-white transition-colors ${u.teamId === team.id ? 'bg-primary text-white' : 'text-gray-700'}`}
+                                                className={`w-full px-4 py-2 text-left text-xs font-bold transition-colors ${u.teamId === team.id ? 'bg-[#ef4444] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                             >
                                                 {team.name}
                                             </button>
