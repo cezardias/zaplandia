@@ -18,13 +18,15 @@ const ThemeContext = createContext<ThemeContextType>({
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const [theme, setTheme] = useState<Theme>('dark');
     const { token, user } = useAuth();
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    
+    // Improved API_URL resolution (Matching AuthContext pattern)
+    let API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : 'http://localhost:3001');
 
     // Fetch theme from backend globally on load
     useEffect(() => {
         const fetchGlobalTheme = async () => {
             try {
-                const res = await fetch(`${API_URL}/config`);
+                const res = await fetch(`${API_URL}/api/config`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.theme === 'light-red' || data.theme === 'dark') {
@@ -61,7 +63,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         if (user?.email === 'cezar.dias@gmail.com' || user?.role === 'superadmin') {
             console.log(`[THEME] Attempting to save global theme: ${newTheme}`);
             try {
-                const res = await fetch(`${API_URL}/config`, {
+                const res = await fetch(`${API_URL}/api/config`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
