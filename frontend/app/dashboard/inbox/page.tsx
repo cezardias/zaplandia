@@ -805,12 +805,12 @@ export default function OmniInboxPage() {
                             <select
                                 value={selectedInstance}
                                 onChange={(e) => setSelectedInstance(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary font-bold transition-all"
                                 style={{ backgroundColor: '#ffffff', color: '#1f2937' }}
                             >
-                                <option value="all">{t[lang].allInboxes}</option>
+                                <option value="all" style={{ backgroundColor: '#ffffff', color: '#1f2937' }}>{t[lang].allInboxes}</option>
                                 {availableInstances.map(inst => (
-                                    <option key={inst.id} value={inst.id}>
+                                    <option key={inst.id} value={inst.id} style={{ backgroundColor: '#ffffff', color: '#1f2937' }}>
                                         {inst.displayName}
                                     </option>
                                 ))}
@@ -940,12 +940,12 @@ export default function OmniInboxPage() {
                         ))}
                     </div>
 
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
                             placeholder={t[lang].searchChats}
-                            className="w-full bg-white/50 border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-primary transition text-gray-700"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition text-gray-700"
                         />
                     </div>
                 </div>
