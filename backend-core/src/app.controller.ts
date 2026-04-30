@@ -36,6 +36,7 @@ export class AppController {
       throw new ForbiddenException('Apenas o Superadmin pode alterar o tema global.');
     }
 
+    // Persist global theme using the correct service method
     await this.integrationsService.saveApiCredential(null, 'GLOBAL_THEME', body.theme);
 
     return { success: true, theme: body.theme };
