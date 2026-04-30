@@ -21,7 +21,11 @@ import {
     Bot,
     Terminal,
     CheckCircle,
-    ArrowLeft
+    ArrowLeft,
+    Users,
+    Paperclip,
+    Smile,
+    X
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
@@ -786,12 +790,12 @@ export default function OmniInboxPage() {
     });
 
     return (
-        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 bg-white rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden relative shadow-sm">
+        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 bg-white rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden relative shadow-xl">
             {/* Contact List */}
-            <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-gray-100 flex-col bg-gray-50/50`}>
-                <div className="p-4 border-b border-gray-100 space-y-4">
+            <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-gray-100 flex-col bg-white`}>
+                <div className="p-6 border-b border-gray-50 space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-gray-800">{t[lang].title}</h2>
+                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">{t[lang].title}</h2>
                     </div>
 
                     {/* Instance Selector (WhatsApp Only) */}
@@ -919,14 +923,14 @@ export default function OmniInboxPage() {
                     )}
 
                     {/* Tabs */}
-                    <div className="flex bg-gray-200/50 p-1 rounded-xl overflow-x-auto no-scrollbar gap-1">
+                    <div className="flex bg-gray-100 p-1 rounded-2xl overflow-x-auto no-scrollbar gap-1">
                         {['all', 'whatsapp', 'instagram', 'facebook'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition whitespace-nowrap ${activeTab === tab
-                                    ? 'bg-primary text-white shadow-md'
-                                    : 'text-gray-500 hover:text-gray-800 hover:bg-white'
+                                className={`px-4 py-2 rounded-xl text-xs font-black capitalize transition-all duration-200 whitespace-nowrap ${activeTab === tab
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105'
+                                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 {tab === 'all' ? t[lang].all : tab}
@@ -969,7 +973,9 @@ export default function OmniInboxPage() {
                             <button
                                 key={contact.id}
                                 onClick={() => setSelectedContact(contact)}
-                                className={`w-full flex items-center space-x-3 p-4 hover:bg-white transition border-b border-gray-100 ${selectedContact?.id === contact.id ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+                                className={`w-full flex items-center space-x-4 p-4 transition-all duration-200 border-b border-gray-50 relative ${selectedContact?.id === contact.id 
+                                    ? 'bg-primary/5 after:absolute after:left-0 after:top-2 after:bottom-2 after:w-1 after:bg-primary after:rounded-r-full' 
+                                    : 'hover:bg-gray-50'
                                     }`}
                             >
                                 <div className="relative">
@@ -990,8 +996,8 @@ export default function OmniInboxPage() {
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p className="text-xs text-gray-500 truncate font-medium">{contact.lastMessage || 'Sem mensagens...'}</p>
-                                        <span className="text-[10px] text-gray-400 font-bold">{formatTime(contact.updatedAt)}</span>
+                                        <p className="text-[11px] text-gray-400 truncate font-medium">{contact.lastMessage || 'Sem mensagens...'}</p>
+                                        <span className="text-[10px] text-gray-300 font-bold">{formatTime(contact.updatedAt)}</span>
                                     </div>
                                 </div>
                             </button>
@@ -1005,54 +1011,56 @@ export default function OmniInboxPage() {
                 {selectedContact ? (
                     <>
                         {/* Header */}
-                        <div className="p-4 border-b border-gray-100 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-10 shadow-sm">
-                            <div className="flex items-center space-x-3 w-full md:w-auto">
+                        <div className="p-5 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-10 shadow-sm border-b border-gray-100">
+                            <div className="flex items-center space-x-4 w-full md:w-auto">
                                 <button 
                                     onClick={() => setSelectedContact(null)}
-                                    className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-500"
+                                    className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-400 transition"
                                 >
                                     <ArrowLeft size={20} />
                                 </button>
-                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 border border-primary/20">
-                                    {selectedContact.name?.charAt(0) || 'C'}
+                                <div className="relative">
+                                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center font-black text-primary shrink-0 border border-primary/20 rotate-3 group-hover:rotate-0 transition-transform">
+                                        {selectedContact.name?.charAt(0) || 'C'}
+                                    </div>
+                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <h3 className="font-bold truncate text-gray-800">{selectedContact.name || 'Contato'}</h3>
-                                    <div className="flex items-center space-x-2 text-xs text-green-600 font-bold">
-                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0"></div>
-                                        <span className="truncate">Online via {selectedContact.provider}</span>
-                                    </div>
+                                    <h3 className="font-black text-lg text-gray-800 leading-tight truncate">{selectedContact.name || 'Contato'}</h3>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                                        Via {selectedContact.provider}
+                                    </span>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 text-gray-500 w-full md:w-auto">
+                            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                                 <button
                                     onClick={handleFinishService}
-                                    className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl transition text-[10px] font-black shadow-md shadow-green-500/20"
-                                    title="Finalizar e Devolver para Automação"
+                                    className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-2xl transition-all font-black text-[10px] shadow-lg shadow-green-500/20 active:scale-95"
                                 >
                                     <CheckCircle className="w-4 h-4" />
-                                    <span>FINALIZAR</span>
+                                    <span>CONCLUIR</span>
                                 </button>
 
                                 {/* Team Selector */}
-                                <select
-                                    value={selectedContact.assignedTeamId || ''}
-                                    onChange={(e) => handleTeamTransfer(e.target.value || null)}
-                                    className="bg-gray-50 border border-gray-200 rounded-xl text-[10px] px-3 py-2 outline-none focus:border-primary transition font-bold text-gray-700"
-                                    title="Atribuir a uma equipe"
-                                >
-                                    <option value="">Sem Equipe</option>
-                                    {teams.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                    ))}
-                                </select>
+                                <div className="relative group">
+                                    <select
+                                        value={selectedContact.assignedTeamId || ''}
+                                        onChange={(e) => handleTeamTransfer(e.target.value || null)}
+                                        className="appearance-none bg-gray-50 border border-gray-200 rounded-2xl text-[10px] pl-4 pr-10 py-2.5 outline-none focus:border-primary transition font-black text-gray-600"
+                                    >
+                                        <option value="">Equipe: Nenhuma</option>
+                                        {teams.map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                    <Users className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                                </div>
 
-                                {/* Unified Automation Toggle */}
+                                {/* Automation Toggle */}
                                 <button
                                     onClick={async () => {
                                         const isPaused = contactAiEnabled === false && contactN8nEnabled === false;
                                         const newValue = isPaused ? null : false;
-                                        
                                         const res = await fetch(`/api/crm/chats/${selectedContact.id}`, {
                                             method: 'PATCH',
                                             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1065,28 +1073,28 @@ export default function OmniInboxPage() {
                                             setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } : c));
                                         }
                                     }}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition shadow-lg ${
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 ${
                                         contactAiEnabled === false && contactN8nEnabled === false
-                                            ? 'bg-red-600 text-white ring-4 ring-red-500/20'
-                                            : 'bg-green-600 text-white ring-4 ring-green-500/20'
+                                            ? 'bg-red-500 text-white shadow-red-500/20'
+                                            : 'bg-primary text-white shadow-primary/20'
                                     }`}
                                 >
-                                    <Bot className={`w-4 h-4 ${(contactAiEnabled === false && contactN8nEnabled === false) ? 'animate-pulse' : ''}`} />
-                                    <span>{(contactAiEnabled === false && contactN8nEnabled === false) ? 'Automação Pausada' : 'Automação Ativa'}</span>
+                                    <Bot className="w-4 h-4" />
+                                    <span>{(contactAiEnabled === false && contactN8nEnabled === false) ? 'PAUSADO' : 'ATIVO'}</span>
                                 </button>
                             </div>
                         </div>
 
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        {/* Messages Area */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#f8fafc]">
                             {messages.map((msg) => (
                                 <div
                                     key={msg.id}
                                     className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
                                 >
-                                    <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-2xl text-sm shadow-sm ${msg.direction === 'outbound'
-                                        ? 'bg-primary text-white rounded-br-none shadow-primary/20'
-                                        : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
+                                    <div className={`group relative max-w-[85%] md:max-w-[70%] p-4 rounded-3xl text-sm shadow-sm transition-all duration-200 ${msg.direction === 'outbound'
+                                        ? 'bg-primary text-white rounded-tr-none shadow-primary/20'
+                                        : 'bg-white text-gray-700 rounded-tl-none border border-gray-100 hover:shadow-md'
                                         }`}>
 
                                         {/* Media Rendering */}
@@ -1113,77 +1121,66 @@ export default function OmniInboxPage() {
                             ))}
                             <div ref={messagesEndRef} />
                         </div>
-                        <div className="p-4 bg-white border-t border-gray-100 relative">
+                        {/* Input Area */}
+                        <div className="p-6 bg-white border-t border-gray-50 relative">
                             {/* File Upload Preview */}
                             {uploadedMedia && (
-                                <div className="mb-4 flex items-center bg-gray-50 p-2 rounded-xl w-fit relative group border border-gray-200">
+                                <div className="mb-4 flex items-center bg-gray-50 p-3 rounded-2xl w-fit relative group border border-gray-100 animate-in slide-in-from-bottom-2">
                                     {uploadedMedia.mimetype.startsWith('image/') ? (
-                                        <img src={uploadedMedia.url} className="h-16 w-16 object-cover rounded-lg" />
+                                        <img src={uploadedMedia.url} className="h-20 w-20 object-cover rounded-xl" />
                                     ) : (
-                                        <div className="h-16 w-16 flex items-center justify-center bg-gray-200 rounded-lg text-gray-500">📎</div>
+                                        <div className="h-20 w-20 flex items-center justify-center bg-white rounded-xl text-primary font-black border border-primary/10">FILE</div>
                                     )}
                                     <button
                                         onClick={() => setUploadedMedia(null)}
-                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 shadow-lg hover:bg-red-600 transition"
+                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1.5 shadow-xl hover:bg-red-600 transition-colors"
                                     >
-                                        <div className="w-3 h-3 flex items-center justify-center text-white text-[10px] font-bold">✕</div>
+                                        <X size={12} className="text-white" />
                                     </button>
                                 </div>
                             )}
 
-                            {/* Hidden Input */}
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                onChange={handleFileSelect}
-                            />
-
-                            {/* Emoji Picker */}
-                            {showEmojiPicker && (
-                                <div className="absolute bottom-20 right-4 z-50 shadow-2xl rounded-2xl overflow-hidden border border-gray-200">
-                                    <EmojiPicker onEmojiClick={handleEmojiClick} theme={Theme.LIGHT} width={300} height={400} />
-                                </div>
-                            )}
-
-                            <form onSubmit={handleSend} className="flex items-center space-x-4">
-                                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 flex items-center focus-within:border-primary transition group">
+                            <form onSubmit={handleSend} className="flex items-center gap-4">
+                                <div className="flex-1 bg-gray-50 border border-gray-100 rounded-3xl px-6 py-4 flex items-center focus-within:border-primary/50 focus-within:bg-white focus-within:shadow-lg transition-all duration-300">
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
-                                        placeholder="Digite sua mensagem..."
-                                        className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 font-medium"
+                                        placeholder="Digite sua mensagem aqui..."
+                                        className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 font-bold"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="text-gray-400 hover:text-primary transition mx-2 relative"
-                                        disabled={isUploading}
-                                    >
-                                        {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <div title="Anexar Arquivo">📎</div>}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                        className={`text-gray-400 hover:text-primary transition mx-2 ${showEmojiPicker ? 'text-primary' : ''}`}
-                                    >
-                                        <div title="Emoji">😊</div>
-                                    </button>
+                                    <div className="flex items-center gap-1 border-l border-gray-200 ml-4 pl-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="p-2 text-gray-400 hover:text-primary transition-colors"
+                                            title="Anexar Arquivo"
+                                        >
+                                            <Paperclip size={20} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                            className={`p-2 text-gray-400 hover:text-primary transition-colors ${showEmojiPicker ? 'text-primary' : ''}`}
+                                            title="Emojis"
+                                        >
+                                            <Smile size={20} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <button
                                     type="submit"
                                     disabled={(!newMessage.trim() && !uploadedMedia) || isUploading}
-                                    className="bg-primary hover:bg-primary-dark text-white p-4 rounded-2xl transition shadow-lg shadow-primary/30 disabled:opacity-50 active:scale-95"
+                                    className="bg-primary hover:bg-primary-dark text-white p-5 rounded-3xl transition-all shadow-xl shadow-primary/30 disabled:opacity-30 active:scale-90"
                                 >
-                                    <Send className="w-5 h-5" />
+                                    <Send size={24} />
                                 </button>
                             </form>
                         </div>
                     </>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                        <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-4">
                             <MessageCircle className="w-10 h-10 opacity-20" />
                         </div>
                         <p className="font-medium">Selecione uma conversa para começar</p>
