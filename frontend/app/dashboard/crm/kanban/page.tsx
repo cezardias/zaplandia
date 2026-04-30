@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Loader2, MoreHorizontal, MessageSquare, Plus, Trash2, Pencil, Check, X, Target, Info } from 'lucide-react';
+import { Loader2, MoreHorizontal, MessageSquare, Plus, Trash2, Pencil, Check, X, Target, Info, ChevronDown } from 'lucide-react';
 
 interface Stage {
     id: string;
@@ -341,23 +341,37 @@ export default function KanbanPage() {
                         <div className="h-8 w-[1px] bg-white/10 mx-2" />
 
                         <label className="text-sm text-gray-400">{t[lang].campaign}</label>
-                        <select
-                            value={selectedCampaignId}
-                            onChange={(e) => setSelectedCampaignId(e.target.value)}
-                            className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm outline-none focus:border-primary transition min-w-[200px]"
-                        >
-                            <option value="">{t[lang].allCampaigns}</option>
-                            {campaigns.map((campaign) => {
-                                const leadCount = Object.values(columns).reduce((acc: number, col: any) => {
-                                    return acc + col.items.filter((item: any) => item.campaignId === campaign.id).length;
-                                }, 0);
-                                return (
-                                    <option key={campaign.id} value={campaign.id}>
-                                        {campaign.name} ({leadCount} {t[lang].leads})
-                                    </option>
-                                );
-                            })}
-                        </select>
+                        <div className="relative group/campaign">
+                            <button
+                                onClick={() => document.getElementById('campaign-dropdown')?.classList.toggle('hidden')}
+                                className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm outline-none focus:border-primary transition min-w-[240px] flex justify-between items-center font-bold text-gray-700"
+                            >
+                                <span>{selectedCampaignId === '' ? t[lang].allCampaigns : campaigns.find(c => c.id === selectedCampaignId)?.name}</span>
+                                <ChevronDown className="w-4 h-4 text-gray-400" />
+                            </button>
+                            <div id="campaign-dropdown" className="hidden absolute top-full right-0 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                                <button
+                                    onClick={() => { setSelectedCampaignId(''); document.getElementById('campaign-dropdown')?.classList.add('hidden'); }}
+                                    className={`w-full px-4 py-2 text-left text-sm font-bold hover:bg-[#ef4444] hover:text-white transition-colors ${selectedCampaignId === '' ? 'bg-[#ef4444] text-white' : 'text-gray-700'}`}
+                                >
+                                    {t[lang].allCampaigns}
+                                </button>
+                                {campaigns.map((campaign) => {
+                                    const leadCount = Object.values(columns).reduce((acc: number, col: any) => {
+                                        return acc + col.items.filter((item: any) => item.campaignId === campaign.id).length;
+                                    }, 0);
+                                    return (
+                                        <button
+                                            key={campaign.id}
+                                            onClick={() => { setSelectedCampaignId(campaign.id); document.getElementById('campaign-dropdown')?.classList.add('hidden'); }}
+                                            className={`w-full px-4 py-2 text-left text-sm font-bold hover:bg-[#ef4444] hover:text-white transition-colors ${selectedCampaignId === campaign.id ? 'bg-[#ef4444] text-white' : 'text-gray-700'}`}
+                                        >
+                                            {campaign.name} ({leadCount} {t[lang].leads})
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

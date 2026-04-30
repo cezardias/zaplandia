@@ -802,19 +802,32 @@ export default function OmniInboxPage() {
                     {activeTab === 'whatsapp' && availableInstances.length > 0 && (
                         <div className="space-y-2">
                             <label className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t[lang].inbox}</label>
-                            <select
-                                value={selectedInstance}
-                                onChange={(e) => setSelectedInstance(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary font-bold transition-all"
-                                style={{ backgroundColor: '#ffffff', color: '#1f2937' }}
-                            >
-                                <option value="all" style={{ backgroundColor: '#ffffff', color: '#1f2937' }}>{t[lang].allInboxes}</option>
-                                {availableInstances.map(inst => (
-                                    <option key={inst.id} value={inst.id} style={{ backgroundColor: '#ffffff', color: '#1f2937' }}>
-                                        {inst.displayName}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="relative group/select">
+                                <button
+                                    onClick={() => document.getElementById('instance-dropdown')?.classList.toggle('hidden')}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary font-bold transition-all flex justify-between items-center bg-white text-gray-700"
+                                >
+                                    <span>{selectedInstance === 'all' ? t[lang].allInboxes : availableInstances.find(i => i.id === selectedInstance)?.displayName}</span>
+                                    <ChevronDown size={14} />
+                                </button>
+                                <div id="instance-dropdown" className="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                                    <button
+                                        onClick={() => { setSelectedInstance('all'); document.getElementById('instance-dropdown')?.classList.add('hidden'); }}
+                                        className={`w-full px-4 py-2 text-left text-sm font-bold hover:bg-primary hover:text-white transition-colors ${selectedInstance === 'all' ? 'bg-primary text-white' : 'text-gray-700'}`}
+                                    >
+                                        {t[lang].allInboxes}
+                                    </button>
+                                    {availableInstances.map(inst => (
+                                        <button
+                                            key={inst.id}
+                                            onClick={() => { setSelectedInstance(inst.id); document.getElementById('instance-dropdown')?.classList.add('hidden'); }}
+                                            className={`w-full px-4 py-2 text-left text-sm font-bold hover:bg-primary hover:text-white transition-colors ${selectedInstance === inst.id ? 'bg-primary text-white' : 'text-gray-700'}`}
+                                        >
+                                            {inst.displayName}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
                             {/* AI Toggle & Prompt Selector */}
                             {selectedInstance !== 'all' && (
@@ -1036,17 +1049,32 @@ export default function OmniInboxPage() {
                                 </button>
 
                                 {/* Team Selector */}
-                                <select
-                                    value={selectedContact.assignedTeamId || ''}
-                                    onChange={(e) => handleTeamTransfer(e.target.value || null)}
-                                    className="border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold hover:border-gray-300 transition-colors"
-                                    style={{ backgroundColor: '#ffffff', color: '#1f2937' }}
-                                >
-                                    <option value="">Equipe: Nenhuma</option>
-                                    {teams.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                    ))}
-                                </select>
+                                <div className="relative group/team">
+                                    <button
+                                        onClick={() => document.getElementById('team-dropdown')?.classList.toggle('hidden')}
+                                        className="border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold hover:border-primary transition-colors flex items-center gap-2 bg-white text-gray-500"
+                                    >
+                                        <span>{selectedContact.assignedTeamId ? teams.find(tm => tm.id === selectedContact.assignedTeamId)?.name : 'Equipe: Nenhuma'}</span>
+                                        <ChevronDown size={12} />
+                                    </button>
+                                    <div id="team-dropdown" className="hidden absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                                        <button
+                                            onClick={() => { handleTeamTransfer(null); document.getElementById('team-dropdown')?.classList.add('hidden'); }}
+                                            className={`w-full px-4 py-2 text-left text-[11px] font-bold hover:bg-primary hover:text-white transition-colors ${!selectedContact.assignedTeamId ? 'bg-primary text-white' : 'text-gray-600'}`}
+                                        >
+                                            Equipe: Nenhuma
+                                        </button>
+                                        {teams.map(t => (
+                                            <button
+                                                key={t.id}
+                                                onClick={() => { handleTeamTransfer(t.id); document.getElementById('team-dropdown')?.classList.add('hidden'); }}
+                                                className={`w-full px-4 py-2 text-left text-[11px] font-bold hover:bg-primary hover:text-white transition-colors ${selectedContact.assignedTeamId === t.id ? 'bg-primary text-white' : 'text-gray-600'}`}
+                                            >
+                                                {t.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 {/* Automation Toggle */}
                                 <button
