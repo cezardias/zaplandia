@@ -767,7 +767,15 @@ export default function OmniInboxPage() {
 
     const getProviderIcon = (provider: string) => {
         switch (provider) {
-            case 'whatsapp': return <img src="/icon.svg" alt="Zaplandia" className="w-4 h-4" />;
+            case 'whatsapp': return (
+                <div className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-sm">
+                    <img 
+                        src="/logo_zaplandia.png" 
+                        alt="Zaplandia" 
+                        className="w-full h-full object-cover scale-[4]" 
+                    />
+                </div>
+            );
             case 'instagram': return <Instagram className="w-4 h-4 text-pink-500" />;
             case 'facebook': return <Facebook className="w-4 h-4 text-blue-600" />;
             case 'mercadolivre': return <ShoppingBag className="w-4 h-4 text-yellow-500" />;

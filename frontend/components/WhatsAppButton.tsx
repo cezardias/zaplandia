@@ -21,10 +21,14 @@ const WhatsAppButton = () => {
             style={{ backgroundColor: '#ef4444' }}
             title="Fale conosco no WhatsApp"
         >
-            <div className="w-8 h-8 flex items-center justify-center">
-                <img src="/icon.svg" alt="Zaplandia" className="w-full h-full" />
+            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-white">
+                <img 
+                    src="/logo_zaplandia.png" 
+                    alt="Zaplandia" 
+                    className="w-full h-full object-cover scale-[4]" 
+                />
             </div>
-            <span className="absolute right-full mr-3 bg-white text-gray-800 px-3 py-1.5 rounded-lg text-sm font-bold shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            <span className="absolute right-full mr-3 bg-white text-primary px-3 py-1.5 rounded-lg text-sm font-bold shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-gray-100">
                 Suporte Zaplândia
             </span>
         </motion.a>
