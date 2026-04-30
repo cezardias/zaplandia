@@ -805,7 +805,8 @@ export default function OmniInboxPage() {
                             <select
                                 value={selectedInstance}
                                 onChange={(e) => setSelectedInstance(e.target.value)}
-                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-gray-700 font-bold"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+                                style={{ backgroundColor: '#ffffff', color: '#1f2937' }}
                             >
                                 <option value="all">{t[lang].allInboxes}</option>
                                 {availableInstances.map(inst => (
@@ -817,7 +818,7 @@ export default function OmniInboxPage() {
 
                             {/* AI Toggle & Prompt Selector */}
                             {selectedInstance !== 'all' && (
-                                <div className="mt-3 p-3 bg-white rounded-xl border border-gray-200 space-y-2 shadow-sm">
+                                <div className="mt-3 p-3 rounded-xl border border-gray-200 space-y-2 shadow-sm" style={{ backgroundColor: '#ffffff', color: '#1f2937' }}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Bot className="w-4 h-4 text-primary" />
@@ -826,7 +827,7 @@ export default function OmniInboxPage() {
                                         <button
                                             title={aiEnabled ? "Disable AI" : "Enable AI"}
                                             onClick={toggleAI}
-                                            className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${aiEnabled ? 'bg-primary' : 'bg-gray-600'
+                                            className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${aiEnabled ? 'bg-primary' : 'bg-gray-400'
                                                 }`}
                                         >
                                             <span
@@ -844,7 +845,7 @@ export default function OmniInboxPage() {
                                         <button
                                             title={n8nEnabled ? "Disable n8n" : "Enable n8n"}
                                             onClick={toggleN8n}
-                                            className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${n8nEnabled ? 'bg-orange-500' : 'bg-gray-600'
+                                            className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${n8nEnabled ? 'bg-orange-500' : 'bg-gray-400'
                                                 }`}
                                         >
                                             <span
@@ -1025,7 +1026,7 @@ export default function OmniInboxPage() {
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto bg-white">
+                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto p-1 rounded-xl" style={{ backgroundColor: '#ffffff' }}>
                                 <button
                                     onClick={handleFinishService}
                                     className="flex items-center space-x-1 bg-green-500 text-white px-3 py-1.5 rounded-lg transition-all font-bold text-[10px]"
@@ -1038,7 +1039,8 @@ export default function OmniInboxPage() {
                                 <select
                                     value={selectedContact.assignedTeamId || ''}
                                     onChange={(e) => handleTeamTransfer(e.target.value || null)}
-                                    className="bg-white border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold text-gray-500 hover:border-gray-300 transition-colors"
+                                    className="border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold hover:border-gray-300 transition-colors"
+                                    style={{ backgroundColor: '#ffffff', color: '#1f2937' }}
                                 >
                                     <option value="">Equipe: Nenhuma</option>
                                     {teams.map(t => (
