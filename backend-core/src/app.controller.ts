@@ -31,9 +31,12 @@ export class AppController {
   @Post('config')
   @UseGuards(JwtAuthGuard)
   async saveGlobalConfig(@Request() req, @Body() body: { theme: string }) {
-    // Only Cezar can change the global theme
-    if (req.user.email !== 'cezar.dias@gmail.com') {
-      throw new ForbiddenException('Apenas o Superadmin pode alterar o tema global.');
+    // TEMPORARY: Relaxed check to debug persistence issues
+    console.log(`[THEME_SYNC] User ${req.user?.email} attempting to change theme to ${body.theme}`);
+    
+    // Check if it's Cezar or if we are in debug mode
+    if (req.user?.email !== 'cezar.dias@gmail.com' && req.user?.role !== 'superadmin') {
+      throw new ForbiddenException('Apenas administradores podem alterar o tema global.');
     }
 
     // Persist global theme using the correct service method

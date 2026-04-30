@@ -58,9 +58,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         setTheme(newTheme);
 
         // If superadmin, save it globally for all users
-        if (user?.email === 'cezar.dias@gmail.com' && token) {
+        if (user?.email === 'cezar.dias@gmail.com' || user?.role === 'superadmin') {
+            console.log(`[THEME] Attempting to save global theme: ${newTheme}`);
             try {
-                await fetch(`${API_URL}/config`, {
+                const res = await fetch(`${API_URL}/config`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -68,9 +69,20 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
                     },
                     body: JSON.stringify({ theme: newTheme })
                 });
+                
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    console.error('[THEME] Save failed:', res.status, errorData);
+                    alert(`Erro ao salvar tema global: ${res.status} ${JSON.stringify(errorData)}`);
+                } else {
+                    console.log('[THEME] Global theme saved successfully!');
+                }
             } catch (err) {
-                console.error('Failed to save global theme:', err);
+                console.error('[THEME] Network error while saving global theme:', err);
+                alert('Erro de rede ao salvar tema global. Verifique o console.');
             }
+        } else {
+            console.warn('[THEME] User not authorized to save global theme:', user?.email);
         }
     };
 
