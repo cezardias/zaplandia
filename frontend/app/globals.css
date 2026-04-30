@@ -44,6 +44,11 @@
 [data-theme="light-red"] .border-white\/5 { border-color: rgba(0,0,0,0.05); }
 [data-theme="light-red"] .border-white\/10 { border-color: rgba(0,0,0,0.1); }
 [data-theme="light-red"] .border-white\/20 { border-color: rgba(0,0,0,0.2); }
+[data-theme="light-red"] .from-primary { --tw-gradient-from: var(--theme-primary) !important; }
+[data-theme="light-red"] .to-accent { --tw-gradient-to: var(--theme-accent) !important; }
+[data-theme="light-red"] .bg-surface { background-color: #ffffff; border-color: rgba(0,0,0,0.05); }
+[data-theme="light-red"] .shadow-primary\/25 { shadow-color: rgba(239, 68, 68, 0.25); }
+[data-theme="light-red"] .text-gray-300 { color: var(--theme-text-secondary); }
 
 /* Ensure primary buttons retain white text */
 [data-theme="light-red"] .bg-primary, 
