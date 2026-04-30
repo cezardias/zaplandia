@@ -210,6 +210,13 @@ export class UsersService implements OnModuleInit {
         });
     }
 
+    async findByIdWithTenant(id: string): Promise<User | null> {
+        return this.usersRepository.findOne({
+            where: { id },
+            relations: ['tenant']
+        });
+    }
+
     async findAllTenants(): Promise<Tenant[]> {
         return this.tenantsRepository.find({ order: { name: 'ASC' } });
     }

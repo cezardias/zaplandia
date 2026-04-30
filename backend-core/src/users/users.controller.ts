@@ -10,13 +10,24 @@ export class UsersController {
 
     @Get('me')
     async getMe(@Request() req) {
-        const user = req.user;
+        const userId = req.user.userId || req.user.id || req.user.sub;
+        const user = await this.usersService.findByIdWithTenant(userId);
+        
+        if (!user) return null;
+
         return {
-            id: user.userId || user.id || user.sub,
+            id: user.id,
             email: user.email,
             name: user.name,
             role: user.role,
-            tenantId: user.tenantId
+            tenantId: user.tenantId,
+            tenant: user.tenant ? {
+                id: user.tenant.id,
+                name: user.tenant.name,
+                trialEndsAt: user.tenant.trialEndsAt,
+                planType: user.tenant.planType,
+                subscriptionStatus: user.tenant.subscriptionStatus
+            } : null
         };
     }
 

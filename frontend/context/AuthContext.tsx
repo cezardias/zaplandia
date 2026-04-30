@@ -9,6 +9,11 @@ interface User {
     name: string;
     role: string;
     tenantId?: string;
+    tenant?: {
+        trialEndsAt?: string;
+        planType?: string;
+        subscriptionStatus?: string;
+    };
 }
 
 interface AuthContextType {

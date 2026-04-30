@@ -314,19 +314,32 @@ export default function DashboardLayout({
                 </div>
 
                 {/* Trial/Subscription Banner */}
-                {user?.role !== 'superadmin' && (
+                {(() => {
+                    if (user?.role === 'superadmin') return null;
+                    if (!user?.tenant || user.tenant.planType !== 'trial') return null;
 
-                    <div className="bg-primary/10 border-b border-primary/20 px-6 py-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs text-primary font-medium">
-                            <AlertCircle size={14} />
-                            <span>{t[lang].trial}</span>
+                    const trialEndsAt = user.tenant.trialEndsAt ? new Date(user.tenant.trialEndsAt) : null;
+                    if (!trialEndsAt) return null;
+
+                    const now = new Date();
+                    const diffTime = trialEndsAt.getTime() - now.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    // Show only if trial is ending within 16 days
+                    if (diffDays > 16) return null;
+
+                    return (
+                        <div className="bg-primary/10 border-b border-primary/20 px-6 py-2 flex items-center justify-between animate-in slide-in-from-top duration-500">
+                            <div className="flex items-center gap-2 text-xs text-primary font-medium">
+                                <AlertCircle size={14} />
+                                <span>{t[lang].trial}</span>
+                            </div>
+                            <Link href="/dashboard/billing" className="text-[10px] bg-primary text-white px-3 py-1 rounded-full hover:bg-primary-dark transition font-bold uppercase tracking-wider">
+                                {t[lang].choosePlan}
+                            </Link>
                         </div>
-                        <Link href="/dashboard/billing" className="text-[10px] bg-primary text-white px-3 py-1 rounded-full hover:bg-primary-dark transition font-bold uppercase tracking-wider">
-                            {t[lang].choosePlan}
-                        </Link>
-                    </div>
-
-                )}
+                    );
+                })()}
                 <div className="flex-1">
                     {children}
                 </div>
