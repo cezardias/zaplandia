@@ -222,11 +222,11 @@ export default function DeveloperPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight mb-2 flex items-center gap-3">
+                    <h1 className="text-3xl font-bold tracking-tight mb-2 flex items-center gap-3 text-gray-800">
                         <Terminal className="text-primary w-8 h-8" />
                         {t[lang].title}
                     </h1>
-                    <p className="text-gray-400">{t[lang].subtitle}</p>
+                    <p className="text-gray-500">{t[lang].subtitle}</p>
                 </div>
             </div>
 
@@ -302,11 +302,11 @@ export default function DeveloperPage() {
                             <p className="text-sm text-gray-400">{t[lang].step1Desc}</p>
                             
                             <div className="space-y-3">
-                                <div className="p-3 bg-black/40 rounded-xl space-y-2 border border-white/5">
+                                <div className="p-3 bg-gray-50 rounded-xl space-y-2 border border-gray-200">
                                     <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">{t[lang].endpointUrl}</p>
                                     <div className="flex items-center justify-between">
-                                        <code className="text-[12px] text-primary">{baseUrl}/api/teams/transfer</code>
-                                        <button onClick={() => copyToClipboard(`${baseUrl}/api/teams/transfer`, setCopiedUrl)} className="text-gray-500 hover:text-white transition">
+                                        <code className="text-[12px] text-blue-700 font-bold">{baseUrl}/api/teams/transfer</code>
+                                        <button onClick={() => copyToClipboard(`${baseUrl}/api/teams/transfer`, setCopiedUrl)} className="text-gray-400 hover:text-primary transition">
                                             {copiedUrl ? <Check size={14} /> : <Copy size={14} />}
                                         </button>
                                     </div>
@@ -323,11 +323,11 @@ export default function DeveloperPage() {
                                     </div>
                                 </div>
 
-                                <div className="p-3 bg-black/40 rounded-xl space-y-2 border border-white/5">
+                                <div className="p-3 bg-gray-50 rounded-xl space-y-2 border border-gray-200">
                                     <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">{t[lang].requiredHeaders}</p>
-                                    <code className="text-[11px] block bg-white/5 p-2 rounded text-blue-300">
-                                        Content-Type: application/json<br />
-                                        x-api-key: [SUA_CHAVE_DE_API]
+                                    <code className="text-[11px] block bg-white border border-gray-100 p-2 rounded text-gray-700">
+                                        <span className="text-blue-700 font-bold">Content-Type:</span> application/json<br />
+                                        <span className="text-blue-700 font-bold">x-api-key:</span> [SUA_CHAVE_DE_API]
                                     </code>
                                 </div>
                             </div>
@@ -345,7 +345,7 @@ export default function DeveloperPage() {
                         <div className="p-6 space-y-4 flex-1">
                             <p className="text-sm text-gray-400">{t[lang].step2Desc}</p>
                             
-                            <pre className="p-4 bg-black/40 rounded-xl text-[12px] font-mono leading-relaxed border border-white/5 text-purple-300 overflow-x-auto">
+                             <pre className="p-4 bg-gray-50 rounded-xl text-[12px] font-mono leading-relaxed border border-gray-200 text-purple-700 overflow-x-auto font-bold">
 {`{
   "contactId": "{{$node.contactId}}",
   "teamId": "id-da-equipe-alvo",
@@ -375,10 +375,10 @@ export default function DeveloperPage() {
                         <div className="p-6 space-y-4 flex-1">
                             <p className="text-sm text-gray-400">{t[lang].step3Desc}</p>
                             
-                            <div className="p-3 bg-black/40 rounded-xl space-y-2 border border-white/5">
+                            <div className="p-3 bg-gray-50 rounded-xl space-y-2 border border-gray-200">
                                 <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">{t[lang].webhookUrl}</p>
                                 <div className="flex items-center justify-between">
-                                    <code className="text-[11px] text-green-400">{baseUrl}/api/webhooks/evolution</code>
+                                    <code className="text-[11px] text-green-700 font-bold">{baseUrl}/api/webhooks/evolution</code>
                                     <button onClick={() => copyToClipboard(`${baseUrl}/api/webhooks/evolution`, setCopiedUrl)} className="p-2 hover:bg-white/10 rounded-lg transition text-gray-400">
                                         {copiedUrl ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                                     </button>

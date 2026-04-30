@@ -325,8 +325,8 @@ export default function KanbanPage() {
             <div className="px-4 sm:px-6 lg:px-8 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-white">{t[lang].title}</h1>
-                        <p className="mt-2 text-sm text-gray-400">{t[lang].subtitle}</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-white">{t[lang].title}</h1>
+                        <p className="mt-2 text-sm text-gray-500">{t[lang].subtitle}</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 mt-4 sm:mt-0">
@@ -433,14 +433,14 @@ export default function KanbanPage() {
                                  </div>
 
                                 {stage.qualificationCriteria && (
-                                    <div className="px-4 py-2 bg-green-500/10 border-b border-green-500/20">
-                                        <div className="flex items-start gap-2">
-                                            <Info className="w-3 h-3 text-green-400 mt-0.5 shrink-0" />
-                                            <p className="text-[10px] text-green-300 italic leading-tight">
-                                                {stage.qualificationCriteria}
-                                            </p>
-                                        </div>
+                                <div className="px-4 py-2 bg-green-50 border-b border-green-100">
+                                    <div className="flex items-start gap-2">
+                                        <Info className="w-3 h-3 text-green-600 mt-0.5 shrink-0" />
+                                        <p className="text-[10px] text-green-700 font-medium italic leading-tight">
+                                            {stage.qualificationCriteria}
+                                        </p>
                                     </div>
+                                </div>
                                 )}
 
                                 <Droppable droppableId={stage.key}>

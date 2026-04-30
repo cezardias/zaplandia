@@ -312,31 +312,31 @@ export default function TeamsPage() {
         <div className="p-8 text-white pb-20">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-4xl font-black tracking-tight flex items-center space-x-4">
+                <h1 className="text-4xl font-black tracking-tight flex items-center space-x-4 text-gray-800 dark:text-white">
                     <div className="p-3 bg-primary/10 rounded-2xl">
                         <Users className="w-10 h-10 text-primary" />
                     </div>
                     <span>{t[lang].title}</span>
                 </h1>
-                <p className="text-gray-400 mt-2 text-lg">{t[lang].desc}</p>
+                <p className="text-gray-500 mt-2 text-lg">{t[lang].desc}</p>
             </div>
 
             {/* Integration Alert */}
-            <div className="mb-8 p-6 bg-blue-500/10 border border-blue-500/20 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="mb-8 p-6 bg-blue-50 border border-blue-100 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start space-x-4">
-                    <div className="p-3 bg-blue-500/20 rounded-2xl shrink-0">
-                        <Terminal className="w-6 h-6 text-blue-400" />
+                    <div className="p-3 bg-blue-100 rounded-2xl shrink-0">
+                        <Terminal className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-blue-400">{t[lang].n8nTitle}</h3>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <h3 className="font-bold text-blue-700">{t[lang].n8nTitle}</h3>
+                        <p className="text-sm text-gray-600 mt-1">
                             {t[lang].n8nDesc}
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center space-x-2 bg-black/40 px-4 py-2 rounded-xl border border-white/5 font-mono text-xs">
-                    <span className="text-gray-500">API Path:</span>
-                    <span className="text-blue-300">/api/teams/transfer</span>
+                <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-xl border border-blue-100 font-mono text-xs shadow-sm">
+                    <span className="text-gray-400 font-bold">API Path:</span>
+                    <span className="text-blue-600 font-bold">/api/teams/transfer</span>
                 </div>
             </div>
 
