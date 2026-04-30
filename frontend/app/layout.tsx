@@ -12,6 +12,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Zaplandia - Automação e CRM IA",
   description: "A plataforma definitiva para automação de redes sociais e CRM com IA.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

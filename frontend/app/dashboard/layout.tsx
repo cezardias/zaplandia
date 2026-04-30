@@ -21,7 +21,8 @@ import {
     CreditCard,
     AlertCircle,
     FileText,
-    Palette
+    Palette,
+    MessageCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -38,6 +39,15 @@ export default function DashboardLayout({
     const router = useRouter();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { theme, toggleTheme } = useTheme();
+
+    const ZaplandiaLogo = ({ className = "w-8 h-8" }) => (
+        <div className={`${className} rounded-full bg-[#ef4444] flex items-center justify-center shadow-lg border border-white/10`}>
+            <div className="relative flex items-center justify-center">
+                <MessageCircle size={Math.round(parseInt(className.match(/\d+/)?.[0] || '8') * 0.6)} className="text-white fill-white" />
+                <span className="absolute font-black text-[#ef4444] mb-[1px]" style={{ fontSize: `${Math.round(parseInt(className.match(/\d+/)?.[0] || '8') * 0.4)}px` }}>Z</span>
+            </div>
+        </div>
+    );
 
     const t: any = {
         pt_BR: {
@@ -191,7 +201,7 @@ export default function DashboardLayout({
             {/* Mobile Header */}
             <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-surface border-b border-white/5 flex items-center justify-between px-6 z-40">
                 <div className="flex items-center space-x-2">
-                    <Zap className="text-primary w-6 h-6 fill-primary" />
+                    <ZaplandiaLogo className="w-6 h-6" />
                     <span className="text-lg font-bold tracking-tight">ZAPLANDIA</span>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -231,8 +241,8 @@ export default function DashboardLayout({
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             `}>
                 <div className="p-6">
-                    <div className="flex items-center space-x-2">
-                        <Zap className="text-primary w-8 h-8 fill-primary" />
+                    <div className="flex items-center space-x-3">
+                        <ZaplandiaLogo className="w-8 h-8" />
                         <span className="text-xl font-bold tracking-tight">ZAPLANDIA</span>
                     </div>
                 </div>
