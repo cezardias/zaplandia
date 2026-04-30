@@ -272,7 +272,7 @@ export default function DashboardLayout({
                             {user?.name?.charAt(0) || 'U'}
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-bold truncate">{user?.name || 'Usuário'}</p>
+                            <p className="text-sm font-bold truncate">{user?.name?.replace('undefined', '').trim() || 'Usuário'}</p>
                             <p className="text-xs text-gray-500 truncate capitalize">{user?.role || 'User'}</p>
                         </div>
                     </div>

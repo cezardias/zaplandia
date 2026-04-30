@@ -246,7 +246,7 @@ export default function DeveloperPage() {
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <p className="text-sm text-gray-400">{t[lang].apiKeyLabel}</p>
-                            <span className="text-[10px] bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/20">{t[lang].externalUsage}</span>
+                            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">{t[lang].externalUsage}</span>
                         </div>
                         <div className="flex items-center gap-4 bg-black/30 p-4 rounded-xl border border-white/5">
                             <Key className="text-primary shrink-0" size={20} />
@@ -266,7 +266,7 @@ export default function DeveloperPage() {
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                         <p className="text-[11px] text-gray-500 max-w-[70%]">
-                            <ShieldAlert size={12} className="inline mr-1 text-yellow-500" />
+                            <ShieldAlert size={12} className="inline mr-1 text-primary" />
                             {t[lang].apiSecurityWarning}
                         </p>
                         <button 
@@ -305,9 +305,9 @@ export default function DeveloperPage() {
                                 <div className="p-3 bg-gray-50 rounded-xl space-y-2 border border-gray-200">
                                     <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">{t[lang].endpointUrl}</p>
                                     <div className="flex items-center justify-between">
-                                        <code className="text-[12px] text-blue-700 font-bold">{baseUrl}/api/teams/transfer</code>
+                                        <code className="text-[12px] text-gray-700 font-bold">{baseUrl}/api/teams/transfer</code>
                                         <button onClick={() => copyToClipboard(`${baseUrl}/api/teams/transfer`, setCopiedUrl)} className="text-gray-400 hover:text-primary transition">
-                                            {copiedUrl ? <Check size={14} /> : <Copy size={14} />}
+                                            {copiedUrl ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
                                         </button>
                                     </div>
                                 </div>
@@ -326,8 +326,8 @@ export default function DeveloperPage() {
                                 <div className="p-3 bg-gray-50 rounded-xl space-y-2 border border-gray-200">
                                     <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">{t[lang].requiredHeaders}</p>
                                     <code className="text-[11px] block bg-white border border-gray-100 p-2 rounded text-gray-700">
-                                        <span className="text-blue-700 font-bold">Content-Type:</span> application/json<br />
-                                        <span className="text-blue-700 font-bold">x-api-key:</span> [SUA_CHAVE_DE_API]
+                                        <span className="text-primary font-bold">Content-Type:</span> application/json<br />
+                                        <span className="text-primary font-bold">x-api-key:</span> [SUA_CHAVE_DE_API]
                                     </code>
                                 </div>
                             </div>
@@ -345,7 +345,7 @@ export default function DeveloperPage() {
                         <div className="p-6 space-y-4 flex-1">
                             <p className="text-sm text-gray-400">{t[lang].step2Desc}</p>
                             
-                             <pre className="p-4 bg-gray-50 rounded-xl text-[12px] font-mono leading-relaxed border border-gray-200 text-purple-700 overflow-x-auto font-bold">
+                             <pre className="p-4 bg-gray-50 rounded-xl text-[12px] font-mono leading-relaxed border border-gray-200 text-gray-700 overflow-x-auto font-bold">
 {`{
   "contactId": "{{$node.contactId}}",
   "teamId": "id-da-equipe-alvo",
@@ -378,16 +378,16 @@ export default function DeveloperPage() {
                             <div className="p-3 bg-gray-50 rounded-xl space-y-2 border border-gray-200">
                                 <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest">{t[lang].webhookUrl}</p>
                                 <div className="flex items-center justify-between">
-                                    <code className="text-[11px] text-green-700 font-bold">{baseUrl}/api/webhooks/evolution</code>
+                                    <code className="text-[11px] text-gray-700 font-bold">{baseUrl}/api/webhooks/evolution</code>
                                     <button onClick={() => copyToClipboard(`${baseUrl}/api/webhooks/evolution`, setCopiedUrl)} className="p-2 hover:bg-white/10 rounded-lg transition text-gray-400">
-                                        {copiedUrl ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                                        {copiedUrl ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
                                     </button>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
-                                <div className="p-4 bg-yellow-500/5 rounded-xl border border-yellow-500/20">
-                                    <p className="text-[11px] text-yellow-500 font-bold mb-1 uppercase tracking-tighter">{t[lang].criticalRule}</p>
+                                <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
+                                    <p className="text-[11px] text-primary font-bold mb-1 uppercase tracking-tighter">{t[lang].criticalRule}</p>
                                     <p className="text-xs text-gray-400">
                                         {t[lang].criticalRuleDesc} <br/>
                                         <code className="text-white font-mono bg-black/40 px-1 rounded">tenant_{user?.tenantId}_</code>
