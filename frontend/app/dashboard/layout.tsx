@@ -41,12 +41,7 @@ export default function DashboardLayout({
     const { theme, toggleTheme } = useTheme();
 
     const ZaplandiaLogo = ({ className = "w-8 h-8" }) => (
-        <div className={`${className} rounded-full bg-[#ef4444] flex items-center justify-center shadow-lg border border-white/10`}>
-            <div className="relative flex items-center justify-center">
-                <MessageCircle size={Math.round(parseInt(className.match(/\d+/)?.[0] || '8') * 0.6)} className="text-white fill-white" />
-                <span className="absolute font-black text-[#ef4444] mb-[1px]" style={{ fontSize: `${Math.round(parseInt(className.match(/\d+/)?.[0] || '8') * 0.4)}px` }}>Z</span>
-            </div>
-        </div>
+        <img src="/icon.svg" alt="Zaplandia" className={className} />
     );
 
     const t: any = {

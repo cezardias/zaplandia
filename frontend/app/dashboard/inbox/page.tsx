@@ -765,18 +765,9 @@ export default function OmniInboxPage() {
         }
     };
 
-    const ZaplandiaIcon = ({ className = "w-4 h-4" }) => (
-        <div className={`${className} rounded-full bg-[#ef4444] flex items-center justify-center shadow-sm border border-white/20`}>
-            <div className="relative flex items-center justify-center">
-                <MessageCircle size={10} className="text-white fill-white" />
-                <span className="absolute text-[6px] font-black text-[#ef4444] mb-[1px]">Z</span>
-            </div>
-        </div>
-    );
-
     const getProviderIcon = (provider: string) => {
         switch (provider) {
-            case 'whatsapp': return <ZaplandiaIcon />;
+            case 'whatsapp': return <img src="/icon.svg" alt="Zaplandia" className="w-4 h-4" />;
             case 'instagram': return <Instagram className="w-4 h-4 text-pink-500" />;
             case 'facebook': return <Facebook className="w-4 h-4 text-blue-600" />;
             case 'mercadolivre': return <ShoppingBag className="w-4 h-4 text-yellow-500" />;

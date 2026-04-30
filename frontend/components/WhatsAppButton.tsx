@@ -21,15 +21,8 @@ const WhatsAppButton = () => {
             style={{ backgroundColor: '#ef4444' }}
             title="Fale conosco no WhatsApp"
         >
-            <div className="relative flex items-center justify-center w-8 h-8">
-                <svg
-                    viewBox="0 0 24 24"
-                    className="w-full h-full fill-current"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.35 2.99 0.97 4.29L2 22l5.71-0.97C9.01 21.65 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z" />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-black text-[#ef4444] mb-[1px]">Z</span>
+            <div className="w-8 h-8 flex items-center justify-center">
+                <img src="/icon.svg" alt="Zaplandia" className="w-full h-full" />
             </div>
             <span className="absolute right-full mr-3 bg-white text-gray-800 px-3 py-1.5 rounded-lg text-sm font-bold shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 Suporte Zaplândia
