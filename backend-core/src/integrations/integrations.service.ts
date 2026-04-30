@@ -97,7 +97,7 @@ export class IntegrationsService {
         }
 
         let cred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: tenantId ?? IsNull(), key_name: keyName },
+            where: { tenantId: tenantId === null ? IsNull() : tenantId, key_name: keyName },
             order: { createdAt: 'DESC' }
         });
 
@@ -106,11 +106,11 @@ export class IntegrationsService {
             this.logger.log(`[SAVE_CREDENTIAL] Updating existing credential ID: ${cred.id}`);
         } else {
             cred = this.apiCredentialRepository.create({
-                tenantId: tenantId || undefined,
+                tenantId: tenantId === null ? null : tenantId,
                 key_name: keyName,
                 key_value: keyValue,
             });
-            this.logger.log(`[SAVE_CREDENTIAL] Creating new credential entry`);
+            this.logger.log(`[SAVE_CREDENTIAL] Creating new credential entry for global key`);
         }
 
         try {
@@ -131,7 +131,7 @@ export class IntegrationsService {
     async getCredential(tenantId: string | null, keyName: string, isOptional: boolean = false): Promise<string | null> {
         // 1. First try to get tenant-specific credential
         const tenantCred = await this.apiCredentialRepository.findOne({
-            where: { tenantId: tenantId ?? IsNull(), key_name: keyName },
+            where: { tenantId: tenantId === null ? IsNull() : tenantId, key_name: keyName },
             order: { createdAt: 'DESC' } // Use createdAt as fallback for build compatibility
         });
 
