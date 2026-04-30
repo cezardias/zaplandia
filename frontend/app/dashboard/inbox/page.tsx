@@ -786,23 +786,22 @@ export default function OmniInboxPage() {
     });
 
     return (
-        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 bg-surface rounded-2xl md:rounded-3xl border border-white/5 overflow-hidden relative">
+        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 bg-white rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden relative shadow-sm">
             {/* Contact List */}
-            <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-white/5 flex-col`}>
-                <div className="p-4 border-b border-white/5 space-y-4">
+            <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-gray-100 flex-col bg-gray-50/50`}>
+                <div className="p-4 border-b border-gray-100 space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold">{t[lang].title}</h2>
-                        {/* <button onClick={fetchChats} className="p-2 hover:bg-white/5 rounded-full"><Clock className="w-4 h-4"/></button> */}
+                        <h2 className="text-xl font-bold text-gray-800">{t[lang].title}</h2>
                     </div>
 
                     {/* Instance Selector (WhatsApp Only) */}
                     {activeTab === 'whatsapp' && availableInstances.length > 0 && (
                         <div className="space-y-2">
-                            <label className="text-xs text-gray-400 font-medium">{t[lang].inbox}</label>
+                            <label className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t[lang].inbox}</label>
                             <select
                                 value={selectedInstance}
                                 onChange={(e) => setSelectedInstance(e.target.value)}
-                                className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-gray-700 font-bold"
                             >
                                 <option value="all">{t[lang].allInboxes}</option>
                                 {availableInstances.map(inst => (
@@ -814,7 +813,7 @@ export default function OmniInboxPage() {
 
                             {/* AI Toggle & Prompt Selector */}
                             {selectedInstance !== 'all' && (
-                                <div className="mt-3 p-3 bg-black/20 rounded-lg border border-white/10 space-y-2">
+                                <div className="mt-3 p-3 bg-white rounded-xl border border-gray-200 space-y-2 shadow-sm">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Bot className="w-4 h-4 text-primary" />
@@ -876,7 +875,7 @@ export default function OmniInboxPage() {
                                                     }
                                                 }
                                             }}
-                                            className="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                            className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 text-gray-700 font-medium"
                                         >
                                             <option value="">{t[lang].selectPrompt}</option>
                                             {aiPrompts.map(prompt => (
@@ -889,7 +888,7 @@ export default function OmniInboxPage() {
 
                                     {/* Gemini Model Selector */}
                                     {aiEnabled && <div className="space-y-3">
-                                        <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest">{t[lang].engineModel}</label>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">{t[lang].engineModel}</label>
                                         <AiModelSelector
                                             value={selectedAiModel}
                                             token={token || ''}
@@ -920,14 +919,14 @@ export default function OmniInboxPage() {
                     )}
 
                     {/* Tabs */}
-                    <div className="flex bg-black/20 p-1 rounded-xl overflow-x-auto no-scrollbar gap-1">
+                    <div className="flex bg-gray-200/50 p-1 rounded-xl overflow-x-auto no-scrollbar gap-1">
                         {['all', 'whatsapp', 'instagram', 'facebook'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition whitespace-nowrap ${activeTab === tab
-                                    ? 'bg-primary text-white shadow-lg'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition whitespace-nowrap ${activeTab === tab
+                                    ? 'bg-primary text-white shadow-md'
+                                    : 'text-gray-500 hover:text-gray-800 hover:bg-white'
                                     }`}
                             >
                                 {tab === 'all' ? t[lang].all : tab}
@@ -970,7 +969,7 @@ export default function OmniInboxPage() {
                             <button
                                 key={contact.id}
                                 onClick={() => setSelectedContact(contact)}
-                                className={`w-full flex items-center space-x-3 p-4 hover:bg-white/5 transition border-b border-white/5 ${selectedContact?.id === contact.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+                                className={`w-full flex items-center space-x-3 p-4 hover:bg-white transition border-b border-gray-100 ${selectedContact?.id === contact.id ? 'bg-primary/5 border-l-4 border-l-primary' : ''
                                     }`}
                             >
                                 <div className="relative">
@@ -991,8 +990,8 @@ export default function OmniInboxPage() {
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p className="text-xs text-gray-500 truncate">{contact.lastMessage || 'Sem mensagens...'}</p>
-                                        <span className="text-[10px] text-gray-400">{formatTime(contact.updatedAt)}</span>
+                                        <p className="text-xs text-gray-500 truncate font-medium">{contact.lastMessage || 'Sem mensagens...'}</p>
+                                        <span className="text-[10px] text-gray-400 font-bold">{formatTime(contact.updatedAt)}</span>
                                     </div>
                                 </div>
                             </button>
@@ -1006,36 +1005,29 @@ export default function OmniInboxPage() {
                 {selectedContact ? (
                     <>
                         {/* Header */}
-                        <div className="p-4 border-b border-gray-200 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="p-4 border-b border-gray-100 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-10 shadow-sm">
                             <div className="flex items-center space-x-3 w-full md:w-auto">
                                 <button 
                                     onClick={() => setSelectedContact(null)}
-                                    className="md:hidden p-2 -ml-2 hover:bg-white/5 rounded-full text-gray-400"
+                                    className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-500"
                                 >
                                     <ArrowLeft size={20} />
                                 </button>
-                                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary shrink-0">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 border border-primary/20">
                                     {selectedContact.name?.charAt(0) || 'C'}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <h3 className="font-bold truncate text-gray-800">{selectedContact.name || 'Contato'}</h3>
-                                    <div className="flex items-center space-x-2 text-xs text-green-600 font-medium">
+                                    <div className="flex items-center space-x-2 text-xs text-green-600 font-bold">
                                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0"></div>
                                         <span className="truncate">Online via {selectedContact.provider}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 text-gray-400 w-full md:w-auto">
-                                <a
-                                    href={`tel:${selectedContact.phoneNumber || selectedContact.externalId?.replace(/\D/g, '')}`}
-                                    className="hover:text-white transition"
-                                    title="Ligar para o contato"
-                                >
-                                </a>
-
+                            <div className="flex flex-wrap items-center gap-2 text-gray-500 w-full md:w-auto">
                                 <button
                                     onClick={handleFinishService}
-                                    className="flex items-center space-x-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 px-3 py-1.5 rounded-lg transition text-[10px] font-bold"
+                                    className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl transition text-[10px] font-black shadow-md shadow-green-500/20"
                                     title="Finalizar e Devolver para Automação"
                                 >
                                     <CheckCircle className="w-4 h-4" />
@@ -1046,7 +1038,7 @@ export default function OmniInboxPage() {
                                 <select
                                     value={selectedContact.assignedTeamId || ''}
                                     onChange={(e) => handleTeamTransfer(e.target.value || null)}
-                                    className="bg-black/20 border border-white/10 rounded-lg text-[10px] px-2 py-1.5 outline-none focus:border-primary transition max-w-[100px]"
+                                    className="bg-gray-50 border border-gray-200 rounded-xl text-[10px] px-3 py-2 outline-none focus:border-primary transition font-bold text-gray-700"
                                     title="Atribuir a uma equipe"
                                 >
                                     <option value="">Sem Equipe</option>
@@ -1059,9 +1051,8 @@ export default function OmniInboxPage() {
                                 <button
                                     onClick={async () => {
                                         const isPaused = contactAiEnabled === false && contactN8nEnabled === false;
-                                        const newValue = isPaused ? null : false; // null means inherit/active, false means specifically paused
+                                        const newValue = isPaused ? null : false;
                                         
-                                        // Toggle both at once
                                         const res = await fetch(`/api/crm/chats/${selectedContact.id}`, {
                                             method: 'PATCH',
                                             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1074,16 +1065,15 @@ export default function OmniInboxPage() {
                                             setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } : c));
                                         }
                                     }}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg ${
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition shadow-lg ${
                                         contactAiEnabled === false && contactN8nEnabled === false
-                                            ? 'bg-red-600 text-white border-b-4 border-red-800 active:border-b-0 active:translate-y-1'
-                                            : 'bg-green-600/20 text-green-500 border border-green-500/30 hover:bg-green-500/30'
+                                            ? 'bg-red-600 text-white ring-4 ring-red-500/20'
+                                            : 'bg-green-600 text-white ring-4 ring-green-500/20'
                                     }`}
                                 >
                                     <Bot className={`w-4 h-4 ${(contactAiEnabled === false && contactN8nEnabled === false) ? 'animate-pulse' : ''}`} />
-                                    <span className="hidden sm:inline">{(contactAiEnabled === false && contactN8nEnabled === false) ? 'Automação Pausada' : 'Automação Ativa'}</span>
+                                    <span>{(contactAiEnabled === false && contactN8nEnabled === false) ? 'Automação Pausada' : 'Automação Ativa'}</span>
                                 </button>
-                                <button className="hover:text-white transition p-1"><MoreVertical className="w-5 h-5" /></button>
                             </div>
                         </div>
 
@@ -1123,16 +1113,14 @@ export default function OmniInboxPage() {
                             ))}
                             <div ref={messagesEndRef} />
                         </div>
-
-                        {/* Input */}
-                        <div className="p-4 bg-white border-t border-gray-200 relative">
+                        <div className="p-4 bg-white border-t border-gray-100 relative">
                             {/* File Upload Preview */}
                             {uploadedMedia && (
-                                <div className="mb-4 flex items-center bg-white/5 p-2 rounded-xl w-fit relative group">
+                                <div className="mb-4 flex items-center bg-gray-50 p-2 rounded-xl w-fit relative group border border-gray-200">
                                     {uploadedMedia.mimetype.startsWith('image/') ? (
                                         <img src={uploadedMedia.url} className="h-16 w-16 object-cover rounded-lg" />
                                     ) : (
-                                        <div className="h-16 w-16 flex items-center justify-center bg-gray-700 rounded-lg">📎</div>
+                                        <div className="h-16 w-16 flex items-center justify-center bg-gray-200 rounded-lg text-gray-500">📎</div>
                                     )}
                                     <button
                                         onClick={() => setUploadedMedia(null)}
@@ -1153,40 +1141,40 @@ export default function OmniInboxPage() {
 
                             {/* Emoji Picker */}
                             {showEmojiPicker && (
-                                <div className="absolute bottom-20 right-4 z-50 shadow-2xl rounded-2xl overflow-hidden">
-                                    <EmojiPicker onEmojiClick={handleEmojiClick} theme={Theme.DARK} width={300} height={400} />
+                                <div className="absolute bottom-20 right-4 z-50 shadow-2xl rounded-2xl overflow-hidden border border-gray-200">
+                                    <EmojiPicker onEmojiClick={handleEmojiClick} theme={Theme.LIGHT} width={300} height={400} />
                                 </div>
                             )}
 
                             <form onSubmit={handleSend} className="flex items-center space-x-4">
-                                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 flex items-center focus-within:border-primary transition">
+                                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 flex items-center focus-within:border-primary transition group">
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         placeholder="Digite sua mensagem..."
-                                        className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
+                                        className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 font-medium"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="text-gray-500 hover:text-primary transition mx-2 relative"
+                                        className="text-gray-400 hover:text-primary transition mx-2 relative"
                                         disabled={isUploading}
                                     >
-                                        {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : '📎'}
+                                        {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <div title="Anexar Arquivo">📎</div>}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                        className={`text-gray-500 hover:text-primary transition mx-2 ${showEmojiPicker ? 'text-primary' : ''}`}
+                                        className={`text-gray-400 hover:text-primary transition mx-2 ${showEmojiPicker ? 'text-primary' : ''}`}
                                     >
-                                        😊
+                                        <div title="Emoji">😊</div>
                                     </button>
                                 </div>
                                 <button
                                     type="submit"
                                     disabled={(!newMessage.trim() && !uploadedMedia) || isUploading}
-                                    className="bg-primary hover:bg-primary-dark text-white p-4 rounded-2xl transition shadow-lg shadow-primary/20 disabled:opacity-50"
+                                    className="bg-primary hover:bg-primary-dark text-white p-4 rounded-2xl transition shadow-lg shadow-primary/30 disabled:opacity-50 active:scale-95"
                                 >
                                     <Send className="w-5 h-5" />
                                 </button>
