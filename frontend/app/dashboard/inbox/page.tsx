@@ -790,12 +790,12 @@ export default function OmniInboxPage() {
     });
 
     return (
-        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 bg-white rounded-2xl md:rounded-3xl border border-gray-100 overflow-hidden relative shadow-xl">
+        <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 bg-white rounded-xl border border-gray-100 overflow-hidden relative shadow-sm">
             {/* Contact List */}
             <div className={`${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-gray-100 flex-col bg-white`}>
-                <div className="p-6 border-b border-gray-50 space-y-4">
+                <div className="p-5 border-b border-gray-50 space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">{t[lang].title}</h2>
+                        <h2 className="text-xl font-semibold text-slate-800 tracking-tight">{t[lang].title}</h2>
                     </div>
 
                     {/* Instance Selector (WhatsApp Only) */}
@@ -923,14 +923,14 @@ export default function OmniInboxPage() {
                     )}
 
                     {/* Tabs */}
-                    <div className="flex bg-gray-100 p-1 rounded-2xl overflow-x-auto no-scrollbar gap-1">
+                    <div className="flex bg-slate-50 p-1 rounded-xl overflow-x-auto no-scrollbar gap-1 border border-slate-100">
                         {['all', 'whatsapp', 'instagram', 'facebook'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 rounded-xl text-xs font-black capitalize transition-all duration-200 whitespace-nowrap ${activeTab === tab
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105'
-                                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
+                                className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all duration-200 whitespace-nowrap ${activeTab === tab
+                                    ? 'bg-white text-primary shadow-sm border border-slate-100'
+                                    : 'text-slate-400 hover:text-slate-600'
                                     }`}
                             >
                                 {tab === 'all' ? t[lang].all : tab}
@@ -973,9 +973,9 @@ export default function OmniInboxPage() {
                             <button
                                 key={contact.id}
                                 onClick={() => setSelectedContact(contact)}
-                                className={`w-full flex items-center space-x-4 p-4 transition-all duration-200 border-b border-gray-50 relative ${selectedContact?.id === contact.id 
-                                    ? 'bg-primary/5 after:absolute after:left-0 after:top-2 after:bottom-2 after:w-1 after:bg-primary after:rounded-r-full' 
-                                    : 'hover:bg-gray-50'
+                                className={`w-full flex items-center space-x-3 p-4 transition-all duration-200 border-b border-gray-50 ${selectedContact?.id === contact.id 
+                                    ? 'bg-slate-50 border-l-2 border-l-primary' 
+                                    : 'hover:bg-gray-50/50'
                                     }`}
                             >
                                 <div className="relative">
@@ -996,8 +996,8 @@ export default function OmniInboxPage() {
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p className="text-[11px] text-gray-400 truncate font-medium">{contact.lastMessage || 'Sem mensagens...'}</p>
-                                        <span className="text-[10px] text-gray-300 font-bold">{formatTime(contact.updatedAt)}</span>
+                                        <p className="text-[11px] text-slate-400 truncate font-normal">{contact.lastMessage || 'Sem mensagens...'}</p>
+                                        <span className="text-[10px] text-slate-300 font-medium">{formatTime(contact.updatedAt)}</span>
                                     </div>
                                 </div>
                             </button>
@@ -1011,50 +1011,44 @@ export default function OmniInboxPage() {
                 {selectedContact ? (
                     <>
                         {/* Header */}
-                        <div className="p-5 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-10 shadow-sm border-b border-gray-100">
-                            <div className="flex items-center space-x-4 w-full md:w-auto">
+                        <div className="p-4 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-10 border-b border-slate-100">
+                            <div className="flex items-center space-x-3 w-full md:w-auto">
                                 <button 
                                     onClick={() => setSelectedContact(null)}
-                                    className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-400 transition"
+                                    className="md:hidden p-2 -ml-2 hover:bg-slate-50 rounded-full text-slate-400 transition"
                                 >
-                                    <ArrowLeft size={20} />
+                                    <ArrowLeft size={18} />
                                 </button>
-                                <div className="relative">
-                                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center font-black text-primary shrink-0 border border-primary/20 rotate-3 group-hover:rotate-0 transition-transform">
-                                        {selectedContact.name?.charAt(0) || 'C'}
-                                    </div>
-                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                                <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center font-semibold text-slate-500 shrink-0 border border-slate-100">
+                                    {selectedContact.name?.charAt(0) || 'C'}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <h3 className="font-black text-lg text-gray-800 leading-tight truncate">{selectedContact.name || 'Contato'}</h3>
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
-                                        Via {selectedContact.provider}
+                                    <h3 className="font-semibold text-slate-700 leading-tight truncate">{selectedContact.name || 'Contato'}</h3>
+                                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tight">
+                                        {selectedContact.provider}
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                                 <button
                                     onClick={handleFinishService}
-                                    className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-2xl transition-all font-black text-[10px] shadow-lg shadow-green-500/20 active:scale-95"
+                                    className="flex items-center space-x-1.5 bg-green-50 text-green-600 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-all font-semibold text-[10px] border border-green-200"
                                 >
-                                    <CheckCircle className="w-4 h-4" />
+                                    <CheckCircle className="w-3.5 h-3.5" />
                                     <span>CONCLUIR</span>
                                 </button>
 
                                 {/* Team Selector */}
-                                <div className="relative group">
-                                    <select
-                                        value={selectedContact.assignedTeamId || ''}
-                                        onChange={(e) => handleTeamTransfer(e.target.value || null)}
-                                        className="appearance-none bg-gray-50 border border-gray-200 rounded-2xl text-[10px] pl-4 pr-10 py-2.5 outline-none focus:border-primary transition font-black text-gray-600"
-                                    >
-                                        <option value="">Equipe: Nenhuma</option>
-                                        {teams.map(t => (
-                                            <option key={t.id} value={t.id}>{t.name}</option>
-                                        ))}
-                                    </select>
-                                    <Users className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
-                                </div>
+                                <select
+                                    value={selectedContact.assignedTeamId || ''}
+                                    onChange={(e) => handleTeamTransfer(e.target.value || null)}
+                                    className="bg-slate-50 border border-slate-200 rounded-lg text-[10px] px-3 py-1.5 outline-none focus:border-primary transition font-medium text-slate-600"
+                                >
+                                    <option value="">Sem Equipe</option>
+                                    {teams.map(t => (
+                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                    ))}
+                                </select>
 
                                 {/* Automation Toggle */}
                                 <button
@@ -1073,28 +1067,28 @@ export default function OmniInboxPage() {
                                             setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, aiEnabled: data.aiEnabled, n8nEnabled: data.n8nEnabled } : c));
                                         }
                                     }}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 ${
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all border ${
                                         contactAiEnabled === false && contactN8nEnabled === false
-                                            ? 'bg-red-500 text-white shadow-red-500/20'
-                                            : 'bg-primary text-white shadow-primary/20'
+                                            ? 'bg-red-50 text-red-600 border-red-100'
+                                            : 'bg-primary/10 text-primary border-primary/20'
                                     }`}
                                 >
-                                    <Bot className="w-4 h-4" />
+                                    <Bot className="w-3.5 h-3.5" />
                                     <span>{(contactAiEnabled === false && contactN8nEnabled === false) ? 'PAUSADO' : 'ATIVO'}</span>
                                 </button>
                             </div>
                         </div>
 
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#f8fafc]">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
                             {messages.map((msg) => (
                                 <div
                                     key={msg.id}
                                     className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
                                 >
-                                    <div className={`group relative max-w-[85%] md:max-w-[70%] p-4 rounded-3xl text-sm shadow-sm transition-all duration-200 ${msg.direction === 'outbound'
-                                        ? 'bg-primary text-white rounded-tr-none shadow-primary/20'
-                                        : 'bg-white text-gray-700 rounded-tl-none border border-gray-100 hover:shadow-md'
+                                    <div className={`group relative max-w-[85%] md:max-w-[70%] p-3.5 rounded-2xl text-[13px] transition-all duration-200 ${msg.direction === 'outbound'
+                                        ? 'bg-primary text-white rounded-tr-none'
+                                        : 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-sm'
                                         }`}>
 
                                         {/* Media Rendering */}
@@ -1122,69 +1116,67 @@ export default function OmniInboxPage() {
                             <div ref={messagesEndRef} />
                         </div>
                         {/* Input Area */}
-                        <div className="p-6 bg-white border-t border-gray-50 relative">
+                        <div className="p-4 bg-white border-t border-slate-100 relative">
                             {/* File Upload Preview */}
                             {uploadedMedia && (
-                                <div className="mb-4 flex items-center bg-gray-50 p-3 rounded-2xl w-fit relative group border border-gray-100 animate-in slide-in-from-bottom-2">
+                                <div className="mb-3 flex items-center bg-slate-50 p-2 rounded-xl w-fit relative group border border-slate-100">
                                     {uploadedMedia.mimetype.startsWith('image/') ? (
-                                        <img src={uploadedMedia.url} className="h-20 w-20 object-cover rounded-xl" />
+                                        <img src={uploadedMedia.url} className="h-16 w-16 object-cover rounded-lg" />
                                     ) : (
-                                        <div className="h-20 w-20 flex items-center justify-center bg-white rounded-xl text-primary font-black border border-primary/10">FILE</div>
+                                        <div className="h-16 w-16 flex items-center justify-center bg-white rounded-lg text-slate-400 font-bold border border-slate-100 text-[10px]">FILE</div>
                                     )}
                                     <button
                                         onClick={() => setUploadedMedia(null)}
-                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1.5 shadow-xl hover:bg-red-600 transition-colors"
+                                        className="absolute -top-1.5 -right-1.5 bg-slate-400 rounded-full p-1 shadow-sm hover:bg-slate-600 transition-colors"
                                     >
-                                        <X size={12} className="text-white" />
+                                        <X size={10} className="text-white" />
                                     </button>
                                 </div>
                             )}
 
-                            <form onSubmit={handleSend} className="flex items-center gap-4">
-                                <div className="flex-1 bg-gray-50 border border-gray-100 rounded-3xl px-6 py-4 flex items-center focus-within:border-primary/50 focus-within:bg-white focus-within:shadow-lg transition-all duration-300">
+                            <form onSubmit={handleSend} className="flex items-center gap-3">
+                                <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 flex items-center focus-within:border-slate-300 focus-within:bg-white transition-all">
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
-                                        placeholder="Digite sua mensagem aqui..."
-                                        className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 font-bold"
+                                        placeholder="Digite aqui..."
+                                        className="flex-1 bg-transparent outline-none text-[13px] text-slate-700 placeholder-slate-400 font-medium"
                                     />
-                                    <div className="flex items-center gap-1 border-l border-gray-200 ml-4 pl-4">
+                                    <div className="flex items-center gap-2 ml-2">
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
-                                            className="p-2 text-gray-400 hover:text-primary transition-colors"
-                                            title="Anexar Arquivo"
+                                            className="text-slate-400 hover:text-slate-600 transition-colors"
                                         >
-                                            <Paperclip size={20} />
+                                            <Paperclip size={18} />
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                            className={`p-2 text-gray-400 hover:text-primary transition-colors ${showEmojiPicker ? 'text-primary' : ''}`}
-                                            title="Emojis"
+                                            className="text-slate-400 hover:text-slate-600 transition-colors"
                                         >
-                                            <Smile size={20} />
+                                            <Smile size={18} />
                                         </button>
                                     </div>
                                 </div>
                                 <button
                                     type="submit"
                                     disabled={(!newMessage.trim() && !uploadedMedia) || isUploading}
-                                    className="bg-primary hover:bg-primary-dark text-white p-5 rounded-3xl transition-all shadow-xl shadow-primary/30 disabled:opacity-30 active:scale-90"
+                                    className="bg-primary hover:opacity-90 text-white p-3 rounded-xl transition-all disabled:opacity-30"
                                 >
-                                    <Send size={24} />
+                                    <Send size={18} />
                                 </button>
                             </form>
                         </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                        <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-4">
-                            <MessageCircle className="w-10 h-10 opacity-20" />
+                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/30">
+                        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                            <MessageCircle className="w-8 h-8 opacity-40" />
                         </div>
-                        <p className="font-medium">Selecione uma conversa para começar</p>
-                        <p className="text-sm">Seu Omni Inbox centraliza todas as redes sociais aqui.</p>
+                        <p className="font-semibold text-slate-600">Omni Inbox</p>
+                        <p className="text-xs text-slate-400 mt-1">Selecione uma conversa para começar</p>
                     </div>
                 )}
             </div>
