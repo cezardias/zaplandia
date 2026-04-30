@@ -1,4 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, ForbiddenException, Request } from '@nestjs/common';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AppService } from './app.service';
 import { IntegrationsService } from './integrations/integrations.service';
 
@@ -25,5 +26,22 @@ export class AppController {
     return {
       theme: theme || 'dark'
     };
+  }
+
+  @Post('config')
+  @UseGuards(JwtAuthGuard)
+  async saveGlobalConfig(@Request() req, @Body() body: { theme: string }) {
+    // Only Cezar can change the global theme
+    if (req.user.email !== 'cezar.dias@gmail.com') {
+      throw new ForbiddenException('Apenas o Superadmin pode alterar o tema global.');
+    }
+
+    await this.integrationsService.saveCredential(null, {
+      name: 'GLOBAL_THEME',
+      value: body.theme,
+      isPublic: true
+    });
+
+    return { success: true, theme: body.theme };
   }
 }

@@ -60,13 +60,13 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         // If superadmin, save it globally for all users
         if (user?.email === 'cezar.dias@gmail.com' && token) {
             try {
-                await fetch(`${API_URL}/admin/credentials/global`, {
+                await fetch(`${API_URL}/config`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ name: 'GLOBAL_THEME', value: newTheme })
+                    body: JSON.stringify({ theme: newTheme })
                 });
             } catch (err) {
                 console.error('Failed to save global theme:', err);
