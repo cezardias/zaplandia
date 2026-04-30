@@ -36,13 +36,13 @@ interface Integration {
 }
 
 const PROVIDERS = [
-    { id: 'facebook', name: 'Meta / Facebook', icon: <Facebook className="w-8 h-8 text-blue-600" />, desc: 'Sincronize mensagens da sua página e automações.' },
-    { id: 'instagram', name: 'Instagram', icon: <Instagram className="w-8 h-8 text-pink-500" />, desc: 'Gerencie DMs e comentários em um só lugar.' },
-    { id: 'whatsapp', name: 'WhatsApp API Oficial', icon: <Zap className="w-8 h-8 text-green-500" />, desc: 'Conecte o WhatsApp Business Oficial (Meta).' },
+    { id: 'facebook', name: 'Meta / Facebook', icon: <Facebook className="w-8 h-8 text-primary" />, desc: 'Sincronize mensagens da sua página e automações.' },
+    { id: 'instagram', name: 'Instagram', icon: <Instagram className="w-8 h-8 text-primary" />, desc: 'Gerencie DMs e comentários em um só lugar.' },
+    { id: 'whatsapp', name: 'WhatsApp API Oficial', icon: <Zap className="w-8 h-8 text-primary" />, desc: 'Conecte o WhatsApp Business Oficial (Meta).' },
     { id: 'evolution', name: 'WhatsApp Não Oficial', icon: <QrCode className="w-8 h-8 text-primary" />, desc: 'Aparelho Conectado via QR Code (EvolutionAPI).' },
-    { id: 'telegram', name: 'Telegram Bot', icon: <Send className="w-8 h-8 text-blue-400" />, desc: 'Gerencie bots de atendimento e vendas.' },
+    { id: 'telegram', name: 'Telegram Bot', icon: <Send className="w-8 h-8 text-primary" />, desc: 'Gerencie bots de atendimento e vendas.' },
     { id: 'tiktok', name: 'TikTok Business', icon: <Smartphone className="w-8 h-8 text-black" />, desc: 'Responda comentários e mensagens do TikTok.' },
-    { id: 'linkedin', name: 'LinkedIn', icon: <Linkedin className="w-8 h-8 text-blue-800" />, desc: 'Automação e CRM para vendas B2B.' },
+    { id: 'linkedin', name: 'LinkedIn', icon: <Linkedin className="w-8 h-8 text-primary" />, desc: 'Automação e CRM para vendas B2B.' },
     { id: 'google_sheets', name: 'Google Sheets', icon: <Globe className="w-8 h-8 text-yellow-600" />, desc: 'Sincronize seus leads com planilhas.' },
     { id: 'mercadolivre', name: 'Mercado Livre', icon: <ShoppingBag className="w-8 h-8 text-yellow-500" />, desc: 'Gerencie perguntas e vendas do Mercado Livre.' },
     { id: 'olx', name: 'OLX', icon: <Store className="w-8 h-8 text-orange-600" />, desc: 'Responda chats e gerencie anúncios da OLX.' },
@@ -239,13 +239,13 @@ export default function IntegrationsPage() {
 
 
     const PROVIDERS_LOCALIZED = [
-        { id: 'facebook', name: t[lang].providers.facebook.name, icon: <Facebook className="w-8 h-8 text-blue-600" />, desc: t[lang].providers.facebook.desc },
-        { id: 'instagram', name: t[lang].providers.instagram.name, icon: <Instagram className="w-8 h-8 text-pink-500" />, desc: t[lang].providers.instagram.desc },
-        { id: 'whatsapp', name: t[lang].providers.whatsapp.name, icon: <Zap className="w-8 h-8 text-green-500" />, desc: t[lang].providers.whatsapp.desc },
+        { id: 'facebook', name: t[lang].providers.facebook.name, icon: <Facebook className="w-8 h-8 text-primary" />, desc: t[lang].providers.facebook.desc },
+        { id: 'instagram', name: t[lang].providers.instagram.name, icon: <Instagram className="w-8 h-8 text-primary" />, desc: t[lang].providers.instagram.desc },
+        { id: 'whatsapp', name: t[lang].providers.whatsapp.name, icon: <Zap className="w-8 h-8 text-primary" />, desc: t[lang].providers.whatsapp.desc },
         { id: 'evolution', name: t[lang].providers.evolution.name, icon: <QrCode className="w-8 h-8 text-primary" />, desc: t[lang].providers.evolution.desc },
-        { id: 'telegram', name: t[lang].providers.telegram.name, icon: <Send className="w-8 h-8 text-blue-400" />, desc: t[lang].providers.telegram.desc },
+        { id: 'telegram', name: t[lang].providers.telegram.name, icon: <Send className="w-8 h-8 text-primary" />, desc: t[lang].providers.telegram.desc },
         { id: 'tiktok', name: t[lang].providers.tiktok.name, icon: <Smartphone className="w-8 h-8 text-black" />, desc: t[lang].providers.tiktok.desc },
-        { id: 'linkedin', name: t[lang].providers.linkedin.name, icon: <Linkedin className="w-8 h-8 text-blue-800" />, desc: t[lang].providers.linkedin.desc },
+        { id: 'linkedin', name: t[lang].providers.linkedin.name, icon: <Linkedin className="w-8 h-8 text-primary" />, desc: t[lang].providers.linkedin.desc },
         { id: 'google_sheets', name: t[lang].providers.google_sheets.name, icon: <Globe className="w-8 h-8 text-yellow-600" />, desc: t[lang].providers.google_sheets.desc },
         { id: 'mercadolivre', name: t[lang].providers.mercadolivre.name, icon: <ShoppingBag className="w-8 h-8 text-yellow-500" />, desc: t[lang].providers.mercadolivre.desc },
         { id: 'olx', name: t[lang].providers.olx.name, icon: <Store className="w-8 h-8 text-orange-600" />, desc: t[lang].providers.olx.desc },

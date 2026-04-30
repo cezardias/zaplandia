@@ -930,19 +930,19 @@ export default function MetaApiPage() {
                     </button>
 
                     <div className="pt-6">
-                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5">
-                            <h3 className="text-blue-400 font-bold text-sm mb-2 flex items-center space-x-2">
+                        <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5">
+                            <h3 className="text-primary font-bold text-sm mb-2 flex items-center space-x-2">
                                 <AlertCircle className="w-4 h-4" />
                                 <span>{t[lang].helpTitle}</span>
                             </h3>
                             <div className="space-y-4">
-                                <p className="text-xs text-blue-400/80 leading-relaxed">
+                                <p className="text-xs text-primary/80 leading-relaxed">
                                     {t[lang].helpDesc}
                                 </p>
                                 
                                 <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase text-blue-400/60">{t[lang].permToken}</p>
-                                    <ol className="text-[10px] text-blue-400/80 list-decimal pl-4 space-y-1">
+                                    <p className="text-[10px] font-black uppercase text-primary/60">{t[lang].permToken}</p>
+                                    <ol className="text-[10px] text-primary/80 list-decimal pl-4 space-y-1">
                                         <li>{t[lang].permStep1}</li>
                                         <li>{t[lang].permStep2}</li>
                                         <li>{t[lang].permStep3}</li>
@@ -953,7 +953,7 @@ export default function MetaApiPage() {
                                 <a
                                     href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
                                     target="_blank"
-                                    className="text-xs font-bold text-blue-400 flex items-center space-x-1 hover:underline"
+                                    className="text-xs font-bold text-primary flex items-center space-x-1 hover:underline"
                                 >
                                     <span>{t[lang].officialDocs}</span>
                                     <ExternalLink className="w-3 h-3" />
