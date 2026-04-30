@@ -923,15 +923,16 @@ export default function OmniInboxPage() {
                     )}
 
                     {/* Tabs */}
-                    <div className="flex p-1 rounded-xl overflow-x-auto no-scrollbar gap-1 border border-gray-100" style={{ backgroundColor: '#f9fafb' }}>
+                    <div className="flex p-1 rounded-xl overflow-x-auto no-scrollbar gap-1 border border-gray-100" style={{ backgroundColor: '#ffffff' }}>
                         {['all', 'whatsapp', 'instagram', 'facebook'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all duration-200 whitespace-nowrap ${activeTab === tab
-                                    ? 'bg-white text-primary shadow-sm border border-gray-200'
-                                    : 'text-gray-400 hover:text-gray-600'
-                                    }`}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all duration-200 whitespace-nowrap`}
+                                style={{ 
+                                    backgroundColor: activeTab === tab ? '#ef4444' : 'transparent',
+                                    color: activeTab === tab ? '#ffffff' : '#9ca3af'
+                                }}
                             >
                                 {tab === 'all' ? t[lang].all : tab}
                             </button>
@@ -973,11 +974,10 @@ export default function OmniInboxPage() {
                             <button
                                 key={contact.id}
                                 onClick={() => setSelectedContact(contact)}
-                                className={`w-full flex items-center space-x-3 p-4 transition-all duration-200 border-b border-gray-50 ${selectedContact?.id === contact.id 
-                                    ? 'border-l-4 border-l-primary' 
-                                    : ''
-                                    }`}
-                                style={{ backgroundColor: selectedContact?.id === contact.id ? '#fef2f2' : '#ffffff' }}
+                                className={`w-full flex items-center space-x-3 p-4 transition-all duration-200 border-b border-gray-50`}
+                                style={{ 
+                                    backgroundColor: selectedContact?.id === contact.id ? '#ef4444' : '#ffffff'
+                                }}
                             >
                                 <div className="relative">
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary/20 to-accent/20 flex items-center justify-center font-bold text-primary">
@@ -989,11 +989,11 @@ export default function OmniInboxPage() {
                                 </div>
                                 <div className="flex-1 text-left overflow-hidden">
                                     <div className="flex items-center gap-1">
-                                        <p className="font-bold truncate" style={{ color: '#1f2937' }}>{contact.name || 'Contato'}</p>
+                                        <p className="font-bold truncate" style={{ color: selectedContact?.id === contact.id ? '#ffffff' : '#1f2937' }}>{contact.name || 'Contato'}</p>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p className="text-[11px] truncate" style={{ color: '#6b7280' }}>{contact.lastMessage || 'Sem mensagens...'}</p>
-                                        <span className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>{formatTime(contact.updatedAt)}</span>
+                                        <p className="text-[11px] truncate" style={{ color: selectedContact?.id === contact.id ? '#ffffff' : '#6b7280', opacity: selectedContact?.id === contact.id ? 0.8 : 1 }}>{contact.lastMessage || 'Sem mensagens...'}</p>
+                                        <span className="text-[10px] font-bold" style={{ color: selectedContact?.id === contact.id ? '#ffffff' : '#9ca3af', opacity: selectedContact?.id === contact.id ? 0.6 : 1 }}>{formatTime(contact.updatedAt)}</span>
                                     </div>
                                 </div>
                             </button>
@@ -1038,9 +1038,9 @@ export default function OmniInboxPage() {
                                 <select
                                     value={selectedContact.assignedTeamId || ''}
                                     onChange={(e) => handleTeamTransfer(e.target.value || null)}
-                                    className="bg-white border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold text-gray-600"
+                                    className="bg-white border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold text-gray-500 hover:border-gray-300 transition-colors"
                                 >
-                                    <option value="">Sem Equipe</option>
+                                    <option value="">Equipe: Nenhuma</option>
                                     {teams.map(t => (
                                         <option key={t.id} value={t.id}>{t.name}</option>
                                     ))}
@@ -1082,10 +1082,10 @@ export default function OmniInboxPage() {
                                     key={msg.id}
                                     className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
                                 >
-                                    <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-xl text-sm`} 
+                                    <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-xl text-sm shadow-sm`} 
                                         style={{ 
                                             borderRadius: '15px',
-                                            backgroundColor: msg.direction === 'outbound' ? '#e11d48' : '#f3f4f6',
+                                            backgroundColor: msg.direction === 'outbound' ? '#ef4444' : '#f3f4f6',
                                             color: msg.direction === 'outbound' ? '#ffffff' : '#1f2937'
                                         }}>
 
