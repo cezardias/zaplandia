@@ -41,15 +41,7 @@ export default function DashboardLayout({
     const { theme, toggleTheme } = useTheme();
 
     const ZaplandiaLogo = ({ className = "w-8 h-8" }) => (
-        <div 
-            className={`${className} rounded-full border border-white/10 shadow-lg`} 
-            style={{ 
-                backgroundImage: 'url("/logo_zaplandia.png")',
-                backgroundSize: '1000%',
-                backgroundPosition: 'center',
-                backgroundColor: '#ef4444'
-            }}
-        />
+        <img src="/icon.svg" alt="Zaplandia" className={className} />
     );
 
     const t: any = {
