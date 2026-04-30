@@ -322,21 +322,21 @@ export default function TeamsPage() {
             </div>
 
             {/* Integration Alert */}
-            <div className="mb-8 p-6 bg-blue-50 border border-blue-100 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="mb-8 p-6 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-red-100" style={{ backgroundColor: '#fef2f2' }}>
                 <div className="flex items-start space-x-4">
-                    <div className="p-3 bg-blue-100 rounded-2xl shrink-0">
-                        <Terminal className="w-6 h-6 text-blue-600" />
+                    <div className="p-3 rounded-2xl shrink-0" style={{ backgroundColor: '#fee2e2' }}>
+                        <Terminal className="w-6 h-6" style={{ color: '#ef4444' }} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-blue-700">{t[lang].n8nTitle}</h3>
+                        <h3 className="font-bold" style={{ color: '#991b1b' }}>{t[lang].n8nTitle}</h3>
                         <p className="text-sm text-gray-600 mt-1">
                             {t[lang].n8nDesc}
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-xl border border-blue-100 font-mono text-xs shadow-sm">
+                <div className="flex items-center space-x-2 px-4 py-2 rounded-xl border border-red-100 font-mono text-xs shadow-sm" style={{ backgroundColor: '#ffffff' }}>
                     <span className="text-gray-400 font-bold">API Path:</span>
-                    <span className="text-blue-600 font-bold">/api/teams/transfer</span>
+                    <span className="font-bold" style={{ color: '#ef4444' }}>/api/teams/transfer</span>
                 </div>
             </div>
 
@@ -451,12 +451,13 @@ export default function TeamsPage() {
                                 <select 
                                     value={u.teamId || ''}
                                     onChange={(e) => assignUser(u.id, e.target.value || null)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-primary transition"
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-xs outline-none focus:border-primary transition font-bold"
+                                    style={{ backgroundColor: '#ffffff', color: '#1f2937' }}
                                     title="Selecionar Equipe para o Atendente"
                                 >
-                                    <option value="">{t[lang].noTeamLabel}</option>
+                                    <option value="" style={{ backgroundColor: '#ffffff', color: '#1f2937' }}>{t[lang].noTeamLabel}</option>
                                     {teams.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                        <option key={t.id} value={t.id} style={{ backgroundColor: '#ffffff', color: '#1f2937' }}>{t.name}</option>
                                     ))}
                                 </select>
                             </div>
