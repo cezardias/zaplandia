@@ -328,7 +328,7 @@ export default function OmniInboxPage() {
         try {
             console.log('Buscando chats...');
             // Get instance name from ID for filtering
-            const instanceName = selectedInstance === 'all'
+            const instanceName = (selectedInstance === 'all' || activeTab !== 'whatsapp')
                 ? 'all'
                 : availableInstances.find(i => i.id === selectedInstance)?.instanceName || selectedInstance;
 
@@ -389,7 +389,7 @@ export default function OmniInboxPage() {
             setSelectedPromptId(null);
             setSelectedAiModel('gemini-1.5-flash');
         }
-    }, [token, selectedInstance, availableInstances]);
+    }, [token, selectedInstance, availableInstances, activeTab]);
 
     // ✅ WebSocket Real-time Updates (REPLACES POLLING)
     useEffect(() => {
@@ -1044,7 +1044,8 @@ export default function OmniInboxPage() {
                             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto p-1 rounded-xl" style={{ backgroundColor: '#ffffff' }}>
                                 <button
                                     onClick={handleFinishService}
-                                    className="flex items-center space-x-1 bg-green-500 text-white px-3 py-1.5 rounded-lg transition-all font-bold text-[10px]"
+                                    className="flex items-center space-x-1 text-white px-3 py-1.5 rounded-lg transition-all font-bold text-[10px]"
+                                    style={{ backgroundColor: '#ef4444' }}
                                 >
                                     <CheckCircle className="w-3.5 h-3.5" />
                                     <span>CONCLUIR</span>
@@ -1054,15 +1055,16 @@ export default function OmniInboxPage() {
                                 <div className="relative group/team">
                                     <button
                                         onClick={() => document.getElementById('team-dropdown')?.classList.toggle('hidden')}
-                                        className="border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold hover:border-primary transition-colors flex items-center gap-2 bg-white text-gray-500"
+                                        className="border border-gray-200 rounded-lg text-[10px] px-3 py-1.5 outline-none font-bold hover:border-primary transition-colors flex items-center gap-2"
+                                        style={{ backgroundColor: '#ffffff', color: '#374151' }}
                                     >
                                         <span>{selectedContact.assignedTeamId ? teams.find(tm => tm.id === selectedContact.assignedTeamId)?.name : 'Equipe: Nenhuma'}</span>
-                                        <ChevronDown size={12} />
+                                        <ChevronDown size={12} className="text-gray-400" />
                                     </button>
-                                    <div id="team-dropdown" className="hidden absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                                    <div id="team-dropdown" className="hidden absolute top-full right-0 mt-1 w-48 border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
                                         <button
                                             onClick={() => { handleTeamTransfer(null); document.getElementById('team-dropdown')?.classList.add('hidden'); }}
-                                            className={`w-full px-4 py-2 text-left text-[11px] font-bold hover:bg-primary hover:text-white transition-colors ${!selectedContact.assignedTeamId ? 'bg-primary text-white' : 'text-gray-600'}`}
+                                            className={`w-full px-4 py-2 text-left text-[11px] font-bold transition-colors ${!selectedContact.assignedTeamId ? 'bg-[#ef4444] text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                                         >
                                             Equipe: Nenhuma
                                         </button>
@@ -1070,7 +1072,7 @@ export default function OmniInboxPage() {
                                             <button
                                                 key={t.id}
                                                 onClick={() => { handleTeamTransfer(t.id); document.getElementById('team-dropdown')?.classList.add('hidden'); }}
-                                                className={`w-full px-4 py-2 text-left text-[11px] font-bold hover:bg-primary hover:text-white transition-colors ${selectedContact.assignedTeamId === t.id ? 'bg-primary text-white' : 'text-gray-600'}`}
+                                                className={`w-full px-4 py-2 text-left text-[11px] font-bold transition-colors ${selectedContact.assignedTeamId === t.id ? 'bg-[#ef4444] text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                                             >
                                                 {t.name}
                                             </button>
