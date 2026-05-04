@@ -1,3 +1,4 @@
+process.env.TZ = 'UTC'; // Fix Postgres double timezone offset bug
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { json, urlencoded } from 'express';
