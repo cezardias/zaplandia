@@ -578,6 +578,16 @@ export default function OmniInboxPage() {
             }
 
             setMessages([...messages, data]);
+            
+            // Update contact list so it bubbles to the top
+            setContacts(prev => {
+                const existing = prev.find(c => c.id === selectedContact.id);
+                if (!existing) return prev;
+                const updatedContact = { ...existing, lastMessage: data.content || (uploadedMedia ? 'Mídia enviada' : ''), updatedAt: new Date().toISOString() };
+                const filtered = prev.filter(c => c.id !== selectedContact.id);
+                return [updatedContact, ...filtered];
+            });
+
             setNewMessage('');
             setUploadedMedia(null);
         } catch (err) {
@@ -790,7 +800,24 @@ export default function OmniInboxPage() {
         if (!dateStr) return '';
         try {
             const date = new Date(dateStr);
-            return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(date);
+            const now = new Date();
+            const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+            
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const isYesterday = date.getDate() === yesterday.getDate() && date.getMonth() === yesterday.getMonth() && date.getFullYear() === yesterday.getFullYear();
+
+            const timeStr = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(date);
+
+            if (isToday) {
+                return timeStr;
+            } else if (isYesterday) {
+                const yesterdayWord = lang === 'en_US' ? 'Yesterday' : (lang === 'it_IT' ? 'Ieri' : 'Ontem');
+                return `${yesterdayWord} ${timeStr}`;
+            } else {
+                const dateStr = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(date);
+                return `${dateStr} ${timeStr}`;
+            }
         } catch (e) {
             return '';
         }
@@ -807,7 +834,7 @@ export default function OmniInboxPage() {
             (contact.id?.toLowerCase().includes(q));
 
         return matchesTab && matchesSearch;
-    });
+    }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     return (
         <div className="flex h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] m-2 md:m-4 rounded-xl border border-gray-200 overflow-hidden relative shadow-sm" style={{ backgroundColor: '#ffffff', color: '#1a202c' }}>

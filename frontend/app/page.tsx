@@ -20,8 +20,11 @@ import {
   Store
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LandingPage() {
+  const { user } = useAuth();
+
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -74,6 +77,11 @@ export default function LandingPage() {
             <div className="hidden md:flex space-x-8 items-center">
               <a href="#features" className="text-gray-300 hover:text-white transition">Funcionalidades</a>
               <a href="#integrations" className="text-gray-300 hover:text-white transition">Integrações</a>
+              {user?.email === 'cezar.dias@dias.com' && (
+                <Link href="/pitch" className="text-primary hover:text-primary-dark font-medium transition flex items-center gap-1">
+                  <Zap className="w-4 h-4" /> Pitch para Investidores
+                </Link>
+              )}
               <Link href="/auth/login" className="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-full font-medium transition">
                 Entrar
               </Link>
