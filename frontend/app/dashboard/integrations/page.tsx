@@ -481,6 +481,22 @@ export default function IntegrationsPage() {
                 </div>
             )}
 
+            <div className="h-px bg-white/5 my-16"></div>
+
+            <div className="max-w-4xl">
+                <div className="flex items-center space-x-3 mb-8">
+                    <div className="p-2 bg-primary/20 rounded-lg">
+                        <Zap className="w-5 h-5 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-black uppercase tracking-tight">Configuração Global de IA</h2>
+                </div>
+
+                <ApiSettingsFields 
+                    token={token || ''} 
+                    userRole={user?.role || 'user'}
+                />
+            </div>
+
             {/* WhatsApp Instance Manager Modal */}
             {showEvolutionModal && (
                 <WhatsAppInstanceManager
