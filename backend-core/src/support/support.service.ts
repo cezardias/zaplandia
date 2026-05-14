@@ -17,10 +17,60 @@ export class SupportService implements OnModuleInit {
 
     async onModuleInit() {
         try {
+            await this.fixTables();
             this.logger.log('SupportService initialized. Seeding initial support articles...');
             await this.seedInitialArticles();
         } catch (error) {
             this.logger.error('Failed to auto-seed support articles:', error.message);
+        }
+    }
+
+    async fixTables() {
+        const queryRunner = this.ticketRepository.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        try {
+            const hasArticles = await queryRunner.hasTable('support_articles');
+            if (!hasArticles) {
+                this.logger.log('Creating "support_articles" table...');
+                await queryRunner.query(`
+                    CREATE TABLE "support_articles" (
+                        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                        "title" character varying NOT NULL,
+                        "content" text NOT NULL,
+                        "category" character varying NOT NULL,
+                        "tags" jsonb,
+                        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+                        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+                        CONSTRAINT "PK_articles_id" PRIMARY KEY ("id")
+                    )
+                `);
+            }
+
+            const hasTickets = await queryRunner.hasTable('tickets');
+            if (!hasTickets) {
+                this.logger.log('Creating "tickets" table...');
+                await queryRunner.query(`
+                    CREATE TABLE "tickets" (
+                        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                        "subject" character varying NOT NULL,
+                        "description" text NOT NULL,
+                        "category" character varying NOT NULL,
+                        "status" character varying NOT NULL DEFAULT 'open',
+                        "priority" character varying NOT NULL DEFAULT 'medium',
+                        "tenantId" character varying NOT NULL,
+                        "requesterId" uuid NOT NULL,
+                        "assigneeId" uuid,
+                        "teamId" character varying,
+                        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+                        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+                        CONSTRAINT "PK_tickets_id" PRIMARY KEY ("id")
+                    )
+                `);
+            }
+        } catch (error) {
+            this.logger.error('Failed to fix support tables:', error.message);
+        } finally {
+            await queryRunner.release();
         }
     }
 
