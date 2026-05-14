@@ -25,7 +25,8 @@ import {
     X,
     Menu,
     ShieldCheck,
-    LogOut
+    LogOut,
+    AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
