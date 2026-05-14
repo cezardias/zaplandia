@@ -464,6 +464,12 @@ export class IntegrationsController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post('instagram/publish')
+    async publishInstagramPost(@Request() req, @Body() body: { imageUrl: string, caption: string }) {
+        return this.metaApiService.publishInstagramPost(req.user.tenantId, body.imageUrl, body.caption);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Delete('instagram/comments/:commentId')
     async deleteInstagramComment(@Request() req, @Param('commentId') commentId: string) {
         return this.metaApiService.deleteInstagramComment(req.user.tenantId, commentId);

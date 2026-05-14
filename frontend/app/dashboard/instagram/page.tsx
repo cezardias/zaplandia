@@ -14,7 +14,9 @@ import {
     Heart,
     Clock,
     AlertCircle,
-    Trash2
+    Trash2,
+    Plus,
+    X
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -45,12 +47,16 @@ export default function InstagramManagementPage() {
     const { lang } = useLanguage();
     
     const [activeTab, setActiveTab] = useState<'feed' | 'insights'>('feed');
+    const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+    const [postImageUrl, setPostImageUrl] = useState('');
+    const [postCaption, setPostCaption] = useState('');
+    const [isPublishing, setIsPublishing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const t: any = {
         pt_BR: {
             title: 'Gestão do Instagram',
-            desc: 'Gerencie publicações, responda comentários e acesse os insights da sua conta profissional do Instagram.',
+            subtitle: 'Gerencie publicações, responda comentários e acesse os insights.',
             tabFeed: 'Feed & Comentários',
             tabInsights: 'Insights',
             errorLoad: 'Erro ao carregar dados do Instagram',
@@ -66,12 +72,21 @@ export default function InstagramManagementPage() {
             us: 'Nós',
             selectPost: 'Selecione uma publicação para ver e gerenciar os comentários',
             metrics: 'Métricas de Engajamento',
-            noInsights: 'Insights ainda não disponíveis ou falta de permissão (instagram_business_manage_insights).',
+            noInsights: 'Insights ainda não disponíveis.',
+            deleteBtn: 'Excluir',
+            deleteConfirm: 'Excluir este comentário/resposta?',
+            createPost: 'Criar Post',
+            postCaptionLabel: 'Legenda',
+            imageUrlLabel: 'URL da Imagem',
+            publishBtn: 'Publicar Agora',
+            publishing: 'Publicando...',
+            publishSuccess: 'Post publicado com sucesso!',
+            publishError: 'Erro ao publicar.',
             errorReply: 'Erro ao responder:'
         },
         en_US: {
             title: 'Instagram Management',
-            desc: 'Manage posts, reply to comments, and access insights for your professional Instagram account.',
+            subtitle: 'Manage posts, reply to comments, and access insights.',
             tabFeed: 'Feed & Comments',
             tabInsights: 'Insights',
             errorLoad: 'Error loading Instagram data',
@@ -87,50 +102,17 @@ export default function InstagramManagementPage() {
             us: 'Us',
             selectPost: 'Select a post to view and manage comments',
             metrics: 'Engagement Metrics',
-            noInsights: 'Insights not yet available or missing permission (instagram_business_manage_insights).',
+            noInsights: 'No insights available.',
+            deleteBtn: 'Delete',
+            deleteConfirm: 'Delete this comment/reply?',
+            createPost: 'Create Post',
+            postCaptionLabel: 'Caption',
+            imageUrlLabel: 'Image URL',
+            publishBtn: 'Publish Now',
+            publishing: 'Publishing...',
+            publishSuccess: 'Post published successfully!',
+            publishError: 'Error publishing post.',
             errorReply: 'Error replying:'
-        },
-        pt_PT: {
-            title: 'Gestão do Instagram',
-            desc: 'Gira publicações, responda a comentários e aceda aos insights da sua conta profissional do Instagram.',
-            tabFeed: 'Feed & Comentários',
-            tabInsights: 'Insights',
-            errorLoad: 'Erro ao carregar dados do Instagram',
-            errorDetail: 'Verifique se as permissões (instagram_business_basic) estão aprovadas ou se a conta está no modo desenvolvimento com testadores válidos.',
-            posts: 'Publicações',
-            noPosts: 'Nenhuma publicação encontrada.',
-            noCaption: 'Sem legenda',
-            postComments: 'Comentários da Publicação',
-            viewOriginal: 'Ver post original no Instagram',
-            noComments: 'Nenhum comentário encontrado para esta publicação.',
-            replyingTo: 'A responder a',
-            replyBtn: 'Responder',
-            us: 'Nós',
-            selectPost: 'Selecione uma publicação para ver e gerir os comentários',
-            metrics: 'Métricas de Envolvimento',
-            noInsights: 'Insights ainda não disponíveis ou falta de permissão (instagram_business_manage_insights).',
-            errorReply: 'Erro ao responder:'
-        },
-        it_IT: {
-            title: 'Gestione Instagram',
-            desc: 'Gestisci post, rispondi ai commenti e accedi agli insights del tuo account professionale Instagram.',
-            tabFeed: 'Feed & Commenti',
-            tabInsights: 'Insights',
-            errorLoad: 'Errore nel caricamento dei dati di Instagram',
-            errorDetail: 'Verifica se i permessi (instagram_business_basic) sono approvati o se l\'account è in modalità sviluppo con tester validi.',
-            posts: 'Post',
-            noPosts: 'Nessun post trovato.',
-            noCaption: 'Nessuna didascalia',
-            postComments: 'Commenti al Post',
-            viewOriginal: 'Vedi post originale su Instagram',
-            noComments: 'Nessun commento trovato per questo post.',
-            replyingTo: 'Rispondendo a',
-            replyBtn: 'Rispondi',
-            us: 'Noi',
-            selectPost: 'Seleziona un post per visualizzare e gestire i commenti',
-            metrics: 'Metriche di Coinvolgimento',
-            noInsights: 'Insights non ancora disponibili o permessi mancanti (instagram_business_manage_insights).',
-            errorReply: 'Errore nella risposta:'
         }
     };
     
@@ -217,7 +199,7 @@ export default function InstagramManagementPage() {
     };
 
     const handleDeleteComment = async (commentId: string) => {
-        if (!confirm(lang === 'en_US' ? 'Delete this comment/reply?' : 'Excluir este comentário/resposta?')) return;
+        if (!confirm(txt.deleteConfirm)) return;
         
         try {
             const res = await fetch(`/api/integrations/instagram/comments/${commentId}`, {
@@ -231,6 +213,35 @@ export default function InstagramManagementPage() {
             }
         } catch (e) {
             console.error(e);
+        }
+    };
+
+    const handlePublishPost = async () => {
+        if (!postImageUrl.trim()) return;
+        setIsPublishing(true);
+        try {
+            const res = await fetch('/api/integrations/instagram/publish', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ imageUrl: postImageUrl, caption: postCaption })
+            });
+            if (res.ok) {
+                alert(txt.publishSuccess);
+                setIsPublishModalOpen(false);
+                setPostImageUrl('');
+                setPostCaption('');
+                fetchMedia();
+            } else {
+                alert(txt.publishError);
+            }
+        } catch (e) {
+            console.error(e);
+            alert(txt.publishError);
+        } finally {
+            setIsPublishing(false);
         }
     };
 
@@ -248,7 +259,6 @@ export default function InstagramManagementPage() {
             if (res.ok) {
                 setReplyText('');
                 setReplyingTo(null);
-                // Refresh comments
                 if (selectedMedia) fetchComments(selectedMedia.id);
             } else {
                 const err = await res.json();
@@ -261,21 +271,29 @@ export default function InstagramManagementPage() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto text-white pb-20 min-h-screen">
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-                            <Instagram className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-between flex-1">
+                    <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-500 rounded-2xl shadow-lg shadow-pink-500/20">
+                            <Instagram className="w-8 h-8 text-white" />
                         </div>
-                        <span>{txt.title}</span>
-                    </h1>
-                    <p className="text-gray-400 mt-2 text-sm max-w-xl">
-                        {txt.desc}
-                    </p>
+                        <div>
+                            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                                {txt.title}
+                            </h1>
+                            <p className="text-gray-400 text-sm mt-1">{txt.subtitle}</p>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        onClick={() => setIsPublishModalOpen(true)}
+                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center shadow-lg shadow-primary/20"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        {txt.createPost}
+                    </button>
                 </div>
                 
-                {/* Tabs */}
                 <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
                     <button
                         onClick={() => setActiveTab('feed')}
@@ -481,6 +499,59 @@ export default function InstagramManagementPage() {
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Publish Modal */}
+            {isPublishModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsPublishModalOpen(false)}></div>
+                    <div className="bg-surface border border-white/10 w-full max-w-md rounded-2xl shadow-2xl relative z-10 overflow-hidden">
+                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
+                            <h3 className="font-bold">{txt.createPost}</h3>
+                            <button onClick={() => setIsPublishModalOpen(false)} className="text-gray-400 hover:text-white transition">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">{txt.imageUrlLabel}</label>
+                                <input 
+                                    type="text"
+                                    value={postImageUrl}
+                                    onChange={(e) => setPostImageUrl(e.target.value)}
+                                    placeholder="https://..."
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">{txt.postCaptionLabel}</label>
+                                <textarea 
+                                    value={postCaption}
+                                    onChange={(e) => setPostCaption(e.target.value)}
+                                    rows={4}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary resize-none"
+                                />
+                            </div>
+                            <button 
+                                onClick={handlePublishPost}
+                                disabled={isPublishing || !postImageUrl}
+                                className="w-full bg-primary hover:bg-primary-dark py-3 rounded-xl font-bold transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isPublishing ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        {txt.publishing}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="w-5 h-5 mr-2" />
+                                        {txt.publishBtn}
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -327,6 +327,32 @@ export class MetaApiService {
         return res.data;
     }
 
+    async publishInstagramPost(tenantId: string, imageUrl: string, caption: string) {
+        const token = await this.getInstagramToken(tenantId);
+        const { instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
+
+        let pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+        if (!pageId) pageId = configIbId;
+        if (!pageId) throw new Error('Instagram Business ID not configured.');
+
+        // Step 1: Create Media Container
+        const containerUrl = `https://graph.facebook.com/v21.0/${pageId}/media`;
+        const containerRes = await axios.post(containerUrl, {
+            image_url: imageUrl,
+            caption: caption
+        }, { params: { access_token: token } });
+
+        const creationId = containerRes.data.id;
+
+        // Step 2: Publish Media
+        const publishUrl = `https://graph.facebook.com/v21.0/${pageId}/media_publish`;
+        const publishRes = await axios.post(publishUrl, {
+            creation_id: creationId
+        }, { params: { access_token: token } });
+
+        return publishRes.data;
+    }
+
     /**
      * Get Instagram Insights (Account level)
      */
@@ -506,5 +532,10 @@ export class MetaApiService {
             this.logger.error(`[META_TEMPLATE] Failed to delete template ${templateName}: ${detailedMsg}`);
             throw new Error(detailedMsg);
         }
+    }
+
+    private async getInstagramToken(tenantId: string): Promise<string> {
+        const { accessToken: defaultToken, instagramAccessToken } = await this.getCredentials(tenantId);
+        return instagramAccessToken || defaultToken;
     }
 }
