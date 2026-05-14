@@ -19,7 +19,8 @@ import {
     Eye,
     EyeOff,
     CheckCircle2,
-    Globe
+    Globe,
+    Bot
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
