@@ -76,12 +76,16 @@ export default function LisaWidget() {
             {/* Toggle Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center z-[9999] hover:scale-110 active:scale-95 transition-all group"
+                className="fixed bottom-6 right-6 w-16 h-16 bg-primary text-white rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center z-[9999] hover:scale-110 active:scale-95 transition-all group overflow-hidden border-2 border-white/20"
             >
-                {isOpen ? <X size={24} /> : (
-                    <div className="relative">
-                        <MessageCircle size={28} />
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-primary rounded-full animate-pulse" />
+                {isOpen ? <X size={28} /> : (
+                    <div className="relative w-full h-full">
+                        <img 
+                            src="/lisa-mascot.jpg" 
+                            alt="Lisa" 
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 border-2 border-primary rounded-full animate-pulse" />
                     </div>
                 )}
                 
@@ -105,8 +109,12 @@ export default function LisaWidget() {
                         {/* Header */}
                         <div className="p-4 bg-primary/10 border-b border-white/5 flex items-center justify-between">
                             <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center text-primary border border-primary/20">
-                                    <Sparkles size={20} />
+                                <div className="w-12 h-12 rounded-2xl overflow-hidden border border-primary/20">
+                                    <img 
+                                        src="/lisa-mascot.jpg" 
+                                        alt="Lisa" 
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-white">{tl.title}</h3>
