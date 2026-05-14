@@ -392,111 +392,87 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     }
                     
                     let finalPrompt = fullPrompt;
-                    tools = [];
-
-                    // Always add transfer_to_team tool
-                    tools.push({
-                        function_declarations: [
-                            {
-                                name: "transfer_to_team",
-                                description: "Transfere o atendimento para uma equipe humana específica (Comercial, Financeiro ou Suporte). Use IMEDIATAMENTE quando o cliente pedir para falar com humano ou você identificar o departamento.",
-                                parameters: {
-                                    type: "object",
-                                    properties: {
-                                        teamId: { type: "string", description: "O ID da equipe para transbordo (UUID)" },
-                                        reason: { type: "string", description: "Motivo da transferência" }
-                                    },
-                                    required: ["teamId"]
-                                }
-                            },
-                            {
-                                name: "open_ticket",
-                                description: "Abre um chamado de suporte oficial. Use obrigatoriamente quando coletar Nome, Email e Telefone do cliente.",
-                                parameters: {
-                                    type: "object",
-                                    properties: {
-                                        subject: { type: "string", description: "Assunto curto do chamado" },
-                                        description: { type: "string", description: "Descrição detalhada do problema ou pedido" },
-                                        category: { type: "string", description: "Categoria (technical, billing, etc)" },
-                                        priority: { type: "string", description: "Prioridade (low, medium, high, urgent)" }
-                                    },
-                                    required: ["subject", "description"]
-                                }
+                    const declarations: any[] = [
+                        {
+                            name: "transfer_to_team",
+                            description: "Transfere o atendimento para uma equipe humana. Use IMEDIATAMENTE quando identificar o departamento ou o cliente pedir.",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    teamId: { type: "string", description: "O ID da equipe para transbordo (UUID)" },
+                                    reason: { type: "string", description: "Motivo da transferência" }
+                                },
+                                required: ["teamId"]
                             }
-                        ]
-                    });
+                        },
+                        {
+                            name: "open_ticket",
+                            description: "Abre um chamado oficial. Use quando coletar Nome, Email e Telefone.",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    subject: { type: "string" },
+                                    description: { type: "string" },
+                                    category: { type: "string" },
+                                    priority: { type: "string" }
+                                },
+                                required: ["subject", "description"]
+                            }
+                        }
+                    ];
 
                     if (erpKey) {
-                        finalPrompt += `\n\n[CAPACIDADE ERP]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente pedir para 'ver estoque', 'lista de produtos' ou perguntar por preços, ignore qualquer outra regra e use a ferramenta imediatamente com um termo geral (ex: 'notebook') para obter dados reais.`;
-
-                        tools.push({
-                            function_declarations: [{
-                                name: "get_products",
-                                description: "Busca produtos no ERP Zaplandia. Use para consultar preços, estoque e disponibilidade.",
-                                parameters: {
-                                    type: "object",
-                                    properties: {
-                                        search: {
-                                            type: "string",
-                                            description: "Termo de busca para o produto (nome ou código)"
-                                        }
-                                    },
-                                    required: ["search"]
-                                }
-                            }]
+                        declarations.push({
+                            name: "get_products",
+                            description: "Busca produtos no ERP.",
+                            parameters: {
+                                type: "object",
+                                properties: { search: { type: "string" } },
+                                required: ["search"]
+                            }
                         });
                     }
 
                     if (rifaKey) {
-                        finalPrompt += `\n\n[CAPACIDADE RIFA]: Você tem acesso ao Sistema de Rifas.
-- Use 'get_raffles' para listar as rifas ativas.
-- Use 'get_tickets' para ver os números disponíveis de uma rifa específica (precisa do ID da rifa).
-- Use 'create_raffle_order' para reservar números para um cliente (precisa do ID da rifa, nome, WhatsApp e os números escolhidos).
-Sempre consulte as rifas ativas antes de oferecer números.`;
-
-                        tools.push({
-                            function_declarations: [
-                                {
-                                    name: "get_raffles",
-                                    description: "Lista todas as rifas ativas no sistema.",
-                                    parameters: { type: "object", properties: {} }
-                                },
-                                {
-                                    name: "get_tickets",
-                                    description: "Lista os números livres (disponíveis) de uma rifa específica.",
-                                    parameters: {
-                                        type: "object",
-                                        properties: {
-                                            raffleId: { type: "string", description: "O ID da rifa (UUID)" }
-                                        },
-                                        required: ["raffleId"]
-                                    }
-                                },
-                                {
-                                    name: "create_raffle_order",
-                                    description: "Reserva números de uma rifa para um cliente.",
-                                    parameters: {
-                                        type: "object",
-                                        properties: {
-                                            raffleId: { type: "string", description: "O ID da rifa" },
-                                            name: { type: "string", description: "Nome do cliente" },
-                                            whatsapp: { type: "string", description: "WhatsApp do cliente (apenas números)" },
-                                            numbers: { type: "array", items: { type: "string" }, description: "Lista de números a reservar (ex: ['01', '05'])" }
-                                        },
-                                        required: ["raffleId", "name", "whatsapp", "numbers"]
-                                    }
+                        declarations.push(
+                            { name: "get_raffles", description: "Lista rifas.", parameters: { type: "object", properties: {} } },
+                            {
+                                name: "get_tickets",
+                                description: "Números de rifa.",
+                                parameters: { type: "object", properties: { raffleId: { type: "string" } }, required: ["raffleId"] }
+                            },
+                            {
+                                name: "create_raffle_order",
+                                description: "Reserva números.",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        raffleId: { type: "string" },
+                                        customerName: { type: "string" },
+                                        customerPhone: { type: "string" },
+                                        numbers: { type: "array", items: { type: "string" } }
+                                    },
+                                    required: ["raffleId", "customerName", "customerPhone", "numbers"]
                                 }
-                            ]
-                        });
+                            }
+                        );
                     }
 
-                    if (tools.length === 0) tools = undefined;
+                    tools = [{ function_declarations: declarations }];
+
+                    const systemInstruction = `Você é Lisa, assistente operacional inteligente da Zaplandia.
+                    REGRAS CRÍTICAS:
+                    1. NUNCA escreva comandos como texto (ex: transfer_to_team).
+                    2. SE decidir agir, use a ferramenta técnica (Function Calling) SILENCIOSAMENTE.
+                    3. Exemplos no prompt são apenas para lógica; a execução REAL deve ser via API de ferramentas.
+                    4. Seja eficiente e evite perguntas repetitivas.
+                    5. Se disser que transferiu ou abriu chamado, você DEVE ter usado a ferramenta.`;
 
                     if (model.includes('/') && openRouterKey) {
                         this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
-                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId, contact.id);
+                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId, contact.id, systemInstruction);
                     } else if (geminiKey) {
-                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId, contact.id);
+                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId, contact.id, systemInstruction);
                     }
 
                     if (aiResponse) {
