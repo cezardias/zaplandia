@@ -810,6 +810,12 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                                 message.status = 'SENT';
                                 message.provider = 'whatsapp';
                                 await this.messageRepository.save(message);
+                                
+                                // Emit status update
+                                this.communicationService.emitToTenant(tenantId, 'message_status', {
+                                    messageId: message.id,
+                                    status: 'SENT'
+                                });
                                 return message;
                             }
                         } catch (metaErr: any) {
@@ -857,16 +863,26 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
 
                                 if (response?.key?.id) {
                                     message.wamid = response.key.id;
-                                    message.status = 'SENT';
                                     await this.messageRepository.save(message);
+
+                                    // Emit status update
+                                    this.communicationService.emitToTenant(tenantId, 'message_status', {
+                                        messageId: message.id,
+                                        status: 'SENT'
+                                    });
                                 }
                             } else {
                                 this.logger.error(`Media file not found at ${filePath}. Sending text only.`);
                                 const response = await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
                                 if (response?.key?.id) {
                                     message.wamid = response.key.id;
-                                    message.status = 'SENT';
                                     await this.messageRepository.save(message);
+
+                                    // Emit status update
+                                    this.communicationService.emitToTenant(tenantId, 'message_status', {
+                                        messageId: message.id,
+                                        status: 'SENT'
+                                    });
                                 }
                             }
                         } else {
@@ -875,8 +891,13 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                             const response = await this.evolutionApiService.sendText(tenantId, instanceName, targetNumber, content);
                             if (response?.key?.id) {
                                 message.wamid = response.key.id;
-                                message.status = 'SENT';
                                 await this.messageRepository.save(message);
+
+                                // Emit status update
+                                this.communicationService.emitToTenant(tenantId, 'message_status', {
+                                    messageId: message.id,
+                                    status: 'SENT'
+                                });
                             }
                         }
                     } else {

@@ -381,7 +381,7 @@ export class WebhooksController {
                                         if (replyText) {
                                             try {
                                                 this.logger.log(`[INSTAGRAM_WEBHOOK] Sending N8N reply (First 50 chars): ${replyText.substring(0, 50)}...`);
-                                                await this.metaApiService.sendInstagramMessage(tenantId, senderId, replyText, pageId);
+                                                await this.crmService.sendMessage(tenantId, contact.id, replyText);
                                             } catch (sendErr: any) {
                                                 this.logger.error(`[INSTAGRAM_WEBHOOK] Failed to send N8N reply: ${sendErr.message}`);
                                             }
@@ -394,7 +394,7 @@ export class WebhooksController {
                                     if (shouldRespond) {
                                         const aiResp = await this.aiService.generateResponse(contact, content, tenantId, pageId);
                                         if (aiResp) {
-                                            await this.metaApiService.sendInstagramMessage(tenantId, senderId, aiResp, pageId);
+                                            await this.crmService.sendMessage(tenantId, contact.id, aiResp);
                                         }
                                     }
                                 } catch (aiErr: any) {
@@ -629,16 +629,12 @@ export class WebhooksController {
         try {
             const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
             if (!contact) return { success: false, error: 'Contact not found' };
-            const useInstance = instanceName || contact.instance;
-            if (!useInstance) return { success: false, error: 'Instance not found' };
-
-            const message = this.messageRepository.create({
-                tenantId, contactId: contact.id, content, direction: 'outbound',
-                provider: contact.provider as any || 'whatsapp', instance: useInstance, status: 'PENDING'
-            });
-            await this.messageRepository.save(message);
-            await this.aiService.sendAIResponse(contact, content, tenantId, useInstance);
-            return { success: true, messageId: message.id };
-        } catch (error) { return { success: false, error: error.message }; }
+            
+            // Use unified sendMessage which handles DB, WS and Provider logic
+            const message = await this.crmService.sendMessage(tenantId, contact.id, content);
+            return { success: true, messageId: message?.id };
+        } catch (error) { 
+            return { success: false, error: error.message }; 
+        }
     }
 }
