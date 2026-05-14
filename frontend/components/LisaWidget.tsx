@@ -181,7 +181,7 @@ export default function LisaWidget() {
                                     className="w-full bg-gray-100 border border-gray-200 rounded-2xl px-4 py-3 pr-12 text-sm text-gray-800 focus:outline-none focus:border-primary/50 transition shadow-inner placeholder:text-gray-500"
                                 />
                                 <button
-                                    onClick={handleSend}
+                                    onClick={() => handleSend()}
                                     disabled={!input.trim() || isLoading}
                                     className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-primary hover:scale-110 transition disabled:opacity-50"
                                 >
