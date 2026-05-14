@@ -1002,6 +1002,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                         return finalAccumulatedText;
                     }
                 }
+            } // Close for loop over parts
 
                 if (accumulatedText) {
                     this.logger.debug(`[AI_ROUTING] Model ${model} succeeded with text in ${version}.`);
@@ -1125,7 +1126,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         }
 
         // Fallback to Gemini with default key if everything else fails
-        return this.generateGenericResponse(tenantId, finalPrompt);
+        return this.generateGenericResponse(tenantId, fullPrompt);
     }
 
     async getPromptByName(name: string, tenantId?: string) {
