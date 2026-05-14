@@ -11,6 +11,7 @@ import { SupportService } from '../support/support.service';
 import { ErpZaplandiaService } from '../integrations/erp-zaplandia.service';
 import { RifaApiService } from '../integrations/rifa-api.service';
 import { MetaApiService } from '../integrations/meta-api.service';
+import { CommsService } from '../comms/comms.service';
 
 export interface AIPrompt {
     id: string;
@@ -37,6 +38,7 @@ export class AiService implements OnModuleInit {
         private erpZaplandiaService: ErpZaplandiaService,
         private rifaApiService: RifaApiService,
         private metaApiService: MetaApiService,
+        private communicationService: CommsService,
     ) { }
 
     async onModuleInit() {
@@ -336,7 +338,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                             this.logger.log(`[LISA_ROUTING] Using specialized OpenRouter key for Lisa.`);
                         }
                     }
-
+                    
+                    let finalPrompt = fullPrompt;
                     tools = [];
 
                     // Always add transfer_to_team tool

@@ -7,11 +7,13 @@ import { Integration } from '../integrations/entities/integration.entity';
 import { IntegrationsModule } from '../integrations/integrations.module';
 
 import { AiPrompt } from '../integrations/entities/ai-prompt.entity';
+import { CommsModule } from '../comms/comms.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Contact, Message, Integration, AiPrompt]),
         forwardRef(() => IntegrationsModule),
+        CommsModule,
     ],
     controllers: [AiController],
     providers: [AiService],

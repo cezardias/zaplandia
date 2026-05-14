@@ -40,10 +40,11 @@ export default function LisaWidget() {
         }
     }, [messages]);
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+    const handleSend = async (customMessage?: string) => {
+        const msgText = customMessage || input;
+        if (!msgText.trim() || isLoading) return;
 
-        const userMsg = { role: 'user', content: input };
+        const userMsg = { role: 'user', content: msgText };
         setMessages(prev => [...prev, userMsg]);
         setInput('');
         setIsLoading(true);
@@ -55,7 +56,7 @@ export default function LisaWidget() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ message: input, history: messages.slice(-5) })
+                body: JSON.stringify({ message: msgText, history: messages.slice(-5) })
             });
 
             if (res.ok) {
@@ -159,7 +160,10 @@ export default function LisaWidget() {
                                 <HelpCircle size={12} />
                                 <span>FAQs</span>
                              </button>
-                             <button className="flex-1 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/10 rounded-lg text-[10px] font-bold text-primary transition flex items-center justify-center space-x-1">
+                             <button 
+                                onClick={() => handleSend('Gostaria de abrir um chamado')}
+                                className="flex-1 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/10 rounded-lg text-[10px] font-bold text-primary transition flex items-center justify-center space-x-1"
+                             >
                                 <Smartphone size={12} />
                                 <span>{tl.support}</span>
                              </button>
