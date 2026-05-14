@@ -331,170 +331,133 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     {status.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
                     <span className="text-sm font-bold">{status.msg}</span>
                 </div>
-            )}
+              {/* --- AI SECTION (UNIFIED PATTERN) --- */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
+                    <Zap className="w-5 h-5 text-yellow-500" />
+                    <span>Configurações de Inteligência Artificial</span>
+                </h2>
 
-            {/* --- AI SECTION (PRIORITY) --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* AI Section (Gemini) */}
-                <div className="relative bg-surface border border-white/5 rounded-3xl p-8 hover:border-purple-500/40 transition-all group overflow-hidden shadow-2xl">
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl group-hover:bg-purple-500/10 transition-all"></div>
-                    
-                    <div className="flex justify-between items-start mb-6">
-                        <div className="p-4 bg-white/5 rounded-2xl group-hover:scale-110 transition-transform duration-300 ring-1 ring-white/10">
-                            <Zap className="w-8 h-8 text-purple-500" />
+                <div className="space-y-6">
+                    {/* Gemini Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                        <div className="md:col-span-8 space-y-1">
+                            <label className="text-[10px] text-white/40 uppercase font-black ml-1">Google Gemini API Key</label>
+                            <div className="relative">
+                                <input
+                                    type={showKeys.gemini ? "text" : "password"}
+                                    value={keys.gemini_key}
+                                    onChange={(e) => setKeys({ ...keys, gemini_key: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary transition font-mono"
+                                    placeholder="Gemini API Key..."
+                                />
+                                <button 
+                                    onClick={() => setShowKeys({...showKeys, gemini: !showKeys.gemini})}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-white transition"
+                                >
+                                    {showKeys.gemini ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
                         </div>
-                        <span className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-black ${keys.gemini_key ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-gray-500/10 text-gray-500 border border-white/5'}`}>
-                            {keys.gemini_key ? 'Configurado' : 'Pendente'}
-                        </span>
-                    </div>
-
-                    <h3 className="text-2xl font-black mb-3">Google Gemini AI</h3>
-                    <p className="text-sm text-gray-400 leading-relaxed mb-8 min-h-[48px]">
-                        Inteligência artificial do Google para automações e chat.
-                    </p>
-
-                    <div className="space-y-4">
-                        <div className="relative">
-                            <input
-                                type={showKeys.gemini ? "text" : "password"}
-                                value={keys.gemini_key}
-                                onChange={(e) => setKeys({ ...keys, gemini_key: e.target.value })}
-                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 transition-all font-mono"
-                                placeholder="Gemini API Key..."
-                            />
-                            <button 
-                                onClick={() => setShowKeys({...showKeys, gemini: !showKeys.gemini})}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/5 rounded-lg transition text-gray-500"
-                            >
-                                {showKeys.gemini ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="md:col-span-2">
                             <button
                                 onClick={() => handleSave('GEMINI_API_KEY', keys.gemini_key)}
                                 disabled={isLoading}
-                                className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 py-4 rounded-xl text-sm font-black transition-all flex items-center justify-center space-x-2"
+                                className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 h-[38px]"
                             >
                                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 <span>Salvar</span>
                             </button>
+                        </div>
+                        <div className="md:col-span-2">
                             <button
                                 onClick={() => handleTestKey('gemini')}
                                 disabled={isLoading || !keys.gemini_key}
-                                className="bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl text-sm font-black transition-all flex items-center justify-center space-x-2"
+                                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 h-[38px]"
                             >
                                 <Zap className="w-4 h-4 text-yellow-500" />
                                 <span>Testar</span>
                             </button>
                         </div>
                     </div>
-                </div>
 
-                {/* AI Section (OpenAI) */}
-                <div className="relative bg-surface border border-white/5 rounded-3xl p-8 hover:border-green-500/40 transition-all group overflow-hidden shadow-2xl">
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-green-500/5 rounded-full blur-3xl group-hover:bg-green-500/10 transition-all"></div>
-
-                    <div className="flex justify-between items-start mb-6">
-                        <div className="p-4 bg-white/5 rounded-2xl group-hover:scale-110 transition-transform duration-300 ring-1 ring-white/10">
-                            <Bot className="w-8 h-8 text-green-500" />
+                    {/* OpenAI Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end pt-4 border-t border-white/5">
+                        <div className="md:col-span-8 space-y-1">
+                            <label className="text-[10px] text-white/40 uppercase font-black ml-1">OpenAI API Key (ChatGPT)</label>
+                            <div className="relative">
+                                <input
+                                    type={showKeys.openai ? "text" : "password"}
+                                    value={keys.openai_key}
+                                    onChange={(e) => setKeys({ ...keys, openai_key: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary transition font-mono"
+                                    placeholder="sk-..."
+                                />
+                                <button 
+                                    onClick={() => setShowKeys({...showKeys, openai: !showKeys.openai})}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-white transition"
+                                >
+                                    {showKeys.openai ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
                         </div>
-                        <span className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-black ${keys.openai_key ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-gray-500/10 text-gray-500 border border-white/5'}`}>
-                            {keys.openai_key ? 'Configurado' : 'Pendente'}
-                        </span>
-                    </div>
-
-                    <h3 className="text-2xl font-black mb-3">OpenAI (ChatGPT)</h3>
-                    <p className="text-sm text-gray-400 leading-relaxed mb-8 min-h-[48px]">
-                        Conecte diretamente com a OpenAI para usar modelos GPT.
-                    </p>
-
-                    <div className="space-y-4">
-                        <div className="relative">
-                            <input
-                                type={showKeys.openai ? "text" : "password"}
-                                value={keys.openai_key}
-                                onChange={(e) => setKeys({ ...keys, openai_key: e.target.value })}
-                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-green-500/50 transition-all font-mono"
-                                placeholder="OpenAI Key (sk-...)"
-                            />
-                            <button 
-                                onClick={() => setShowKeys({...showKeys, openai: !showKeys.openai})}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/5 rounded-lg transition text-gray-500"
-                            >
-                                {showKeys.openai ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="md:col-span-2">
                             <button
                                 onClick={() => handleSave('OPENAI_API_KEY', keys.openai_key)}
                                 disabled={isLoading}
-                                className="bg-green-600 hover:bg-green-500 disabled:opacity-50 py-4 rounded-xl text-sm font-black transition-all flex items-center justify-center space-x-2"
+                                className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 h-[38px]"
                             >
                                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 <span>Salvar</span>
                             </button>
+                        </div>
+                        <div className="md:col-span-2">
                             <button
                                 onClick={() => handleTestKey('openai')}
                                 disabled={isLoading || !keys.openai_key}
-                                className="bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl text-sm font-black transition-all flex items-center justify-center space-x-2"
+                                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 h-[38px]"
                             >
                                 <Zap className="w-4 h-4 text-yellow-500" />
                                 <span>Testar</span>
                             </button>
                         </div>
                     </div>
-                </div>
 
-                {/* AI Section (OpenRouter) */}
-                <div className="relative bg-surface border border-white/5 rounded-3xl p-8 hover:border-cyan-500/40 transition-all group overflow-hidden shadow-2xl">
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl group-hover:bg-cyan-500/10 transition-all"></div>
-
-                    <div className="flex justify-between items-start mb-6">
-                        <div className="p-4 bg-white/5 rounded-2xl group-hover:scale-110 transition-transform duration-300 ring-1 ring-white/10">
-                            <Zap className="w-8 h-8 text-cyan-500" />
+                    {/* OpenRouter Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end pt-4 border-t border-white/5">
+                        <div className="md:col-span-8 space-y-1">
+                            <label className="text-[10px] text-white/40 uppercase font-black ml-1">OpenRouter API Key</label>
+                            <div className="relative">
+                                <input
+                                    type={showKeys.openrouter ? "text" : "password"}
+                                    value={keys.openrouter_key}
+                                    onChange={(e) => setKeys({ ...keys, openrouter_key: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary transition font-mono"
+                                    placeholder="sk-or-v1-..."
+                                />
+                                <button 
+                                    onClick={() => setShowKeys({...showKeys, openrouter: !showKeys.openrouter})}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-white transition"
+                                >
+                                    {showKeys.openrouter ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
                         </div>
-                        <span className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-black ${keys.openrouter_key ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-gray-500/10 text-gray-500 border border-white/5'}`}>
-                            {keys.openrouter_key ? 'Configurado' : 'Pendente'}
-                        </span>
-                    </div>
-
-                    <h3 className="text-2xl font-black mb-3">OpenRouter AI</h3>
-                    <p className="text-sm text-gray-400 leading-relaxed mb-8 min-h-[48px]">
-                        Acesso unificado a diversos modelos (Claude, Llama, etc).
-                    </p>
-
-                    <div className="space-y-4">
-                        <div className="relative">
-                            <input
-                                type={showKeys.openrouter ? "text" : "password"}
-                                value={keys.openrouter_key}
-                                onChange={(e) => setKeys({ ...keys, openrouter_key: e.target.value })}
-                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-cyan-500/50 transition-all font-mono"
-                                placeholder="OpenRouter Key..."
-                            />
-                            <button 
-                                onClick={() => setShowKeys({...showKeys, openrouter: !showKeys.openrouter})}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white/5 rounded-lg transition text-gray-500"
-                            >
-                                {showKeys.openrouter ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="md:col-span-2">
                             <button
                                 onClick={() => handleSave('OPENROUTER_API_KEY', keys.openrouter_key)}
                                 disabled={isLoading}
-                                className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 py-4 rounded-xl text-sm font-black transition-all flex items-center justify-center space-x-2"
+                                className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 h-[38px]"
                             >
                                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 <span>Salvar</span>
                             </button>
+                        </div>
+                        <div className="md:col-span-2">
                             <button
                                 onClick={() => handleTestKey('openrouter')}
                                 disabled={isLoading || !keys.openrouter_key}
-                                className="bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl text-sm font-black transition-all flex items-center justify-center space-x-2"
+                                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 h-[38px]"
                             >
                                 <Zap className="w-4 h-4 text-yellow-500" />
                                 <span>Testar</span>
@@ -502,7 +465,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <div className="h-px bg-white/5 my-8"></div>
 

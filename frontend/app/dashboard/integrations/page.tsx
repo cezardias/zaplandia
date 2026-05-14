@@ -374,30 +374,15 @@ export default function IntegrationsPage() {
                     <h1 className="text-4xl font-extrabold tracking-tight">{t[lang].title}</h1>
                     <p className="text-gray-400 mt-2">{t[lang].subtitle}</p>
                 </div>
-            </div>
-
-            {/* Configurações de IA Prominentes na Página */}
-            <div className="mb-12">
-                <div className="flex items-center space-x-3 mb-8">
-                    <div className="p-2 bg-primary/20 rounded-lg">
-                        <Zap className="w-5 h-5 text-primary" />
-                    </div>
-                    <h2 className="text-2xl font-black uppercase tracking-tight">Configurações de IA</h2>
-                </div>
-                
-                <ApiSettingsFields 
-                    token={token || ''} 
-                    userRole={user?.role || 'user'}
-                />
-            </div>
-
-            <div className="h-px bg-white/5 my-12"></div>
-
-            <div className="flex items-center space-x-3 mb-8">
-                <div className="p-2 bg-primary/20 rounded-lg">
-                    <Globe className="w-5 h-5 text-primary" />
-                </div>
-                <h2 className="text-2xl font-black uppercase tracking-tight">Canais de Atendimento</h2>
+                {user?.role === 'superadmin' && (
+                    <button
+                        onClick={() => router.push('/dashboard/settings/api')}
+                        className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-xl border border-white/10 transition-all font-bold text-sm"
+                    >
+                        <Settings className="w-4 h-4" />
+                        <span>{t[lang].configGlobal}</span>
+                    </button>
+                )}
             </div>
 
 
