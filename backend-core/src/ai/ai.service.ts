@@ -1012,9 +1012,11 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
     }
 
     async generateLisaResponse(tenantId: string, fullPrompt: string) {
-        // Find Lisa's specialized prompt
+        // Find Lisa's specialized prompt - prioritizing current tenant
         const lisaPrompt = await this.aiPromptRepository.findOne({
-            where: { name: 'ZAPLANDIA_HELP_CENTER_LISA' }
+            where: { name: 'ZAPLANDIA_HELP_CENTER_LISA', tenantId }
+        }) || await this.aiPromptRepository.findOne({
+            where: { name: 'ZAPLANDIA_HELP_CENTER_LISA' } // Global fallback
         });
 
         const systemPrompt = lisaPrompt?.content || `
@@ -1054,17 +1056,20 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         return this.generateGenericResponse(tenantId, finalPrompt);
     }
 
-    async getPromptByName(name: string) {
+    async getPromptByName(name: string, tenantId?: string) {
+        if (tenantId) {
+            return this.aiPromptRepository.findOne({ where: { name, tenantId } });
+        }
         return this.aiPromptRepository.findOne({ where: { name } });
     }
 
     async savePromptByName(name: string, content: string, tenantId: string, provider?: string, model?: string, apiKey?: string) {
-        let prompt = await this.aiPromptRepository.findOne({ where: { name } });
+        let prompt = await this.aiPromptRepository.findOne({ where: { name, tenantId } });
         if (prompt) {
             prompt.content = content;
-            if (provider) prompt.provider = provider;
-            if (model) prompt.model = model;
-            if (apiKey) prompt.apiKey = apiKey;
+            if (provider !== undefined) prompt.provider = provider;
+            if (model !== undefined) prompt.model = model;
+            if (apiKey !== undefined) prompt.apiKey = apiKey; // Allow empty string to clear
         } else {
             prompt = this.aiPromptRepository.create({ name, content, tenantId, provider, model, apiKey });
         }

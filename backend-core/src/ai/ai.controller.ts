@@ -243,7 +243,7 @@ export class AiController {
     async getLisaPrompt(@Request() req: any) {
         // Only superadmin can see/edit Lisa's prompt
         if (req.user.role !== 'superadmin') return { content: '' };
-        const prompt = await this.aiService.getPromptByName('ZAPLANDIA_HELP_CENTER_LISA');
+        const prompt = await this.aiService.getPromptByName('ZAPLANDIA_HELP_CENTER_LISA', req.user.tenantId);
         return { 
             content: prompt?.content || '',
             provider: prompt?.provider || 'gemini',
