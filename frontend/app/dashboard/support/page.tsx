@@ -29,6 +29,7 @@ export default function SupportPage() {
     const { lang } = useLanguage();
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
     const [tickets, setTickets] = useState<any[]>([]);
     const [showTicketList, setShowTicketList] = useState(false);
