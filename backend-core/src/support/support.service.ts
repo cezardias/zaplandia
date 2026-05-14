@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { SupportArticle } from './entities/support-article.entity';
+import { Ticket } from './entities/ticket.entity';
 
 @Injectable()
 export class SupportService implements OnModuleInit {

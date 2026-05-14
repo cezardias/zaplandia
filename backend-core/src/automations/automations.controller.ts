@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Patch } from '@nestjs/common';
 import { AutomationsService } from './automations.service';
-import { UniversalAuthGuard } from '../auth/universal-auth.guard';
+import { UniversalAuthGuard } from '../auth/guards/universal-auth.guard';
 
 @Controller('automations')
 @UseGuards(UniversalAuthGuard)

@@ -610,9 +610,13 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                 this.logger.warn(`[GEN_VAR] Failed to parse as JSON array: ${cleaned}`);
             }
 
-            return [responseStr];
+            return [baseMessage];
         } catch (error) {
             this.logger.error(`[GEN_VAR_CRITICAL] ${error.message}`);
+            return [baseMessage];
+        }
+    }
+
     // For /api/ai/prompts used in frontend
     async generatePrompts(tenantId: string, topic: string, count: number = 3): Promise<string[]> {
         return this.generateVariations(tenantId, topic, "Gere prompts de sistema para IA agir como um atendente.", count);
