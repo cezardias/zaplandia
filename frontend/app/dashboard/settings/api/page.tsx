@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Key } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import ApiSettingsFields from '@/components/ApiSettingsFields';
 
