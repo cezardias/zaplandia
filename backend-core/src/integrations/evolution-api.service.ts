@@ -191,6 +191,27 @@ export class EvolutionApiService {
         }
     }
 
+    async fetchProfilePicture(tenantId: string, instanceName: string, number: string): Promise<string | null> {
+        const baseUrl = await this.getBaseUrl(tenantId);
+        const apiKey = await this.getApiKey(tenantId);
+        if (!baseUrl || !apiKey) return null;
+
+        try {
+            const cleanNumber = number.replace(/\D/g, '');
+            const jid = number.includes('@') ? number : `${cleanNumber}@s.whatsapp.net`;
+            const url = `${baseUrl}/chat/fetchProfile/${instanceName}?number=${encodeURIComponent(jid)}`;
+            
+            const response = await axios.get(url, {
+                headers: { 'apikey': apiKey }
+            });
+
+            return response.data?.profilePictureUrl || response.data?.picture || response.data?.profilePicture || null;
+        } catch (e) {
+            this.logger.debug(`[EvolutionAPI] Could not fetch profile picture for ${number}: ${e.message}`);
+            return null;
+        }
+    }
+
     async createInstance(tenantId: string, instanceName: string, userId: string, webhookUrl?: string) {
         const baseUrl = await this.getBaseUrl(tenantId);
         const apiKey = await this.getApiKey(tenantId);

@@ -522,6 +522,28 @@ export class WebhooksController {
                     name: pushName, phoneNumber: phonePart, externalId: externalId, instance: instanceName
                 });
                 
+                // Try to get profile pic if missing from Evolution API
+                let profilePic = contact.metadata?.profilePic;
+                if (!profilePic && !isOutbound) {
+                    try {
+                        const fetchedPic = await this.evolutionApiService.fetchProfilePicture(tenantId, instanceName, externalId);
+                        if (fetchedPic) profilePic = fetchedPic;
+                    } catch (e) {}
+                }
+
+                const contactUpdates: any = { 
+                    lastMessage: content,
+                    updatedAt: new Date(),
+                    provider: 'whatsapp'
+                };
+
+                if (profilePic && profilePic !== contact.metadata?.profilePic) {
+                    contactUpdates.metadata = { ...contact.metadata, profilePic };
+                    contact.metadata = contactUpdates.metadata; // Update local object for socket
+                }
+
+                await this.contactRepository.update(contact.id, contactUpdates);
+                
                 const wamid = messageData.key.id;
                 const exists = await this.messageRepository.findOne({ where: { wamid, contactId: contact.id } });
                 if (exists) {
