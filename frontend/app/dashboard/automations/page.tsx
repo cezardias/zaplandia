@@ -426,6 +426,7 @@ export default function AutomationsPage() {
                             exit={{ opacity: 0, x: -20 }}
                             className="flex-1 p-8 overflow-y-auto"
                         >
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {workflows.map((wf) => (
                                     <div key={wf.id} className="group relative bg-surface border border-white/5 rounded-2xl p-6 hover:border-primary/30 transition shadow-lg hover:shadow-primary/5 overflow-hidden">
                                         <div className={`absolute top-0 left-0 w-1 h-full bg-primary ${wf.status === 'active' ? 'opacity-100' : 'opacity-20'}`} />
