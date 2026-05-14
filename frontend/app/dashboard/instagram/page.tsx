@@ -69,6 +69,7 @@ export default function InstagramManagementPage() {
     const [publishStep, setPublishStep] = useState(1);
     const [filePreview, setFilePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [mediaType, setMediaType] = useState<'FEED' | 'REELS'>('FEED');
     const [isLoading, setIsLoading] = useState(false);
 
     const t: any = {
@@ -255,6 +256,7 @@ export default function InstagramManagementPage() {
             const payload: any = {
                 imageUrl: postImageUrl.startsWith('data:') ? 'https://zaplandia.com/temp-image.jpg' : postImageUrl, // Fallback for demo
                 caption: postCaption,
+                mediaType: mediaType,
                 altText: postAltText,
                 commentsEnabled: commentsEnabled
             };
@@ -608,9 +610,24 @@ export default function InstagramManagementPage() {
                                                  <p className="text-[10px] text-gray-300 leading-relaxed">
                                                      <strong className="text-primary">{lang === 'en_US' ? 'Carousel Tip (2026):' : 'Dica de Carrossel (2026):'}</strong> {lang === 'en_US' ? 'Use up to 10 slides in vertical format (4:5) for maximum engagement.' : 'O ideal é usar até 10 slides, garantindo que o formato seja consistente (preferencialmente vertical 4:5).'}
                                                  </p>
-                                             </div>
+                                            </div>
 
-                                             <textarea 
+                                            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 mb-6">
+                                                <button
+                                                    onClick={() => setMediaType('FEED')}
+                                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${mediaType === 'FEED' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-white'}`}
+                                                >
+                                                    Feed Post
+                                                </button>
+                                                <button
+                                                    onClick={() => setMediaType('REELS')}
+                                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${mediaType === 'REELS' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-white'}`}
+                                                >
+                                                    Reels
+                                                </button>
+                                            </div>
+
+                                            <textarea 
                                                 value={postCaption}
                                                 onChange={(e) => setPostCaption(e.target.value)}
                                                 placeholder={lang === 'en_US' ? 'Write a caption or add hashtags...' : 'Escreva uma legenda ou adicione hashtags...'}
@@ -705,6 +722,14 @@ export default function InstagramManagementPage() {
                                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
                                                 />
                                             )}
+                                        </div>
+
+                                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                                            <p className="text-[10px] text-yellow-500 leading-tight">
+                                                {lang === 'en_US' 
+                                                    ? 'Note: Meta API does not yet support publishing directly to Stories (History) via third-party apps.' 
+                                                    : 'Nota: A API da Meta ainda não permite a publicação direta em Stories (Históricos) através de aplicativos de terceiros.'}
+                                            </p>
                                         </div>
                                     </div>
                                 )}

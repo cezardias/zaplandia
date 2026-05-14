@@ -330,6 +330,7 @@ export class MetaApiService {
     async publishInstagramPost(tenantId: string, options: { 
         imageUrl: string, 
         caption: string, 
+        mediaType?: 'FEED' | 'REELS',
         altText?: string, 
         locationId?: string,
         userTags?: any[],
@@ -346,9 +347,15 @@ export class MetaApiService {
         // Step 1: Create Media Container
         const containerUrl = `https://graph.facebook.com/v21.0/${pageId}/media`;
         const payload: any = {
-            image_url: options.imageUrl,
             caption: options.caption,
         };
+
+        if (options.mediaType === 'REELS') {
+            payload.video_url = options.imageUrl;
+            payload.media_type = 'REELS';
+        } else {
+            payload.image_url = options.imageUrl;
+        }
 
         if (options.altText) payload.alt_text = options.altText;
         if (options.locationId) payload.location_id = options.locationId;
