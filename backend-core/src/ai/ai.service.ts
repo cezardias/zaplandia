@@ -787,6 +787,14 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                         toolResult = await this.rifaApiService.getTickets(tenantId, args.raffleId);
                     } else if (funcName === 'create_raffle_order' && tenantId) {
                         toolResult = await this.rifaApiService.createOrder(tenantId, args);
+                    } else if (funcName === 'open_ticket' && tenantId && contactId) {
+                        this.logger.log(`[AI_TOOL] Opening ticket for contact ${contactId}`);
+                        toolResult = await this.supportService.createTicket(tenantId, contactId, {
+                            subject: args.subject,
+                            description: args.description,
+                            category: args.category || 'technical',
+                            priority: args.priority || 'medium'
+                        });
                     } else {
                         toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
                     }
@@ -925,6 +933,14 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                         toolResult = await this.rifaApiService.getTickets(tenantId, args.raffleId);
                     } else if (funcName === 'create_raffle_order' && tenantId) {
                         toolResult = await this.rifaApiService.createOrder(tenantId, args);
+                    } else if (funcName === 'open_ticket' && tenantId && contactId) {
+                        this.logger.log(`[AI_TOOL] Opening ticket for contact ${contactId}`);
+                        toolResult = await this.supportService.createTicket(tenantId, contactId, {
+                            subject: args.subject,
+                            description: args.description,
+                            category: args.category || 'technical',
+                            priority: args.priority || 'medium'
+                        });
                     } else {
                         toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
                     }
