@@ -264,6 +264,100 @@ export class MetaApiService {
         }
     }
 
+    /**
+     * Get recent Instagram Media (Posts, Reels)
+     */
+    async getInstagramMedia(tenantId: string) {
+        try {
+            const { accessToken: defaultToken, instagramAccessToken, instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+            
+            let pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            if (!pageId) pageId = configIbId;
+            if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
+
+            const response = await axios.get(
+                `https://graph.facebook.com/v18.0/${pageId}/media`,
+                { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count' } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[INSTAGRAM_MEDIA] Failed to fetch media: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
+
+    /**
+     * Get comments for a specific Instagram Media
+     */
+    async getInstagramComments(tenantId: string, mediaId: string) {
+        try {
+            const { accessToken: defaultToken, instagramAccessToken } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+
+            const response = await axios.get(
+                `https://graph.facebook.com/v18.0/${mediaId}/comments`,
+                { params: { access_token: accessToken, fields: 'id,text,timestamp,username,replies{id,text,timestamp,username}' } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[INSTAGRAM_COMMENTS] Failed to fetch comments: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
+
+    /**
+     * Reply to an Instagram Comment
+     */
+    async replyToInstagramComment(tenantId: string, commentId: string, message: string) {
+        try {
+            const { accessToken: defaultToken, instagramAccessToken } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+
+            const response = await axios.post(
+                `https://graph.facebook.com/v18.0/${commentId}/replies`,
+                { message },
+                { params: { access_token: accessToken } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[INSTAGRAM_COMMENT_REPLY] Failed to reply: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
+
+    /**
+     * Get Instagram Insights (Account level)
+     */
+    async getInstagramInsights(tenantId: string) {
+        try {
+            const { accessToken: defaultToken, instagramAccessToken, instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+            
+            let pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            if (!pageId) pageId = configIbId;
+            if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured');
+
+            const response = await axios.get(
+                `https://graph.facebook.com/v18.0/${pageId}/insights`,
+                { params: { access_token: accessToken, metric: 'impressions,reach,profile_views', period: 'day' } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.warn(`[INSTAGRAM_INSIGHTS] Failed to fetch insights: ${detailedMsg}`);
+            // Return empty data instead of throwing to avoid breaking UI if not approved yet
+            return { data: [] };
+        }
+    }
+
     async createTemplate(tenantId: string, templateData: { name: string, category: string, language: string, bodyText: string }) {
         try {
             const { accessToken, wabaId } = await this.getCredentials(tenantId);

@@ -437,6 +437,32 @@ export class IntegrationsController {
         return this.metaApiService.testConnection(req.user.tenantId);
     }
 
+    // --- INSTAGRAM MANAGEMENT ENDPOINTS ---
+
+    @UseGuards(JwtAuthGuard)
+    @Get('instagram/media')
+    async getInstagramMedia(@Request() req) {
+        return this.metaApiService.getInstagramMedia(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('instagram/media/:mediaId/comments')
+    async getInstagramComments(@Request() req, @Param('mediaId') mediaId: string) {
+        return this.metaApiService.getInstagramComments(req.user.tenantId, mediaId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('instagram/comments/:commentId/reply')
+    async replyToInstagramComment(@Request() req, @Param('commentId') commentId: string, @Body() body: { message: string }) {
+        return this.metaApiService.replyToInstagramComment(req.user.tenantId, commentId, body.message);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('instagram/insights')
+    async getInstagramInsights(@Request() req) {
+        return this.metaApiService.getInstagramInsights(req.user.tenantId);
+    }
+
     @UseGuards(JwtAuthGuard)
     @Post('meta/templates')
     async createMetaTemplate(@Request() req, @Body() body: { name: string, category: string, language: string, bodyText: string }) {

@@ -22,7 +22,8 @@ import {
     AlertCircle,
     FileText,
     Palette,
-    MessageCircle
+    MessageCircle,
+    Instagram
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -174,6 +175,7 @@ export default function DashboardLayout({
         { name: t[lang].menu.ai, icon: <Zap size={20} />, path: '/dashboard/ai-assistant', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.whatsapp, icon: <Smartphone size={20} />, path: '/dashboard/integrations/whatsapp', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.meta, icon: <Facebook size={20} />, path: '/dashboard/integrations/meta', roles: ['superadmin', 'admin', 'user'] },
+        { name: 'Gestão Instagram', icon: <Instagram size={20} />, path: '/dashboard/instagram', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.crm, icon: <Users size={20} />, path: '/dashboard/crm', roles: ['superadmin', 'admin', 'user', 'agent'] },
         { name: t[lang].menu.teams, icon: <Users size={20} />, path: '/dashboard/teams', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.pipeline, icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },

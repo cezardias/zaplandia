@@ -409,14 +409,45 @@ export class WebhooksController {
                         for (const change of entry.changes) {
                             if (change.field === 'comments' || change.field === 'mentions') {
                                 const value = change.value;
-                                this.logger.log(`[INSTAGRAM_WEBHOOK] ${change.field} event from ${value.from?.id}`);
-                                await this.n8nService.triggerWebhook(tenantId, {
-                                    type: `instagram.${change.field}`,
-                                    from: value.from,
-                                    content: value.text,
-                                    media_id: value.media_id,
-                                    comment_id: value.id,
-                                }, null);
+                                this.logger.log(`[INSTAGRAM_WEBHOOK] ${change.field} event from ${value.from?.username || value.from?.id}`);
+
+                                const globalN8n = await this.integrationsService.getCredential(tenantId, 'N8N_WEBHOOK_URL', true);
+                                const providerConfigStr = await this.integrationsService.getCredential(tenantId, 'N8N_PROVIDER_CONFIG', true);
+                                let hasN8n = !!globalN8n;
+                                if (!hasN8n && providerConfigStr) {
+                                    try {
+                                        const config = JSON.parse(providerConfigStr);
+                                        if (config['instagram']) hasN8n = true;
+                                    } catch (e) {}
+                                }
+
+                                if (hasN8n) {
+                                    const n8nResponse = await this.n8nService.triggerWebhook(tenantId, {
+                                        type: `instagram.${change.field}`,
+                                        from: value.from,
+                                        content: value.text,
+                                        media_id: value.media?.id || value.media_id,
+                                        comment_id: value.id,
+                                        provider: 'instagram'
+                                    }, null);
+
+                                    if (n8nResponse && change.field === 'comments') {
+                                        const resBuffer = Array.isArray(n8nResponse) ? n8nResponse : [n8nResponse];
+                                        for (const r of resBuffer) {
+                                            let replyText = r.output || (typeof r.message === 'object' ? r.message.text : null) || r.textMessage || r.text || r.message;
+                                            if (replyText && typeof replyText !== 'string') replyText = JSON.stringify(replyText);
+                                            
+                                            if (replyText) {
+                                                try {
+                                                    await this.metaApiService.replyToInstagramComment(tenantId, value.id, replyText);
+                                                    this.logger.log(`[INSTAGRAM_WEBHOOK] Successfully replied to comment ${value.id}`);
+                                                } catch (e: any) {
+                                                    this.logger.error(`[INSTAGRAM_WEBHOOK] Failed to reply to comment: ${e.message}`);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
