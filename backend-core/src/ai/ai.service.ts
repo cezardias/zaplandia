@@ -295,7 +295,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const integrations = await this.integrationRepository.find({
                 where: {
                     tenantId,
-                    provider: In(['evolution', 'meta']),
+                    provider: In(['evolution', 'whatsapp', 'instagram']),
                 },
                 order: { updatedAt: 'DESC' }
             });
