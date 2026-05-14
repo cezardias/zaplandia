@@ -18,6 +18,12 @@ export class AiPrompt {
     @Column()
     tenantId: string;
 
+    @Column({ nullable: true })
+    provider: string;
+
+    @Column({ nullable: true })
+    model: string;
+
     @CreateDateColumn()
     createdAt: Date;
 

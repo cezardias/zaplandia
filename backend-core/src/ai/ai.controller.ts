@@ -221,13 +221,17 @@ export class AiController {
         // Only superadmin can see/edit Lisa's prompt
         if (req.user.role !== 'superadmin') return { content: '' };
         const prompt = await this.aiService.getPromptByName('ZAPLANDIA_HELP_CENTER_LISA');
-        return { content: prompt?.content || '' };
+        return { 
+            content: prompt?.content || '',
+            provider: prompt?.provider || 'gemini',
+            model: prompt?.model || 'gemini-1.5-flash'
+        };
     }
 
     @Post('lisa/prompt')
-    async saveLisaPrompt(@Request() req: any, @Body() body: { content: string }) {
+    async saveLisaPrompt(@Request() req: any, @Body() body: { content: string, provider?: string, model?: string }) {
         if (req.user.role !== 'superadmin') return { success: false };
-        await this.aiService.savePromptByName('ZAPLANDIA_HELP_CENTER_LISA', body.content, req.user.tenantId);
+        await this.aiService.savePromptByName('ZAPLANDIA_HELP_CENTER_LISA', body.content, req.user.tenantId, body.provider, body.model);
         return { success: true };
     }
 

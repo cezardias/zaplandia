@@ -949,6 +949,21 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         `;
 
         const finalPrompt = `${systemPrompt}\n\n${fullPrompt}`;
+        const provider = lisaPrompt?.provider || 'gemini';
+        const model = lisaPrompt?.model || 'gemini-1.5-flash';
+
+        if (provider === 'openrouter') {
+            const apiKey = await this.getOpenRouterApiKey(tenantId);
+            if (apiKey) {
+                try {
+                    return await this.callOpenRouter(model, finalPrompt, apiKey, 2048, undefined, tenantId);
+                } catch (e) {
+                    this.logger.error(`Lisa failed via OpenRouter: ${e.message}`);
+                }
+            }
+        }
+
+        // Fallback to Gemini
         return this.generateGenericResponse(tenantId, finalPrompt);
     }
 
@@ -956,12 +971,14 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         return this.aiPromptRepository.findOne({ where: { name } });
     }
 
-    async savePromptByName(name: string, content: string, tenantId: string) {
+    async savePromptByName(name: string, content: string, tenantId: string, provider?: string, model?: string) {
         let prompt = await this.aiPromptRepository.findOne({ where: { name } });
         if (prompt) {
             prompt.content = content;
+            if (provider) prompt.provider = provider;
+            if (model) prompt.model = model;
         } else {
-            prompt = this.aiPromptRepository.create({ name, content, tenantId });
+            prompt = this.aiPromptRepository.create({ name, content, tenantId, provider, model });
         }
         return this.aiPromptRepository.save(prompt);
     }
