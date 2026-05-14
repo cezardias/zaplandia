@@ -20,7 +20,8 @@ import {
     CreditCard,
     Terminal,
     HelpCircle,
-    FileText
+    FileText,
+    Palette
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
