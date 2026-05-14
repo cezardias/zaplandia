@@ -731,9 +731,18 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
     private async getPromptContent(promptId: string, tenantId: string): Promise<string | null> {
         try {
-            const prompt = await this.aiPromptRepository.findOne({
+            // Try tenant-specific first
+            let prompt = await this.aiPromptRepository.findOne({
                 where: { id: promptId, tenantId }
             });
+
+            // Fallback to global search by ID only
+            if (!prompt) {
+                prompt = await this.aiPromptRepository.findOne({
+                    where: { id: promptId }
+                });
+            }
+
             return prompt?.content || null;
         } catch (error) {
             this.logger.error(`Error fetching prompt content for ${promptId}: ${error.message}`);
