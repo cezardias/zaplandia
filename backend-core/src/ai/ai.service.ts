@@ -224,6 +224,24 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
 
     /**
+     * Generate a generic AI response for tasks not tied to a specific contact (e.g. Automation Architect)
+     */
+    async generateGenericResponse(tenantId: string, prompt: string): Promise<string | null> {
+        try {
+            const geminiKey = await this.getGeminiApiKey(tenantId);
+            if (!geminiKey) {
+                this.logger.error(`No Gemini API key for tenant ${tenantId}`);
+                return null;
+            }
+            // Use flash model for speed in generic tasks
+            return this.callGemini('gemini-1.5-flash', prompt, geminiKey, 2048, undefined, tenantId);
+        } catch (error) {
+            this.logger.error(`Error in generateGenericResponse: ${error.message}`);
+            return null;
+        }
+    }
+
+    /**
      * Generate AI response for a message
      */
     /**

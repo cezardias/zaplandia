@@ -19,6 +19,7 @@ import { TeamsModule } from './teams/teams.module';
 import { CommsModule } from './comms/comms.module';
 import { BillingModule } from './billing/billing.module';
 import { MailModule } from './mail/mail.module';
+import { AutomationsModule } from './automations/automations.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { MailModule } from './mail/mail.module';
     CommsModule,
     BillingModule,
     MailModule,
+    AutomationsModule,
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'redis',

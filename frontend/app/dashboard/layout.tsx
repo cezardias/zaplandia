@@ -4,26 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import {
-    BarChart3,
-    MessageSquare,
-    Users,
-    Zap,
-    Settings,
-    LogOut,
-    LayoutDashboard,
-    ShieldCheck,
-    HelpCircle,
-    Smartphone,
-    Facebook,
-    Menu,
-    X,
-    Terminal,
-    CreditCard,
-    AlertCircle,
-    FileText,
-    Palette,
     MessageCircle,
-    Instagram
+    Instagram,
+    Cpu
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -68,6 +51,7 @@ export default function DashboardLayout({
                 settings: 'Configurações',
                 payments: 'Pagamentos',
                 developer: 'Desenvolvedor',
+                automations: 'Automações n8n',
                 help: 'Central de Ajuda',
                 terms: 'Termos de Uso'
             },
@@ -90,6 +74,7 @@ export default function DashboardLayout({
                 settings: 'Settings',
                 payments: 'Payments',
                 developer: 'Developer',
+                automations: 'n8n Automations',
                 help: 'Help Center',
                 terms: 'Terms of Use'
             },
@@ -112,6 +97,7 @@ export default function DashboardLayout({
                 settings: 'Configurações',
                 payments: 'Pagamentos',
                 developer: 'Programador',
+                automations: 'Automações n8n',
                 help: 'Central de Ajuda',
                 terms: 'Termos de Uso'
             },
@@ -134,6 +120,7 @@ export default function DashboardLayout({
                 settings: 'Impostazioni',
                 payments: 'Pagamenti',
                 developer: 'Sviluppatore',
+                automations: 'Automazioni n8n',
                 help: 'Centro Assistenza',
                 terms: 'Termini di Utilizzo'
             },
@@ -186,6 +173,7 @@ export default function DashboardLayout({
         { name: t[lang].menu.settings, icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.payments, icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
         { name: t[lang].menu.developer, icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.automations, icon: <Cpu size={20} />, path: '/dashboard/automations', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.help, icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
         { name: t[lang].menu.terms, icon: <FileText size={20} />, path: '/dashboard/terms', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
