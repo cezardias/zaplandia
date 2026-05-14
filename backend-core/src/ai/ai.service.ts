@@ -396,24 +396,34 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     // Always add transfer_to_team tool
                     tools.push({
-                        function_declarations: [{
-                            name: "transfer_to_team",
-                            description: "Transfere o atendimento para uma equipe humana específica (Comercial, Financeiro ou Suporte).",
-                            parameters: {
-                                type: "object",
-                                properties: {
-                                    teamId: {
-                                        type: "string",
-                                        description: "O ID da equipe para transbordo (UUID)"
+                        function_declarations: [
+                            {
+                                name: "transfer_to_team",
+                                description: "Transfere o atendimento para uma equipe humana específica (Comercial, Financeiro ou Suporte). Use IMEDIATAMENTE quando o cliente pedir para falar com humano ou você identificar o departamento.",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        teamId: { type: "string", description: "O ID da equipe para transbordo (UUID)" },
+                                        reason: { type: "string", description: "Motivo da transferência" }
                                     },
-                                    reason: {
-                                        type: "string",
-                                        description: "Motivo da transferência"
-                                    }
-                                },
-                                required: ["teamId"]
+                                    required: ["teamId"]
+                                }
+                            },
+                            {
+                                name: "open_ticket",
+                                description: "Abre um chamado de suporte oficial. Use obrigatoriamente quando coletar Nome, Email e Telefone do cliente.",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        subject: { type: "string", description: "Assunto curto do chamado" },
+                                        description: { type: "string", description: "Descrição detalhada do problema ou pedido" },
+                                        category: { type: "string", description: "Categoria (technical, billing, etc)" },
+                                        priority: { type: "string", description: "Prioridade (low, medium, high, urgent)" }
+                                    },
+                                    required: ["subject", "description"]
+                                }
                             }
-                        }]
+                        ]
                     });
 
                     if (erpKey) {
