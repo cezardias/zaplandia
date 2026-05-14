@@ -42,9 +42,27 @@ export class AiService implements OnModuleInit {
     async onModuleInit() {
         this.logger.log('Initializing AiService and seeding special prompts...');
         try {
+            await this.fixAiPromptsTable();
             await this.seedDefaultPrompts();
         } catch (error) {
             this.logger.error(`Failed to seed default prompts: ${error.message}`);
+        }
+    }
+
+    private async fixAiPromptsTable() {
+        try {
+            const queryRunner = this.integrationRepository.manager.connection.createQueryRunner();
+            await queryRunner.connect();
+            this.logger.log('[DB_REPAIR] Checking ai_prompts table columns...');
+            
+            await queryRunner.query(`ALTER TABLE ai_prompts ADD COLUMN IF NOT EXISTS "provider" VARCHAR;`);
+            await queryRunner.query(`ALTER TABLE ai_prompts ADD COLUMN IF NOT EXISTS "model" VARCHAR;`);
+            await queryRunner.query(`ALTER TABLE ai_prompts ADD COLUMN IF NOT EXISTS "apiKey" VARCHAR;`);
+            
+            await queryRunner.release();
+            this.logger.log('[DB_REPAIR] ai_prompts table columns verified/added.');
+        } catch (error) {
+            this.logger.error(`[DB_REPAIR] Failed to update ai_prompts table: ${error.message}`);
         }
     }
 
