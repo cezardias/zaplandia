@@ -331,7 +331,9 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     {status.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
                     <span className="text-sm font-bold">{status.msg}</span>
                 </div>
-              {/* --- AI SECTION (UNIFIED PATTERN) --- */}
+            )}
+
+            {/* --- AI SECTION (UNIFIED PATTERN) --- */}
             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
                     <Zap className="w-5 h-5 text-yellow-500" />
