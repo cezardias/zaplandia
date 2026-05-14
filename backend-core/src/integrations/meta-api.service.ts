@@ -536,6 +536,8 @@ export class MetaApiService {
 
     private async getInstagramToken(tenantId: string): Promise<string> {
         const { accessToken: defaultToken, instagramAccessToken } = await this.getCredentials(tenantId);
-        return instagramAccessToken || defaultToken;
+        const token = instagramAccessToken || defaultToken;
+        if (!token) throw new Error('Meta/Instagram Access Token not configured.');
+        return token;
     }
 }
