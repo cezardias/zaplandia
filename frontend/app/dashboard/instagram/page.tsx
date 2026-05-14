@@ -600,8 +600,17 @@ export default function InstagramManagementPage() {
                                                     <Instagram className="w-4 h-4 text-white" />
                                                 </div>
                                                 <span className="text-sm font-bold">zaplandia_oficial</span>
-                                            </div>
-                                            <textarea 
+                                             </div>
+
+                                             {/* Carousel Tip */}
+                                             <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-start">
+                                                 <AlertCircle className="w-4 h-4 text-primary mr-2 flex-shrink-0 mt-0.5" />
+                                                 <p className="text-[10px] text-gray-300 leading-relaxed">
+                                                     <strong className="text-primary">{lang === 'en_US' ? 'Carousel Tip (2026):' : 'Dica de Carrossel (2026):'}</strong> {lang === 'en_US' ? 'Use up to 10 slides in vertical format (4:5) for maximum engagement.' : 'O ideal é usar até 10 slides, garantindo que o formato seja consistente (preferencialmente vertical 4:5).'}
+                                                 </p>
+                                             </div>
+
+                                             <textarea 
                                                 value={postCaption}
                                                 onChange={(e) => setPostCaption(e.target.value)}
                                                 placeholder={lang === 'en_US' ? 'Write a caption or add hashtags...' : 'Escreva uma legenda ou adicione hashtags...'}

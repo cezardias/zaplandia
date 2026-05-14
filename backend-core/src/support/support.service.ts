@@ -128,6 +128,44 @@ export class SupportService implements OnModuleInit {
 - **CRM**: Contatos que comentam em seus vídeos são capturados e adicionados automaticamente ao CRM para que você possa iniciar uma conversa via WhatsApp ou Direct.`,
             },
             {
+                title: 'Gestão Completa do Instagram: Posts, Comentários e Automação',
+                category: 'Instagram',
+                content: `O Zaplandia oferece controle total sobre sua presença no Instagram:
+
+1. **Gestão de Feed**:
+   - Visualize todos os seus posts recentes.
+   - Veja o engajamento (curtidas e total de comentários) em tempo real.
+   - Acesse o link direto da publicação original.
+
+2. **Criação e Publicação de Posts**:
+   - Clique em **"Criar Post"** para subir fotos do seu dispositivo.
+   - Use o formato **Vertical (4:5)** para garantir máximo alcance no feed (1080x1350px).
+   - **Carrosséis (Dica 2026)**: Use até 10 slides consistentes no mesmo formato para manter o engajamento alto.
+   - Configure **Alt Text (Acessibilidade)** e programe a publicação para datas futuras.
+   - Toggles de Privacidade: Oculte curtidas ou desative comentários em posts específicos.
+
+3. **Gestão de Comentários**:
+   - Responda comentários diretamente pelo Zaplandia.
+   - Exclua comentários indesejados ou spam em segundos.
+   - Automação: Integre com o n8n para enviar respostas automáticas baseadas em IA para comentários específicos.`,
+            },
+            {
+                title: 'Integração n8n: Webhooks Separados para Instagram',
+                category: 'Automação',
+                content: `Aumente a inteligência do seu atendimento configurando webhooks granulares:
+
+1. **Configuração**:
+   - Vá em **Configurações API > n8n**.
+   - Agora você tem campos distintos para **Instagram Inbox** e **Instagram Comments**.
+
+2. **Por que separar?**:
+   - **Instagram Inbox**: Ideal para fluxos de vendas, agendamentos e suporte direto (conversas privadas).
+   - **Instagram Comments**: Focado em engajamento público, agradecimentos automáticos e captura de leads através de comentários em posts.
+
+3. **Segurança**:
+   - O Zaplandia garante que cada evento seja roteado para o workflow correto no seu n8n, permitindo que você crie automações complexas sem misturar canais.`,
+            },
+            {
                 title: 'Manual Geral: IA e Automação de Conversas',
                 category: 'IA',
                 content: `Como a IA do Zaplandia funciona:
