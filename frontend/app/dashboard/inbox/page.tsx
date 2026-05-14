@@ -45,6 +45,7 @@ interface Contact {
     n8nEnabled?: boolean | null;
     assignedTeamId?: string | null;
     assignedUserId?: string | null;
+    metadata?: any;
 }
 
 interface Message {
