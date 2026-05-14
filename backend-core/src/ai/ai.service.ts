@@ -805,11 +805,18 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             };
 
             if (tools) {
-                // OpenRouter uses OpenAI-compatible tool format
-                payload.tools = tools.map(t => ({
-                    type: 'function',
-                    function: t.function_declarations[0]
-                }));
+                // OpenRouter/OpenAI tool format: flat list of function objects
+                payload.tools = [];
+                for (const t of tools) {
+                    if (t.function_declarations) {
+                        for (const fd of t.function_declarations) {
+                            payload.tools.push({
+                                type: 'function',
+                                function: fd
+                            });
+                        }
+                    }
+                }
             }
 
             const response = await axios.post(url, payload, {
@@ -960,8 +967,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 }
 
                 if (tools) {
+                    // Gemini format: list of objects containing lists of function_declarations
                     payload.tools = tools;
-                    this.logger.debug(`[AI_DEBUG] Sending payload with tools to ${model} (${version})`);
+                    this.logger.debug(`[AI_DEBUG] Sending payload with ${tools.reduce((acc, t) => acc + (t.function_declarations?.length || 0), 0)} functions to ${model}`);
                 }
 
                 const response = await axios.post(url, payload, {
