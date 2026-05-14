@@ -205,8 +205,8 @@ export class MetaApiService {
                 this.logger.log(`[INSTAGRAM_SEND] Using Instagram-scoped API: ${activeUrl}`);
             } else {
                 // Standard Instagram Graph API via Facebook Page
-                activeUrl = `https://graph.facebook.com/v18.0/${pageId}/messages`;
-                this.logger.log(`[INSTAGRAM_SEND] Using Facebook-scoped API: ${activeUrl} (Page: ${pageId})`);
+                activeUrl = `https://graph.facebook.com/v18.0/me/messages`;
+                this.logger.log(`[INSTAGRAM_SEND] Using Facebook-scoped API: ${activeUrl} (Implicit Page via token, was explicit IG ID: ${pageId})`);
             }
 
             this.logger.debug(`[INSTAGRAM_SEND] Payload: ${JSON.stringify(payload)}`);
