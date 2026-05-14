@@ -59,6 +59,29 @@ export class AiController {
         }
     }
 
+    @Post('list-models-preview')
+    async listModelsPreview(@Body() body: { provider: 'gemini' | 'openrouter'; key: string }) {
+        try {
+            if (body.provider === 'gemini') {
+                const response = await axios.get(
+                    `https://generativelanguage.googleapis.com/v1beta/models?key=${body.key.trim()}&pageSize=50`
+                );
+                const models = response.data?.models || [];
+                return models
+                    .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+                    .map((m: any) => ({ id: m.name, name: m.displayName || m.name }));
+            } else {
+                // OpenRouter
+                const response = await axios.get('https://openrouter.ai/api/v1/models', {
+                    headers: { 'Authorization': `Bearer ${body.key.trim()}` }
+                });
+                return response.data?.data?.map((m: any) => ({ id: m.id, name: m.name || m.id })) || [];
+            }
+        } catch (error) {
+            return { error: error.message };
+        }
+    }
+
     /**
      * DIAGNOSTIC: List all Gemini models available for this tenant's API key
      * GET /api/ai/list-models
@@ -224,14 +247,15 @@ export class AiController {
         return { 
             content: prompt?.content || '',
             provider: prompt?.provider || 'gemini',
-            model: prompt?.model || 'gemini-1.5-flash'
+            model: prompt?.model || 'gemini-1.5-flash',
+            apiKey: prompt?.apiKey || ''
         };
     }
 
     @Post('lisa/prompt')
-    async saveLisaPrompt(@Request() req: any, @Body() body: { content: string, provider?: string, model?: string }) {
+    async saveLisaPrompt(@Request() req: any, @Body() body: { content: string, provider?: string, model?: string, apiKey?: string }) {
         if (req.user.role !== 'superadmin') return { success: false };
-        await this.aiService.savePromptByName('ZAPLANDIA_HELP_CENTER_LISA', body.content, req.user.tenantId, body.provider, body.model);
+        await this.aiService.savePromptByName('ZAPLANDIA_HELP_CENTER_LISA', body.content, req.user.tenantId, body.provider, body.model, body.apiKey);
         return { success: true };
     }
 

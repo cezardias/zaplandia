@@ -951,9 +951,10 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         const finalPrompt = `${systemPrompt}\n\n${fullPrompt}`;
         const provider = lisaPrompt?.provider || 'gemini';
         const model = lisaPrompt?.model || 'gemini-1.5-flash';
+        const lisaApiKey = lisaPrompt?.apiKey;
 
         if (provider === 'openrouter') {
-            const apiKey = await this.getOpenRouterApiKey(tenantId);
+            const apiKey = lisaApiKey || await this.getOpenRouterApiKey(tenantId);
             if (apiKey) {
                 try {
                     return await this.callOpenRouter(model, finalPrompt, apiKey, 2048, undefined, tenantId);
@@ -961,9 +962,18 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                     this.logger.error(`Lisa failed via OpenRouter: ${e.message}`);
                 }
             }
+        } else if (provider === 'gemini') {
+            const apiKey = lisaApiKey || await this.getGeminiApiKey(tenantId);
+            if (apiKey) {
+                try {
+                    return await this.callGemini(model, finalPrompt, apiKey, 2048, undefined, tenantId);
+                } catch (e) {
+                    this.logger.error(`Lisa failed via Gemini: ${e.message}`);
+                }
+            }
         }
 
-        // Fallback to Gemini
+        // Fallback to Gemini with default key if everything else fails
         return this.generateGenericResponse(tenantId, finalPrompt);
     }
 
@@ -971,14 +981,15 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         return this.aiPromptRepository.findOne({ where: { name } });
     }
 
-    async savePromptByName(name: string, content: string, tenantId: string, provider?: string, model?: string) {
+    async savePromptByName(name: string, content: string, tenantId: string, provider?: string, model?: string, apiKey?: string) {
         let prompt = await this.aiPromptRepository.findOne({ where: { name } });
         if (prompt) {
             prompt.content = content;
             if (provider) prompt.provider = provider;
             if (model) prompt.model = model;
+            if (apiKey) prompt.apiKey = apiKey;
         } else {
-            prompt = this.aiPromptRepository.create({ name, content, tenantId, provider, model });
+            prompt = this.aiPromptRepository.create({ name, content, tenantId, provider, model, apiKey });
         }
         return this.aiPromptRepository.save(prompt);
     }

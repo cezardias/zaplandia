@@ -11,6 +11,9 @@ export default function AiTrainingPage() {
     const [lisaPrompt, setLisaPrompt] = useState('');
     const [lisaProvider, setLisaProvider] = useState<'gemini' | 'openrouter'>('gemini');
     const [lisaModel, setLisaModel] = useState('gemini-1.5-flash');
+    const [lisaKey, setLisaKey] = useState('');
+    const [availableModels, setAvailableModels] = useState<{ id: string, name: string }[]>([]);
+    const [isFetchingModels, setIsFetchingModels] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -26,7 +29,10 @@ export default function AiTrainingPage() {
             error: 'Erro ao salvar configurações.',
             tip: 'Dica: Defina o tom de voz (amigável/objetiva) e as principais dúvidas que ela deve saber responder sobre o CRM.',
             providerLabel: 'Provedor de IA',
-            modelLabel: 'Modelo da Lisa'
+            modelLabel: 'Modelo da Lisa',
+            apiKeyLabel: 'Chave de API (Admin)',
+            fetchModels: 'Carregar Modelos',
+            fetching: 'Buscando...'
         }
     };
 
@@ -46,11 +52,40 @@ export default function AiTrainingPage() {
                 setLisaPrompt(data.content);
                 if (data.provider) setLisaProvider(data.provider);
                 if (data.model) setLisaModel(data.model);
+                if (data.apiKey) setLisaKey(data.apiKey);
+                
+                // If we have a key, fetch models
+                if (data.apiKey && data.provider) {
+                    handleFetchModels(data.provider, data.apiKey);
+                }
             }
         } catch (err) {
             console.error('Error fetching Lisa prompt:', err);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleFetchModels = async (provider: string, key: string) => {
+        if (!key) return;
+        setIsFetchingModels(true);
+        try {
+            const res = await fetch('/api/ai/list-models-preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ provider, key })
+            });
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setAvailableModels(data);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar modelos:', err);
+        } finally {
+            setIsFetchingModels(false);
         }
     };
 
@@ -66,7 +101,8 @@ export default function AiTrainingPage() {
                 body: JSON.stringify({ 
                     content: lisaPrompt,
                     provider: lisaProvider,
-                    model: lisaModel
+                    model: lisaModel,
+                    apiKey: lisaKey
                 })
             });
             if (res.ok) {
@@ -110,7 +146,40 @@ export default function AiTrainingPage() {
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">{tl.modelLabel}</label>
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">{tl.apiKeyLabel}</label>
+                                <div className="flex space-x-2">
+                                    <input
+                                        type="password"
+                                        value={lisaKey}
+                                        onChange={(e) => setLisaKey(e.target.value)}
+                                        placeholder="Insira a API Key"
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-white focus:border-primary outline-none transition"
+                                    />
+                                    <button
+                                        onClick={() => handleFetchModels(lisaProvider, lisaKey)}
+                                        disabled={isFetchingModels || !lisaKey}
+                                        className="bg-white/5 hover:bg-white/10 px-4 rounded-2xl text-xs font-bold transition border border-white/10 disabled:opacity-50"
+                                    >
+                                        {isFetchingModels ? <Loader2 className="w-4 h-4 animate-spin" /> : tl.fetchModels}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">{tl.modelLabel}</label>
+                            {availableModels.length > 0 ? (
+                                <select
+                                    value={lisaModel}
+                                    onChange={(e) => setLisaModel(e.target.value)}
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-white focus:border-primary outline-none transition"
+                                >
+                                    <option value="">Selecione um modelo...</option>
+                                    {availableModels.map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                                </select>
+                            ) : (
                                 <input
                                     type="text"
                                     value={lisaModel}
@@ -118,7 +187,7 @@ export default function AiTrainingPage() {
                                     placeholder="Ex: gemini-1.5-pro ou anthropic/claude-3-opus"
                                     className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-white focus:border-primary outline-none transition"
                                 />
-                            </div>
+                            )}
                         </div>
                     </div>
 

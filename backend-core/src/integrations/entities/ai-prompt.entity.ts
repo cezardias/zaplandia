@@ -24,6 +24,9 @@ export class AiPrompt {
     @Column({ nullable: true })
     model: string;
 
+    @Column({ nullable: true })
+    apiKey: string;
+
     @CreateDateColumn()
     createdAt: Date;
 
