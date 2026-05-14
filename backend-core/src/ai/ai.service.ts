@@ -1011,7 +1011,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         return null;
     }
 
-    async generateLisaResponse(tenantId: string, fullPrompt: string) {
+    async generateLisaResponse(tenantId: string, fullPrompt: string, contactId?: string) {
         // Find Lisa's specialized prompt - prioritizing current tenant
         const lisaPrompt = await this.aiPromptRepository.findOne({
             where: { name: 'ZAPLANDIA_HELP_CENTER_LISA', tenantId }
@@ -1027,6 +1027,39 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         DICA: Se a dúvida for complexa, sugira abrir um chamado de suporte.
         `;
 
+        let tools: any[] = [];
+        // Add default tools for Lisa (Transfer and Tickets)
+        tools.push({
+            function_declarations: [
+                {
+                    name: "transfer_to_team",
+                    description: "Transfere a conversa para uma equipe humana específica (comercial, suporte, financeiro, etc). Use IMEDIATAMENTE quando identificar o departamento.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            teamId: { type: "string", description: "O ID da equipe para transbordo (UUID)" },
+                            reason: { type: "string", description: "Motivo da transferência" }
+                        },
+                        required: ["teamId"]
+                    }
+                },
+                {
+                    name: "open_ticket",
+                    description: "Abre um chamado de suporte no sistema. Use quando o cliente fornecer Nome, Email, Telefone e Descrição.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            subject: { type: "string", description: "Assunto do chamado" },
+                            description: { type: "string", description: "Descrição detalhada do problema" },
+                            category: { type: "string", description: "Categoria (technical, billing, etc)" },
+                            priority: { type: "string", description: "Prioridade (low, medium, high, urgent)" }
+                        },
+                        required: ["subject", "description"]
+                    }
+                }
+            ]
+        });
+
         const finalPrompt = `${systemPrompt}\n\n${fullPrompt}`;
         const provider = lisaPrompt?.provider || 'gemini';
         const model = lisaPrompt?.model || 'gemini-1.5-flash';
@@ -1036,7 +1069,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
             const apiKey = lisaApiKey || await this.getOpenRouterApiKey(tenantId);
             if (apiKey) {
                 try {
-                    return await this.callOpenRouter(model, finalPrompt, apiKey, 2048, undefined, tenantId);
+                    return await this.callOpenRouter(model, finalPrompt, apiKey, 2048, tools, tenantId, contactId);
                 } catch (e) {
                     this.logger.error(`Lisa failed via OpenRouter: ${e.message}`);
                 }
@@ -1045,7 +1078,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
             const apiKey = lisaApiKey || await this.getGeminiApiKey(tenantId);
             if (apiKey) {
                 try {
-                    return await this.callGemini(model, finalPrompt, apiKey, 2048, undefined, tenantId);
+                    return await this.callGemini(model, finalPrompt, apiKey, 2048, tools, tenantId, contactId);
                 } catch (e) {
                     this.logger.error(`Lisa failed via Gemini: ${e.message}`);
                 }
@@ -1074,5 +1107,57 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
             prompt = this.aiPromptRepository.create({ name, content, tenantId, provider, model, apiKey });
         }
         return this.aiPromptRepository.save(prompt);
+    }
+
+    async getOrCreateContactForLisa(tenantId: string, user: any) {
+        let contact = await this.contactRepository.findOne({ 
+            where: { tenantId, externalId: user.email } 
+        });
+
+        if (!contact) {
+            contact = this.contactRepository.create({
+                tenantId,
+                name: user.name || 'User Lisa Chat',
+                externalId: user.email,
+                provider: 'site',
+                stage: 'NOVO'
+            });
+            await this.contactRepository.save(contact);
+        }
+        return contact;
+    }
+
+    async recordLisaInteraction(tenantId: string, contactId: string, userMsg: string, lisaResponse: string) {
+        // Record user message
+        const m1 = this.messageRepository.create({
+            tenantId,
+            contactId,
+            content: userMsg,
+            direction: 'inbound',
+            provider: 'site'
+        });
+        await this.messageRepository.save(m1);
+
+        // Record Lisa response
+        const m2 = this.messageRepository.create({
+            tenantId,
+            contactId,
+            content: lisaResponse,
+            direction: 'outbound',
+            provider: 'site'
+        });
+        await this.messageRepository.save(m2);
+
+        // Update contact lastMessage
+        await this.contactRepository.update(contactId, {
+            lastMessage: lisaResponse,
+            updatedAt: new Date()
+        });
+
+        // Emit new message event so Omni Inbox refreshes
+        this.communicationService.emitToTenant(tenantId, 'new_message', {
+            ...m2,
+            contact: { id: contactId, name: 'User Lisa Chat', provider: 'site' }
+        });
     }
 }

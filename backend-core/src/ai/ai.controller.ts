@@ -234,8 +234,17 @@ export class AiController {
 
     @Post('lisa/chat')
     async lisaChat(@Request() req: any, @Body() body: { message: string, history: any[] }) {
+        // 1. Ensure a contact exists for this Lisa session (based on user info)
+        const contact = await this.aiService.getOrCreateContactForLisa(req.user.tenantId, req.user);
+        
         const fullPrompt = `Histórico:\n${body.history.map(h => `${h.role}: ${h.content}`).join('\n')}\nUser: ${body.message}`;
-        const response = await this.aiService.generateLisaResponse(req.user.tenantId, fullPrompt);
+        const response = await this.aiService.generateLisaResponse(req.user.tenantId, fullPrompt, contact?.id);
+        
+        // 2. Record the message in the CRM so it shows up in Omni Inbox if transferred
+        if (contact) {
+            await this.aiService.recordLisaInteraction(req.user.tenantId, contact.id, body.message, response);
+        }
+        
         return { content: response };
     }
 
