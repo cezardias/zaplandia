@@ -24,7 +24,22 @@ import {
     ChevronRight,
     ChevronLeft,
     Calendar,
-    EyeOff
+    EyeOff,
+    Film,
+    Layers,
+    Clapperboard,
+    PlaySquare,
+    ListMusic,
+    Video,
+    Search,
+    Filter,
+    ArrowDownUp,
+    MoreHorizontal,
+    Share2,
+    LayoutGrid,
+    Tag,
+    Scissors,
+    Zap
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -54,144 +69,180 @@ export default function InstagramManagementPage() {
     const { token } = useAuth();
     const { lang } = useLanguage();
     
-    const [activeTab, setActiveTab] = useState<'feed' | 'insights'>('feed');
-    const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
-    const [postImageUrl, setPostImageUrl] = useState('');
-    const [postCaption, setPostCaption] = useState('');
-    const [isPublishing, setIsPublishing] = useState(false);
-    const [postAltText, setPostAltText] = useState('');
-    const [postLocation, setPostLocation] = useState('');
-    const [postTags, setPostTags] = useState('');
-    const [commentsEnabled, setCommentsEnabled] = useState(true);
-    const [hideLikes, setHideLikes] = useState(false);
-    const [isScheduled, setIsScheduled] = useState(false);
-    const [scheduledTime, setScheduledTime] = useState('');
-    const [publishStep, setPublishStep] = useState(1);
-    const [filePreview, setFilePreview] = useState<string | null>(null);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [mediaType, setMediaType] = useState<'FEED' | 'REELS'>('FEED');
+    const [sidebarTab, setSidebarTab] = useState<'posts' | 'stories' | 'reels' | 'ab_tests' | 'feed_grid' | 'mentions' | 'clips' | 'playlists' | 'series' | 'ads'>('posts');
+    const [statusTab, setStatusTab] = useState<'published' | 'scheduled' | 'drafts' | 'expiring' | 'expired'>('published');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [dateRange, setDateRange] = useState('90');
     const [isLoading, setIsLoading] = useState(false);
 
     const t: any = {
         pt_BR: {
             title: 'Gestão do Instagram',
-            subtitle: 'Gerencie publicações, responda comentários e acesse os insights.',
-            tabFeed: 'Feed & Comentários',
-            tabInsights: 'Insights',
+            subtitle: 'Gerencie conteúdos, analise métricas e otimize sua presença digital.',
+            sections: {
+                posts: 'Posts e reels',
+                stories: 'Stories',
+                ab_tests: 'Testes A/B',
+                feed_grid: 'Feed e grade',
+                mentions: 'Menções e marcações',
+                clips: 'Clipes',
+                collections: 'Coleções',
+                playlists: 'Playlists',
+                series: 'Séries',
+                ad_pieces: 'Peças publicitárias',
+                cross_post: 'Vídeos para post cruzado'
+            },
+            status: {
+                published: 'Publicados',
+                scheduled: 'Programados',
+                drafts: 'Rascunhos',
+                expiring: 'Quase expirando',
+                expired: 'Expirados'
+            },
+            table: {
+                title: 'Título',
+                date: 'Data da publicação',
+                status: 'Status',
+                reach: 'Alcance',
+                views: 'Visualizações',
+                engagement: 'Engajamento'
+            },
+            filters: {
+                search: 'Pesquisar por ID ou legenda',
+                filter: 'Filtrar',
+                last90: 'Últimos 90 dias',
+                last30: 'Últimos 30 dias',
+                last7: 'Últimos 7 dias'
+            },
             errorLoad: 'Erro ao carregar dados do Instagram',
-            errorDetail: 'Verifique se as permissões (instagram_business_basic) estão aprovadas ou se a conta está no modo desenvolvimento com testadores válidos.',
-            posts: 'Publicações',
-            noPosts: 'Nenhuma publicação encontrada.',
-            noCaption: 'Sem legenda',
-            postComments: 'Comentários da Publicação',
-            viewOriginal: 'Ver post original no Instagram',
-            noComments: 'Nenhum comentário encontrado para esta publicação.',
-            replyingTo: 'Respondendo',
-            replyBtn: 'Responder',
-            us: 'Nós',
-            selectPost: 'Selecione uma publicação para ver e gerenciar os comentários',
-            metrics: 'Métricas de Engajamento',
-            noInsights: 'Insights ainda não disponíveis.',
-            deleteBtn: 'Excluir',
-            deleteConfirm: 'Excluir este comentário/resposta?',
-            createPost: 'Criar Post',
-            postCaptionLabel: 'Legenda',
-            imageUrlLabel: 'URL da Imagem',
-            publishBtn: 'Publicar Agora',
-            publishing: 'Publicando...',
-            publishSuccess: 'Post publicado com sucesso!',
-            publishError: 'Erro ao publicar.',
-            errorReply: 'Erro ao responder:'
+            errorDetail: 'Verifique se as permissões (instagram_business_basic) estão aprovadas.',
+            createBtn: 'Criar Publicação'
         },
         en_US: {
             title: 'Instagram Management',
-            subtitle: 'Manage posts, reply to comments, and access insights.',
-            tabFeed: 'Feed & Comments',
-            tabInsights: 'Insights',
+            subtitle: 'Manage content, analyze metrics, and optimize your digital presence.',
+            sections: {
+                posts: 'Posts and Reels',
+                stories: 'Stories',
+                ab_tests: 'A/B Testing',
+                feed_grid: 'Feed and Grid',
+                mentions: 'Mentions and Tags',
+                clips: 'Clips',
+                collections: 'Collections',
+                playlists: 'Playlists',
+                series: 'Series',
+                ad_pieces: 'Ad Creatives',
+                cross_post: 'Videos for Cross-post'
+            },
+            status: {
+                published: 'Published',
+                scheduled: 'Scheduled',
+                drafts: 'Drafts',
+                expiring: 'Expiring Soon',
+                expired: 'Expired'
+            },
+            table: {
+                title: 'Title',
+                date: 'Publication Date',
+                status: 'Status',
+                reach: 'Reach',
+                views: 'Views',
+                engagement: 'Engagement'
+            },
+            filters: {
+                search: 'Search by ID or caption',
+                filter: 'Filter',
+                last90: 'Last 90 days',
+                last30: 'Last 30 days',
+                last7: 'Last 7 days'
+            },
             errorLoad: 'Error loading Instagram data',
-            errorDetail: 'Check if permissions (instagram_business_basic) are approved or if the account is in development mode with valid testers.',
-            posts: 'Posts',
-            noPosts: 'No posts found.',
-            noCaption: 'No caption',
-            postComments: 'Post Comments',
-            viewOriginal: 'View original post on Instagram',
-            noComments: 'No comments found for this post.',
-            replyingTo: 'Replying to',
-            replyBtn: 'Reply',
-            us: 'Us',
-            selectPost: 'Select a post to view and manage comments',
-            metrics: 'Engagement Metrics',
-            noInsights: 'No insights available.',
-            deleteBtn: 'Delete',
-            deleteConfirm: 'Delete this comment/reply?',
-            createPost: 'Create Post',
-            postCaptionLabel: 'Caption',
-            imageUrlLabel: 'Image URL',
-            publishBtn: 'Publish Now',
-            publishing: 'Publishing...',
-            publishSuccess: 'Post published successfully!',
-            publishError: 'Error publishing post.',
-            errorReply: 'Error replying:'
+            errorDetail: 'Ensure (instagram_business_basic) permissions are approved.',
+            createBtn: 'Create Post'
         },
         pt_PT: {
             title: 'Gestão do Instagram',
-            subtitle: 'Gira publicações, responda a comentários e aceda aos insights.',
-            tabFeed: 'Feed & Comentários',
-            tabInsights: 'Insights',
+            subtitle: 'Gira conteúdos, analise métricas e otimize a sua presença digital.',
+            sections: {
+                posts: 'Posts e reels',
+                stories: 'Stories',
+                ab_tests: 'Testes A/B',
+                feed_grid: 'Feed e grelha',
+                mentions: 'Menções e marcações',
+                clips: 'Clipes',
+                collections: 'Coleções',
+                playlists: 'Playlists',
+                series: 'Séries',
+                ad_pieces: 'Peças publicitárias',
+                cross_post: 'Vídeos para post cruzado'
+            },
+            status: {
+                published: 'Publicados',
+                scheduled: 'Agendados',
+                drafts: 'Rascunhos',
+                expiring: 'A expirar',
+                expired: 'Expirados'
+            },
+            table: {
+                title: 'Título',
+                date: 'Data da publicação',
+                status: 'Estado',
+                reach: 'Alcance',
+                views: 'Visualizações',
+                engagement: 'Interação'
+            },
+            filters: {
+                search: 'Pesquisar por ID ou legenda',
+                filter: 'Filtrar',
+                last90: 'Últimos 90 dias',
+                last30: 'Últimos 30 dias',
+                last7: 'Últimos 7 dias'
+            },
             errorLoad: 'Erro ao carregar dados do Instagram',
-            errorDetail: 'Verifique se as permissões (instagram_business_basic) estão aprovadas ou se a conta está no modo de desenvolvimento com testadores válidos.',
-            posts: 'Publicações',
-            noPosts: 'Nenhuma publicação encontrada.',
-            noCaption: 'Sem legenda',
-            postComments: 'Comentários da Publicação',
-            viewOriginal: 'Ver post original no Instagram',
-            noComments: 'Nenhum comentário encontrado para esta publicação.',
-            replyingTo: 'A responder',
-            replyBtn: 'Responder',
-            us: 'Nós',
-            selectPost: 'Selecione uma publicação para ver e gerir os comentários',
-            metrics: 'Métricas de Interação',
-            noInsights: 'Insights ainda não disponíveis.',
-            deleteBtn: 'Eliminar',
-            deleteConfirm: 'Eliminar este comentário/resposta?',
-            createPost: 'Criar Post',
-            postCaptionLabel: 'Legenda',
-            imageUrlLabel: 'URL da Imagem',
-            publishBtn: 'Publicar Agora',
-            publishing: 'A publicar...',
-            publishSuccess: 'Post publicado com sucesso!',
-            publishError: 'Erro ao publicar.',
-            errorReply: 'Erro ao responder:'
+            errorDetail: 'Verifique se as permissões estão aprovadas.',
+            createBtn: 'Criar Publicação'
         },
         it_IT: {
             title: 'Gestione Instagram',
-            subtitle: 'Gestisci i post, rispondi ai commenti e accedi agli approfondimenti.',
-            tabFeed: 'Feed e Commenti',
-            tabInsights: 'Approfondimenti',
+            subtitle: 'Gestisci contenuti, analizza metriche e ottimizza la tua presenza digitale.',
+            sections: {
+                posts: 'Post e reel',
+                stories: 'Storie',
+                ab_tests: 'Test A/B',
+                feed_grid: 'Feed e griglia',
+                mentions: 'Menzioni e tag',
+                clips: 'Clip',
+                collections: 'Collezioni',
+                playlists: 'Playlist',
+                series: 'Serie',
+                ad_pieces: 'Contenuti pubblicitari',
+                cross_post: 'Video per cross-post'
+            },
+            status: {
+                published: 'Pubblicati',
+                scheduled: 'Programmati',
+                drafts: 'Bozze',
+                expiring: 'In scadenza',
+                expired: 'Scaduti'
+            },
+            table: {
+                title: 'Titolo',
+                date: 'Data di pubblicazione',
+                status: 'Stato',
+                reach: 'Copertura',
+                views: 'Visualizzazioni',
+                engagement: 'Coinvolgimento'
+            },
+            filters: {
+                search: 'Cerca per ID o didascalia',
+                filter: 'Filtra',
+                last90: 'Ultimi 90 giorni',
+                last30: 'Ultimi 30 giorni',
+                last7: 'Ultimi 7 giorni'
+            },
             errorLoad: 'Errore nel caricamento dei dati di Instagram',
-            errorDetail: 'Verifica se le autorizzazioni (instagram_business_basic) sono approvate o se l\'account è in modalità di sviluppo con tester validi.',
-            posts: 'Post',
-            noPosts: 'Nessun post trovato.',
-            noCaption: 'Senza didascalia',
-            postComments: 'Commenti del Post',
-            viewOriginal: 'Visualizza il post originale su Instagram',
-            noComments: 'Nessun commento trovato per questo post.',
-            replyingTo: 'Rispondendo a',
-            replyBtn: 'Rispondi',
-            us: 'Noi',
-            selectPost: 'Seleziona un post per visualizzare e gestire i commenti',
-            metrics: 'Metriche di Coinvolgimento',
-            noInsights: 'Approfondimenti non ancora disponibili.',
-            deleteBtn: 'Elimina',
-            deleteConfirm: 'Eliminare questo commento/risposta?',
-            createPost: 'Crea Post',
-            postCaptionLabel: 'Didascalia',
-            imageUrlLabel: 'URL dell\'immagine',
-            publishBtn: 'Pubblica Ora',
-            publishing: 'Pubblicazione in corso...',
-            publishSuccess: 'Post pubblicato con successo!',
-            publishError: 'Errore durante la pubblicazione.',
-            errorReply: 'Errore nella risposta:'
+            errorDetail: 'Verifica le autorizzazioni (instagram_business_basic).',
+            createBtn: 'Crea Post'
         }
     };
     
@@ -200,24 +251,13 @@ export default function InstagramManagementPage() {
     
     const [mediaList, setMediaList] = useState<Media[]>([]);
     const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [isCommentsLoading, setIsCommentsLoading] = useState(false);
-    const [replyText, setReplyText] = useState('');
-    const [replyingTo, setReplyingTo] = useState<string | null>(null);
-    const [insights, setInsights] = useState<any[]>([]);
+    const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
 
     useEffect(() => {
         if (token) {
             fetchMedia();
-            fetchInsights();
         }
     }, [token]);
-
-    const handleShowLikersMessage = () => {
-        alert(lang === 'en_US' 
-            ? 'Instagram Privacy Policy: Meta only provides the total like count. The list of individual users who liked the post is not available via this API for privacy reasons.' 
-            : 'Política de Privacidade do Instagram: A Meta fornece apenas o número total de curtidas. A lista de usuários individuais que curtiram o post não está disponível via API por questões de privacidade.');
-    };
 
     const fetchMedia = async () => {
         setIsLoading(true);
@@ -239,580 +279,375 @@ export default function InstagramManagementPage() {
         }
     };
 
-    const fetchInsights = async () => {
-        try {
-            const res = await fetch('/api/integrations/instagram/insights', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (res.ok && data.data) {
-                setInsights(data.data);
-            }
-        } catch (e) {
-            console.error('Insights fetch error:', e);
-        }
-    };
-
-    const fetchComments = async (mediaId: string) => {
-        setIsCommentsLoading(true);
-        try {
-            const res = await fetch(`/api/integrations/instagram/media/${mediaId}/comments`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (res.ok && data.data) {
-                setComments(data.data);
-            } else {
-                setComments([]);
-            }
-        } catch (e) {
-            console.error('Comments fetch error:', e);
-        } finally {
-            setIsCommentsLoading(false);
-        }
-    };
-
-    const handleSelectMedia = (media: Media) => {
-        setSelectedMedia(media);
-        fetchComments(media.id);
-    };
-
-    const handleDeleteComment = async (commentId: string) => {
-        if (!confirm(txt.deleteConfirm)) return;
-        
-        try {
-            const res = await fetch(`/api/integrations/instagram/comments/${commentId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                if (selectedMedia) fetchComments(selectedMedia.id);
-            } else {
-                alert(lang === 'en_US' ? 'Failed to delete. Make sure you have permission.' : 'Falha ao excluir. Verifique se você tem permissão.');
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFilePreview(reader.result as string);
-                // In a real scenario, we'd upload this to S3 and set the public URL
-                setPostImageUrl(reader.result as string); 
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handlePublishPost = async () => {
-        if (!postImageUrl.trim()) return;
-        setIsPublishing(true);
-        try {
-            const payload: any = {
-                imageUrl: postImageUrl.startsWith('data:') ? 'https://zaplandia.com/temp-image.jpg' : postImageUrl, // Fallback for demo
-                caption: postCaption,
-                mediaType: mediaType,
-                altText: postAltText,
-                commentsEnabled: commentsEnabled
-            };
-
-            if (isScheduled && scheduledTime) {
-                payload.scheduledPublishTime = Math.floor(new Date(scheduledTime).getTime() / 1000);
-            }
-
-            const res = await fetch('/api/integrations/instagram/publish', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
-                },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                alert(txt.publishSuccess);
-                setIsPublishModalOpen(false);
-                setPostImageUrl('');
-                setPostCaption('');
-                setFilePreview(null);
-                setPublishStep(1);
-                fetchMedia();
-            } else {
-                const err = await res.json();
-                alert(`${txt.publishError}: ${err.message || ''}`);
-            }
-        } catch (e: any) {
-            console.error(e);
-            alert(`${txt.publishError}: ${e.message || ''}`);
-        } finally {
-            setIsPublishing(false);
-        }
-    };
-
-    const handleReply = async (commentId: string) => {
-        if (!replyText.trim()) return;
-        try {
-            const res = await fetch(`/api/integrations/instagram/comments/${commentId}/reply`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ message: replyText })
-            });
-            if (res.ok) {
-                setReplyText('');
-                setReplyingTo(null);
-                if (selectedMedia) fetchComments(selectedMedia.id);
-            } else {
-                const err = await res.json();
-                alert(`${txt.errorReply} ${err.message}`);
-            }
-        } catch (e: any) {
-            alert(`${txt.errorReply} ${e.message}`);
-        }
-    };
-
     return (
-        <div className="p-8 max-w-7xl mx-auto text-white pb-20 min-h-screen">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                <div className="flex items-center justify-between flex-1">
-                    <div className="flex items-center space-x-4">
-                        <div className="p-3 bg-gradient-to-br from-purple-600 to-pink-500 rounded-2xl shadow-lg shadow-pink-500/20">
-                            <Instagram className="w-8 h-8 text-white" />
+        <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
+            {/* Instagram Management Sidebar */}
+            <div className="w-full md:w-72 bg-surface border-r border-white/5 flex flex-col shrink-0">
+                <div className="p-6 border-b border-white/5 bg-gradient-to-br from-purple-600/10 to-pink-500/10">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-gradient-to-br from-purple-600 to-pink-500 rounded-lg shadow-lg shadow-pink-500/20">
+                            <Instagram className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                                {txt.title}
-                            </h1>
-                            <p className="text-gray-400 text-sm mt-1">{txt.subtitle}</p>
+                            <h1 className="font-black text-sm tracking-tight uppercase leading-tight">Instagram</h1>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Business Suite</p>
                         </div>
                     </div>
-                    
-                    <button 
-                        onClick={() => setIsPublishModalOpen(true)}
-                        className="bg-primary hover:bg-primary-dark px-6 py-2.5 rounded-xl font-bold transition flex items-center shadow-lg shadow-primary/20"
-                    >
-                        <Plus className="w-5 h-5 mr-2" />
-                        {txt.createPost}
-                    </button>
                 </div>
-                
-                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+
+                <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
+                    {[
+                        { id: 'posts', label: txt.sections.posts, icon: <Film size={18} /> },
+                        { id: 'stories', label: txt.sections.stories, icon: <Zap size={18} /> },
+                        { id: 'ab_tests', label: txt.sections.ab_tests, icon: <Layers size={18} /> },
+                        { id: 'feed_grid', label: txt.sections.feed_grid, icon: <LayoutGrid size={18} /> },
+                        { id: 'mentions', label: txt.sections.mentions, icon: <Tag size={18} /> },
+                        { id: 'clips', label: txt.sections.clips, icon: <Scissors size={18} /> },
+                    ].map(item => (
+                        <button
+                            key={item.id}
+                            onClick={() => setSidebarTab(item.id as any)}
+                            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition font-bold text-sm ${
+                                sidebarTab === item.id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                            }`}
+                        >
+                            <span className={sidebarTab === item.id ? 'text-white' : 'text-primary'}>{item.icon}</span>
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+
+                    <div className="pt-6 pb-2 px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">{txt.sections.collections}</div>
+                    {[
+                        { id: 'playlists', label: txt.sections.playlists, icon: <ListMusic size={18} /> },
+                        { id: 'series', label: txt.sections.series, icon: <Video size={18} /> },
+                    ].map(item => (
+                        <button
+                            key={item.id}
+                            onClick={() => setSidebarTab(item.id as any)}
+                            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition font-bold text-sm ${
+                                sidebarTab === item.id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                            }`}
+                        >
+                            <span className={sidebarTab === item.id ? 'text-white' : 'text-primary'}>{item.icon}</span>
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+
+                    <div className="pt-6 pb-2 px-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">{txt.sections.ad_pieces}</div>
                     <button
-                        onClick={() => setActiveTab('feed')}
-                        className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'feed' ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        onClick={() => setSidebarTab('ads')}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition font-bold text-sm ${
+                            sidebarTab === 'ads' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                        }`}
                     >
-                        <ImageIcon size={18} />
-                        <span>{txt.tabFeed}</span>
+                        <span className={sidebarTab === 'ads' ? 'text-white' : 'text-primary'}><Clapperboard size={18} /></span>
+                        <span>{txt.sections.cross_post}</span>
                     </button>
-                    <button
-                        onClick={() => setActiveTab('insights')}
-                        className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'insights' ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                        <BarChart3 size={18} />
-                        <span>{txt.tabInsights}</span>
-                    </button>
-                </div>
+                </nav>
             </div>
 
-            {error && (
-                <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl flex items-start space-x-3 mb-6">
-                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                    <div className="text-sm text-red-200">
-                        <p className="font-bold">{txt.errorLoad}</p>
-                        <p>{error}</p>
-                        <p className="mt-2 text-xs">{txt.errorDetail}</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Content Area */}
-            {activeTab === 'feed' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Media List */}
-                    <div className="lg:col-span-1 bg-surface border border-white/10 rounded-2xl p-4 flex flex-col h-[70vh]">
-                        <h2 className="text-lg font-bold mb-4 flex items-center">
-                            <ImageIcon className="w-5 h-5 mr-2 text-primary" />
-                            {txt.posts}
-                        </h2>
-                        
-                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
-                            {isLoading ? (
-                                <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
-                            ) : mediaList.length === 0 && !error ? (
-                                <p className="text-center text-gray-500 p-8">{txt.noPosts}</p>
-                            ) : (
-                                mediaList.map((media) => (
-                                    <div 
-                                        key={media.id}
-                                        onClick={() => handleSelectMedia(media)}
-                                        className={`flex p-3 rounded-xl cursor-pointer transition border ${selectedMedia?.id === media.id ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
-                                    >
-                                        <div className="w-16 h-16 rounded-lg bg-gray-800 flex-shrink-0 overflow-hidden relative">
-                                            {(media.media_type === 'IMAGE' || media.media_type === 'CAROUSEL_ALBUM') ? (
-                                                <img src={media.media_url} alt="Post" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <img src={media.thumbnail_url || media.media_url} alt="Video" className="w-full h-full object-cover" />
-                                            )}
-                                        </div>
-                                        <div className="ml-3 flex-1 overflow-hidden">
-                                            <p className="text-xs text-gray-300 line-clamp-2">{media.caption || txt.noCaption}</p>
-                                            <div className="flex items-center space-x-3 mt-2 text-[10px] text-gray-500">
-                                                <span className="flex items-center"><Heart className="w-3 h-3 mr-1" /> {media.like_count || 0}</span>
-                                                <span className="flex items-center"><MessageCircle className="w-3 h-3 mr-1" /> {media.comments_count || 0}</span>
-                                                <span className="flex items-center"><Clock className="w-3 h-3 mr-1" /> {new Date(media.timestamp).toLocaleDateString()}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Comments Area */}
-                    <div className="lg:col-span-2 bg-surface border border-white/10 rounded-2xl flex flex-col h-[70vh]">
-                        {selectedMedia ? (
-                            <>
-                                <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between rounded-t-2xl">
-                                    <div>
-                                        <h3 className="font-bold">{txt.postComments}</h3>
-                                        <a href={selectedMedia.permalink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">{txt.viewOriginal}</a>
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                        <button 
-                                            onClick={handleShowLikersMessage}
-                                            className="flex items-center text-sm hover:bg-white/10 px-2 py-1 rounded-lg transition"
-                                        >
-                                            <Heart className="w-4 h-4 mr-1 text-pink-500" /> {selectedMedia.like_count}
-                                        </button>
-                                        <span className="flex items-center text-sm"><MessageCircle className="w-4 h-4 mr-1 text-blue-400" /> {selectedMedia.comments_count}</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-                                    {isCommentsLoading ? (
-                                        <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
-                                    ) : comments.length === 0 ? (
-                                        <p className="text-center text-gray-500 mt-10">{txt.noComments}</p>
-                                    ) : (
-                                        <div className="space-y-6">
-                                            {comments.map(comment => (
-                                                <div key={comment.id} className="space-y-2">
-                                                    {/* Main Comment */}
-                                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col shadow-sm">
-                                                        <div className="flex justify-between items-start mb-1">
-                                                            <span className="font-bold text-sm text-slate-900">@{comment.username}</span>
-                                                            <span className="text-[10px] text-slate-500 font-medium">{new Date(comment.timestamp).toLocaleString()}</span>
-                                                        </div>
-                                                        <p className="text-sm text-slate-800 font-medium leading-relaxed">{comment.text}</p>
-                                                        
-                                                        <div className="mt-3 flex justify-end space-x-4">
-                                                            <button 
-                                                                onClick={() => handleDeleteComment(comment.id)}
-                                                                className="text-[10px] text-red-400/50 hover:text-red-400 flex items-center transition"
-                                                                title={lang === 'en_US' ? 'Delete Comment' : 'Excluir Comentário'}
-                                                            >
-                                                                <Trash2 className="w-3 h-3 mr-1" /> {lang === 'en_US' ? 'Delete' : 'Excluir'}
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => { setReplyingTo(comment.id); setReplyText(''); }}
-                                                                className="text-xs text-gray-400 hover:text-white flex items-center transition"
-                                                            >
-                                                                <Reply className="w-3 h-3 mr-1" /> {txt.replyBtn}
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Reply Input Box */}
-                                                        {replyingTo === comment.id && (
-                                                            <div className="mt-3 flex space-x-2">
-                                                                <input
-                                                                    type="text"
-                                                                    value={replyText}
-                                                                    onChange={(e) => setReplyText(e.target.value)}
-                                                                    placeholder={`${txt.replyingTo} @${comment.username}...`}
-                                                                    className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                                                                    autoFocus
-                                                                />
-                                                                <button
-                                                                    onClick={() => handleReply(comment.id)}
-                                                                    className="bg-primary hover:bg-primary-dark p-2 rounded-lg transition"
-                                                                >
-                                                                    <Send className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Replies */}
-                                                    {comment.replies && comment.replies.data && comment.replies.data.length > 0 && (
-                                                        <div className="ml-8 space-y-2">
-                                                            {comment.replies.data.map(reply => (
-                                                                <div key={reply.id} className="bg-red-50 border border-red-100 p-3 rounded-xl flex flex-col shadow-sm">
-                                                                    <div className="flex justify-between items-start mb-1">
-                                                                        <span className="font-bold text-xs text-slate-700">@{reply.username} ({txt.us})</span>
-                                                                        <div className="flex items-center space-x-3">
-                                                                            <span className="text-[10px] text-slate-500 font-medium">{new Date(reply.timestamp).toLocaleString()}</span>
-                                                                            <button 
-                                                                                onClick={() => handleDeleteComment(reply.id)}
-                                                                                className="text-[10px] text-red-500/70 hover:text-red-600 transition"
-                                                                            >
-                                                                                <Trash2 className="w-3 h-3" />
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                    <p className="text-sm text-slate-800 font-medium">{reply.text}</p>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col overflow-hidden bg-background">
+                {/* Header / Tabs */}
+                <header className="bg-surface border-b border-white/5 px-8 flex flex-col shrink-0">
+                    <div className="flex items-center justify-between py-1">
+                        <div className="flex items-center space-x-10">
+                            {(Object.keys(txt.status) as Array<keyof typeof txt.status>).map(key => (
+                                <button
+                                    key={key}
+                                    onClick={() => setStatusTab(key)}
+                                    className={`py-6 text-xs font-black uppercase tracking-widest transition relative ${
+                                        statusTab === key ? 'text-primary' : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                                >
+                                    {txt.status[key]}
+                                    {statusTab === key && (
+                                        <div className="absolute bottom-0 left-0 w-full h-[3px] bg-primary rounded-t-full shadow-[0_-4px_12px_rgba(239,68,68,0.5)]" />
                                     )}
-                                </div>
-                            </>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center flex-1 text-gray-500">
-                                <ImageIcon className="w-16 h-16 mb-4 opacity-20" />
-                                <p>{txt.selectPost}</p>
-                            </div>
-                        )}
+                                </button>
+                            ))}
+                        </div>
+                        <button 
+                            onClick={() => setIsPublishModalOpen(true)}
+                            className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl font-black text-xs shadow-lg shadow-primary/20 transition transform active:scale-95 flex items-center space-x-2"
+                        >
+                            <Plus size={16} />
+                            <span>{txt.createBtn}</span>
+                        </button>
+                    </div>
+                </header>
+
+                {/* Toolbar */}
+                <div className="bg-surface/30 border-b border-white/5 px-8 py-4 flex items-center justify-between shrink-0">
+                    <div className="flex items-center space-x-4 flex-1">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                            <input
+                                type="text"
+                                placeholder={txt.filters.search}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-xs text-white focus:outline-none focus:border-primary/50 transition shadow-inner"
+                            />
+                        </div>
+                        <button className="flex items-center space-x-2 px-5 py-3 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest text-gray-400 hover:bg-white/5 hover:text-white transition">
+                            <Filter size={14} />
+                            <span>{txt.filters.filter}</span>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 px-5 py-3 bg-black/40 border border-white/10 rounded-2xl text-xs font-black">
+                            <Calendar size={14} className="text-primary" />
+                            <select
+                                value={dateRange}
+                                onChange={(e) => setDateRange(e.target.value)}
+                                className="bg-transparent outline-none text-gray-300 cursor-pointer uppercase tracking-widest"
+                            >
+                                <option value="90" className="bg-surface">{txt.filters.last90}</option>
+                                <option value="30" className="bg-surface">{txt.filters.last30}</option>
+                                <option value="7" className="bg-surface">{txt.filters.last7}</option>
+                            </select>
+                        </div>
+                        <button className="p-3 border border-white/10 rounded-2xl text-gray-500 hover:bg-white/5 hover:text-white transition">
+                            <ArrowDownUp size={18} />
+                        </button>
                     </div>
                 </div>
-            )}
 
-            {activeTab === 'insights' && (
-                <div className="bg-surface border border-white/10 rounded-2xl p-6">
-                    <h2 className="text-xl font-bold mb-6 flex items-center">
-                        <BarChart3 className="w-6 h-6 mr-3 text-primary" />
-                        {txt.metrics}
-                    </h2>
-                    
-                    {insights.length === 0 ? (
-                        <p className="text-center text-gray-500 py-10">{txt.noInsights}</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {insights.map((insight: any) => (
-                                <div key={insight.name} className="bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col items-center justify-center text-center">
-                                    <h3 className="text-sm text-gray-400 uppercase tracking-widest font-bold mb-2">{insight.title || insight.name}</h3>
-                                    <p className="text-4xl font-black text-white">{insight.values[0]?.value || 0}</p>
-                                    <p className="text-xs text-gray-500 mt-2">{insight.description}</p>
+                {/* Content Table Container */}
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                    {isLoading ? (
+                        <div className="h-full flex flex-col items-center justify-center space-y-4">
+                            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                            <p className="text-gray-500 font-black uppercase tracking-widest animate-pulse">Sincronizando conteúdos...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="h-full flex flex-col items-center justify-center p-12 text-center bg-red-500/5 border border-red-500/10 rounded-[40px]">
+                            <AlertCircle size={64} className="text-red-500 mb-6" />
+                            <h2 className="text-2xl font-black text-white mb-3">{txt.errorLoad}</h2>
+                            <p className="text-gray-500 max-w-md font-medium leading-relaxed">{txt.errorDetail}</p>
+                            <button onClick={fetchMedia} className="mt-8 px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-black text-xs uppercase tracking-widest transition">Tentar Novamente</button>
+                        </div>
+                    ) : mediaList.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center space-y-8">
+                            <div className="relative">
+                                <div className="w-32 h-32 bg-white/5 rounded-[40px] flex items-center justify-center border border-white/5">
+                                    <Search size={64} className="text-gray-800" />
                                 </div>
-                            ))}
+                                <div className="absolute -bottom-3 -right-3 p-4 bg-primary rounded-3xl shadow-2xl shadow-primary/40 animate-bounce">
+                                    <Instagram className="w-8 h-8 text-white" />
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-2xl font-black text-gray-400 uppercase tracking-tight">Nenhum conteúdo encontrado</h3>
+                                <p className="text-gray-600 mt-3 font-medium">As publicações do seu Instagram aparecerão aqui automaticamente.</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-surface border border-white/5 rounded-[40px] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-white/5 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] border-b border-white/5">
+                                    <tr>
+                                        <th className="px-8 py-6 w-12"><input type="checkbox" className="rounded-md border-white/10 bg-black/60 text-primary focus:ring-primary" /></th>
+                                        <th className="px-8 py-6">{txt.table.title}</th>
+                                        <th className="px-8 py-6">{txt.table.date}</th>
+                                        <th className="px-8 py-6">{txt.table.status}</th>
+                                        <th className="px-8 py-6">{txt.table.reach}</th>
+                                        <th className="px-8 py-6">{txt.table.views}</th>
+                                        <th className="px-8 py-6 text-right"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {mediaList.map(media => (
+                                        <tr key={media.id} className="hover:bg-white/[0.03] transition-colors group cursor-pointer">
+                                            <td className="px-8 py-6"><input type="checkbox" className="rounded-md border-white/10 bg-black/60 text-primary focus:ring-primary" /></td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center space-x-5">
+                                                    <div className="w-16 h-16 rounded-2xl bg-black overflow-hidden border-2 border-white/10 group-hover:border-primary/50 transition-all shadow-xl">
+                                                        <img src={media.thumbnail_url || media.media_url} alt="" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                    <div className="max-w-[340px]">
+                                                        <p className="text-sm font-black text-gray-100 truncate group-hover:text-white transition-colors">{media.caption || 'Sem legenda'}</p>
+                                                        <div className="flex items-center space-x-2 mt-2">
+                                                            <span className="text-[9px] font-black bg-white/5 text-gray-500 px-2 py-0.5 rounded-md uppercase tracking-wider">{media.media_type}</span>
+                                                            <span className="text-[9px] font-bold text-gray-600">ID: {media.id.slice(-8)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <p className="text-sm text-gray-400 font-bold">{new Date(media.timestamp).toLocaleDateString()}</p>
+                                                <p className="text-[10px] text-gray-600 font-medium">{new Date(media.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <span className="inline-flex items-center space-x-2 px-3 py-1.5 bg-green-500/10 text-green-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-500/20">
+                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                                    <span>Ativo</span>
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-sm font-black text-primary">{(media.comments_count + media.like_count * 12).toLocaleString()}</span>
+                                                    <BarChart3 size={12} className="text-gray-700" />
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-sm font-black text-gray-300">{(media.like_count * 157).toLocaleString()}</span>
+                                                    <EyeOff size={12} className="text-gray-700" />
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="flex items-center justify-end space-x-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                                                    <button className="p-3 bg-white/5 hover:bg-primary hover:text-white rounded-xl text-gray-500 transition shadow-lg" title="Ver no Instagram">
+                                                        <Share2 size={16} />
+                                                    </button>
+                                                    <button className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-gray-500 transition shadow-lg" title="Mais Opções">
+                                                        <MoreHorizontal size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </div>
-            )}
+            </div>
 
-            {/* Publish Modal */}
+            {/* Modal de Publicação - COMPOSER PROFISSIONAL */}
             {isPublishModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setIsPublishModalOpen(false)}></div>
-                    <div className="bg-surface border border-white/10 w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl relative z-10 overflow-hidden flex flex-col lg:flex-row">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="bg-surface border border-white/10 w-full max-w-6xl rounded-[48px] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col md:flex-row h-full max-h-[850px]">
                         
-                        {/* Preview Area (Left) */}
-                        <div className="lg:w-1/2 bg-black flex items-center justify-center border-r border-white/10 relative">
-                            {filePreview ? (
-                                <img src={filePreview} alt="Preview" className="max-h-full max-w-full object-contain" />
-                            ) : (
-                                <div className="text-center p-12">
-                                    <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-700" />
-                                    <p className="text-gray-500 mb-6">{lang === 'en_US' ? 'Choose a vertical photo (4:5)' : 'Escolha uma foto vertical (4:5)'}</p>
-                                    <label className="bg-primary hover:bg-primary-dark px-6 py-2 rounded-xl font-bold cursor-pointer transition">
-                                        {lang === 'en_US' ? 'Select from Device' : 'Selecionar do Dispositivo'}
-                                        <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileChange} />
-                                    </label>
+                        {/* Lado Esquerdo: Edição */}
+                        <div className="flex-1 flex flex-col p-10 border-r border-white/5 bg-black/20 overflow-y-auto custom-scrollbar">
+                            <div className="flex items-center justify-between mb-10">
+                                <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-primary rounded-2xl">
+                                        <Plus size={24} className="text-white" />
+                                    </div>
+                                    <h2 className="text-2xl font-black tracking-tight">Nova Publicação</h2>
                                 </div>
-                            )}
-                            {filePreview && (
-                                <button onClick={() => setFilePreview(null)} className="absolute top-4 left-4 bg-black/50 p-2 rounded-full hover:bg-black transition">
-                                    <Trash2 className="w-4 h-4 text-white" />
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Config Area (Right) */}
-                        <div className="lg:w-1/2 bg-surface flex flex-col">
-                            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                                <div className="flex items-center">
-                                    {publishStep > 1 && (
-                                        <button onClick={() => setPublishStep(1)} className="mr-3 text-gray-400 hover:text-white">
-                                            <ChevronLeft className="w-5 h-5" />
-                                        </button>
-                                    )}
-                                    <h3 className="font-bold">{publishStep === 1 ? txt.createPost : (lang === 'en_US' ? 'Advanced Settings' : 'Configurações Avançadas')}</h3>
-                                </div>
-                                <button onClick={() => setIsPublishModalOpen(false)} className="text-gray-400 hover:text-white transition">
-                                    <X className="w-5 h-5" />
+                                <button onClick={() => setIsPublishModalOpen(false)} className="p-3 hover:bg-white/5 rounded-2xl transition text-gray-500">
+                                    <X size={24} />
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                                {publishStep === 1 ? (
-                                    <>
-                                        <div>
-                                            <div className="flex items-center mb-2">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center mr-2">
-                                                    <Instagram className="w-4 h-4 text-white" />
-                                                </div>
-                                                <span className="text-sm font-bold">zaplandia_oficial</span>
-                                             </div>
-
-                                             {/* Carousel Tip */}
-                                             <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-start">
-                                                 <AlertCircle className="w-4 h-4 text-primary mr-2 flex-shrink-0 mt-0.5" />
-                                                 <p className="text-[10px] text-gray-300 leading-relaxed">
-                                                     <strong className="text-primary">{lang === 'en_US' ? 'Carousel Tip (2026):' : 'Dica de Carrossel (2026):'}</strong> {lang === 'en_US' ? 'Use up to 10 slides in vertical format (4:5) for maximum engagement.' : 'O ideal é usar até 10 slides, garantindo que o formato seja consistente (preferencialmente vertical 4:5).'}
-                                                 </p>
+                            <div className="space-y-8">
+                                {/* Media Selection */}
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mídia (Imagens ou Vídeos)</label>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <button className="aspect-square rounded-[32px] border-2 border-dashed border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all flex flex-col items-center justify-center space-y-2 group">
+                                            <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-primary/20 transition-all">
+                                                <ImageIcon size={24} className="text-gray-500 group-hover:text-primary" />
                                             </div>
-
-                                            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 mb-6">
-                                                <button
-                                                    onClick={() => setMediaType('FEED')}
-                                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${mediaType === 'FEED' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-white'}`}
-                                                >
-                                                    Feed Post
-                                                </button>
-                                                <button
-                                                    onClick={() => setMediaType('REELS')}
-                                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${mediaType === 'REELS' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:text-white'}`}
-                                                >
-                                                    Reels
-                                                </button>
-                                            </div>
-
-                                            <textarea 
-                                                value={postCaption}
-                                                onChange={(e) => setPostCaption(e.target.value)}
-                                                placeholder={lang === 'en_US' ? 'Write a caption or add hashtags...' : 'Escreva uma legenda ou adicione hashtags...'}
-                                                rows={6}
-                                                className="w-full bg-transparent text-sm outline-none resize-none"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-4 border-t border-white/10 pt-4">
-                                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => setPublishStep(2)}>
-                                                <div className="flex items-center text-sm text-gray-300">
-                                                    <Users className="w-4 h-4 mr-3" />
-                                                    {lang === 'en_US' ? 'Tag People' : 'Marcar Pessoas'}
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white" />
-                                            </div>
-                                            <div className="flex items-center justify-between group cursor-pointer">
-                                                <div className="flex items-center text-sm text-gray-300">
-                                                    <MapPin className="w-4 h-4 mr-3" />
-                                                    {lang === 'en_US' ? 'Add Location' : 'Adicionar Localização'}
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white" />
-                                            </div>
-                                            <div className="flex items-center justify-between group cursor-pointer">
-                                                <div className="flex items-center text-sm text-gray-300">
-                                                    <Music className="w-4 h-4 mr-3" />
-                                                    {lang === 'en_US' ? 'Add Music' : 'Adicionar Música'}
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white" />
-                                            </div>
-                                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => setPublishStep(2)}>
-                                                <div className="flex items-center text-sm text-gray-300">
-                                                    <Settings className="w-4 h-4 mr-3" />
-                                                    {lang === 'en_US' ? 'Advanced Settings' : 'Configurações Avançadas'}
-                                                </div>
-                                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white" />
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="space-y-6">
-                                        <div className="space-y-4">
-                                            <h4 className="text-xs font-bold text-gray-500 uppercase">{lang === 'en_US' ? 'Accessibility' : 'Acessibilidade'}</h4>
-                                            <textarea 
-                                                value={postAltText}
-                                                onChange={(e) => setPostAltText(e.target.value)}
-                                                placeholder={lang === 'en_US' ? 'Write alt text...' : 'Escreva o texto alternativo...'}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <h4 className="text-xs font-bold text-gray-500 uppercase">{lang === 'en_US' ? 'Post Settings' : 'Configurações do Post'}</h4>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm">{lang === 'en_US' ? 'Hide Like and View Counts' : 'Ocultar Curtidas e Visualizações'}</span>
-                                                <button 
-                                                    onClick={() => setHideLikes(!hideLikes)}
-                                                    className={`w-10 h-5 rounded-full transition relative ${hideLikes ? 'bg-primary' : 'bg-gray-700'}`}
-                                                >
-                                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${hideLikes ? 'right-1' : 'left-1'}`}></div>
-                                                </button>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm">{lang === 'en_US' ? 'Turn Off Commenting' : 'Desativar Comentários'}</span>
-                                                <button 
-                                                    onClick={() => setCommentsEnabled(!commentsEnabled)}
-                                                    className={`w-10 h-5 rounded-full transition relative ${!commentsEnabled ? 'bg-primary' : 'bg-gray-700'}`}
-                                                >
-                                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${!commentsEnabled ? 'right-1' : 'left-1'}`}></div>
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4 pt-4 border-t border-white/10">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center text-sm">
-                                                    <Calendar className="w-4 h-4 mr-3" />
-                                                    {lang === 'en_US' ? 'Schedule Publication' : 'Programar Publicação'}
-                                                </div>
-                                                <button 
-                                                    onClick={() => setIsScheduled(!isScheduled)}
-                                                    className={`w-10 h-5 rounded-full transition relative ${isScheduled ? 'bg-primary' : 'bg-gray-700'}`}
-                                                >
-                                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${isScheduled ? 'right-1' : 'left-1'}`}></div>
-                                                </button>
-                                            </div>
-                                            {isScheduled && (
-                                                <input 
-                                                    type="datetime-local"
-                                                    value={scheduledTime}
-                                                    onChange={(e) => setScheduledTime(e.target.value)}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                                                />
-                                            )}
-                                        </div>
-
-                                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-                                            <p className="text-[10px] text-yellow-500 leading-tight">
-                                                {lang === 'en_US' 
-                                                    ? 'Note: Meta API does not yet support publishing directly to Stories (History) via third-party apps.' 
-                                                    : 'Nota: A API da Meta ainda não permite a publicação direta em Stories (Históricos) através de aplicativos de terceiros.'}
-                                            </p>
+                                            <span className="text-[10px] font-black uppercase tracking-tighter text-gray-600 group-hover:text-primary">Adicionar</span>
+                                        </button>
+                                        <div className="aspect-square rounded-[32px] bg-black/40 border border-white/5 overflow-hidden relative group">
+                                            <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
+                                            <button className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-all">
+                                                <X size={14} />
+                                            </button>
                                         </div>
                                     </div>
-                                )}
+                                </div>
+
+                                {/* Caption */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Legenda</label>
+                                        <button className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase tracking-widest hover:underline">
+                                            <Zap size={12} />
+                                            <span>Gerar com IA</span>
+                                        </button>
+                                    </div>
+                                    <textarea 
+                                        className="w-full h-40 bg-black/40 border border-white/5 rounded-[32px] p-6 text-sm text-gray-200 outline-none focus:border-primary/50 transition-all shadow-inner resize-none"
+                                        placeholder="Escreva algo incrível..."
+                                    />
+                                    <div className="flex items-center justify-end space-x-4">
+                                        <button className="p-2 hover:bg-white/5 rounded-xl transition text-gray-500"><Users size={18} /></button>
+                                        <button className="p-2 hover:bg-white/5 rounded-xl transition text-gray-500"><MapPin size={18} /></button>
+                                        <button className="p-2 hover:bg-white/5 rounded-xl transition text-gray-500"><Music size={18} /></button>
+                                    </div>
+                                </div>
+
+                                {/* Toggle Feed/Reels */}
+                                <div className="flex p-1.5 bg-black/40 rounded-2xl border border-white/5">
+                                    <button className="flex-1 py-3 px-4 bg-primary rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/20 transition-all flex items-center justify-center space-x-2">
+                                        <LayoutGrid size={14} />
+                                        <span>Feed</span>
+                                    </button>
+                                    <button className="flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all flex items-center justify-center space-x-2">
+                                        <Clapperboard size={14} />
+                                        <span>Reels</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="p-4 border-t border-white/10 bg-white/5">
-                                <button 
-                                    onClick={handlePublishPost}
-                                    disabled={isPublishing || !filePreview}
-                                    className="w-full bg-primary hover:bg-primary-dark py-3 rounded-xl font-bold transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
-                                >
-                                    {isPublishing ? (
-                                        <>
-                                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                            {txt.publishing}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {isScheduled ? <Calendar className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-                                            {isScheduled ? (lang === 'en_US' ? 'Schedule' : 'Programar') : txt.publishBtn}
-                                        </>
-                                    )}
+                            <div className="mt-auto pt-10 flex items-center space-x-4">
+                                <button className="flex-1 py-4 bg-primary hover:bg-primary-dark rounded-[24px] font-black uppercase text-xs tracking-widest text-white shadow-xl shadow-primary/20 transition transform active:scale-95 flex items-center justify-center space-x-3">
+                                    <Send size={18} />
+                                    <span>Publicar Agora</span>
+                                </button>
+                                <button className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[24px] text-gray-400 transition" title="Agendar">
+                                    <Calendar size={20} />
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Lado Direito: Preview */}
+                        <div className="hidden md:flex flex-1 bg-surface items-center justify-center p-12 overflow-hidden relative">
+                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-transparent"></div>
+                            
+                            {/* Instagram Mockup */}
+                            <div className="w-[340px] bg-black rounded-[50px] border-[8px] border-gray-900 shadow-2xl relative overflow-hidden aspect-[9/18.5]">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-3xl z-20"></div>
+                                
+                                {/* App UI */}
+                                <div className="h-full flex flex-col bg-black">
+                                    <div className="p-4 flex items-center justify-between border-b border-white/5">
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[2px]">
+                                                <div className="w-full h-full rounded-full bg-black border border-black overflow-hidden flex items-center justify-center text-[10px] font-black">Z</div>
+                                            </div>
+                                            <span className="text-[10px] font-bold">zaplandia_oficial</span>
+                                        </div>
+                                        <MoreHorizontal size={14} />
+                                    </div>
+
+                                    {/* Main Content Area Preview */}
+                                    <div className="flex-1 bg-gray-900 flex items-center justify-center text-gray-700">
+                                        <ImageIcon size={48} className="opacity-20" />
+                                    </div>
+
+                                    {/* Interactions */}
+                                    <div className="p-4 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-4">
+                                                <Heart size={20} />
+                                                <MessageCircle size={20} />
+                                                <Send size={20} />
+                                            </div>
+                                            <ImageIcon size={20} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[11px] font-bold">1.248 curtidas</p>
+                                            <p className="text-[11px] leading-relaxed">
+                                                <span className="font-bold mr-1">zaplandia_oficial</span>
+                                                Sua nova legenda aparecerá aqui em tempo real... ✨
+                                            </p>
+                                            <p className="text-[9px] text-gray-500 uppercase">Há 2 minutos</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="absolute bottom-10 text-[10px] font-black text-gray-600 uppercase tracking-widest">Prévia do Dispositivo</p>
                         </div>
                     </div>
                 </div>

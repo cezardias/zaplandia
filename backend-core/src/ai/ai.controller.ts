@@ -30,6 +30,30 @@ export class AiController {
         return this.aiService.getOpenRouterCredits(apiKey);
     }
 
+    @Post('test-key')
+    async testKey(@Body() body: { provider: 'gemini' | 'openrouter'; key: string }) {
+        try {
+            if (body.provider === 'gemini') {
+                const response = await axios.post(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${body.key.trim()}`,
+                    { contents: [{ parts: [{ text: 'Ping' }] }] },
+                    { headers: { 'Content-Type': 'application/json' } }
+                );
+                return { success: true, data: response.data };
+            } else {
+                const response = await axios.get('https://openrouter.ai/api/v1/auth/key', {
+                    headers: { 'Authorization': `Bearer ${body.key.trim()}` }
+                });
+                return { success: true, data: response.data };
+            }
+        } catch (error) {
+            return { 
+                success: false, 
+                message: error.response?.data?.error?.message || error.response?.data?.message || error.message 
+            };
+        }
+    }
+
     /**
      * DIAGNOSTIC: List all Gemini models available for this tenant's API key
      * GET /api/ai/list-models
