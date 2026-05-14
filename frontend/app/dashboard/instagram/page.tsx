@@ -352,7 +352,7 @@ export default function InstagramManagementPage() {
                 <header className="bg-surface border-b border-white/5 px-8 flex flex-col shrink-0">
                     <div className="flex items-center justify-between py-1">
                         <div className="flex items-center space-x-10">
-                            {(Object.keys(txt.status) as Array<keyof typeof txt.status>).map(key => (
+                            {Object.keys(txt.status).map((key: any) => (
                                 <button
                                     key={key}
                                     onClick={() => setStatusTab(key)}
