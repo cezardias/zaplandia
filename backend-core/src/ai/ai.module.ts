@@ -8,6 +8,7 @@ import { IntegrationsModule } from '../integrations/integrations.module';
 
 import { AiPrompt } from '../integrations/entities/ai-prompt.entity';
 import { CommsModule } from '../comms/comms.module';
+import { CrmModule } from '../crm/crm.module';
 
 import { SupportModule } from '../support/support.module';
 
@@ -15,6 +16,7 @@ import { SupportModule } from '../support/support.module';
     imports: [
         TypeOrmModule.forFeature([Contact, Message, Integration, AiPrompt]),
         forwardRef(() => IntegrationsModule),
+        forwardRef(() => CrmModule),
         CommsModule,
         SupportModule,
     ],

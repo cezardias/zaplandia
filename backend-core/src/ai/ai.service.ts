@@ -8,6 +8,8 @@ import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { AiPrompt as AiPromptEntity } from '../integrations/entities/ai-prompt.entity';
 import { SupportService } from '../support/support.service';
+import { CrmService } from '../crm/crm.service';
+import { forwardRef, Inject } from '@nestjs/common';
 import { ErpZaplandiaService } from '../integrations/erp-zaplandia.service';
 import { RifaApiService } from '../integrations/rifa-api.service';
 import { MetaApiService } from '../integrations/meta-api.service';
@@ -40,7 +42,11 @@ export class AiService implements OnModuleInit {
         private metaApiService: MetaApiService,
         private communicationService: CommsService,
         private supportService: SupportService,
+        @Inject(forwardRef(() => CrmService))
+        private crmService: CrmService,
     ) { }
+
+    private debounceMap = new Map<string, { timeout: any, messages: string[], instanceName: string, tenantId: string }>();
 
     async onModuleInit() {
         this.logger.log('Initializing AiService and seeding special prompts...');
@@ -229,6 +235,51 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
 
     async generateResponse(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
+        this.logger.log(`[AI_DEBOUNCE] Received message from ${contact.id}. Starting 10s window...`);
+        
+        const existing = this.debounceMap.get(contact.id);
+        if (existing) {
+            clearTimeout(existing.timeout);
+            existing.messages.push(userMessage);
+            existing.timeout = setTimeout(() => this.processDebouncedResponse(contact.id), 10000);
+            this.logger.debug(`[AI_DEBOUNCE] Appended to existing buffer for ${contact.id}. Reset timer.`);
+            return null; // Return null to webhook to avoid blocking
+        }
+
+        const timeout = setTimeout(() => this.processDebouncedResponse(contact.id), 10000);
+        this.debounceMap.set(contact.id, {
+            timeout,
+            messages: [userMessage],
+            instanceName: instanceName || contact.instance || 'default',
+            tenantId
+        });
+
+        return null; // Return null to webhook
+    }
+
+    private async processDebouncedResponse(contactId: string) {
+        const data = this.debounceMap.get(contactId);
+        if (!data) return;
+        this.debounceMap.delete(contactId);
+
+        const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId: data.tenantId } });
+        if (!contact) return;
+
+        const combinedMessage = data.messages.join(' ');
+        this.logger.log(`[AI_DEBOUNCE] Processing combined message for ${contact.name}: "${combinedMessage}"`);
+
+        try {
+            const response = await this.executeAIGeneration(contact, combinedMessage, data.tenantId, data.instanceName);
+            if (response) {
+                this.logger.log(`[AI_DEBOUNCE] Generation successful. Sending via CrmService...`);
+                await this.crmService.sendMessage(data.tenantId, contact.id, response);
+            }
+        } catch (error) {
+            this.logger.error(`[AI_DEBOUNCE_ERROR] Failed to process debounced response: ${error.message}`);
+        }
+    }
+
+    private async executeAIGeneration(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
         try {
             const geminiKey = await this.getGeminiApiKey(tenantId);
             const openRouterKey = await this.getOpenRouterApiKey(tenantId);
