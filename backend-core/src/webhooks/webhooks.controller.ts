@@ -358,7 +358,7 @@ export class WebhooksController {
                             if (!hasN8n && providerConfigStr) {
                                 try {
                                     const config = JSON.parse(providerConfigStr);
-                                    if (config['instagram']) hasN8n = true;
+                                    if (config['instagram_inbox'] || config['instagram']) hasN8n = true;
                                 } catch (e) {}
                             }
                             if (hasN8n && contact.n8nEnabled !== false) {
@@ -369,7 +369,7 @@ export class WebhooksController {
                                     contact_id: contact.id,
                                     name: contact.name,
                                     message_id: message.id,
-                                    provider: 'instagram',
+                                    provider: 'instagram_inbox',
                                 }, null);
 
                                 if (n8nResponse) {
@@ -417,7 +417,7 @@ export class WebhooksController {
                                 if (!hasN8n && providerConfigStr) {
                                     try {
                                         const config = JSON.parse(providerConfigStr);
-                                        if (config['instagram']) hasN8n = true;
+                                        if (config['instagram_comments'] || config['instagram']) hasN8n = true;
                                     } catch (e) {}
                                 }
 
@@ -428,7 +428,7 @@ export class WebhooksController {
                                         content: value.text,
                                         media_id: value.media?.id || value.media_id,
                                         comment_id: value.id,
-                                        provider: 'instagram'
+                                        provider: 'instagram_comments'
                                     }, null);
 
                                     if (n8nResponse && change.field === 'comments') {

@@ -13,8 +13,13 @@ import {
     Store,
     AlertCircle,
     Coins,
-    Smartphone
+    Coins,
+    Smartphone,
+    Instagram,
+    MessageCircle
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+
 
 interface ApiSettingsFieldsProps {
     token: string;
@@ -25,6 +30,73 @@ interface ApiSettingsFieldsProps {
 
 export default function ApiSettingsFields({ token, tenantId = null, isAdminMode = false, userRole = 'user' }: ApiSettingsFieldsProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const { lang } = useLanguage();
+
+    const t: any = {
+        pt_BR: {
+            save_success: 'Chave salva com sucesso!',
+            save_error: 'Erro ao salvar chave.',
+            load_error: 'Erro ao carregar chaves existentes.',
+            n8n_title: 'Automação n8n',
+            n8n_fallback: 'Webhook Padrão (Fallback)',
+            n8n_provider_title: 'Webhooks por Provedor (Avançado)',
+            n8n_save: 'Salvar Configuração n8n',
+            instagram_inbox: 'INSTAGRAM INBOX',
+            instagram_comments: 'INSTAGRAM COMMENTS',
+            evolution: 'EVOLUTION',
+            telegram: 'TELEGRAM',
+            mercadolivre: 'MERCADOLIVRE',
+            whatsapp: 'WHATSAPP'
+        },
+        en_US: {
+            save_success: 'Key saved successfully!',
+            save_error: 'Error saving key.',
+            load_error: 'Error loading existing keys.',
+            n8n_title: 'n8n Automation',
+            n8n_fallback: 'Default Webhook (Fallback)',
+            n8n_provider_title: 'Webhooks per Provider (Advanced)',
+            n8n_save: 'Save n8n Configuration',
+            instagram_inbox: 'INSTAGRAM INBOX',
+            instagram_comments: 'INSTAGRAM COMMENTS',
+            evolution: 'EVOLUTION',
+            telegram: 'TELEGRAM',
+            mercadolivre: 'MERCADOLIVRE',
+            whatsapp: 'WHATSAPP'
+        },
+        pt_PT: {
+            save_success: 'Chave guardada com sucesso!',
+            save_error: 'Erro ao guardar a chave.',
+            load_error: 'Erro ao carregar chaves existentes.',
+            n8n_title: 'Automação n8n',
+            n8n_fallback: 'Webhook Padrão (Fallback)',
+            n8n_provider_title: 'Webhooks por Fornecedor (Avançado)',
+            n8n_save: 'Guardar Configuração n8n',
+            instagram_inbox: 'INSTAGRAM INBOX',
+            instagram_comments: 'INSTAGRAM COMMENTS',
+            evolution: 'EVOLUTION',
+            telegram: 'TELEGRAM',
+            mercadolivre: 'MERCADOLIVRE',
+            whatsapp: 'WHATSAPP'
+        },
+        it_IT: {
+            save_success: 'Chiave salvata con successo!',
+            save_error: 'Errore durante il salvataggio della chiave.',
+            load_error: 'Errore durante il caricamento delle chiavi esistenti.',
+            n8n_title: 'Automazione n8n',
+            n8n_fallback: 'Webhook Predefinito (Fallback)',
+            n8n_provider_title: 'Webhook per Provider (Avanzato)',
+            n8n_save: 'Salva Configurazione n8n',
+            instagram_inbox: 'INSTAGRAM INBOX',
+            instagram_comments: 'INSTAGRAM COMMENTS',
+            evolution: 'EVOLUTION',
+            telegram: 'TELEGRAM',
+            mercadolivre: 'MERCADOLIVRE',
+            whatsapp: 'WHATSAPP'
+        }
+    };
+
+    const txt = t[lang] || t['pt_BR'];
+
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
     const [keys, setKeys] = useState({
@@ -85,7 +157,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             }
         } catch (err) {
             console.error('Erro ao carregar chaves:', err);
-            setStatus({ type: 'error', msg: 'Erro ao carregar chaves existentes.' });
+            setStatus({ type: 'error', msg: txt.load_error });
         } finally {
             setIsLoading(false);
         }
@@ -201,12 +273,12 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             });
 
             if (!res.ok) throw new Error('Falha ao salvar no servidor.');
-            setStatus({ type: 'success', msg: `${name} salvo com sucesso!` });
+            setStatus({ type: 'success', msg: `${name} ${txt.save_success || 'saved successfully!'}` });
 
             // Re-fetch to confirm persistence and update UI
             setTimeout(fetchExistingKeys, 500);
         } catch (err: any) {
-            setStatus({ type: 'error', msg: err.message });
+            setStatus({ type: 'error', msg: err.message || txt.save_error });
         } finally {
             setIsLoading(false);
         }
@@ -269,17 +341,21 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">Instagram Business ID (ID da Página)</label>
+                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">
+                                {lang === 'en_US' ? 'Instagram Business ID (Page ID)' : 'Instagram Business ID (ID da Página)'}
+                            </label>
                             <input
                                 type="text"
                                 value={keys.meta_instagram_business_id}
                                 onChange={(e) => setKeys({ ...keys, meta_instagram_business_id: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                                placeholder="ID Numérico da Página no FB"
+                                placeholder={lang === 'en_US' ? 'Numeric Page ID' : 'ID Numérico da Página no FB'}
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">Token de Acesso do Instagram (Page Access Token)</label>
+                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">
+                                {lang === 'en_US' ? 'Instagram Page Access Token' : 'Token de Acesso do Instagram (Page Access Token)'}
+                            </label>
                             <textarea
                                 value={keys.instagram_token}
                                 onChange={(e) => setKeys({ ...keys, instagram_token: e.target.value })}
@@ -291,7 +367,9 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">ID do app do Instagram</label>
+                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">
+                                {lang === 'en_US' ? 'Instagram App ID' : 'ID do app do Instagram'}
+                            </label>
                             <input
                                 type="text"
                                 value={keys.instagram_app_id}
@@ -301,7 +379,9 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">Chave secreta do app do Instagram</label>
+                            <label className="text-[10px] text-white/40 mb-1 ml-1 block uppercase font-bold">
+                                {lang === 'en_US' ? 'Instagram App Secret' : 'Chave secreta do app do Instagram'}
+                            </label>
                             <input
                                 type="password"
                                 value={keys.instagram_app_secret}
@@ -463,11 +543,11 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <h2 className="text-lg font-bold mb-6 flex items-center space-x-3">
                     <Zap className="w-5 h-5 text-orange-500" />
-                    <span>Automação n8n</span>
+                    <span>{txt.n8n_title}</span>
                 </h2>
                 <div className="space-y-4">
                     <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl mb-4">
-                        <p className="text-sm text-orange-300 font-bold mb-2">Webhook Padrão (Fallback)</p>
+                        <p className="text-sm text-orange-300 font-bold mb-2">{txt.n8n_fallback}</p>
                         <input
                             type="text"
                             value={keys.n8n_webhook_url}
@@ -478,11 +558,11 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                     </div>
                     
                     <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
-                        <p className="text-xs text-white/60 font-bold mb-3 uppercase tracking-wider">Webhooks por Provedor (Avançado)</p>
+                        <p className="text-xs text-white/60 font-bold mb-3 uppercase tracking-wider">{txt.n8n_provider_title}</p>
                         <div className="space-y-3">
-                            {['whatsapp', 'instagram', 'evolution', 'telegram', 'mercadolivre'].map(provider => (
+                            {['whatsapp', 'instagram_inbox', 'instagram_comments', 'evolution', 'telegram', 'mercadolivre'].map(provider => (
                                 <div key={provider} className="flex flex-col space-y-1">
-                                    <label className="text-[10px] text-white/40 font-bold uppercase ml-1">{provider}</label>
+                                    <label className="text-[10px] text-white/40 font-bold uppercase ml-1">{txt[provider] || provider}</label>
                                     <input
                                         type="text"
                                         value={(() => {
@@ -499,7 +579,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                                             setKeys({ ...keys, n8n_provider_config: JSON.stringify(newConfig) });
                                         }}
                                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-orange-500"
-                                        placeholder={`URL n8n para ${provider}`}
+                                        placeholder={`URL n8n for ${provider}`}
                                     />
                                 </div>
                             ))}
@@ -515,7 +595,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                         className="w-full bg-orange-600 hover:bg-orange-700 py-3 rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2"
                     >
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        <span>Salvar Configuração n8n</span>
+                        <span>{txt.n8n_save}</span>
                     </button>
                 </div>
             </section>
