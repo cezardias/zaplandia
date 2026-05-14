@@ -254,10 +254,16 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
 
-        // AGENT ROLE FILTER: Only see assigned chats or team chats IF the agent is in a team
-        if (role === 'agent' && teamId) {
+        // TEAM ISOLATION: 
+        // Superadmins and Admins see everything.
+        // Others (Agents/Users) with a teamId only see:
+        // 1. Unassigned chats (assignedTeamId IS NULL) - to allow picking up new leads
+        // 2. Chats assigned specifically to them
+        // 3. Chats assigned to their team
+        if (role !== 'superadmin' && role !== 'admin' && teamId) {
             query.andWhere(new Brackets(qb => {
-                qb.where('contact.assignedUserId = :userId', { userId })
+                qb.where('contact.assignedTeamId IS NULL')
+                  .orWhere('contact.assignedUserId = :userId', { userId })
                   .orWhere('contact.assignedTeamId = :teamId', { teamId });
             }));
         }
@@ -375,10 +381,20 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         return query.orderBy('contact.updatedAt', 'DESC').getMany(); // Order by updatedAt to show recent chats first
     }
 
-    async findAllByTenant(tenantId: string, filters?: { stage?: string, search?: string, campaignId?: string, instance?: string }) {
-        this.logger.debug(`[FIND_ALL] Tenant: ${tenantId}, Filters: ${JSON.stringify(filters)}`);
+    async findAllByTenant(tenantId: string, user: { userId: string, role: string, teamId?: string }, filters?: { stage?: string, search?: string, campaignId?: string, instance?: string }) {
+        const { userId, role, teamId } = user;
+        this.logger.debug(`[FIND_ALL] Tenant: ${tenantId}, User: ${userId}, Filters: ${JSON.stringify(filters)}`);
         const query = this.contactRepository.createQueryBuilder('contact')
             .where('contact.tenantId = :tenantId', { tenantId });
+
+        // TEAM ISOLATION (Same logic as getRecentChats)
+        if (role !== 'superadmin' && role !== 'admin' && teamId) {
+            query.andWhere(new Brackets(qb => {
+                qb.where('contact.assignedTeamId IS NULL')
+                  .orWhere('contact.assignedUserId = :userId', { userId })
+                  .orWhere('contact.assignedTeamId = :teamId', { teamId });
+            }));
+        }
 
         if (filters?.instance && filters.instance !== 'all') {
             let instanceName = filters.instance;
