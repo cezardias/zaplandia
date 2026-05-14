@@ -729,12 +729,20 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
      *        if both versions return 429, wait 5s and throw so outer loop tries next model
      * 503/500 → throw immediately so outer loop tries next model
      */
-    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string): Promise<string | null> {
+    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string): Promise<string | null> {
         try {
             const url = 'https://openrouter.ai/api/v1/chat/completions';
+            const messages: any[] = [];
+            
+            if (systemInstruction) {
+                messages.push({ role: 'system', content: systemInstruction });
+            }
+            
+            messages.push({ role: 'user', content: prompt });
+
             const payload: any = {
                 model: model,
-                messages: [{ role: 'user', content: prompt }],
+                messages,
                 max_tokens: maxTokens,
                 temperature: 0.1,
             };
@@ -864,7 +872,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         }
     }
 
-    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string): Promise<string | null> {
+    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string): Promise<string | null> {
         // 🔧 FIX: Tool calling MUST use v1beta. v1 often doesn't support the 'tools' field.
         // However, if tools fail or model is not found in v1beta, we can try v1 as fallback for text.
         const versions = tools ? ['v1beta', 'v1'] : ['v1', 'v1beta'];
@@ -888,6 +896,12 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                     }
                 };
 
+                if (systemInstruction) {
+                    payload.system_instruction = {
+                        parts: [{ text: systemInstruction }]
+                    };
+                }
+
                 if (tools) {
                     payload.tools = tools;
                     this.logger.debug(`[AI_DEBUG] Sending payload with tools to ${model} (${version})`);
@@ -901,18 +915,22 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                 this.logger.debug(`[AI_DEBUG] Model ${model} responded. Status: ${response.status}`);
                 this.logger.debug(`[AI_TRACE] Response Body: ${JSON.stringify(response.data)}`);
                 const candidate = response.data?.candidates?.[0];
-                const part = candidate?.content?.parts?.[0];
+                const parts = candidate?.content?.parts || [];
 
-                if (part) {
-                    this.logger.debug(`[AI_DEBUG] Part Keys: ${Object.keys(part).join(', ')}`);
-                }
+                let accumulatedText = '';
+                let toolResult: any;
+                let funcCallFound = false;
 
-                // Check for Tool Calling (Function Call) - Handle both camelCase and snake_case
-                const functionCall = part?.functionCall || part?.function_call;
+                for (const part of parts) {
+                    if (part.text) accumulatedText += part.text;
 
-                if (functionCall) {
-                    const funcName = functionCall.name;
-                    const args = functionCall.args;
+                    // Check for Tool Calling (Function Call) - Handle both camelCase and snake_case
+                    const functionCall = part?.functionCall || part?.function_call;
+
+                    if (functionCall) {
+                        funcCallFound = true;
+                        const funcName = functionCall.name;
+                        const args = functionCall.args;
 
                     this.logger.log(`[AI_TOOL] Gemini requested tool: ${funcName} with args: ${JSON.stringify(args)}`);
 
@@ -952,7 +970,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                     const followUpPayload = {
                         contents: [
                             { role: 'user', parts: [{ text: prompt }] },
-                            { role: 'model', parts: [part] }, // Maintain conversation flow
+                            { role: 'model', parts: parts }, // Maintain conversation flow
                             {
                                 role: 'function',
                                 parts: [{
@@ -963,7 +981,8 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                                 }]
                             }
                         ],
-                        generationConfig: payload.generationConfig
+                        generationConfig: payload.generationConfig,
+                        system_instruction: payload.system_instruction
                     };
 
                     const followUpResponse = await axios.post(url, followUpPayload, {
@@ -972,17 +991,21 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                     });
 
                     const finalCandidate = followUpResponse.data?.candidates?.[0];
-                    const finalText = finalCandidate?.content?.parts?.[0]?.text;
-                    if (finalText) {
+                    const finalParts = finalCandidate?.content?.parts || [];
+                    let finalAccumulatedText = '';
+                    for (const fp of finalParts) {
+                        if (fp.text) finalAccumulatedText += fp.text;
+                    }
+
+                    if (finalAccumulatedText) {
                         this.logger.debug(`[AI_ROUTING] Tool call + Follow-up successful with model ${model}.`);
-                        return finalText;
+                        return finalAccumulatedText;
                     }
                 }
 
-                const text = part?.text;
-                if (text) {
-                    this.logger.debug(`[AI_ROUTING] Model ${model} succeeded in ${version}.`);
-                    return text;
+                if (accumulatedText) {
+                    this.logger.debug(`[AI_ROUTING] Model ${model} succeeded with text in ${version}.`);
+                    return accumulatedText;
                 }
             } catch (error) {
                 lastError = error;
@@ -1077,7 +1100,6 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
             ]
         });
 
-        const finalPrompt = `${systemPrompt}\n\n${fullPrompt}`;
         const provider = lisaPrompt?.provider || 'gemini';
         const model = lisaPrompt?.model || 'gemini-1.5-flash';
         const lisaApiKey = lisaPrompt?.apiKey;
@@ -1086,7 +1108,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
             const apiKey = lisaApiKey || await this.getOpenRouterApiKey(tenantId);
             if (apiKey) {
                 try {
-                    return await this.callOpenRouter(model, finalPrompt, apiKey, 2048, tools, tenantId, contactId);
+                    return await this.callOpenRouter(model, fullPrompt, apiKey, 2048, tools, tenantId, contactId, systemPrompt);
                 } catch (e) {
                     this.logger.error(`Lisa failed via OpenRouter: ${e.message}`);
                 }
@@ -1095,7 +1117,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
             const apiKey = lisaApiKey || await this.getGeminiApiKey(tenantId);
             if (apiKey) {
                 try {
-                    return await this.callGemini(model, finalPrompt, apiKey, 2048, tools, tenantId, contactId);
+                    return await this.callGemini(model, fullPrompt, apiKey, 2048, tools, tenantId, contactId, systemPrompt);
                 } catch (e) {
                     this.logger.error(`Lisa failed via Gemini: ${e.message}`);
                 }
