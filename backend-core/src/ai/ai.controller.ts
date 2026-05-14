@@ -241,11 +241,11 @@ export class AiController {
         const response = await this.aiService.generateLisaResponse(req.user.tenantId, fullPrompt, contact?.id);
         
         // 2. Record the message in the CRM so it shows up in Omni Inbox if transferred
-        if (contact) {
+        if (contact && response) {
             await this.aiService.recordLisaInteraction(req.user.tenantId, contact.id, body.message, response);
         }
         
-        return { content: response };
+        return { content: response || 'Desculpe, não consegui processar sua mensagem agora.' };
     }
 
     @Get('lisa/prompt')
