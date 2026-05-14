@@ -147,18 +147,18 @@ export default function AiTrainingPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">{tl.apiKeyLabel}</label>
-                                <div className="flex items-center space-x-3">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                                     <input
                                         type="password"
                                         value={lisaKey}
                                         onChange={(e) => setLisaKey(e.target.value)}
                                         placeholder="Insira a API Key"
-                                        className="flex-1 h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-primary outline-none transition"
+                                        className="flex-1 h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-primary outline-none transition w-full"
                                     />
                                     <button
                                         onClick={() => handleFetchModels(lisaProvider, lisaKey)}
                                         disabled={isFetchingModels || !lisaKey}
-                                        className="h-14 px-6 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-2xl text-xs font-black transition disabled:opacity-50 flex items-center justify-center whitespace-nowrap shadow-lg shadow-primary/5 min-w-[140px]"
+                                        className="h-14 px-6 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-2xl text-xs font-black transition disabled:opacity-50 flex items-center justify-center whitespace-nowrap shadow-lg shadow-primary/5 sm:min-w-[140px]"
                                     >
                                         {isFetchingModels ? <Loader2 className="w-4 h-4 animate-spin" /> : tl.fetchModels}
                                     </button>

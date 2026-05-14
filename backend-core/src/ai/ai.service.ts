@@ -816,8 +816,9 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
 
         for (const version of versions) {
             try {
-                const url = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${cleanApiKey}`;
-                this.logger.debug(`[AI_ROUTING] Calling Gemini URL: https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=HIDDEN`);
+                const modelPath = model.startsWith('models/') ? model : `models/${model}`;
+                const url = `https://generativelanguage.googleapis.com/${version}/${modelPath}:generateContent?key=${cleanApiKey}`;
+                this.logger.debug(`[AI_ROUTING] Calling Gemini URL: ${url.replace(cleanApiKey, 'HIDDEN')}`);
 
                 const payload: any = {
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
