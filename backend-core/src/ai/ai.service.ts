@@ -353,7 +353,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const isFreshStart = history.length === 0;
             const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]: O atendimento humano acabou de ser finalizado. Inicie o contato do zero de acordo com o prompt acima.' : 'Histórico da Conversa:'}\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
-            const configuredModel = integration.aiModel || 'gemini-1.5-flash';
+            // Use the already defined configuredModel
             const modelsToTry = [
                 configuredModel,
                 'gemini-2.0-flash',
@@ -510,7 +510,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 return null;
             }
 
-            this.logger.log(`AI generated response for contact ${contact.id} using prompt ${integration.aiPromptId}`);
+            this.logger.log(`AI generated response for contact ${contact.id} using prompt ${activePromptId}`);
             return aiResponse;
 
         } catch (error) {
