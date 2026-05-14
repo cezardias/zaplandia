@@ -504,6 +504,7 @@ export default function AutomationsPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+            </div>
 
             {/* n8n Setup Modal */}
             <AnimatePresence>
