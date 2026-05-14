@@ -104,7 +104,7 @@ export default function LisaWidget() {
                         initial={{ opacity: 0, y: 20, scale: 0.95, transformOrigin: 'bottom right' }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="fixed bottom-24 right-6 w-[360px] max-w-[90vw] h-[520px] max-h-[80vh] bg-surface border border-white/10 rounded-3xl shadow-2xl z-[9999] flex flex-col overflow-hidden"
+                        className="fixed bottom-24 right-6 w-[360px] max-w-[90vw] h-[520px] max-h-[80vh] bg-white border border-gray-200 shadow-2xl z-[9999] flex flex-col overflow-hidden rounded-3xl"
                     >
                         {/* Header */}
                         <div className="p-4 bg-primary/10 border-b border-white/5 flex items-center justify-between">
@@ -117,10 +117,10 @@ export default function LisaWidget() {
                                     />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-white">{tl.title}</h3>
+                                    <h3 className="text-sm font-black text-gray-800">{tl.title}</h3>
                                     <div className="flex items-center space-x-1">
                                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                                        <span className="text-[10px] text-gray-400 font-medium">{tl.status}</span>
+                                        <span className="text-[10px] text-gray-500 font-bold">{tl.status}</span>
                                     </div>
                                 </div>
                             </div>
@@ -133,10 +133,10 @@ export default function LisaWidget() {
                         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                             {messages.map((msg, i) => (
                                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${
+                                    <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${
                                         msg.role === 'user' 
-                                            ? 'bg-primary text-white shadow-lg shadow-primary/10' 
-                                            : 'bg-white/5 text-gray-200 border border-white/5'
+                                            ? 'bg-primary text-white shadow-primary/10' 
+                                            : 'bg-gray-100 text-gray-800 border border-gray-200'
                                     }`}>
                                         {msg.content}
                                     </div>
@@ -174,7 +174,7 @@ export default function LisaWidget() {
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                                     placeholder={tl.placeholder}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 pr-12 text-sm text-white focus:outline-none focus:border-primary/50 transition shadow-inner"
+                                    className="w-full bg-gray-100 border border-gray-200 rounded-2xl px-4 py-3 pr-12 text-sm text-gray-800 focus:outline-none focus:border-primary/50 transition shadow-inner placeholder:text-gray-500"
                                 />
                                 <button
                                     onClick={handleSend}
