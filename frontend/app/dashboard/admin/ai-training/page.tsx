@@ -147,18 +147,18 @@ export default function AiTrainingPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">{tl.apiKeyLabel}</label>
-                                <div className="flex space-x-2">
+                                <div className="flex items-center space-x-3">
                                     <input
                                         type="password"
                                         value={lisaKey}
                                         onChange={(e) => setLisaKey(e.target.value)}
                                         placeholder="Insira a API Key"
-                                        className="flex-1 bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-white focus:border-primary outline-none transition"
+                                        className="flex-1 h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-primary outline-none transition"
                                     />
                                     <button
                                         onClick={() => handleFetchModels(lisaProvider, lisaKey)}
                                         disabled={isFetchingModels || !lisaKey}
-                                        className="bg-white/5 hover:bg-white/10 px-4 rounded-2xl text-xs font-bold transition border border-white/10 disabled:opacity-50"
+                                        className="h-14 px-6 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-2xl text-xs font-black transition disabled:opacity-50 flex items-center justify-center whitespace-nowrap shadow-lg shadow-primary/5 min-w-[140px]"
                                     >
                                         {isFetchingModels ? <Loader2 className="w-4 h-4 animate-spin" /> : tl.fetchModels}
                                     </button>
@@ -172,11 +172,11 @@ export default function AiTrainingPage() {
                                 <select
                                     value={lisaModel}
                                     onChange={(e) => setLisaModel(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-white focus:border-primary outline-none transition"
+                                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-primary outline-none transition appearance-none cursor-pointer"
                                 >
                                     <option value="">Selecione um modelo...</option>
                                     {availableModels.map(m => (
-                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                        <option key={m.id} value={m.id} className="bg-surface">{m.name}</option>
                                     ))}
                                 </select>
                             ) : (
@@ -185,7 +185,7 @@ export default function AiTrainingPage() {
                                     value={lisaModel}
                                     onChange={(e) => setLisaModel(e.target.value)}
                                     placeholder="Ex: gemini-1.5-pro ou anthropic/claude-3-opus"
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-white focus:border-primary outline-none transition"
+                                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 text-white focus:border-primary outline-none transition"
                                 />
                             )}
                         </div>
