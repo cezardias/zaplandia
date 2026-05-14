@@ -327,7 +327,15 @@ export class MetaApiService {
         return res.data;
     }
 
-    async publishInstagramPost(tenantId: string, imageUrl: string, caption: string) {
+    async publishInstagramPost(tenantId: string, options: { 
+        imageUrl: string, 
+        caption: string, 
+        altText?: string, 
+        locationId?: string,
+        userTags?: any[],
+        scheduledPublishTime?: number,
+        commentsEnabled?: boolean
+    }) {
         const token = await this.getInstagramToken(tenantId);
         const { instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
 
@@ -337,18 +345,30 @@ export class MetaApiService {
 
         // Step 1: Create Media Container
         const containerUrl = `https://graph.facebook.com/v21.0/${pageId}/media`;
-        const containerRes = await axios.post(containerUrl, {
-            image_url: imageUrl,
-            caption: caption
-        }, { params: { access_token: token } });
+        const payload: any = {
+            image_url: options.imageUrl,
+            caption: options.caption,
+        };
 
+        if (options.altText) payload.alt_text = options.altText;
+        if (options.locationId) payload.location_id = options.locationId;
+        if (options.userTags) payload.user_tags = JSON.stringify(options.userTags);
+        if (options.commentsEnabled !== undefined) payload.comments_enabled = options.commentsEnabled;
+
+        const containerRes = await axios.post(containerUrl, payload, { params: { access_token: token } });
         const creationId = containerRes.data.id;
 
         // Step 2: Publish Media
         const publishUrl = `https://graph.facebook.com/v21.0/${pageId}/media_publish`;
-        const publishRes = await axios.post(publishUrl, {
+        const publishPayload: any = {
             creation_id: creationId
-        }, { params: { access_token: token } });
+        };
+
+        if (options.scheduledPublishTime) {
+            publishPayload.scheduled_publish_time = options.scheduledPublishTime;
+        }
+
+        const publishRes = await axios.post(publishUrl, publishPayload, { params: { access_token: token } });
 
         return publishRes.data;
     }

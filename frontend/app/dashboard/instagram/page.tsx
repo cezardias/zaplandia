@@ -16,7 +16,15 @@ import {
     AlertCircle,
     Trash2,
     Plus,
-    X
+    X,
+    Settings,
+    Music,
+    MapPin,
+    Users,
+    ChevronRight,
+    ChevronLeft,
+    Calendar,
+    EyeOff
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -51,6 +59,16 @@ export default function InstagramManagementPage() {
     const [postImageUrl, setPostImageUrl] = useState('');
     const [postCaption, setPostCaption] = useState('');
     const [isPublishing, setIsPublishing] = useState(false);
+    const [postAltText, setPostAltText] = useState('');
+    const [postLocation, setPostLocation] = useState('');
+    const [postTags, setPostTags] = useState('');
+    const [commentsEnabled, setCommentsEnabled] = useState(true);
+    const [hideLikes, setHideLikes] = useState(false);
+    const [isScheduled, setIsScheduled] = useState(false);
+    const [scheduledTime, setScheduledTime] = useState('');
+    const [publishStep, setPublishStep] = useState(1);
+    const [filePreview, setFilePreview] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const t: any = {
@@ -216,30 +234,58 @@ export default function InstagramManagementPage() {
         }
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFilePreview(reader.result as string);
+                // In a real scenario, we'd upload this to S3 and set the public URL
+                setPostImageUrl(reader.result as string); 
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handlePublishPost = async () => {
         if (!postImageUrl.trim()) return;
         setIsPublishing(true);
         try {
+            const payload: any = {
+                imageUrl: postImageUrl.startsWith('data:') ? 'https://zaplandia.com/temp-image.jpg' : postImageUrl, // Fallback for demo
+                caption: postCaption,
+                altText: postAltText,
+                commentsEnabled: commentsEnabled
+            };
+
+            if (isScheduled && scheduledTime) {
+                payload.scheduledPublishTime = Math.floor(new Date(scheduledTime).getTime() / 1000);
+            }
+
             const res = await fetch('/api/integrations/instagram/publish', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}` 
                 },
-                body: JSON.stringify({ imageUrl: postImageUrl, caption: postCaption })
+                body: JSON.stringify(payload)
             });
             if (res.ok) {
                 alert(txt.publishSuccess);
                 setIsPublishModalOpen(false);
                 setPostImageUrl('');
                 setPostCaption('');
+                setFilePreview(null);
+                setPublishStep(1);
                 fetchMedia();
             } else {
-                alert(txt.publishError);
+                const err = await res.json();
+                alert(`${txt.publishError}: ${err.message || ''}`);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert(txt.publishError);
+            alert(`${txt.publishError}: ${e.message || ''}`);
         } finally {
             setIsPublishing(false);
         }
@@ -505,51 +551,175 @@ export default function InstagramManagementPage() {
             {/* Publish Modal */}
             {isPublishModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsPublishModalOpen(false)}></div>
-                    <div className="bg-surface border border-white/10 w-full max-w-md rounded-2xl shadow-2xl relative z-10 overflow-hidden">
-                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-                            <h3 className="font-bold">{txt.createPost}</h3>
-                            <button onClick={() => setIsPublishModalOpen(false)} className="text-gray-400 hover:text-white transition">
-                                <X className="w-5 h-5" />
-                            </button>
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setIsPublishModalOpen(false)}></div>
+                    <div className="bg-surface border border-white/10 w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl relative z-10 overflow-hidden flex flex-col lg:flex-row">
+                        
+                        {/* Preview Area (Left) */}
+                        <div className="lg:w-1/2 bg-black flex items-center justify-center border-r border-white/10 relative">
+                            {filePreview ? (
+                                <img src={filePreview} alt="Preview" className="max-h-full max-w-full object-contain" />
+                            ) : (
+                                <div className="text-center p-12">
+                                    <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-700" />
+                                    <p className="text-gray-500 mb-6">{lang === 'en_US' ? 'Choose a vertical photo (4:5)' : 'Escolha uma foto vertical (4:5)'}</p>
+                                    <label className="bg-primary hover:bg-primary-dark px-6 py-2 rounded-xl font-bold cursor-pointer transition">
+                                        {lang === 'en_US' ? 'Select from Device' : 'Selecionar do Dispositivo'}
+                                        <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileChange} />
+                                    </label>
+                                </div>
+                            )}
+                            {filePreview && (
+                                <button onClick={() => setFilePreview(null)} className="absolute top-4 left-4 bg-black/50 p-2 rounded-full hover:bg-black transition">
+                                    <Trash2 className="w-4 h-4 text-white" />
+                                </button>
+                            )}
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div>
-                                <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">{txt.imageUrlLabel}</label>
-                                <input 
-                                    type="text"
-                                    value={postImageUrl}
-                                    onChange={(e) => setPostImageUrl(e.target.value)}
-                                    placeholder="https://..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
-                                />
+
+                        {/* Config Area (Right) */}
+                        <div className="lg:w-1/2 bg-surface flex flex-col">
+                            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                                <div className="flex items-center">
+                                    {publishStep > 1 && (
+                                        <button onClick={() => setPublishStep(1)} className="mr-3 text-gray-400 hover:text-white">
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                    <h3 className="font-bold">{publishStep === 1 ? txt.createPost : (lang === 'en_US' ? 'Advanced Settings' : 'Configurações Avançadas')}</h3>
+                                </div>
+                                <button onClick={() => setIsPublishModalOpen(false)} className="text-gray-400 hover:text-white transition">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                            <div>
-                                <label className="text-xs text-gray-500 font-bold uppercase mb-2 block">{txt.postCaptionLabel}</label>
-                                <textarea 
-                                    value={postCaption}
-                                    onChange={(e) => setPostCaption(e.target.value)}
-                                    rows={4}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary resize-none"
-                                />
-                            </div>
-                            <button 
-                                onClick={handlePublishPost}
-                                disabled={isPublishing || !postImageUrl}
-                                className="w-full bg-primary hover:bg-primary-dark py-3 rounded-xl font-bold transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isPublishing ? (
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                                {publishStep === 1 ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                        {txt.publishing}
+                                        <div>
+                                            <div className="flex items-center mb-2">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center mr-2">
+                                                    <Instagram className="w-4 h-4 text-white" />
+                                                </div>
+                                                <span className="text-sm font-bold">zaplandia_oficial</span>
+                                            </div>
+                                            <textarea 
+                                                value={postCaption}
+                                                onChange={(e) => setPostCaption(e.target.value)}
+                                                placeholder={lang === 'en_US' ? 'Write a caption or add hashtags...' : 'Escreva uma legenda ou adicione hashtags...'}
+                                                rows={6}
+                                                className="w-full bg-transparent text-sm outline-none resize-none"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-4 border-t border-white/10 pt-4">
+                                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => setPublishStep(2)}>
+                                                <div className="flex items-center text-sm text-gray-300">
+                                                    <Users className="w-4 h-4 mr-3" />
+                                                    {lang === 'en_US' ? 'Tag People' : 'Marcar Pessoas'}
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white" />
+                                            </div>
+                                            <div className="flex items-center justify-between group cursor-pointer">
+                                                <div className="flex items-center text-sm text-gray-300">
+                                                    <MapPin className="w-4 h-4 mr-3" />
+                                                    {lang === 'en_US' ? 'Add Location' : 'Adicionar Localização'}
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white" />
+                                            </div>
+                                            <div className="flex items-center justify-between group cursor-pointer">
+                                                <div className="flex items-center text-sm text-gray-300">
+                                                    <Music className="w-4 h-4 mr-3" />
+                                                    {lang === 'en_US' ? 'Add Music' : 'Adicionar Música'}
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white" />
+                                            </div>
+                                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => setPublishStep(2)}>
+                                                <div className="flex items-center text-sm text-gray-300">
+                                                    <Settings className="w-4 h-4 mr-3" />
+                                                    {lang === 'en_US' ? 'Advanced Settings' : 'Configurações Avançadas'}
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-white" />
+                                            </div>
+                                        </div>
                                     </>
                                 ) : (
-                                    <>
-                                        <Plus className="w-5 h-5 mr-2" />
-                                        {txt.publishBtn}
-                                    </>
+                                    <div className="space-y-6">
+                                        <div className="space-y-4">
+                                            <h4 className="text-xs font-bold text-gray-500 uppercase">{lang === 'en_US' ? 'Accessibility' : 'Acessibilidade'}</h4>
+                                            <textarea 
+                                                value={postAltText}
+                                                onChange={(e) => setPostAltText(e.target.value)}
+                                                placeholder={lang === 'en_US' ? 'Write alt text...' : 'Escreva o texto alternativo...'}
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h4 className="text-xs font-bold text-gray-500 uppercase">{lang === 'en_US' ? 'Post Settings' : 'Configurações do Post'}</h4>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm">{lang === 'en_US' ? 'Hide Like and View Counts' : 'Ocultar Curtidas e Visualizações'}</span>
+                                                <button 
+                                                    onClick={() => setHideLikes(!hideLikes)}
+                                                    className={`w-10 h-5 rounded-full transition relative ${hideLikes ? 'bg-primary' : 'bg-gray-700'}`}
+                                                >
+                                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${hideLikes ? 'right-1' : 'left-1'}`}></div>
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm">{lang === 'en_US' ? 'Turn Off Commenting' : 'Desativar Comentários'}</span>
+                                                <button 
+                                                    onClick={() => setCommentsEnabled(!commentsEnabled)}
+                                                    className={`w-10 h-5 rounded-full transition relative ${!commentsEnabled ? 'bg-primary' : 'bg-gray-700'}`}
+                                                >
+                                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${!commentsEnabled ? 'right-1' : 'left-1'}`}></div>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4 pt-4 border-t border-white/10">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center text-sm">
+                                                    <Calendar className="w-4 h-4 mr-3" />
+                                                    {lang === 'en_US' ? 'Schedule Publication' : 'Programar Publicação'}
+                                                </div>
+                                                <button 
+                                                    onClick={() => setIsScheduled(!isScheduled)}
+                                                    className={`w-10 h-5 rounded-full transition relative ${isScheduled ? 'bg-primary' : 'bg-gray-700'}`}
+                                                >
+                                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${isScheduled ? 'right-1' : 'left-1'}`}></div>
+                                                </button>
+                                            </div>
+                                            {isScheduled && (
+                                                <input 
+                                                    type="datetime-local"
+                                                    value={scheduledTime}
+                                                    onChange={(e) => setScheduledTime(e.target.value)}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-primary"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
                                 )}
-                            </button>
+                            </div>
+
+                            <div className="p-4 border-t border-white/10 bg-white/5">
+                                <button 
+                                    onClick={handlePublishPost}
+                                    disabled={isPublishing || !filePreview}
+                                    className="w-full bg-primary hover:bg-primary-dark py-3 rounded-xl font-bold transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
+                                >
+                                    {isPublishing ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                            {txt.publishing}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {isScheduled ? <Calendar className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                                            {isScheduled ? (lang === 'en_US' ? 'Schedule' : 'Programar') : txt.publishBtn}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
