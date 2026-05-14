@@ -5,7 +5,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import WhatsAppButton from "@/components/WhatsAppButton";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,7 +29,6 @@ export default function RootLayout({
             <ThemeProvider>
               <SocketProvider>
                 {children}
-                <WhatsAppButton />
               </SocketProvider>
             </ThemeProvider>
           </AuthProvider>
