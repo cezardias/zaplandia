@@ -13,7 +13,6 @@ import {
     Store,
     AlertCircle,
     Coins,
-    Coins,
     Smartphone,
     Instagram,
     MessageCircle
