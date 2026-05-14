@@ -60,7 +60,9 @@ export default function AutomationsPage() {
         }
     ]);
     const [inputValue, setInputValue] = useState('');
-    const chatEndRef = useRef<HTMLDivElement>(nu    const t: any = {
+    const chatEndRef = useRef<HTMLDivElement>(null);
+
+    const t: any = {
         pt_BR: {
             title: 'Gestão de Automações',
             subtitle: 'Crie e gerencie fluxos inteligentes com n8n e IA.',
@@ -157,9 +159,6 @@ export default function AutomationsPage() {
             setupSuccess: 'n8n connesso con successo!',
             setupError: 'Errore durante la connessione a n8n. Controlla i dati.',
             notConfigured: 'n8n non configurato. Clicca per configurare.'
-        }
-    };
-
         }
     };
 
