@@ -275,9 +275,38 @@ O Zaplandia precisa de um token que não expire:
    - **Respondeu/Negociação**: Se você usar palavras como "respondeu", "negociação", "reply" ou "interessado", o lead será movido automaticamente para esta coluna assim que o cliente responder à sua mensagem.
 
 3. **Vantagens**:
-   - Elimina o trabalho manual de arrastar leads.
+    - Elimina o trabalho manual de arrastar leads.
    - Mantém seu funil de vendas sempre atualizado em tempo real.
    - Permite identificar rapidamente quais clientes já estão em fase de negociação.`,
+            },
+            {
+                title: 'Gestão do Instagram: Feed, Comentários e Insights',
+                category: 'Meta',
+                content: `Centralize o gerenciamento do seu perfil profissional do Instagram no Zaplandia:
+
+1. **Acesso**: No menu lateral, clique em **Gestão Instagram**.
+2. **Requisitos**: É necessário ter configurado o **Instagram Business ID**, **Token de Acesso do Instagram** e as permissões aprovadas (ou conta em modo desenvolvedor com os perfis cadastrados como testadores).
+3. **Feed & Comentários**: 
+   - Visualize todas as suas publicações recentes e Reels.
+   - Clique em uma publicação para listar todos os comentários.
+   - Responda aos comentários diretamente da plataforma.
+4. **Insights**:
+   - Acesse a aba "Insights" para visualizar as métricas de engajamento da conta, como Alcance, Impressões e Visualizações do Perfil.`,
+            },
+            {
+                title: 'Automação de Comentários no Instagram via n8n',
+                category: 'Automação',
+                content: `Configure seu n8n para responder automaticamente aos comentários nas publicações do seu Instagram:
+
+1. **Configuração do Webhook**:
+   - Vá em **Integrações > Configurações**.
+   - Na seção **Automação n8n**, cadastre a URL do seu Webhook (global ou específico para o canal \`instagram\`).
+2. **Recebendo os Eventos**:
+   - Quando alguém comentar num post seu, o Zaplandia enviará um payload para o seu n8n contendo o evento \`instagram.comment\`, o texto do comentário, o ID do autor e o \`comment_id\`.
+3. **Enviando a Resposta (Auto-Reply)**:
+   - Processe a lógica no n8n.
+   - O último nó do seu fluxo HTTP Response deve retornar simplesmente o texto da resposta desejada.
+   - O Zaplandia interceptará esse texto e postará a resposta nativamente no Instagram como uma resposta ao comentário do seu cliente!`,
             }
         ];
 
