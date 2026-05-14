@@ -314,22 +314,17 @@ export class MetaApiService {
      * Reply to an Instagram Comment
      */
     async replyToInstagramComment(tenantId: string, commentId: string, message: string) {
-        try {
-            const { accessToken: defaultToken, instagramAccessToken } = await this.getCredentials(tenantId);
-            const accessToken = instagramAccessToken || defaultToken;
+        const token = await this.getInstagramToken(tenantId);
+        const url = `https://graph.facebook.com/v21.0/${commentId}/replies`;
+        const res = await axios.post(url, { message }, { params: { access_token: token } });
+        return res.data;
+    }
 
-            const response = await axios.post(
-                `https://graph.facebook.com/v18.0/${commentId}/replies`,
-                { message },
-                { params: { access_token: accessToken } }
-            );
-
-            return response.data;
-        } catch (error: any) {
-            const detailedMsg = error.response?.data?.error?.message || error.message;
-            this.logger.error(`[INSTAGRAM_COMMENT_REPLY] Failed to reply: ${detailedMsg}`);
-            throw new Error(`Meta API Error: ${detailedMsg}`);
-        }
+    async deleteInstagramComment(tenantId: string, commentId: string) {
+        const token = await this.getInstagramToken(tenantId);
+        const url = `https://graph.facebook.com/v21.0/${commentId}`;
+        const res = await axios.delete(url, { params: { access_token: token } });
+        return res.data;
     }
 
     /**

@@ -13,7 +13,8 @@ import {
     Reply,
     Heart,
     Clock,
-    AlertCircle
+    AlertCircle,
+    Trash2
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -151,6 +152,12 @@ export default function InstagramManagementPage() {
         }
     }, [token]);
 
+    const handleShowLikersMessage = () => {
+        alert(lang === 'en_US' 
+            ? 'Instagram Privacy Policy: Meta only provides the total like count. The list of individual users who liked the post is not available via this API for privacy reasons.' 
+            : 'Política de Privacidade do Instagram: A Meta fornece apenas o número total de curtidas. A lista de usuários individuais que curtiram o post não está disponível via API por questões de privacidade.');
+    };
+
     const fetchMedia = async () => {
         setIsLoading(true);
         setError(null);
@@ -207,6 +214,24 @@ export default function InstagramManagementPage() {
     const handleSelectMedia = (media: Media) => {
         setSelectedMedia(media);
         fetchComments(media.id);
+    };
+
+    const handleDeleteComment = async (commentId: string) => {
+        if (!confirm(lang === 'en_US' ? 'Delete this comment/reply?' : 'Excluir este comentário/resposta?')) return;
+        
+        try {
+            const res = await fetch(`/api/integrations/instagram/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                if (selectedMedia) fetchComments(selectedMedia.id);
+            } else {
+                alert(lang === 'en_US' ? 'Failed to delete. Make sure you have permission.' : 'Falha ao excluir. Verifique se você tem permissão.');
+            }
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     const handleReply = async (commentId: string) => {
@@ -333,7 +358,12 @@ export default function InstagramManagementPage() {
                                         <a href={selectedMedia.permalink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">{txt.viewOriginal}</a>
                                     </div>
                                     <div className="flex items-center space-x-4">
-                                        <span className="flex items-center text-sm"><Heart className="w-4 h-4 mr-1 text-pink-500" /> {selectedMedia.like_count}</span>
+                                        <button 
+                                            onClick={handleShowLikersMessage}
+                                            className="flex items-center text-sm hover:bg-white/10 px-2 py-1 rounded-lg transition"
+                                        >
+                                            <Heart className="w-4 h-4 mr-1 text-pink-500" /> {selectedMedia.like_count}
+                                        </button>
                                         <span className="flex items-center text-sm"><MessageCircle className="w-4 h-4 mr-1 text-blue-400" /> {selectedMedia.comments_count}</span>
                                     </div>
                                 </div>
@@ -355,7 +385,14 @@ export default function InstagramManagementPage() {
                                                         </div>
                                                         <p className="text-sm text-gray-200">{comment.text}</p>
                                                         
-                                                        <div className="mt-3 flex justify-end">
+                                                        <div className="mt-3 flex justify-end space-x-4">
+                                                            <button 
+                                                                onClick={() => handleDeleteComment(comment.id)}
+                                                                className="text-[10px] text-red-400/50 hover:text-red-400 flex items-center transition"
+                                                                title={lang === 'en_US' ? 'Delete Comment' : 'Excluir Comentário'}
+                                                            >
+                                                                <Trash2 className="w-3 h-3 mr-1" /> {lang === 'en_US' ? 'Delete' : 'Excluir'}
+                                                            </button>
                                                             <button 
                                                                 onClick={() => { setReplyingTo(comment.id); setReplyText(''); }}
                                                                 className="text-xs text-gray-400 hover:text-white flex items-center transition"
@@ -392,7 +429,16 @@ export default function InstagramManagementPage() {
                                                                 <div key={reply.id} className="bg-primary/5 border border-primary/10 p-3 rounded-xl flex flex-col">
                                                                     <div className="flex justify-between items-start mb-1">
                                                                         <span className="font-bold text-xs text-gray-400">@{reply.username} ({txt.us})</span>
-                                                                        <span className="text-[10px] text-gray-500">{new Date(reply.timestamp).toLocaleString()}</span>
+                                                                        <div className="flex items-center space-x-3">
+                                                                            <span className="text-[10px] text-gray-500">{new Date(reply.timestamp).toLocaleString()}</span>
+                                                                            <button 
+                                                                                onClick={() => handleDeleteComment(reply.id)}
+                                                                                className="text-gray-500 hover:text-red-400 transition"
+                                                                                title={lang === 'en_US' ? 'Delete Reply' : 'Excluir Resposta'}
+                                                                            >
+                                                                                <Trash2 className="w-3 h-3" />
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
                                                                     <p className="text-sm text-gray-300">{reply.text}</p>
                                                                 </div>

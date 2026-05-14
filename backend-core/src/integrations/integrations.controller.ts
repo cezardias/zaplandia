@@ -464,6 +464,12 @@ export class IntegrationsController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Delete('instagram/comments/:commentId')
+    async deleteInstagramComment(@Request() req, @Param('commentId') commentId: string) {
+        return this.metaApiService.deleteInstagramComment(req.user.tenantId, commentId);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Post('meta/templates')
     async createMetaTemplate(@Request() req, @Body() body: { name: string, category: string, language: string, bodyText: string }) {
         return this.metaApiService.createTemplate(req.user.tenantId, body);
