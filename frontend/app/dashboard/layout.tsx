@@ -6,11 +6,26 @@ import { useLanguage } from '@/context/LanguageContext';
 import {
     MessageCircle,
     Instagram,
-    Cpu
+    Cpu,
+    LifeBuoy,
+    Brain,
+    LayoutDashboard,
+    MessageSquare,
+    Zap,
+    Smartphone,
+    Facebook,
+    Users,
+    BarChart3,
+    Settings,
+    CreditCard,
+    Terminal,
+    HelpCircle,
+    FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
+import LisaWidget from '@/components/LisaWidget';
 
 export default function DashboardLayout({
     children,
@@ -52,6 +67,8 @@ export default function DashboardLayout({
                 payments: 'Pagamentos',
                 developer: 'Desenvolvedor',
                 automations: 'Automações n8n',
+                aiTraining: 'Treinar Lisa (IA)',
+                adminTickets: 'Gestão de Chamados',
                 help: 'Central de Ajuda',
                 terms: 'Termos de Uso'
             },
@@ -75,6 +92,8 @@ export default function DashboardLayout({
                 payments: 'Payments',
                 developer: 'Developer',
                 automations: 'n8n Automations',
+                aiTraining: 'Train Lisa (AI)',
+                adminTickets: 'Ticket Management',
                 help: 'Help Center',
                 terms: 'Terms of Use'
             },
@@ -98,6 +117,8 @@ export default function DashboardLayout({
                 payments: 'Pagamentos',
                 developer: 'Programador',
                 automations: 'Automações n8n',
+                aiTraining: 'Treinar Lisa (IA)',
+                adminTickets: 'Gestão de Chamados',
                 help: 'Central de Ajuda',
                 terms: 'Termos de Uso'
             },
@@ -121,6 +142,8 @@ export default function DashboardLayout({
                 payments: 'Pagamenti',
                 developer: 'Sviluppatore',
                 automations: 'Automazioni n8n',
+                aiTraining: 'Addestra Lisa (IA)',
+                adminTickets: 'Gestione Ticket',
                 help: 'Centro Assistenza',
                 terms: 'Termini di Utilizzo'
             },
@@ -174,6 +197,8 @@ export default function DashboardLayout({
         { name: t[lang].menu.payments, icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
         { name: t[lang].menu.developer, icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.automations, icon: <Cpu size={20} />, path: '/dashboard/automations', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.aiTraining, icon: <Brain size={20} />, path: '/dashboard/admin/ai-training', roles: ['superadmin'] },
+        { name: t[lang].menu.adminTickets, icon: <LifeBuoy size={20} />, path: '/dashboard/admin/support', roles: ['superadmin'] },
         { name: t[lang].menu.help, icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
         { name: t[lang].menu.terms, icon: <FileText size={20} />, path: '/dashboard/terms', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
@@ -350,6 +375,8 @@ export default function DashboardLayout({
                 <div className="flex-1">
                     {children}
                 </div>
+                {/* Floating AI Assistant Lisa */}
+                <LisaWidget />
             </main>
         </div>
     );

@@ -7,6 +7,7 @@ import { Integration } from '../integrations/entities/integration.entity';
 import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { AiPrompt as AiPromptEntity } from '../integrations/entities/ai-prompt.entity';
+import { SupportService } from '../support/support.service';
 import { ErpZaplandiaService } from '../integrations/erp-zaplandia.service';
 import { RifaApiService } from '../integrations/rifa-api.service';
 import { MetaApiService } from '../integrations/meta-api.service';
@@ -41,11 +42,6 @@ export class AiService implements OnModuleInit {
     async onModuleInit() {
         this.logger.log('Initializing AiService and seeding special prompts...');
         try {
-            // Find all tenants (indirectly via integrations or prompts)
-            // or just seed for the system.
-            // Simplified: We'll seed when prompts are requested or on a timer, 
-            // but even better, just ensure the prompt exists for all known tenants.
-            // For now, let's create a method that can be called to ensure basic prompts exist.
             await this.seedDefaultPrompts();
         } catch (error) {
             this.logger.error(`Failed to seed default prompts: ${error.message}`);
@@ -78,7 +74,6 @@ REGRAS: Não enviar spam, não repetir frases, manter comportamento humano.
 
 INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
-        // Get all unique tenantIds from integrations
         const integrations = await this.integrationRepository.find({ select: ['tenantId'] });
         const tenantIds = [...new Set(integrations.map(i => i.tenantId))];
 
@@ -98,9 +93,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    /**
-     * Get all AI prompts for a tenant
-     */
     async findAll(tenantId: string): Promise<AiPromptEntity[]> {
         return this.aiPromptRepository.find({
             where: { tenantId },
@@ -108,19 +100,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         });
     }
 
-    /**
-     * Get Gemini API key for tenant from integrations
-     */
     private async getGeminiApiKey(tenantId: string): Promise<string | null> {
         try {
             const apiKey = await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY');
             if (apiKey) {
-                // AGGRESSIVE SANITIZATION: Remove quotes, newlines, and surrounding whitespace
                 const cleanedKey = apiKey.replace(/["'\n\r]/g, '').trim();
                 if (cleanedKey) return cleanedKey;
             }
 
-            // GLOBAL FALLBACK: Use environment variables if no tenant-specific key exists
             const envKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
             if (envKey) {
                 this.logger.log(`[AI] Using global GEMINI_API_KEY fallback from environment`);
@@ -134,15 +121,11 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    /**
-     * Get OpenRouter API key for tenant
-     */
     private async getOpenRouterApiKey(tenantId: string): Promise<string | null> {
         try {
             const apiKey = await this.integrationsService.getCredential(tenantId, 'OPENROUTER_API_KEY');
             if (apiKey?.trim()) return apiKey.trim();
 
-            // GLOBAL FALLBACK
             if (process.env.OPENROUTER_API_KEY) {
                 this.logger.log(`[AI] Using global OPENROUTER_API_KEY fallback from environment`);
                 return process.env.OPENROUTER_API_KEY.trim();
@@ -155,11 +138,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    /**
-     * Check if AI should respond to this message
-     */
     async shouldRespond(contact: Contact, instanceName: string, tenantId: string): Promise<boolean> {
-        // 1. Find the integration for this specific instance
         const integrations = await this.integrationRepository.find({
             where: {
                 tenantId,
@@ -167,7 +146,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             order: { updatedAt: 'DESC' }
         });
 
-        // Match by instanceName in credentials or settings 
         const integration = integrations.find(i => {
             const credInst = i.credentials?.instanceName;
             const settInst = i.settings?.instanceName;
@@ -181,17 +159,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         });
 
         if (!integration) {
-            // FALLBACK: Check if this matches a Meta Official setup without a formal Integration record
             const metaPhoneId = await this.integrationsService.getCredential(tenantId, 'META_PHONE_NUMBER_ID', true);
-            // Relaxed matching: try to match instanceName against the stored Phone ID OR handle any MetaOfficial name
             if (metaPhoneId && (metaPhoneId === instanceName || instanceName === 'MetaOfficial')) {
                 this.logger.log(`[META_WA] Manual integration recognized for instance ${instanceName}`);
-                // In manual mode, we assume AI is enabled if prompt is found
                 const globalAiPromptId = await this.integrationsService.getCredential(tenantId, 'AI_PROMPT_ID', true);
                 if (globalAiPromptId && contact.aiEnabled !== false) {
                     return true;
                 }
-                // If no specific credential, check if tenant has ANY prompt (safer fallback)
                 const prompts = await this.aiPromptRepository.find({ where: { tenantId } });
                 if (prompts.length > 0 && contact.aiEnabled !== false) {
                     return true;
@@ -201,20 +175,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             return false;
         }
 
-        // --- HIERARCHY LOGIC ---
-        // Contact Level (Manual Override) - Pausa a automação para este contato específico
         if (contact.aiEnabled === false) {
             this.logger.log(`AI disabled specifically for contact ${contact.id}`);
             return false;
         }
 
-        // Global Level (Instance Level)
         if (!integration.aiEnabled) {
             this.logger.log(`AI disabled globally for instance ${instanceName}`);
             return false;
         }
 
-        // 3. Check if prompt is configured
         if (!integration.aiPromptId) {
             this.logger.warn(`No AI prompt configured for instance ${instanceName}`);
             return false;
@@ -223,9 +193,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         return true;
     }
 
-    /**
-     * Generate a generic AI response for tasks not tied to a specific contact (e.g. Automation Architect)
-     */
     async generateGenericResponse(tenantId: string, prompt: string): Promise<string | null> {
         try {
             const geminiKey = await this.getGeminiApiKey(tenantId);
@@ -233,7 +200,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 this.logger.error(`No Gemini API key for tenant ${tenantId}`);
                 return null;
             }
-            // Use flash model for speed in generic tasks
             return this.callGemini('gemini-1.5-flash', prompt, geminiKey, 2048, undefined, tenantId);
         } catch (error) {
             this.logger.error(`Error in generateGenericResponse: ${error.message}`);
@@ -241,15 +207,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    /**
-     * Generate AI response for a message
-     */
-    /**
-     * Generate AI response for a message
-     */
     async generateResponse(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
         try {
-            // 1. Determine provider and get API key
             const geminiKey = await this.getGeminiApiKey(tenantId);
             const openRouterKey = await this.getOpenRouterApiKey(tenantId);
 
@@ -258,16 +217,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 return null;
             }
 
-            // 3. Get integration to find prompt
             const integrations = await this.integrationRepository.find({
                 where: {
                     tenantId,
-                    provider: In(['evolution', 'meta']), // Include Meta integrations
+                    provider: In(['evolution', 'meta']),
                 },
                 order: { updatedAt: 'DESC' }
             });
 
-            // Match by instanceName (contact.instance or provided)
             const targetInstance = instanceName || contact.instance;
             const integration = integrations.find(i => {
                 const credInst = i.credentials?.instanceName;
@@ -288,7 +245,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 return null;
             }
 
-            // 4. Fetch AI prompt from database
             let promptContent = await this.getPromptContent(integration.aiPromptId, tenantId);
 
             if (!promptContent) {
@@ -296,22 +252,17 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 return null;
             }
 
-            // SMART FIX: Replace common n8n/template variables if present in prompt
-            // Use contact details for replacement
             const pushName = contact.name || 'Cliente';
             promptContent = promptContent.replace(/\{\{\s*\$\(?'Webhook'\)?\.item\.json\.body\.data\.pushName\s*\}\}/g, pushName);
             promptContent = promptContent.replace(/\{\{\s*pushName\s*\}\}/g, pushName);
             promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName);
 
-            // 5. Get conversation history (last 10 messages)
             const rawHistory = await this.messageRepository.find({
                 where: { contactId: contact.id },
                 order: { createdAt: 'DESC' },
-                take: 15 // Take a bit more to ensure we find the reset marker if present
+                take: 15
             });
 
-            // Smart Memory Reset: If we find the [CONTROLE_SISTEMA] marker, we discard everything before it
-            // because a human has finished the service and the AI should start over.
             const resetMarkerIndex = rawHistory.findIndex(m => m.content.includes('[CONTROLE_SISTEMA]'));
             let history = rawHistory;
             if (resetMarkerIndex !== -1) {
@@ -321,7 +272,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 history = rawHistory.slice(0, 10);
             }
 
-            // Build context
             const conversationContext = history
                 .reverse()
                 .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`)
@@ -330,7 +280,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const isFreshStart = history.length === 0;
             const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]: O atendimento humano acabou de ser finalizado. Inicie o contato do zero de acordo com o prompt acima.' : 'Histórico da Conversa:'}\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
-            // 6. Call Gemini API manually (Resilient Fallback List)
             const configuredModel = integration.aiModel || 'gemini-1.5-flash';
             const modelsToTry = [
                 configuredModel,
@@ -350,7 +299,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             for (const model of uniqueModels) {
                 this.logger.debug(`[AI_ATTEMPT] Trying Gemini model: ${model}`);
                 try {
-                    // 6.1 CHECK FOR ERP TOOLS & AUTO-INJECT INSTRUCTION
                     let tools: any[] | undefined;
                     const erpKey = await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true);
                     const rifaKey = await this.integrationsService.getCredential(tenantId, 'RIFA_API_KEY', true);
@@ -359,7 +307,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     tools = [];
 
                     if (erpKey) {
-                        // Auto-inject capability instruction so the user doesn't have to manually edit every prompt
                         finalPrompt += `\n\n[CAPACIDADE ERP]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente pedir para 'ver estoque', 'lista de produtos' ou perguntar por preços, ignore qualquer outra regra e use a ferramenta imediatamente com um termo geral (ex: 'notebook') para obter dados reais.`;
 
                         tools.push({
@@ -425,7 +372,6 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
 
                     if (tools.length === 0) tools = undefined;
 
-                    // ROUTING LOGIC
                     if (model.includes('/') && openRouterKey) {
                         this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
                         aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId);
@@ -447,7 +393,6 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                         this.logger.error(`[AI_FATAL] Invalid API Key detected for Tenant ${tenantId}`);
                         break;
                     }
-                    // Continue to next model on 404, 429, 503
                 }
             }
 
@@ -467,27 +412,19 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         }
     }
 
-    /**
-     * Send AI response via Evolution API
-     */
     async sendAIResponse(contact: Contact, aiResponse: string, tenantId: string, instanceNameOverride?: string, senderOverride?: string): Promise<void> {
-        // Variables needed in catch block for healing
         let targetNumber = '';
         let useContact = contact;
         let useInstance = '';
 
         try {
-            // CRITICAL: Re-fetch contact from DB to ensure we have the LATEST externalId/JID
             const freshContact = await this.contactRepository.findOne({ where: { id: contact.id } });
             useContact = freshContact || contact;
             useInstance = instanceNameOverride || useContact.instance;
 
-            // Get target number
-            // PRIORITY 1: Caller-supplied override
             if (senderOverride) {
                 targetNumber = senderOverride;
                 this.logger.debug(`[AI_SEND] Using caller-supplied senderOverride: ${targetNumber}`);
-                // PRIORITY 2: If we have a numeric phoneNumber, use that with @s.whatsapp.net
             } else if (useContact.phoneNumber && useContact.phoneNumber.length > 8) {
                 targetNumber = `${useContact.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
                 this.logger.debug(`[AI_SEND] Using phone-based JID for stability: ${targetNumber}`);
@@ -500,25 +437,20 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                 return;
             }
 
-            // HARDENING: Standardize number to base JID (remove :device but keep @suffix)
             const cleanNumber = targetNumber.replace(/:[0-9]+/, '');
             targetNumber = cleanNumber.includes('@') ? cleanNumber : `${cleanNumber.replace(/\D/g, '')}@s.whatsapp.net`;
 
-            // LID RESOLUTION: If still @lid, try to resolve to real phone JID via Evolution API
             if (targetNumber.includes('@lid')) {
                 this.logger.log(`[AI_SEND] Target is @lid — attempting LID resolution for ${targetNumber}`);
                 const resolvedJid = await this.evolutionApiService.resolveLid(tenantId, useInstance, targetNumber);
                 if (resolvedJid) {
                     this.logger.log(`[AI_SEND] LID resolved: ${targetNumber} -> ${resolvedJid}`);
                     targetNumber = resolvedJid;
-                    // Persist resolved JID back to contact so future messages don't re-resolve
                     await this.contactRepository.update(useContact.id, { externalId: resolvedJid });
                 } else if (useContact.phoneNumber && useContact.phoneNumber.replace(/\D/g, '').length > 8) {
-                    // LID resolution failed — fallback to contact's phoneNumber
                     const phoneFallback = `${useContact.phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
                     this.logger.warn(`[AI_SEND] LID could not be resolved. Falling back to phoneNumber: ${phoneFallback}`);
                     targetNumber = phoneFallback;
-                    // Persist fallback JID so future messages use it directly
                     await this.contactRepository.update(useContact.id, { externalId: phoneFallback });
                 } else {
                     throw new Error(`LID ${targetNumber} could not be resolved and no phoneNumber available.`);
@@ -527,33 +459,23 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
 
             this.logger.log(`Sending AI response to ${targetNumber} via ${useInstance}`);
 
-            // Find integration to determine provider
             const integration = await this.integrationsService.resolveInstance(tenantId, useInstance);
 
             if (integration?.provider === 'whatsapp' && integration.credentials?.META_ACCESS_TOKEN) {
-                // Official Meta Sending
                 await this.metaApiService.sendTextMessage(tenantId, targetNumber, aiResponse);
             } else if (integration?.provider === 'instagram' || useContact.provider === 'instagram') {
-                // Instagram Sending
-                // targetNumber in Instagram context is the PSID (sender.id from webhook)
-                // If it contains @suffix, remove it
                 const psid = targetNumber.split('@')[0];
                 await this.metaApiService.sendInstagramMessage(tenantId, psid, aiResponse);
             } else {
-                // Evolution API Sending (Default Fallback)
                 await this.evolutionApiService.sendText(tenantId, useInstance, targetNumber, aiResponse);
             }
 
             this.logger.log(`AI response sent to ${targetNumber} via ${useInstance}`);
 
-
-
         } catch (error) {
             const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
             this.logger.error(`Failed to send AI response: ${errorMsg}`);
 
-            // AUTOMATIC HEALING: If delivery failed with "exists: false" and we were using a LID
-            // Try falling back to the phone number if we have it in the contact.
             const isExistsFalse = errorMsg.includes('exists":false') || errorMsg.includes('not found');
             const wasLid = targetNumber && targetNumber.includes('@lid');
 
@@ -563,24 +485,20 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                 try {
                     await this.evolutionApiService.sendText(tenantId, useInstance, fallbackNumber, aiResponse);
                     this.logger.log(`[AI_HEAL] Success! AI response delivered via phone fallback.`);
-                    return; // Successfully healed
+                    return;
                 } catch (fallbackError) {
                     this.logger.error(`[AI_HEAL] Phone fallback also failed: ${fallbackError.message}`);
                 }
             }
 
-            // EXTRA RESILIENCE: Log the full error to help debug LID issues
             if (error.response?.data) {
                 this.logger.error(`Evolution API Error Detail: ${JSON.stringify(error.response.data)}`);
             }
         }
     }
 
-    // --- RESTORED METHODS FOR FRONTEND MAGIC WAND ---
-
     async getAiResponse(tenantId: string, prompt: string, provider: string, context?: string, modelName?: string) {
         try {
-            // Fetch the Gemini API Key for this specific tenant (or global fallback)
             const apiKey = await this.getGeminiApiKey(tenantId);
 
             if (!apiKey) {
@@ -591,7 +509,6 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
             const systemInstruction = context || "Você é o assistente da Zaplandia.";
             const fullPrompt = `${systemInstruction}\n\n${prompt}`;
 
-            // 6. Call Gemini API manually (Resilient Fallback List)
             const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
@@ -636,7 +553,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         } catch (error) {
             const errorDetail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
             this.logger.error(`[AI_REQUEST_FAILED] ${errorDetail}`);
-            return null; // Return null instead of error string so callers can fallback
+            return null;
         }
     }
 
@@ -651,8 +568,6 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         Gere as variações no formato JSON array de strings: ["variação 1", "variação 2", ...]`;
 
         try {
-            // Look up the tenant's configured aiModel from their integration
-            // (same logic as generateResponse uses for inbox AI — ensures same working model)
             let configuredModel: string | undefined;
             try {
                 const integrations = await this.integrationRepository.find({
@@ -673,15 +588,12 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
 
             if (!responseStr) return [baseMessage];
 
-            // 1. If it's a known error/warning prefix (Deprecated check, keeping just in case)
             if (responseStr.startsWith('[ERRO')) {
                 this.logger.warn(`[GEN_VAR] Received error string from AI: ${responseStr}. Falling back to original.`);
                 return [baseMessage];
             }
 
-            // 2. Try to extract JSON from the response
             let cleaned = responseStr.trim();
-            // Remove markdown code blocks if present
             cleaned = cleaned.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
 
             const jsonMatch = cleaned.match(/\[.*\]/s);
@@ -698,14 +610,9 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                 this.logger.warn(`[GEN_VAR] Failed to parse as JSON array: ${cleaned}`);
             }
 
-            // 3. Fallback: return it as single item if not JSON
             return [responseStr];
         } catch (error) {
             this.logger.error(`[GEN_VAR_CRITICAL] ${error.message}`);
-            return [baseMessage]; // Fallback to original message instead of sending error to user
-        }
-    }
-
     // For /api/ai/prompts used in frontend
     async generatePrompts(tenantId: string, topic: string, count: number = 3): Promise<string[]> {
         return this.generateVariations(tenantId, topic, "Gere prompts de sistema para IA agir como um atendente.", count);
@@ -1021,5 +928,37 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         }
 
         return null;
+    }
+
+    async generateLisaResponse(tenantId: string, fullPrompt: string) {
+        // Find Lisa's specialized prompt
+        const lisaPrompt = await this.aiPromptRepository.findOne({
+            where: { name: 'ZAPLANDIA_HELP_CENTER_LISA' }
+        });
+
+        const systemPrompt = lisaPrompt?.content || `
+        Seu nome é Lisa. Você é a assistente oficial da Zaplandia.
+        PERSONALIDADE: Amigável, compreensiva e objetiva.
+        FOCO: Zaplandia e suas integrações (WhatsApp, Instagram, n8n, CRM).
+        OBJETIVO: Auxiliar os usuários nas funcionalidades, resolver dificuldades e proporcionar uma experiência espetacular.
+        DICA: Se a dúvida for complexa, sugira abrir um chamado de suporte.
+        `;
+
+        const finalPrompt = `${systemPrompt}\n\n${fullPrompt}`;
+        return this.generateGenericResponse(tenantId, finalPrompt);
+    }
+
+    async getPromptByName(name: string) {
+        return this.aiPromptRepository.findOne({ where: { name } });
+    }
+
+    async savePromptByName(name: string, content: string, tenantId: string) {
+        let prompt = await this.aiPromptRepository.findOne({ where: { name } });
+        if (prompt) {
+            prompt.content = content;
+        } else {
+            prompt = this.aiPromptRepository.create({ name, content, tenantId });
+        }
+        return this.aiPromptRepository.save(prompt);
     }
 }

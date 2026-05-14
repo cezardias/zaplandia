@@ -180,6 +180,28 @@ export class AiController {
         return this.aiService.findAll(req.user.tenantId);
     }
 
+    @Post('lisa/chat')
+    async lisaChat(@Request() req: any, @Body() body: { message: string, history: any[] }) {
+        const fullPrompt = `Histórico:\n${body.history.map(h => `${h.role}: ${h.content}`).join('\n')}\nUser: ${body.message}`;
+        const response = await this.aiService.generateLisaResponse(req.user.tenantId, fullPrompt);
+        return { content: response };
+    }
+
+    @Get('lisa/prompt')
+    async getLisaPrompt(@Request() req: any) {
+        // Only superadmin can see/edit Lisa's prompt
+        if (req.user.role !== 'superadmin') return { content: '' };
+        const prompt = await this.aiService.getPromptByName('ZAPLANDIA_HELP_CENTER_LISA');
+        return { content: prompt?.content || '' };
+    }
+
+    @Post('lisa/prompt')
+    async saveLisaPrompt(@Request() req: any, @Body() body: { content: string }) {
+        if (req.user.role !== 'superadmin') return { success: false };
+        await this.aiService.savePromptByName('ZAPLANDIA_HELP_CENTER_LISA', body.content, req.user.tenantId);
+        return { success: true };
+    }
+
     @Post('prompts')
     async generatePrompts(
         @Body() body: { topic: string; count?: number },

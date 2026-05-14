@@ -190,7 +190,10 @@ export default function AutomationsPage() {
                     setN8nConfig(data);
                 } else {
                     setIsConfigured(false);
-                    setShowSetupModal(true);
+                    // Only show setup modal to superadmin
+                    if (user?.role === 'superadmin') {
+                        setShowSetupModal(true);
+                    }
                 }
             }
         } catch (err) {
@@ -297,7 +300,7 @@ export default function AutomationsPage() {
                         </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                        {!isConfigured && (
+                        {(!isConfigured && user?.role === 'superadmin') && (
                             <button 
                                 onClick={() => setShowSetupModal(true)}
                                 className="px-3 py-1 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-lg text-[10px] font-black uppercase tracking-tighter hover:bg-orange-500/20 transition animate-pulse"

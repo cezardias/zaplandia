@@ -12,8 +12,9 @@ import {
     Shield,
     Settings,
     ChevronRight,
-    Loader2,
-    X
+    X,
+    LifeBuoy,
+    Plus
 } from 'lucide-react';
 
 interface Article {
@@ -28,8 +29,9 @@ export default function SupportPage() {
     const { lang } = useLanguage();
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+    const [tickets, setTickets] = useState<any[]>([]);
+    const [showTicketList, setShowTicketList] = useState(false);
 
 
     const t: any = {
@@ -709,8 +711,24 @@ Zaplandia ha bisogno di un token che non scada:
 
 
     useEffect(() => {
-        if (token) fetchArticles();
+        if (token) {
+            fetchArticles();
+            fetchTickets();
+        }
     }, [token]);
+
+    const fetchTickets = async () => {
+        try {
+            const res = await fetch('/api/support/tickets', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setTickets(await res.json());
+            }
+        } catch (err) {
+            console.error('Error fetching tickets:', err);
+        }
+    };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -752,9 +770,25 @@ Zaplandia ha bisogno di un token che non scada:
                         {t[lang].searchButton}
                     </button>
                 </form>
+
+                <div className="flex justify-center mt-10 space-x-4">
+                    <button 
+                        onClick={() => setShowTicketList(false)}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition ${!showTicketList ? 'bg-primary text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}
+                    >
+                        Base de Conhecimento
+                    </button>
+                    <button 
+                        onClick={() => setShowTicketList(true)}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition ${showTicketList ? 'bg-primary text-white' : 'bg-white/5 text-gray-500 hover:bg-white/10'}`}
+                    >
+                        Meus Chamados ({tickets.length})
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {!showTicketList ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {isLoading ? (
                     <div className="col-span-full py-20 flex flex-col items-center">
                         <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
@@ -788,6 +822,45 @@ Zaplandia ha bisogno di un token che non scada:
                     })
                 )}
             </div>
+            ) : (
+                <div className="space-y-4">
+                    {tickets.length === 0 ? (
+                        <div className="text-center py-20 bg-surface border border-dashed border-white/10 rounded-3xl">
+                            <LifeBuoy size={48} className="mx-auto text-gray-700 mb-4" />
+                            <p className="text-gray-500 font-bold">Você não tem nenhum chamado aberto.</p>
+                            <button className="mt-4 text-primary font-bold hover:underline">Abrir novo chamado agora</button>
+                        </div>
+                    ) : (
+                        tickets.map(ticket => (
+                            <div key={ticket.id} className="p-6 bg-surface border border-white/5 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition">
+                                <div className="flex items-center space-x-4">
+                                    <div className={`p-3 rounded-xl ${
+                                        ticket.status === 'open' ? 'bg-red-500/10 text-red-500' :
+                                        ticket.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-500' :
+                                        'bg-green-500/10 text-green-500'
+                                    }`}>
+                                        <LifeBuoy size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-white group-hover:text-primary transition">{ticket.subject}</h3>
+                                        <p className="text-xs text-gray-500">Aberto em {new Date(ticket.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${
+                                        ticket.status === 'open' ? 'bg-red-500/10 text-red-500' :
+                                        ticket.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-500' :
+                                        'bg-green-500/10 text-green-500'
+                                    }`}>
+                                        {ticket.status}
+                                    </span>
+                                    <ChevronRight size={16} className="text-gray-700" />
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
 
             {/* Article Modal */}
             {selectedArticle && (

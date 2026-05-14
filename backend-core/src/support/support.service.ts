@@ -10,6 +10,8 @@ export class SupportService implements OnModuleInit {
     constructor(
         @InjectRepository(SupportArticle)
         private articleRepository: Repository<SupportArticle>,
+        @InjectRepository(Ticket)
+        private ticketRepository: Repository<Ticket>,
     ) { }
 
     async onModuleInit() {
@@ -362,5 +364,48 @@ O Zaplandia precisa de um token que não expire:
             }
         }
         this.logger.log('Seeding completed sucessfully.');
+    }
+
+    // --- Ticketing System ---
+
+    async createTicket(tenantId: string, requesterId: string, data: any) {
+        const ticket = this.ticketRepository.create({
+            ...data,
+            tenantId,
+            requesterId,
+            status: 'open'
+        });
+        return this.ticketRepository.save(ticket);
+    }
+
+    async findAllTickets(tenantId: string, role: string) {
+        if (role === 'superadmin') {
+            return this.ticketRepository.find({
+                relations: ['requester', 'assignee'],
+                order: { createdAt: 'DESC' }
+            });
+        }
+        return this.ticketRepository.find({
+            where: { tenantId },
+            relations: ['requester', 'assignee'],
+            order: { createdAt: 'DESC' }
+        });
+    }
+
+    async findUserTickets(tenantId: string, requesterId: string) {
+        return this.ticketRepository.find({
+            where: { tenantId, requesterId },
+            relations: ['assignee'],
+            order: { createdAt: 'DESC' }
+        });
+    }
+
+    async updateTicket(id: string, data: any) {
+        await this.ticketRepository.update(id, data);
+        return this.ticketRepository.findOne({ where: { id }, relations: ['requester', 'assignee'] });
+    }
+
+    async transferTicket(id: string, assigneeId: string, teamId?: string) {
+        return this.updateTicket(id, { assigneeId, teamId });
     }
 }
