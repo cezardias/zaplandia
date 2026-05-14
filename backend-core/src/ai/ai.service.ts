@@ -235,15 +235,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
 
     async generateResponse(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
-        this.logger.log(`[AI_DEBOUNCE] Received message from ${contact.id}. Starting 10s window...`);
+        this.logger.log(`[AI_WAIT] Message from ${contact.name} (${contact.id}). Waiting 10s for more...`);
         
         const existing = this.debounceMap.get(contact.id);
         if (existing) {
             clearTimeout(existing.timeout);
             existing.messages.push(userMessage);
             existing.timeout = setTimeout(() => this.processDebouncedResponse(contact.id), 10000);
-            this.logger.debug(`[AI_DEBOUNCE] Appended to existing buffer for ${contact.id}. Reset timer.`);
-            return null; // Return null to webhook to avoid blocking
+            return null;
         }
 
         const timeout = setTimeout(() => this.processDebouncedResponse(contact.id), 10000);
@@ -254,7 +253,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             tenantId
         });
 
-        return null; // Return null to webhook
+        return null;
     }
 
     private async processDebouncedResponse(contactId: string) {
@@ -1089,81 +1088,21 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         return null;
     }
 
-    async generateLisaResponse(tenantId: string, fullPrompt: string, contactId?: string) {
-        // Find Lisa's specialized prompt - prioritizing current tenant
-        const lisaPrompt = await this.aiPromptRepository.findOne({
-            where: { name: 'ZAPLANDIA_HELP_CENTER_LISA', tenantId }
-        }) || await this.aiPromptRepository.findOne({
-            where: { name: 'ZAPLANDIA_HELP_CENTER_LISA' } // Global fallback
-        });
-
-        const systemPrompt = lisaPrompt?.content || `
-        Seu nome é Lisa. Você é a assistente oficial da Zaplandia.
-        PERSONALIDADE: Amigável, compreensiva e objetiva.
-        FOCO: Zaplandia e suas integrações (WhatsApp, Instagram, n8n, CRM).
-        OBJETIVO: Auxiliar os usuários nas funcionalidades, resolver dificuldades e proporcionar uma experiência espetacular.
-        DICA: Se a dúvida for complexa, sugira abrir um chamado de suporte.
-        `;
-
-        let tools: any[] = [];
-        // Add default tools for Lisa (Transfer and Tickets)
-        tools.push({
-            function_declarations: [
-                {
-                    name: "transfer_to_team",
-                    description: "Transfere a conversa para uma equipe humana específica (comercial, suporte, financeiro, etc). Use IMEDIATAMENTE quando identificar o departamento.",
-                    parameters: {
-                        type: "object",
-                        properties: {
-                            teamId: { type: "string", description: "O ID da equipe para transbordo (UUID)" },
-                            reason: { type: "string", description: "Motivo da transferência" }
-                        },
-                        required: ["teamId"]
-                    }
-                },
-                {
-                    name: "open_ticket",
-                    description: "Abre um chamado de suporte no sistema. Use quando o cliente fornecer Nome, Email, Telefone e Descrição.",
-                    parameters: {
-                        type: "object",
-                        properties: {
-                            subject: { type: "string", description: "Assunto do chamado" },
-                            description: { type: "string", description: "Descrição detalhada do problema" },
-                            category: { type: "string", description: "Categoria (technical, billing, etc)" },
-                            priority: { type: "string", description: "Prioridade (low, medium, high, urgent)" }
-                        },
-                        required: ["subject", "description"]
-                    }
-                }
-            ]
-        });
-
-        const provider = lisaPrompt?.provider || 'gemini';
-        const model = lisaPrompt?.model || 'gemini-1.5-flash';
-        const lisaApiKey = lisaPrompt?.apiKey;
-
-        if (provider === 'openrouter') {
-            const apiKey = lisaApiKey || await this.getOpenRouterApiKey(tenantId);
-            if (apiKey) {
-                try {
-                    return await this.callOpenRouter(model, fullPrompt, apiKey, 2048, tools, tenantId, contactId, systemPrompt);
-                } catch (e) {
-                    this.logger.error(`Lisa failed via OpenRouter: ${e.message}`);
-                }
-            }
-        } else if (provider === 'gemini') {
-            const apiKey = lisaApiKey || await this.getGeminiApiKey(tenantId);
-            if (apiKey) {
-                try {
-                    return await this.callGemini(model, fullPrompt, apiKey, 2048, tools, tenantId, contactId, systemPrompt);
-                } catch (e) {
-                    this.logger.error(`Lisa failed via Gemini: ${e.message}`);
-                }
-            }
+    async generateLisaResponse(tenantId: string, fullPrompt: string, contactId?: string): Promise<string | null> {
+        this.logger.log(`[LISA_CHAT] Instant response requested for contact ${contactId}`);
+        
+        let contact: Contact | null = null;
+        if (contactId) {
+            contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
         }
 
-        // Fallback to Gemini with default key if everything else fails
-        return this.generateGenericResponse(tenantId, fullPrompt);
+        if (!contact) {
+            // Minimal contact object for logic if none exists
+            contact = { id: contactId || 'temp', name: 'Usuário Web', tenantId, provider: 'site' } as any;
+        }
+
+        // Call unified generation engine WITHOUT debounce for web chat
+        return this.executeAIGeneration(contact!, fullPrompt, tenantId, contact?.instance);
     }
 
     async getPromptByName(name: string, tenantId?: string) {
