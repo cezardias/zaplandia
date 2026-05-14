@@ -9,11 +9,14 @@ import { IntegrationsModule } from '../integrations/integrations.module';
 import { AiPrompt } from '../integrations/entities/ai-prompt.entity';
 import { CommsModule } from '../comms/comms.module';
 
+import { SupportModule } from '../support/support.module';
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([Contact, Message, Integration, AiPrompt]),
         forwardRef(() => IntegrationsModule),
         CommsModule,
+        SupportModule,
     ],
     controllers: [AiController],
     providers: [AiService],
