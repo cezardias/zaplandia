@@ -23,14 +23,271 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
+import { useLanguage } from '@/context/LanguageContext';
+
 export default function BillingPage() {
     const { user, token } = useAuth();
+    const { lang } = useLanguage();
     const [status, setStatus] = useState<any>(null);
     const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
     const [method, setMethod] = useState<'pix' | 'credit_card' | 'debit_card' | 'boleto'>('credit_card');
     const [isGenerating, setIsGenerating] = useState(false);
     const [transaction, setTransaction] = useState<any>(null);
     const [copied, setCopied] = useState(false);
+    
+    // Translation Object
+    const t: any = {
+        pt_BR: {
+            title: 'Planos & Assinatura',
+            subtitle: 'Escalabilidade e inteligência para sua operação de atendimento.',
+            currentStatus: 'Status Atual',
+            trialAccess: 'Acesso Trial (15 Dias)',
+            monthlyPlan: 'Plano Mensal',
+            annualPlan: 'Plano Anual',
+            daysRemaining: 'dias restantes',
+            expiration: 'Vencimento',
+            monthlyDesc: 'Flexibilidade para o seu negócio.',
+            annualDesc: 'Maximize seu lucro com economia.',
+            recommended: 'Recomendado',
+            monthlyPrice: 'R$ 300',
+            annualPrice: 'R$ 2.400',
+            perMonth: '/ mês',
+            perYear: '/ ano',
+            features: {
+                unlimitedInstances: 'Instâncias Ilimitadas',
+                unlimitedAgents: 'Atendentes Ilimitados',
+                aiIntegrated: 'Assistente IA Integrado',
+                prioritySupport: 'Suporte Prioritário',
+                allMonthly: 'Tudo do Mensal',
+                annualDiscount: 'Desconto de R$ 1.200/ano',
+                consultancy: 'Consultoria de Automação'
+            },
+            btgInstallments: '🚀 12x de R$ 200,00 no Cartão',
+            btgNote: '* Parcelado com juros via BTG Pactual',
+            paymentMethod: 'Método de Pagamento',
+            credit: 'Crédito',
+            debit: 'Débito',
+            pix: 'Pix',
+            boleto: 'Boleto',
+            activatePlan: 'Ativar Plano',
+            processing: 'Processando...',
+            pixCopyPaste: 'Pix Copia e Cola',
+            paymentNotice: 'Após o pagamento, sua assinatura será ativada automaticamente em até 2 minutos.',
+            billingInfoTitle: 'Dados de Faturamento',
+            billingInfoDesc: 'Preencha as informações para ativar seu plano premium.',
+            saveAndProceed: 'Salvar Dados e Prosseguir',
+            saving: 'Salvando...',
+            cnpj: 'CNPJ da Empresa',
+            razaoSocial: 'Razão Social',
+            responsibleName: 'Nome do Responsável',
+            responsibleCpf: 'CPF do Responsável',
+            contactEmail: 'E-mail de Contato',
+            contactPhone: 'Telefone (DDI + DDD)',
+            errors: {
+                cnpj: 'CNPJ inválido',
+                razaoSocial: 'Razão Social é obrigatória',
+                name: 'Nome do responsável é obrigatório',
+                cpf: 'CPF inválido',
+                email: 'E-mail inválido',
+                phone: 'Telefone inválido',
+                server: 'Erro ao salvar os dados no servidor.',
+                connection: 'Erro de conexão com o servidor.'
+            },
+            adminTitle: 'Configurações Gerenciais',
+            adminSubtitle: 'Ambiente restrito • BTG Pactual Gateway',
+            adminNote: 'Certifique-se de que os escopos necessários (links, pix, webhooks) estejam habilitados no painel do BTG Id.',
+            updateBtg: 'Atualizar Credenciais BTG',
+            saved: 'Salvo!'
+        },
+        en_US: {
+            title: 'Plans & Subscription',
+            subtitle: 'Scalability and intelligence for your service operation.',
+            currentStatus: 'Current Status',
+            trialAccess: 'Trial Access (15 Days)',
+            monthlyPlan: 'Monthly Plan',
+            annualPlan: 'Annual Plan',
+            daysRemaining: 'days remaining',
+            expiration: 'Expiration',
+            monthlyDesc: 'Flexibility for your business.',
+            annualDesc: 'Maximize your profit with savings.',
+            recommended: 'Recommended',
+            monthlyPrice: 'USD 59',
+            annualPrice: 'USD 590',
+            perMonth: '/ month',
+            perYear: '/ year',
+            features: {
+                unlimitedInstances: 'Unlimited Instances',
+                unlimitedAgents: 'Unlimited Agents',
+                aiIntegrated: 'Integrated AI Assistant',
+                prioritySupport: 'Priority Support',
+                allMonthly: 'Everything in Monthly',
+                annualDiscount: 'Save $118/year',
+                consultancy: 'Automation Consultancy'
+            },
+            btgInstallments: '🚀 Up to 12x Installments',
+            btgNote: '* Installments via BTG Pactual',
+            paymentMethod: 'Payment Method',
+            credit: 'Credit Card',
+            debit: 'Debit Card',
+            pix: 'Pix (Brazil)',
+            boleto: 'Bank Slip (Brazil)',
+            activatePlan: 'Activate Plan',
+            processing: 'Processing...',
+            pixCopyPaste: 'Pix Copy & Paste',
+            paymentNotice: 'After payment, your subscription will be automatically activated within 2 minutes.',
+            billingInfoTitle: 'Billing Information',
+            billingInfoDesc: 'Fill in the information to activate your premium plan.',
+            saveAndProceed: 'Save and Proceed',
+            saving: 'Saving...',
+            cnpj: 'Company Tax ID',
+            razaoSocial: 'Business Name',
+            responsibleName: 'Responsible Name',
+            responsibleCpf: 'Personal Tax ID',
+            contactEmail: 'Contact Email',
+            contactPhone: 'Contact Phone (DDI + Area)',
+            errors: {
+                cnpj: 'Invalid Tax ID',
+                razaoSocial: 'Business Name is required',
+                name: 'Responsible Name is required',
+                cpf: 'Invalid Tax ID',
+                email: 'Invalid Email',
+                phone: 'Invalid Phone',
+                server: 'Error saving data on the server.',
+                connection: 'Connection error with the server.'
+            },
+            adminTitle: 'Management Settings',
+            adminSubtitle: 'Restricted Area • BTG Pactual Gateway',
+            adminNote: 'Ensure that the necessary scopes (links, pix, webhooks) are enabled in the BTG Id panel.',
+            updateBtg: 'Update BTG Credentials',
+            saved: 'Saved!'
+        },
+        pt_PT: {
+            title: 'Planos & Subscrição',
+            subtitle: 'Escalabilidade e inteligência para a sua operação de atendimento.',
+            currentStatus: 'Estado Atual',
+            trialAccess: 'Acesso Trial (15 Dias)',
+            monthlyPlan: 'Plano Mensal',
+            annualPlan: 'Plano Anual',
+            daysRemaining: 'dias restantes',
+            expiration: 'Vencimento',
+            monthlyDesc: 'Flexibilidade para o seu negócio.',
+            annualDesc: 'Maximize o seu lucro com poupança.',
+            recommended: 'Recomendado',
+            monthlyPrice: '50€',
+            annualPrice: '500€',
+            perMonth: '/ mês',
+            perYear: '/ ano',
+            features: {
+                unlimitedInstances: 'Instâncias Ilimitadas',
+                unlimitedAgents: 'Assistentes Ilimitados',
+                aiIntegrated: 'Assistente IA Integrado',
+                prioritySupport: 'Suporte Prioritário',
+                allMonthly: 'Tudo do Mensal',
+                annualDiscount: 'Desconto de 100€/ano',
+                consultancy: 'Consultoria de Automação'
+            },
+            btgInstallments: '🚀 Até 12x no Cartão',
+            btgNote: '* Parcelado via BTG Pactual',
+            paymentMethod: 'Método de Pagamento',
+            credit: 'Crédito',
+            debit: 'Débito',
+            pix: 'Pix',
+            boleto: 'Boleto',
+            activatePlan: 'Ativar Plano',
+            processing: 'A processar...',
+            pixCopyPaste: 'Pix Copiar e Colar',
+            paymentNotice: 'Após o pagamento, a sua subscrição será ativada automaticamente em até 2 minutos.',
+            billingInfoTitle: 'Dados de Faturação',
+            billingInfoDesc: 'Preencha as informações para ativar o seu plano premium.',
+            saveAndProceed: 'Guardar Dados e Prosseguir',
+            saving: 'A guardar...',
+            cnpj: 'NIF da Empresa',
+            razaoSocial: 'Razão Social',
+            responsibleName: 'Nome do Responsável',
+            responsibleCpf: 'NIF do Responsável',
+            contactEmail: 'E-mail de Contacto',
+            contactPhone: 'Telefone (DDI + DDD)',
+            errors: {
+                cnpj: 'NIF inválido',
+                razaoSocial: 'Razão Social é obrigatória',
+                name: 'Nome do responsável é obrigatório',
+                cpf: 'NIF inválido',
+                email: 'E-mail inválido',
+                phone: 'Telefone inválido',
+                server: 'Erro ao guardar os dados no servidor.',
+                connection: 'Erro de ligação com o servidor.'
+            },
+            adminTitle: 'Configurações de Gestão',
+            adminSubtitle: 'Ambiente restrito • BTG Pactual Gateway',
+            adminNote: 'Certifique-se de que os âmbitos necessários (links, pix, webhooks) estão ativos no painel do BTG Id.',
+            updateBtg: 'Atualizar Credenciais BTG',
+            saved: 'Guardado!'
+        },
+        it_IT: {
+            title: 'Piani e Abbonamento',
+            subtitle: 'Scalabilità e intelligenza per la tua operazione di servizio.',
+            currentStatus: 'Stato Attuale',
+            trialAccess: 'Accesso Trial (15 Giorni)',
+            monthlyPlan: 'Piano Mensile',
+            annualPlan: 'Piano Annuale',
+            daysRemaining: 'giorni rimanenti',
+            expiration: 'Scadenza',
+            monthlyDesc: 'Flessibilità per il tuo business.',
+            annualDesc: 'Massimizza il tuo profitto con il risparmio.',
+            recommended: 'Consigliato',
+            monthlyPrice: '50€',
+            annualPrice: '500€',
+            perMonth: '/ mese',
+            perYear: '/ anno',
+            features: {
+                unlimitedInstances: 'Istanze Illimitate',
+                unlimitedAgents: 'Agenti Illimitati',
+                aiIntegrated: 'Assistente IA Integrato',
+                prioritySupport: 'Supporto Prioritario',
+                allMonthly: 'Tutto del Mensile',
+                annualDiscount: 'Risparmio di 100€/anno',
+                consultancy: 'Consulenza di Automazione'
+            },
+            btgInstallments: '🚀 Fino a 12 rate',
+            btgNote: '* Rateizzato tramite BTG Pactual',
+            paymentMethod: 'Metodo di Pagamento',
+            credit: 'Carta di Credito',
+            debit: 'Carta di Debito',
+            pix: 'Pix',
+            boleto: 'Boleto',
+            activatePlan: 'Attiva Piano',
+            processing: 'In elaborazione...',
+            pixCopyPaste: 'Pix Copia e Incolla',
+            paymentNotice: 'Dopo il pagamento, il tuo abbonamento verrà attivato automaticamente entro 2 minuti.',
+            billingInfoTitle: 'Dati di Fatturazione',
+            billingInfoDesc: 'Compila le informazioni per attivare il tuo piano premium.',
+            saveAndProceed: 'Salva e Procedi',
+            saving: 'Salvataggio...',
+            cnpj: 'P. IVA Aziendale',
+            razaoSocial: 'Ragione Sociale',
+            responsibleName: 'Nome Responsabile',
+            responsibleCpf: 'Codice Fiscale Responsabile',
+            contactEmail: 'Email di Contatto',
+            contactPhone: 'Telefono di Contatto',
+            errors: {
+                cnpj: 'P. IVA non valida',
+                razaoSocial: 'La ragione sociale è obbligatoria',
+                name: 'Il nome del responsabile è obbligatorio',
+                cpf: 'Codice fiscale non valido',
+                email: 'Email non valida',
+                phone: 'Telefono non valido',
+                server: 'Errore nel salvataggio dei dati sul server.',
+                connection: 'Errore di connessione con il server.'
+            },
+            adminTitle: 'Impostazioni Gestionali',
+            adminSubtitle: 'Area Riservata • BTG Pactual Gateway',
+            adminNote: 'Assicurati che gli ambiti necessari (link, pix, webhook) siano abilitati nel pannello BTG Id.',
+            updateBtg: 'Aggiorna Credenziali BTG',
+            saved: 'Salvato!'
+        }
+    };
+
+    const txt = t[lang] || t['pt_BR'];
     
     // Billing Info Form State
     const [showBillingModal, setShowBillingModal] = useState(false);
@@ -174,12 +431,12 @@ export default function BillingPage() {
         e.preventDefault();
         
         const errors: Record<string, string> = {};
-        if (!billingForm.razaoSocial) errors.razaoSocial = 'Razão Social é obrigatória';
-        if (!validateCNPJ(billingForm.cnpj)) errors.cnpj = 'CNPJ inválido';
-        if (!billingForm.responsibleName) errors.responsibleName = 'Nome do responsável é obrigatório';
-        if (!validateCPF(billingForm.responsibleCpf)) errors.responsibleCpf = 'CPF inválido';
-        if (!billingForm.responsibleEmail.includes('@')) errors.responsibleEmail = 'E-mail inválido';
-        if (billingForm.responsiblePhone.length < 10) errors.responsiblePhone = 'Telefone inválido';
+        if (!billingForm.razaoSocial) errors.razaoSocial = txt.errors.razaoSocial;
+        if (!validateCNPJ(billingForm.cnpj)) errors.cnpj = txt.errors.cnpj;
+        if (!billingForm.responsibleName) errors.responsibleName = txt.errors.name;
+        if (!validateCPF(billingForm.responsibleCpf)) errors.responsibleCpf = txt.errors.cpf;
+        if (!billingForm.responsibleEmail.includes('@')) errors.responsibleEmail = txt.errors.email;
+        if (billingForm.responsiblePhone.length < 10) errors.responsiblePhone = txt.errors.phone;
         
         if (Object.keys(errors).length > 0) {
             setFormErrors(errors);
@@ -205,11 +462,11 @@ export default function BillingPage() {
                 handlePaymentAction();
             } else {
                 const errorData = await res.json();
-                setFormErrors({ server: errorData.message || 'Erro ao salvar os dados no servidor. Verifique se o sistema foi reiniciado.' });
+                setFormErrors({ server: errorData.message || txt.errors.server });
             }
         } catch (error) {
             console.error('Erro ao salvar dados:', error);
-            setFormErrors({ server: 'Erro de conexão com o servidor.' });
+            setFormErrors({ server: txt.errors.connection });
         } finally {
             setIsSavingProfile(false);
         }
@@ -263,8 +520,8 @@ export default function BillingPage() {
         <div className="p-8 max-w-6xl mx-auto pb-20">
             {/* Header */}
             <div className="text-center mb-12">
-                <h1 className="text-4xl font-extrabold tracking-tight mb-4">Planos & Assinatura</h1>
-                <p className="text-gray-400 text-lg">Escalabilidade e inteligência para sua operação de atendimento.</p>
+                <h1 className="text-4xl font-extrabold tracking-tight mb-4">{txt.title}</h1>
+                <p className="text-gray-400 text-lg">{txt.subtitle}</p>
             </div>
 
             {/* Current Status Card */}
@@ -275,18 +532,18 @@ export default function BillingPage() {
                             {status.isExpired ? <Clock size={28} /> : <Zap size={28} />}
                         </div>
                         <div>
-                            <p className="text-sm text-gray-500 font-medium uppercase tracking-widest">Status Atual</p>
+                            <p className="text-sm text-gray-500 font-medium uppercase tracking-widest">{txt.currentStatus}</p>
                             <h3 className="text-xl font-bold flex items-center gap-2">
-                                {status.planType === 'trial' ? 'Acesso Trial (15 Dias)' : `Plano ${status.planType === 'annual' ? 'Anual' : 'Mensal'}`}
+                                {status.planType === 'trial' ? txt.trialAccess : `Plano ${status.planType === 'annual' ? txt.annualPlan : txt.monthlyPlan}`}
                                 <span className={`text-xs px-2 py-0.5 rounded-full border ${status.isExpired ? 'border-red-500/50 text-red-500' : 'border-green-500/50 text-green-500'}`}>
-                                    {status.status === 'trial' ? `${status.trialRemainingDays} dias restantes` : status.status}
+                                    {status.status === 'trial' ? `${status.trialRemainingDays} ${txt.daysRemaining}` : status.status}
                                 </span>
                             </h3>
                         </div>
                     </div>
                     {status.paidUntil && (
                         <div className="text-right">
-                            <p className="text-xs text-gray-500 uppercase tracking-widest">Vencimento</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-widest">{txt.expiration}</p>
                             <p className="font-bold">{new Date(status.paidUntil).toLocaleDateString()}</p>
                         </div>
                     )}
@@ -301,14 +558,14 @@ export default function BillingPage() {
                     className={`relative p-8 rounded-3xl border-2 transition cursor-pointer flex flex-col h-full ${selectedPlan === 'monthly' ? 'border-primary bg-primary/5' : 'border-white/5 bg-surface hover:border-white/20'}`}
                 >
                     <div className="mb-4">
-                        <h3 className="text-xl font-bold">Plano Mensal</h3>
-                        <p className="text-sm text-gray-400">Flexibilidade para o seu negócio.</p>
+                        <h3 className="text-xl font-bold">{txt.monthlyPlan}</h3>
+                        <p className="text-sm text-gray-400">{txt.monthlyDesc}</p>
                     </div>
                     <div className="text-4xl font-extrabold mb-8">
-                        R$ 300 <span className="text-lg text-gray-500 font-normal">/ mês</span>
+                        {txt.monthlyPrice} <span className="text-lg text-gray-500 font-normal">{txt.perMonth}</span>
                     </div>
                     <ul className="space-y-4 mb-8 flex-1">
-                        {['Instâncias Ilimitadas', 'Atendentes Ilimitados', 'Assistente IA Integrado', 'Suporte Prioritário'].map((feat, i) => (
+                        {[txt.features.unlimitedInstances, txt.features.unlimitedAgents, txt.features.aiIntegrated, txt.features.prioritySupport].map((feat, i) => (
                             <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
                                 <CheckCircle2 size={16} className="text-primary" /> {feat}
                             </li>
@@ -322,21 +579,21 @@ export default function BillingPage() {
                     className={`relative p-8 rounded-3xl border-2 transition cursor-pointer flex flex-col h-full overflow-hidden ${selectedPlan === 'annual' ? 'border-primary bg-primary/5' : 'border-white/5 bg-surface hover:border-white/20'}`}
                 >
                     <div className="absolute top-4 right-4 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
-                        Recomendado
+                        {txt.recommended}
                     </div>
                     <div className="mb-4">
-                        <h3 className="text-xl font-bold">Plano Anual</h3>
-                        <p className="text-sm text-gray-400">Maximize seu lucro com economia.</p>
+                        <h3 className="text-xl font-bold">{txt.annualPlan}</h3>
+                        <p className="text-sm text-gray-400">{txt.annualDesc}</p>
                     </div>
                     <div className="text-4xl font-extrabold mb-8">
-                        R$ 2.400 <span className="text-lg text-gray-500 font-normal">/ ano</span>
+                        {txt.annualPrice} <span className="text-lg text-gray-500 font-normal">{txt.perYear}</span>
                     </div>
                     <div className="mb-8 p-3 bg-primary/10 border border-primary/20 rounded-xl">
-                        <p className="text-xs text-primary font-bold">🚀 12x de R$ 200,00 no Cartão</p>
-                        <p className="text-[10px] text-gray-400 mt-1">* Parcelado com juros via BTG Pactual</p>
+                        <p className="text-xs text-primary font-bold">{txt.btgInstallments}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">{txt.btgNote}</p>
                     </div>
                     <ul className="space-y-4 mb-8 flex-1">
-                        {['Tudo do Mensal', 'Desconto de R$ 1.200/ano', 'Prioridade em Atendimento', 'Consultoria de Automação'].map((feat, i) => (
+                        {[txt.features.allMonthly, txt.features.annualDiscount, txt.features.prioritySupport, txt.features.consultancy].map((feat, i) => (
                             <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
                                 <CheckCircle2 size={16} className="text-primary" /> {feat}
                             </li>
@@ -349,7 +606,7 @@ export default function BillingPage() {
             <div className="bg-surface border border-white/5 rounded-3xl p-8 shadow-xl">
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                     <CreditCard size={20} className="text-primary" />
-                    Método de Pagamento
+                    {txt.paymentMethod}
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -358,28 +615,28 @@ export default function BillingPage() {
                         className={`p-4 rounded-2xl border-2 transition flex flex-col items-center justify-center gap-3 text-center ${method === 'credit_card' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
                     >
                         <CreditCard size={24} />
-                        <span className="font-bold text-sm">Crédito</span>
+                        <span className="font-bold text-sm">{txt.credit}</span>
                     </button>
                     <button 
                         onClick={() => setMethod('debit_card')}
                         className={`p-4 rounded-2xl border-2 transition flex flex-col items-center justify-center gap-3 text-center ${method === 'debit_card' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
                     >
                         <CreditCard size={24} className="rotate-180" />
-                        <span className="font-bold text-sm">Débito</span>
+                        <span className="font-bold text-sm">{txt.debit}</span>
                     </button>
                     <button 
                         onClick={() => setMethod('pix')}
                         className={`p-4 rounded-2xl border-2 transition flex flex-col items-center justify-center gap-3 text-center ${method === 'pix' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
                     >
                         <QrCode size={24} />
-                        <span className="font-bold text-sm">Pix</span>
+                        <span className="font-bold text-sm">{txt.pix}</span>
                     </button>
                     <button 
                         onClick={() => setMethod('boleto')}
                         className={`p-4 rounded-2xl border-2 transition flex flex-col items-center justify-center gap-3 text-center ${method === 'boleto' ? 'border-primary bg-primary/5 text-primary' : 'border-white/5 bg-black/40 text-gray-400'}`}
                     >
                         <FileText size={24} />
-                        <span className="font-bold text-sm">Boleto</span>
+                        <span className="font-bold text-sm">{txt.boleto}</span>
                     </button>
                 </div>
 
@@ -389,7 +646,7 @@ export default function BillingPage() {
                         disabled={isGenerating}
                         className="w-full bg-primary hover:bg-primary-dark text-white py-5 rounded-2xl font-bold text-lg transition flex items-center justify-center gap-3 shadow-xl shadow-primary/20"
                     >
-                        {isGenerating ? 'Processando...' : `Ativar Plano ${selectedPlan === 'annual' ? 'Anual' : 'Mensal'}`}
+                        {isGenerating ? txt.processing : `${txt.activatePlan} ${selectedPlan === 'annual' ? txt.annualPlan : txt.monthlyPlan}`}
                         <ArrowRight size={20} />
                     </button>
                 ) : (
@@ -399,7 +656,7 @@ export default function BillingPage() {
                                 <img src={transaction.pixQrCode} alt="Pix QR Code" className="w-48 h-48 rounded-2xl bg-white p-2" />
                             )}
                             <div className="w-full space-y-2">
-                                <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest text-center">Pix Copia e Cola</p>
+                                <p className="text-[10px] uppercase text-gray-500 font-bold tracking-widest text-center">{txt.pixCopyPaste}</p>
                                 <div className="flex items-center gap-2 bg-black/60 p-3 rounded-xl border border-white/10">
                                     <code className="text-xs truncate flex-1 text-gray-400">{transaction.pixCopyPaste}</code>
                                     <button onClick={copyPix} className="p-2 hover:bg-white/10 rounded-lg text-primary transition">
@@ -410,7 +667,7 @@ export default function BillingPage() {
                         </div>
                         <div className="flex items-center gap-2 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-xs text-blue-300">
                             <AlertCircle size={16} className="shrink-0" />
-                            <span>Após o pagamento, sua assinatura será ativada automaticamente em até 2 minutos.</span>
+                            <span>{txt.paymentNotice}</span>
                         </div>
                     </div>
                 )}
@@ -427,8 +684,8 @@ export default function BillingPage() {
                                     <Building2 size={32} />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black tracking-tight">Dados de Faturamento</h2>
-                                    <p className="text-gray-400 text-sm">Preencha as informações para ativar seu plano premium.</p>
+                                    <h2 className="text-2xl font-black tracking-tight">{txt.billingInfoTitle}</h2>
+                                    <p className="text-gray-400 text-sm">{txt.billingInfoDesc}</p>
                                 </div>
                             </div>
                             <button onClick={() => setShowBillingModal(false)} className="p-2 hover:bg-white/10 rounded-xl transition">
@@ -449,7 +706,7 @@ export default function BillingPage() {
                                 {/* CNPJ */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                        <Building2 size={12} /> CNPJ da Empresa
+                                        <Building2 size={12} /> {txt.cnpj}
                                     </label>
                                     <input 
                                         type="text" 
@@ -473,7 +730,7 @@ export default function BillingPage() {
                                 {/* Razão Social */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                        <Building2 size={12} /> Razão Social
+                                        <Building2 size={12} /> {txt.razaoSocial}
                                     </label>
                                     <input 
                                         type="text" 
@@ -488,7 +745,7 @@ export default function BillingPage() {
                                 {/* Nome Responsável */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                        <UserCircle size={12} /> Nome do Responsável
+                                        <UserCircle size={12} /> {txt.responsibleName}
                                     </label>
                                     <input 
                                         type="text" 
@@ -503,7 +760,7 @@ export default function BillingPage() {
                                 {/* CPF Responsável */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                        <IdCard size={12} /> CPF do Responsável
+                                        <IdCard size={12} /> {txt.responsibleCpf}
                                     </label>
                                     <input 
                                         type="text" 
@@ -525,7 +782,7 @@ export default function BillingPage() {
                                 {/* Email Contato */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                        <Mail size={12} /> E-mail de Contato
+                                        <Mail size={12} /> {txt.contactEmail}
                                     </label>
                                     <input 
                                         type="email" 
@@ -540,7 +797,7 @@ export default function BillingPage() {
                                 {/* Telefone Contato */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                        <PhoneCall size={12} /> Telefone (DDI + DDD)
+                                        <PhoneCall size={12} /> {txt.contactPhone}
                                     </label>
                                     <input 
                                         type="text" 
@@ -565,7 +822,7 @@ export default function BillingPage() {
                                 disabled={isSavingProfile}
                                 className="w-full bg-primary hover:bg-primary-dark text-white py-5 rounded-2xl font-black text-lg transition flex items-center justify-center gap-3 shadow-xl shadow-primary/40 mt-4 group"
                             >
-                                {isSavingProfile ? 'Salvando...' : 'Salvar Dados e Prosseguir'}
+                                {isSavingProfile ? txt.saving : txt.saveAndProceed}
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                         </form>
@@ -580,8 +837,8 @@ export default function BillingPage() {
                             <ShieldCheck size={24} />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold">Configurações Gerenciais</h2>
-                            <p className="text-gray-400 text-sm italic">Ambiente restrito • BTG Pactual Gateway</p>
+                            <h2 className="text-2xl font-bold">{txt.adminTitle}</h2>
+                            <p className="text-gray-400 text-sm italic">{txt.adminSubtitle}</p>
                         </div>
                     </div>
 
@@ -637,14 +894,14 @@ export default function BillingPage() {
                             
                             <div className="md:col-span-2 flex items-center justify-between">
                                 <div className="text-xs text-gray-500 leading-relaxed max-w-md">
-                                    Certifique-se de que os escopos necessários (links, pix, webhooks) estejam habilitados no painel do BTG Id.
+                                    {txt.adminNote}
                                 </div>
                                 <button 
                                     type="submit"
                                     disabled={isSavingConfig}
                                     className={`px-8 py-4 rounded-2xl font-bold transition flex items-center gap-2 ${showConfigSuccess ? 'bg-green-500 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg shadow-yellow-500/20'}`}
                                 >
-                                    {isSavingConfig ? 'Salvando...' : showConfigSuccess ? <><Check size={20} /> Salvo!</> : 'Atualizar Credenciais BTG'}
+                                    {isSavingConfig ? txt.saving : showConfigSuccess ? <><Check size={20} /> {txt.saved}</> : txt.updateBtg}
                                 </button>
                             </div>
                         </form>
