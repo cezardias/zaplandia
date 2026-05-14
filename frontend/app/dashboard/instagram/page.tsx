@@ -444,12 +444,12 @@ export default function InstagramManagementPage() {
                                             {comments.map(comment => (
                                                 <div key={comment.id} className="space-y-2">
                                                     {/* Main Comment */}
-                                                    <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col">
+                                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col shadow-sm">
                                                         <div className="flex justify-between items-start mb-1">
-                                                            <span className="font-bold text-sm text-primary-light">@{comment.username}</span>
-                                                            <span className="text-[10px] text-gray-500">{new Date(comment.timestamp).toLocaleString()}</span>
+                                                            <span className="font-bold text-sm text-slate-900">@{comment.username}</span>
+                                                            <span className="text-[10px] text-slate-500 font-medium">{new Date(comment.timestamp).toLocaleString()}</span>
                                                         </div>
-                                                        <p className="text-sm text-gray-200">{comment.text}</p>
+                                                        <p className="text-sm text-slate-800 font-medium leading-relaxed">{comment.text}</p>
                                                         
                                                         <div className="mt-3 flex justify-end space-x-4">
                                                             <button 
@@ -492,21 +492,20 @@ export default function InstagramManagementPage() {
                                                     {comment.replies && comment.replies.data && comment.replies.data.length > 0 && (
                                                         <div className="ml-8 space-y-2">
                                                             {comment.replies.data.map(reply => (
-                                                                <div key={reply.id} className="bg-primary/5 border border-primary/10 p-3 rounded-xl flex flex-col">
+                                                                <div key={reply.id} className="bg-red-50 border border-red-100 p-3 rounded-xl flex flex-col shadow-sm">
                                                                     <div className="flex justify-between items-start mb-1">
-                                                                        <span className="font-bold text-xs text-gray-400">@{reply.username} ({txt.us})</span>
+                                                                        <span className="font-bold text-xs text-slate-700">@{reply.username} ({txt.us})</span>
                                                                         <div className="flex items-center space-x-3">
-                                                                            <span className="text-[10px] text-gray-500">{new Date(reply.timestamp).toLocaleString()}</span>
+                                                                            <span className="text-[10px] text-slate-500 font-medium">{new Date(reply.timestamp).toLocaleString()}</span>
                                                                             <button 
                                                                                 onClick={() => handleDeleteComment(reply.id)}
-                                                                                className="text-gray-500 hover:text-red-400 transition"
-                                                                                title={lang === 'en_US' ? 'Delete Reply' : 'Excluir Resposta'}
+                                                                                className="text-[10px] text-red-500/70 hover:text-red-600 transition"
                                                                             >
                                                                                 <Trash2 className="w-3 h-3" />
                                                                             </button>
                                                                         </div>
                                                                     </div>
-                                                                    <p className="text-sm text-gray-300">{reply.text}</p>
+                                                                    <p className="text-sm text-slate-800 font-medium">{reply.text}</p>
                                                                 </div>
                                                             ))}
                                                         </div>
