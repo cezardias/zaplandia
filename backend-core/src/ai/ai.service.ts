@@ -280,13 +280,17 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
     private async executeAIGeneration(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
         try {
-            const geminiKey = await this.getGeminiApiKey(tenantId);
-            const openRouterKey = await this.getOpenRouterApiKey(tenantId);
+            let geminiKey: string | null = null;
+            let openRouterKey: string | null = null;
 
-            if (!geminiKey && !openRouterKey) {
-                this.logger.error(`No AI API key configured for tenant ${tenantId}`);
-                return null;
-            }
+            const targetInstance = instanceName || contact.instance;
+
+            // 1. Find Lisa prompt first (priority)
+            const promptEntity = await this.aiPromptRepository.findOne({ 
+                where: { name: 'ZAPLANDIA_HELP_CENTER_LISA', tenantId } 
+            }) || await this.aiPromptRepository.findOne({ 
+                where: { name: 'ZAPLANDIA_HELP_CENTER_LISA' } 
+            });
 
             const integrations = await this.integrationRepository.find({
                 where: {
@@ -296,30 +300,28 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 order: { updatedAt: 'DESC' }
             });
 
-            const targetInstance = instanceName || contact.instance;
             const integration = integrations.find(i => {
                 const credInst = i.credentials?.instanceName;
                 const settInst = i.settings?.instanceName;
-
                 if (!targetInstance) return false;
-
                 const match = (name: string) =>
                     name === targetInstance ||
                     targetInstance.endsWith(`_${name}`) ||
                     name.endsWith(`_${targetInstance}`);
-
                 return (credInst && match(credInst)) || (settInst && match(settInst));
             });
 
-            if (!integration?.aiPromptId) {
-                this.logger.error(`No AI prompt configured for instance ${targetInstance}`);
+            const activePromptId = promptEntity?.id || integration?.aiPromptId;
+            const configuredModel = integration?.aiModel || promptEntity?.model || 'gemini-1.5-flash';
+
+            if (!activePromptId) {
+                this.logger.error(`No AI prompt configured and no Lisa prompt found.`);
                 return null;
             }
 
-            let promptContent = await this.getPromptContent(integration.aiPromptId, tenantId);
-
+            let promptContent = await this.getPromptContent(activePromptId, tenantId);
             if (!promptContent) {
-                this.logger.error(`Prompt ${integration.aiPromptId} content not found or empty`);
+                this.logger.error(`Prompt content not found or empty for ID: ${activePromptId}`);
                 return null;
             }
 
@@ -367,8 +369,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             let aiResponse: string | null = null;
             let lastError: any;
 
-            const promptEntity = await this.aiPromptRepository.findOne({ where: { id: integration.aiPromptId } });
-            const isLisa = promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
+            const isLisa = promptEntity?.id === activePromptId || promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
 
             for (const model of uniqueModels) {
                 this.logger.debug(`[AI_ATTEMPT] Trying Gemini model: ${model}`);
@@ -381,13 +382,24 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     // If it's Lisa, override keys if she has specific ones
                     if (isLisa && promptEntity?.apiKey) {
-                        if (promptEntity.provider === 'gemini') {
+                        if (promptEntity.provider === 'gemini' || !promptEntity.provider) {
                             geminiKey = promptEntity.apiKey;
-                            this.logger.log(`[LISA_ROUTING] Using specialized Gemini key for Lisa.`);
+                            this.logger.log(`[LISA_ROUTING] Using specialized Gemini key from Prompt config.`);
                         } else if (promptEntity.provider === 'openrouter') {
                             openRouterKey = promptEntity.apiKey;
-                            this.logger.log(`[LISA_ROUTING] Using specialized OpenRouter key for Lisa.`);
+                            this.logger.log(`[LISA_ROUTING] Using specialized OpenRouter key from Prompt config.`);
                         }
+                    }
+
+                    if (!geminiKey && !openRouterKey) {
+                        this.logger.warn(`[AI_ROUTING] No API keys found. Final check for global keys...`);
+                        geminiKey = await this.getGeminiApiKey(tenantId);
+                        openRouterKey = await this.getOpenRouterApiKey(tenantId);
+                    }
+
+                    if (!geminiKey && !openRouterKey) {
+                        this.logger.error(`[AI_FATAL] No AI API key configured for tenant ${tenantId}`);
+                        return null;
                     }
                     
                     let finalPrompt = fullPrompt;
