@@ -378,19 +378,17 @@ export default function IntegrationsPage() {
 
             {/* Configurações de IA Prominentes na Página */}
             <div className="mb-12">
-                <div className="flex items-center space-x-3 mb-6">
+                <div className="flex items-center space-x-3 mb-8">
                     <div className="p-2 bg-primary/20 rounded-lg">
                         <Zap className="w-5 h-5 text-primary" />
                     </div>
-                    <h2 className="text-2xl font-black uppercase tracking-tight">Configurações de IA (Gemini, GPT, OpenRouter)</h2>
+                    <h2 className="text-2xl font-black uppercase tracking-tight">Configurações de IA</h2>
                 </div>
                 
-                <div className="bg-surface border border-white/5 rounded-[40px] p-8 shadow-2xl">
-                    <ApiSettingsFields 
-                        token={token || ''} 
-                        userRole={user?.role || 'user'}
-                    />
-                </div>
+                <ApiSettingsFields 
+                    token={token || ''} 
+                    userRole={user?.role || 'user'}
+                />
             </div>
 
             <div className="h-px bg-white/5 my-12"></div>
