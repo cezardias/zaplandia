@@ -131,10 +131,11 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         rifa_api_url: '',
         n8n_provider_config: '',
         instagram_token: '',
+        openai_key: '',
     });
 
     const [openrouterCredits, setOpenrouterCredits] = useState<{ total_credits: number, total_usage: number } | null>(null);
-    const [showKeys, setShowKeys] = useState({ gemini: false, openrouter: false });
+    const [showKeys, setShowKeys] = useState({ gemini: false, openrouter: false, openai: false });
 
     useEffect(() => {
         if (token) fetchExistingKeys();
@@ -231,6 +232,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             if (item.key_name === 'EVOLUTION_API_KEY') next.evolution_api_key = item.key_value;
             if (item.key_name === 'ERP_ZAPLANDIA_KEY') next.erp_zaplandia_key = item.key_value;
             if (item.key_name === 'OPENROUTER_API_KEY') next.openrouter_key = item.key_value;
+            if (item.key_name === 'OPENAI_API_KEY') next.openai_key = item.key_value;
             if (item.key_name === 'RIFA_API_KEY') next.rifa_api_key = item.key_value;
             if (item.key_name === 'RIFA_API_URL') next.rifa_api_url = item.key_value;
         });
@@ -255,11 +257,15 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
         }
     };
 
-    const handleTestKey = async (provider: 'gemini' | 'openrouter') => {
+    const handleTestKey = async (provider: 'gemini' | 'openrouter' | 'openai') => {
         setIsLoading(true);
         setStatus(null);
         try {
-            const keyValue = provider === 'gemini' ? keys.gemini_key : keys.openrouter_key;
+            const keyValue = provider === 'gemini' 
+                ? keys.gemini_key 
+                : provider === 'openrouter' 
+                    ? keys.openrouter_key 
+                    : keys.openai_key;
             if (!keyValue) throw new Error('Insira uma chave antes de testar.');
 
             const res = await fetch('/api/ai/test-key', {
@@ -327,7 +333,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             )}
 
             {/* --- AI SECTION (PRIORITY) --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* AI Section (Gemini) */}
                 <section className="bg-gradient-to-br from-purple-900/20 to-black/40 border border-purple-500/20 rounded-[32px] p-8 shadow-2xl relative overflow-hidden group hover:border-purple-500/40 transition-all duration-500">
                     <div className="absolute -top-12 -right-12 w-32 h-32 bg-purple-500/10 blur-[60px] group-hover:bg-purple-500/20 transition-all duration-500"></div>
@@ -377,10 +383,58 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                                 <span>Testar</span>
                             </button>
                         </div>
-                        
-                        <p className="text-[10px] text-gray-500 text-center font-bold uppercase tracking-tighter">
-                            A Lisa IA e as automações usam esta chave para processamento.
-                        </p>
+                    </div>
+                </section>
+
+                {/* AI Section (OpenAI) */}
+                <section className="bg-gradient-to-br from-green-900/20 to-black/40 border border-green-500/20 rounded-[32px] p-8 shadow-2xl relative overflow-hidden group hover:border-green-500/40 transition-all duration-500">
+                    <div className="absolute -top-12 -right-12 w-32 h-32 bg-green-500/10 blur-[60px] group-hover:bg-green-500/20 transition-all duration-500"></div>
+
+                    <h2 className="text-xl font-black mb-8 flex items-center space-x-3">
+                        <div className="p-2 bg-green-500/20 rounded-xl">
+                            <Bot className="w-5 h-5 text-green-500" />
+                        </div>
+                        <span>OpenAI (ChatGPT)</span>
+                    </h2>
+
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Chave de API OpenAI</label>
+                            <div className="relative">
+                                <input
+                                    type={showKeys.openai ? "text" : "password"}
+                                    value={keys.openai_key}
+                                    onChange={(e) => setKeys({ ...keys, openai_key: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all font-mono"
+                                    placeholder="sk-..."
+                                />
+                                <button 
+                                    onClick={() => setShowKeys({...showKeys, openai: !showKeys.openai})}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-white/5 rounded-lg transition text-gray-500"
+                                >
+                                    {showKeys.openai ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => handleSave('OPENAI_API_KEY', keys.openai_key)}
+                                disabled={isLoading}
+                                className="bg-green-600 hover:bg-green-500 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center space-x-2 shadow-lg shadow-green-900/20"
+                            >
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                                <span>Salvar OpenAI</span>
+                            </button>
+                            <button
+                                onClick={() => handleTestKey('openai')}
+                                disabled={isLoading || !keys.openai_key}
+                                className="bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center space-x-2"
+                            >
+                                <Zap className="w-5 h-5 text-yellow-500" />
+                                <span>Testar</span>
+                            </button>
+                        </div>
                     </div>
                 </section>
 
@@ -415,18 +469,6 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                             </div>
                         </div>
 
-                        {openrouterCredits && (
-                            <div className="flex items-center space-x-4 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl">
-                                <Coins className="w-5 h-5 text-cyan-400" />
-                                <div>
-                                    <p className="text-[10px] text-cyan-300 uppercase font-black tracking-widest">Saldo Disponível</p>
-                                    <p className="text-lg font-black text-white">
-                                        ${(openrouterCredits.total_credits - openrouterCredits.total_usage).toFixed(4)} USD
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 onClick={() => handleSave('OPENROUTER_API_KEY', keys.openrouter_key)}
@@ -437,11 +479,12 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
                                 <span>Salvar OpenRouter</span>
                             </button>
                             <button
-                                onClick={() => window.open('https://openrouter.ai/keys', '_blank')}
+                                onClick={() => handleTestKey('openrouter')}
+                                disabled={isLoading || !keys.openrouter_key}
                                 className="bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center space-x-2"
                             >
-                                <Globe size={18} className="text-gray-400" />
-                                <span>Gerar Chave</span>
+                                <Zap className="w-5 h-5 text-yellow-500" />
+                                <span>Testar</span>
                             </button>
                         </div>
                     </div>

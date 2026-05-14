@@ -31,7 +31,7 @@ export class AiController {
     }
 
     @Post('test-key')
-    async testKey(@Body() body: { provider: 'gemini' | 'openrouter'; key: string }) {
+    async testKey(@Body() body: { provider: 'gemini' | 'openrouter' | 'openai'; key: string }) {
         try {
             if (body.provider === 'gemini') {
                 const response = await axios.post(
@@ -39,6 +39,11 @@ export class AiController {
                     { contents: [{ parts: [{ text: 'Ping' }] }] },
                     { headers: { 'Content-Type': 'application/json' } }
                 );
+                return { success: true, data: response.data };
+            } else if (body.provider === 'openai') {
+                const response = await axios.get('https://api.openai.com/v1/models', {
+                    headers: { 'Authorization': `Bearer ${body.key.trim()}` }
+                });
                 return { success: true, data: response.data };
             } else {
                 const response = await axios.get('https://openrouter.ai/api/v1/auth/key', {
