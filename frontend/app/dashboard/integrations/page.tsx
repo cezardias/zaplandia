@@ -50,6 +50,9 @@ const PROVIDERS = [
     { id: 'n8n', name: 'n8n Automation', icon: <Terminal className="w-8 h-8 text-orange-500" />, desc: 'Conecte Webhooks para automações de fluxos.' },
     { id: 'erp_zaplandia', name: 'ERP Zaplandia', icon: <Zap className="w-8 h-8 text-emerald-500" />, desc: 'Sincronize produtos, preços e estoque do seu ERP.' },
     { id: 'rifa', name: 'Rifa API', icon: <Smartphone className="w-8 h-8 text-indigo-500" />, desc: 'Conecte sua API de rifas para gerenciar números e pedidos.' },
+    { id: 'gemini', name: 'Google Gemini AI', icon: <Zap className="w-8 h-8 text-purple-500" />, desc: 'Inteligência artificial do Google para automações e chat.' },
+    { id: 'openai', name: 'OpenAI (ChatGPT)', icon: <Bot className="w-8 h-8 text-green-500" />, desc: 'Conecte diretamente com a OpenAI para usar modelos GPT.' },
+    { id: 'openrouter', name: 'OpenRouter AI', icon: <Zap className="w-8 h-8 text-cyan-500" />, desc: 'Acesso unificado a diversos modelos (Claude, Llama, etc).' },
 ];
 
 export default function IntegrationsPage() {
@@ -62,6 +65,7 @@ export default function IntegrationsPage() {
     const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
     const [aiConfig, setAiConfig] = useState({ enabled: false, promptId: '', aiModel: 'gemini-1.5-flash', n8nEnabled: false });
     const [isSavingAI, setIsSavingAI] = useState(false);
+    const [hasAiKeys, setHasAiKeys] = useState({ gemini: false, openai: false, openrouter: false });
     const [showEvolutionModal, setShowEvolutionModal] = useState(false);
     const [savedPrompts, setSavedPrompts] = useState<any[]>([]);
 
@@ -105,7 +109,10 @@ export default function IntegrationsPage() {
                 olx: { name: 'OLX', desc: 'Responda chats e gerencie anúncios da OLX.' },
                 n8n: { name: 'n8n Automation', desc: 'Conecte Webhooks para automações de fluxos.' },
                 erp_zaplandia: { name: 'ERP Zaplandia', desc: 'Sincronize produtos, preços e estoque do seu ERP.' },
-                rifa: { name: 'Rifa API', desc: 'Conecte sua API de rifas para gerenciar números e pedidos.' }
+                rifa: { name: 'Rifa API', desc: 'Conecte sua API de rifas para gerenciar números e pedidos.' },
+                gemini: { name: 'Google Gemini AI', desc: 'Inteligência artificial do Google para automações e chat.' },
+                openai: { name: 'OpenAI (ChatGPT)', desc: 'Conecte diretamente com a OpenAI para usar modelos GPT.' },
+                openrouter: { name: 'OpenRouter AI', desc: 'Acesso unificado a diversos modelos (Claude, Llama, etc).' }
             }
         },
         en_US: {
@@ -147,7 +154,10 @@ export default function IntegrationsPage() {
                 olx: { name: 'OLX', desc: 'Reply to chats and manage OLX ads.' },
                 n8n: { name: 'n8n Automation', desc: 'Connect Webhooks for flow automations.' },
                 erp_zaplandia: { name: 'ERP Zaplandia', desc: 'Sync products, prices and stock from your ERP.' },
-                rifa: { name: 'Raffle API', desc: 'Connect your raffle API to manage numbers and orders.' }
+                rifa: { name: 'Raffle API', desc: 'Connect your raffle API to manage numbers and orders.' },
+                gemini: { name: 'Google Gemini AI', desc: 'Google AI for automations and chat.' },
+                openai: { name: 'OpenAI (ChatGPT)', desc: 'Connect directly to OpenAI to use GPT models.' },
+                openrouter: { name: 'OpenRouter AI', desc: 'Unified access to various models (Claude, Llama, etc).' }
             }
         },
         pt_PT: {
@@ -253,17 +263,39 @@ export default function IntegrationsPage() {
         { id: 'n8n', name: t[lang].providers.n8n.name, icon: <Terminal className="w-8 h-8 text-orange-500" />, desc: t[lang].providers.n8n.desc },
         { id: 'erp_zaplandia', name: t[lang].providers.erp_zaplandia.name, icon: <Zap className="w-8 h-8 text-emerald-500" />, desc: t[lang].providers.erp_zaplandia.desc },
         { id: 'rifa', name: t[lang].providers.rifa.name, icon: <Smartphone className="w-8 h-8 text-indigo-500" />, desc: t[lang].providers.rifa.desc },
+        { id: 'gemini', name: t[lang].providers.gemini.name, icon: <Zap className="w-8 h-8 text-purple-500" />, desc: t[lang].providers.gemini.desc },
+        { id: 'openai', name: t[lang].providers.openai.name, icon: <Bot className="w-8 h-8 text-green-500" />, desc: t[lang].providers.openai.desc },
+        { id: 'openrouter', name: t[lang].providers.openrouter.name, icon: <Zap className="w-8 h-8 text-cyan-500" />, desc: t[lang].providers.openrouter.desc },
     ];
 
     useEffect(() => {
         if (token) {
             fetchIntegrations();
+            fetchAIKeys();
             fetch('/api/ai/prompts', { headers: { 'Authorization': `Bearer ${token}` } })
                 .then(res => res.json())
                 .then(data => { if (Array.isArray(data)) setSavedPrompts(data); })
                 .catch(err => console.error('Erro ao buscar prompts:', err));
         }
     }, [token]);
+
+    const fetchAIKeys = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integrations/credentials`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setHasAiKeys({
+                    gemini: !!data.find((c: any) => c.key === 'GEMINI_API_KEY')?.value,
+                    openai: !!data.find((c: any) => c.key === 'OPENAI_API_KEY')?.value,
+                    openrouter: !!data.find((c: any) => c.key === 'OPENROUTER_API_KEY')?.value,
+                });
+            }
+        } catch (err) {
+            console.error('Erro ao buscar chaves de IA:', err);
+        }
+    };
 
     const fetchIntegrations = async () => {
         try {
@@ -407,8 +439,18 @@ export default function IntegrationsPage() {
                                     <div className="p-4 bg-white/5 rounded-2xl group-hover:scale-110 transition-transform duration-300 ring-1 ring-white/10">
                                         {app.icon}
                                     </div>
-                                    <span className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-black ${isConnected ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-gray-500/10 text-gray-500 border border-white/5'}`}>
-                                        {isConnected ? t[lang].active : t[lang].paused}
+                                    <span className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-black ${
+                                        (app.id === 'gemini' && hasAiKeys.gemini) || 
+                                        (app.id === 'openai' && hasAiKeys.openai) || 
+                                        (app.id === 'openrouter' && hasAiKeys.openrouter) || 
+                                        isConnected 
+                                        ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                                        : 'bg-gray-500/10 text-gray-500 border border-white/5'
+                                    }`}>
+                                        {(app.id === 'gemini' && hasAiKeys.gemini) || 
+                                         (app.id === 'openai' && hasAiKeys.openai) || 
+                                         (app.id === 'openrouter' && hasAiKeys.openrouter) || 
+                                         isConnected ? t[lang].active : t[lang].paused}
                                     </span>
                                 </div>
 
@@ -416,8 +458,15 @@ export default function IntegrationsPage() {
                                 <p className="text-sm text-gray-400 leading-relaxed mb-8 min-h-[48px]">{app.desc}</p>
 
                                 <div className="flex flex-col space-y-3">
-                                    {/* FORCE WHATSAPP BEHAVIOR */}
-                                    {app.id === 'evolution' ? (
+                                    {['gemini', 'openai', 'openrouter'].includes(app.id) ? (
+                                        <button
+                                            onClick={() => router.push('/dashboard/settings/api')}
+                                            className="w-full bg-white/5 hover:bg-white/10 text-white text-sm py-4 rounded-xl transition font-black border border-white/10 flex items-center justify-center space-x-2"
+                                        >
+                                            <Settings className="w-4 h-4" />
+                                            <span>{t[lang].config}</span>
+                                        </button>
+                                    ) : app.id === 'evolution' ? (
                                         <div className="flex flex-col space-y-2">
                                             <button
                                                 onClick={() => {
@@ -481,21 +530,6 @@ export default function IntegrationsPage() {
                 </div>
             )}
 
-            <div className="h-px bg-white/5 my-16"></div>
-
-            <div className="max-w-4xl">
-                <div className="flex items-center space-x-3 mb-8">
-                    <div className="p-2 bg-primary/20 rounded-lg">
-                        <Zap className="w-5 h-5 text-primary" />
-                    </div>
-                    <h2 className="text-2xl font-black uppercase tracking-tight">Configuração Global de IA</h2>
-                </div>
-
-                <ApiSettingsFields 
-                    token={token || ''} 
-                    userRole={user?.role || 'user'}
-                />
-            </div>
 
             {/* WhatsApp Instance Manager Modal */}
             {showEvolutionModal && (
