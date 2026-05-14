@@ -18,7 +18,8 @@ import {
     MessageCircle,
     Eye,
     EyeOff,
-    CheckCircle2
+    CheckCircle2,
+    Globe
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -251,6 +252,35 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
             }
         } catch (e) {
             console.error('Erro ao buscar créditos OpenRouter:', e);
+        }
+    };
+
+    const handleTestKey = async (provider: 'gemini' | 'openrouter') => {
+        setIsLoading(true);
+        setStatus(null);
+        try {
+            const keyValue = provider === 'gemini' ? keys.gemini_key : keys.openrouter_key;
+            if (!keyValue) throw new Error('Insira uma chave antes de testar.');
+
+            const res = await fetch('/api/ai/test-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ provider, key: keyValue })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                setStatus({ type: 'success', msg: `Conexão com ${provider.toUpperCase()} estabelecida com sucesso!` });
+            } else {
+                throw new Error(data.message || 'Falha na conexão.');
+            }
+        } catch (err: any) {
+            setStatus({ type: 'error', msg: `Erro no teste: ${err.message}` });
+        } finally {
+            setIsLoading(false);
         }
     };
 
