@@ -314,15 +314,52 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             let aiResponse: string | null = null;
             let lastError: any;
 
+            const promptEntity = await this.aiPromptRepository.findOne({ where: { id: integration.aiPromptId } });
+            const isLisa = promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
+
             for (const model of uniqueModels) {
                 this.logger.debug(`[AI_ATTEMPT] Trying Gemini model: ${model}`);
                 try {
                     let tools: any[] | undefined;
-                    const erpKey = await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true);
-                    const rifaKey = await this.integrationsService.getCredential(tenantId, 'RIFA_API_KEY', true);
+                    let erpKey = await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true);
+                    let rifaKey = await this.integrationsService.getCredential(tenantId, 'RIFA_API_KEY', true);
+                    let geminiKey = await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY', true);
+                    let openRouterKey = await this.integrationsService.getCredential(tenantId, 'OPENROUTER_API_KEY', true);
 
-                    let finalPrompt = fullPrompt;
+                    // If it's Lisa, override keys if she has specific ones
+                    if (isLisa && promptEntity?.apiKey) {
+                        if (promptEntity.provider === 'gemini') {
+                            geminiKey = promptEntity.apiKey;
+                            this.logger.log(`[LISA_ROUTING] Using specialized Gemini key for Lisa.`);
+                        } else if (promptEntity.provider === 'openrouter') {
+                            openRouterKey = promptEntity.apiKey;
+                            this.logger.log(`[LISA_ROUTING] Using specialized OpenRouter key for Lisa.`);
+                        }
+                    }
+
                     tools = [];
+
+                    // Always add transfer_to_team tool
+                    tools.push({
+                        function_declarations: [{
+                            name: "transfer_to_team",
+                            description: "Transfere o atendimento para uma equipe humana específica (Comercial, Financeiro ou Suporte).",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    teamId: {
+                                        type: "string",
+                                        description: "O ID da equipe para transbordo (UUID)"
+                                    },
+                                    reason: {
+                                        type: "string",
+                                        description: "Motivo da transferência"
+                                    }
+                                },
+                                required: ["teamId"]
+                            }
+                        }]
+                    });
 
                     if (erpKey) {
                         finalPrompt += `\n\n[CAPACIDADE ERP]: Você tem acesso ao ERP Zaplandia via ferramenta 'get_products'. Se o cliente pedir para 'ver estoque', 'lista de produtos' ou perguntar por preços, ignore qualquer outra regra e use a ferramenta imediatamente com um termo geral (ex: 'notebook') para obter dados reais.`;
@@ -392,9 +429,9 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
 
                     if (model.includes('/') && openRouterKey) {
                         this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
-                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId);
+                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId, contact.id);
                     } else if (geminiKey) {
-                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId);
+                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId, contact.id);
                     }
 
                     if (aiResponse) {
@@ -688,7 +725,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
      *        if both versions return 429, wait 5s and throw so outer loop tries next model
      * 503/500 → throw immediately so outer loop tries next model
      */
-    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string): Promise<string | null> {
+    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string): Promise<string | null> {
         try {
             const url = 'https://openrouter.ai/api/v1/chat/completions';
             const payload: any = {
@@ -730,7 +767,16 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                     this.logger.log(`[AI_TOOL] Calling ${funcName} with args: ${JSON.stringify(args)}`);
 
                     let toolResult: any;
-                    if (funcName === 'get_products' && tenantId) {
+                    if (funcName === 'transfer_to_team' && tenantId && contactId) {
+                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team ${args.teamId}`);
+                        await this.contactRepository.update(contactId, { assignedTeamId: args.teamId });
+                        // Emit update via socket
+                        this.communicationService.emitToTenant(tenantId, 'contact_updated', {
+                            contactId: contactId,
+                            assignedTeamId: args.teamId
+                        });
+                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${args.teamId}.` };
+                    } else if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
                     } else if (funcName === 'get_raffles' && tenantId) {
                         toolResult = await this.rifaApiService.getRaffles(tenantId);
@@ -806,7 +852,7 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
         }
     }
 
-    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string): Promise<string | null> {
+    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string): Promise<string | null> {
         // 🔧 FIX: Tool calling MUST use v1beta. v1 often doesn't support the 'tools' field.
         // However, if tools fail or model is not found in v1beta, we can try v1 as fallback for text.
         const versions = tools ? ['v1beta', 'v1'] : ['v1', 'v1beta'];
@@ -859,7 +905,16 @@ Sempre consulte as rifas ativas antes de oferecer números.`;
                     this.logger.log(`[AI_TOOL] Gemini requested tool: ${funcName} with args: ${JSON.stringify(args)}`);
 
                     let toolResult: any;
-                    if (funcName === 'get_products' && tenantId) {
+                    if (funcName === 'transfer_to_team' && tenantId && contactId) {
+                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team ${args.teamId}`);
+                        await this.contactRepository.update(contactId, { assignedTeamId: args.teamId });
+                        // Emit update via socket
+                        this.communicationService.emitToTenant(tenantId, 'contact_updated', {
+                            contactId: contactId,
+                            assignedTeamId: args.teamId
+                        });
+                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${args.teamId}.` };
+                    } else if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
                     } else if (funcName === 'get_raffles' && tenantId) {
                         toolResult = await this.rifaApiService.getRaffles(tenantId);
