@@ -32,6 +32,7 @@ import { useRouter } from 'next/navigation';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import { useSocket } from '@/context/SocketContext';
 import AiModelSelector from '@/components/AiModelSelector';
+import { Bell, BellOff, Wifi, WifiOff } from 'lucide-react';
 
 interface Contact {
     id: string;
@@ -66,6 +67,8 @@ export default function OmniInboxPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+    const { isConnected } = useSocket();
 
 
     const t: any = {
@@ -371,6 +374,10 @@ export default function OmniInboxPage() {
         fetchAiPrompts();
         fetchCredentials();
         fetchTeams();
+
+        if (typeof window !== 'undefined' && "Notification" in window) {
+            setNotificationPermission(Notification.permission);
+        }
     }, [token]);
 
     useEffect(() => {
@@ -405,7 +412,14 @@ export default function OmniInboxPage() {
                 const existing = prev.find(c => c.id === msg.contactId);
                 const updatedContact = existing 
                     ? { ...existing, lastMessage: msg.content, updatedAt: new Date().toISOString() }
-                    : { ...msg.contact, lastMessage: msg.content, updatedAt: new Date().toISOString(), provider: msg.provider };
+                    : { 
+                        id: msg.contactId, 
+                        name: msg.contact?.name || 'Novo Contato',
+                        provider: msg.provider || msg.contact?.provider || 'whatsapp',
+                        updatedAt: new Date().toISOString(),
+                        lastMessage: msg.content,
+                        ...msg.contact 
+                    };
                 
                 const filtered = prev.filter(c => c.id !== msg.contactId);
                 return [updatedContact as Contact, ...filtered];
@@ -844,6 +858,27 @@ export default function OmniInboxPage() {
                 <div className="p-5 border-b border-gray-200 space-y-4" style={{ backgroundColor: '#ffffff' }}>
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold" style={{ color: '#111827' }}>{t[lang].title}</h2>
+                        
+                        <div className="flex items-center space-x-2">
+                            {/* Socket Status */}
+                            <div 
+                                className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse'}`}
+                                title={isConnected ? 'Conectado em tempo real' : 'Desconectado - Tente recarregar'}
+                            />
+                            
+                            {/* Notification Toggle */}
+                            <button 
+                                onClick={() => {
+                                    if ("Notification" in window) {
+                                        Notification.requestPermission().then(setNotificationPermission);
+                                    }
+                                }}
+                                className={`p-1.5 rounded-lg transition-all ${notificationPermission === 'granted' ? 'text-primary' : 'text-gray-300 hover:text-gray-500'}`}
+                                title={notificationPermission === 'granted' ? 'Notificações Ativas' : 'Ativar Notificações'}
+                            >
+                                {notificationPermission === 'granted' ? <Bell size={16} /> : <BellOff size={16} />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Instance Selector (WhatsApp Only) */}

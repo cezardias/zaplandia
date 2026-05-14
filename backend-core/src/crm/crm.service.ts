@@ -232,9 +232,17 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         });
 
         // Emit via socket so UI updates
+        const contact = await this.contactRepository.findOne({ where: { id: contactId } });
         this.communicationService.emitToTenant(tenantId, 'new_message', {
             ...saved,
-            contact: { id: contactId, provider: provider || 'whatsapp' } 
+            contact: contact ? { 
+                id: contact.id, 
+                name: contact.name, 
+                provider: contact.provider || provider || 'whatsapp',
+                phoneNumber: contact.phoneNumber,
+                externalId: contact.externalId,
+                metadata: contact.metadata
+            } : { id: contactId, provider: provider || 'whatsapp' }
         });
         
         return saved;
@@ -549,7 +557,14 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         // ✅ Emitir evento WebSocket para atualização em tempo real
         this.communicationService.emitToTenant(tenantId, 'new_message', {
             ...message,
-            contact: contact ? { id: contact.id, name: contact.name } : null
+            contact: contact ? { 
+                id: contact.id, 
+                name: contact.name,
+                provider: contact.provider || finalProvider,
+                phoneNumber: contact.phoneNumber,
+                externalId: contact.externalId,
+                metadata: contact.metadata
+            } : null
         });
 
         // ✅ Update contact lastMessage and updatedAt for sorting

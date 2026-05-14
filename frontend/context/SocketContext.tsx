@@ -81,7 +81,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, [socket]);
 
     const playNotificationSound = () => {
-        const audio = new Audio('/sounds/notification.mp3'); // Need to ensure this exists or use a CDN link
+        // Use a standard base64 beep or a public CDN sound if local file is missing
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'); 
         audio.play().catch(e => console.warn('Sound play blocked:', e));
     };
 
@@ -89,12 +90,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (!("Notification" in window)) return;
 
         if (Notification.permission === "granted") {
-            new Notification(`Nova mensagem de ${msg.contact?.name || 'Contato'}`, {
+            const n = new Notification(msg.contact?.name || 'Novo Contato', {
                 body: msg.content,
-                icon: '/logo.png', // Adjust
+                icon: '/logo.png',
+                tag: msg.contactId || 'new_msg' // Dedup same contact
             });
-        } else if (Notification.permission !== "denied") {
-            Notification.requestPermission();
+            n.onclick = () => {
+                window.focus();
+                // Optionally navigate to the specific chat
+            };
         }
     };
 
