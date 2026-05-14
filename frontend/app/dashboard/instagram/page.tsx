@@ -45,6 +45,95 @@ export default function InstagramManagementPage() {
     
     const [activeTab, setActiveTab] = useState<'feed' | 'insights'>('feed');
     const [isLoading, setIsLoading] = useState(false);
+
+    const t: any = {
+        pt_BR: {
+            title: 'Gestão do Instagram',
+            desc: 'Gerencie publicações, responda comentários e acesse os insights da sua conta profissional do Instagram.',
+            tabFeed: 'Feed & Comentários',
+            tabInsights: 'Insights',
+            errorLoad: 'Erro ao carregar dados do Instagram',
+            errorDetail: 'Verifique se as permissões (instagram_business_basic) estão aprovadas ou se a conta está no modo desenvolvimento com testadores válidos.',
+            posts: 'Publicações',
+            noPosts: 'Nenhuma publicação encontrada.',
+            noCaption: 'Sem legenda',
+            postComments: 'Comentários da Publicação',
+            viewOriginal: 'Ver post original no Instagram',
+            noComments: 'Nenhum comentário encontrado para esta publicação.',
+            replyingTo: 'Respondendo',
+            replyBtn: 'Responder',
+            us: 'Nós',
+            selectPost: 'Selecione uma publicação para ver e gerenciar os comentários',
+            metrics: 'Métricas de Engajamento',
+            noInsights: 'Insights ainda não disponíveis ou falta de permissão (instagram_business_manage_insights).',
+            errorReply: 'Erro ao responder:'
+        },
+        en_US: {
+            title: 'Instagram Management',
+            desc: 'Manage posts, reply to comments, and access insights for your professional Instagram account.',
+            tabFeed: 'Feed & Comments',
+            tabInsights: 'Insights',
+            errorLoad: 'Error loading Instagram data',
+            errorDetail: 'Check if permissions (instagram_business_basic) are approved or if the account is in development mode with valid testers.',
+            posts: 'Posts',
+            noPosts: 'No posts found.',
+            noCaption: 'No caption',
+            postComments: 'Post Comments',
+            viewOriginal: 'View original post on Instagram',
+            noComments: 'No comments found for this post.',
+            replyingTo: 'Replying to',
+            replyBtn: 'Reply',
+            us: 'Us',
+            selectPost: 'Select a post to view and manage comments',
+            metrics: 'Engagement Metrics',
+            noInsights: 'Insights not yet available or missing permission (instagram_business_manage_insights).',
+            errorReply: 'Error replying:'
+        },
+        pt_PT: {
+            title: 'Gestão do Instagram',
+            desc: 'Gira publicações, responda a comentários e aceda aos insights da sua conta profissional do Instagram.',
+            tabFeed: 'Feed & Comentários',
+            tabInsights: 'Insights',
+            errorLoad: 'Erro ao carregar dados do Instagram',
+            errorDetail: 'Verifique se as permissões (instagram_business_basic) estão aprovadas ou se a conta está no modo desenvolvimento com testadores válidos.',
+            posts: 'Publicações',
+            noPosts: 'Nenhuma publicação encontrada.',
+            noCaption: 'Sem legenda',
+            postComments: 'Comentários da Publicação',
+            viewOriginal: 'Ver post original no Instagram',
+            noComments: 'Nenhum comentário encontrado para esta publicação.',
+            replyingTo: 'A responder a',
+            replyBtn: 'Responder',
+            us: 'Nós',
+            selectPost: 'Selecione uma publicação para ver e gerir os comentários',
+            metrics: 'Métricas de Envolvimento',
+            noInsights: 'Insights ainda não disponíveis ou falta de permissão (instagram_business_manage_insights).',
+            errorReply: 'Erro ao responder:'
+        },
+        it_IT: {
+            title: 'Gestione Instagram',
+            desc: 'Gestisci post, rispondi ai commenti e accedi agli insights del tuo account professionale Instagram.',
+            tabFeed: 'Feed & Commenti',
+            tabInsights: 'Insights',
+            errorLoad: 'Errore nel caricamento dei dati di Instagram',
+            errorDetail: 'Verifica se i permessi (instagram_business_basic) sono approvati o se l\'account è in modalità sviluppo con tester validi.',
+            posts: 'Post',
+            noPosts: 'Nessun post trovato.',
+            noCaption: 'Nessuna didascalia',
+            postComments: 'Commenti al Post',
+            viewOriginal: 'Vedi post originale su Instagram',
+            noComments: 'Nessun commento trovato per questo post.',
+            replyingTo: 'Rispondendo a',
+            replyBtn: 'Rispondi',
+            us: 'Noi',
+            selectPost: 'Seleziona un post per visualizzare e gestire i commenti',
+            metrics: 'Metriche di Coinvolgimento',
+            noInsights: 'Insights non ancora disponibili o permessi mancanti (instagram_business_manage_insights).',
+            errorReply: 'Errore nella risposta:'
+        }
+    };
+    
+    const txt = t[lang] || t['pt_BR'];
     const [error, setError] = useState<string | null>(null);
     
     const [mediaList, setMediaList] = useState<Media[]>([]);
@@ -138,10 +227,10 @@ export default function InstagramManagementPage() {
                 if (selectedMedia) fetchComments(selectedMedia.id);
             } else {
                 const err = await res.json();
-                alert(`Erro ao responder: ${err.message}`);
+                alert(`${txt.errorReply} ${err.message}`);
             }
         } catch (e: any) {
-            alert(`Erro ao responder: ${e.message}`);
+            alert(`${txt.errorReply} ${e.message}`);
         }
     };
 
@@ -154,10 +243,10 @@ export default function InstagramManagementPage() {
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
                             <Instagram className="w-6 h-6 text-white" />
                         </div>
-                        <span>Gestão do Instagram</span>
+                        <span>{txt.title}</span>
                     </h1>
                     <p className="text-gray-400 mt-2 text-sm max-w-xl">
-                        Gerencie publicações, responda comentários e acesse os insights da sua conta profissional do Instagram.
+                        {txt.desc}
                     </p>
                 </div>
                 
@@ -168,14 +257,14 @@ export default function InstagramManagementPage() {
                         className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'feed' ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                     >
                         <ImageIcon size={18} />
-                        <span>Feed & Comentários</span>
+                        <span>{txt.tabFeed}</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('insights')}
                         className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'insights' ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                     >
                         <BarChart3 size={18} />
-                        <span>Insights</span>
+                        <span>{txt.tabInsights}</span>
                     </button>
                 </div>
             </div>
@@ -184,9 +273,9 @@ export default function InstagramManagementPage() {
                 <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl flex items-start space-x-3 mb-6">
                     <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
                     <div className="text-sm text-red-200">
-                        <p className="font-bold">Erro ao carregar dados do Instagram</p>
+                        <p className="font-bold">{txt.errorLoad}</p>
                         <p>{error}</p>
-                        <p className="mt-2 text-xs">Verifique se as permissões (instagram_business_basic) estão aprovadas ou se a conta está no modo desenvolvimento com testadores válidos.</p>
+                        <p className="mt-2 text-xs">{txt.errorDetail}</p>
                     </div>
                 </div>
             )}
@@ -198,14 +287,14 @@ export default function InstagramManagementPage() {
                     <div className="lg:col-span-1 bg-surface border border-white/10 rounded-2xl p-4 flex flex-col h-[70vh]">
                         <h2 className="text-lg font-bold mb-4 flex items-center">
                             <ImageIcon className="w-5 h-5 mr-2 text-primary" />
-                            Publicações
+                            {txt.posts}
                         </h2>
                         
                         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
                             {isLoading ? (
                                 <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
                             ) : mediaList.length === 0 && !error ? (
-                                <p className="text-center text-gray-500 p-8">Nenhuma publicação encontrada.</p>
+                                <p className="text-center text-gray-500 p-8">{txt.noPosts}</p>
                             ) : (
                                 mediaList.map((media) => (
                                     <div 
@@ -221,7 +310,7 @@ export default function InstagramManagementPage() {
                                             )}
                                         </div>
                                         <div className="ml-3 flex-1 overflow-hidden">
-                                            <p className="text-xs text-gray-300 line-clamp-2">{media.caption || 'Sem legenda'}</p>
+                                            <p className="text-xs text-gray-300 line-clamp-2">{media.caption || txt.noCaption}</p>
                                             <div className="flex items-center space-x-3 mt-2 text-[10px] text-gray-500">
                                                 <span className="flex items-center"><Heart className="w-3 h-3 mr-1" /> {media.like_count || 0}</span>
                                                 <span className="flex items-center"><MessageCircle className="w-3 h-3 mr-1" /> {media.comments_count || 0}</span>
@@ -240,8 +329,8 @@ export default function InstagramManagementPage() {
                             <>
                                 <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between rounded-t-2xl">
                                     <div>
-                                        <h3 className="font-bold">Comentários da Publicação</h3>
-                                        <a href={selectedMedia.permalink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">Ver post original no Instagram</a>
+                                        <h3 className="font-bold">{txt.postComments}</h3>
+                                        <a href={selectedMedia.permalink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">{txt.viewOriginal}</a>
                                     </div>
                                     <div className="flex items-center space-x-4">
                                         <span className="flex items-center text-sm"><Heart className="w-4 h-4 mr-1 text-pink-500" /> {selectedMedia.like_count}</span>
@@ -253,7 +342,7 @@ export default function InstagramManagementPage() {
                                     {isCommentsLoading ? (
                                         <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
                                     ) : comments.length === 0 ? (
-                                        <p className="text-center text-gray-500 mt-10">Nenhum comentário encontrado para esta publicação.</p>
+                                        <p className="text-center text-gray-500 mt-10">{txt.noComments}</p>
                                     ) : (
                                         <div className="space-y-6">
                                             {comments.map(comment => (
@@ -271,7 +360,7 @@ export default function InstagramManagementPage() {
                                                                 onClick={() => { setReplyingTo(comment.id); setReplyText(''); }}
                                                                 className="text-xs text-gray-400 hover:text-white flex items-center transition"
                                                             >
-                                                                <Reply className="w-3 h-3 mr-1" /> Responder
+                                                                <Reply className="w-3 h-3 mr-1" /> {txt.replyBtn}
                                                             </button>
                                                         </div>
 
@@ -282,7 +371,7 @@ export default function InstagramManagementPage() {
                                                                     type="text"
                                                                     value={replyText}
                                                                     onChange={(e) => setReplyText(e.target.value)}
-                                                                    placeholder={`Respondendo @${comment.username}...`}
+                                                                    placeholder={`${txt.replyingTo} @${comment.username}...`}
                                                                     className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
                                                                     autoFocus
                                                                 />
@@ -302,7 +391,7 @@ export default function InstagramManagementPage() {
                                                             {comment.replies.data.map(reply => (
                                                                 <div key={reply.id} className="bg-primary/5 border border-primary/10 p-3 rounded-xl flex flex-col">
                                                                     <div className="flex justify-between items-start mb-1">
-                                                                        <span className="font-bold text-xs text-gray-400">@{reply.username} (Nós)</span>
+                                                                        <span className="font-bold text-xs text-gray-400">@{reply.username} ({txt.us})</span>
                                                                         <span className="text-[10px] text-gray-500">{new Date(reply.timestamp).toLocaleString()}</span>
                                                                     </div>
                                                                     <p className="text-sm text-gray-300">{reply.text}</p>
@@ -319,7 +408,7 @@ export default function InstagramManagementPage() {
                         ) : (
                             <div className="flex flex-col items-center justify-center flex-1 text-gray-500">
                                 <ImageIcon className="w-16 h-16 mb-4 opacity-20" />
-                                <p>Selecione uma publicação para ver e gerenciar os comentários</p>
+                                <p>{txt.selectPost}</p>
                             </div>
                         )}
                     </div>
@@ -330,11 +419,11 @@ export default function InstagramManagementPage() {
                 <div className="bg-surface border border-white/10 rounded-2xl p-6">
                     <h2 className="text-xl font-bold mb-6 flex items-center">
                         <BarChart3 className="w-6 h-6 mr-3 text-primary" />
-                        Métricas de Engajamento
+                        {txt.metrics}
                     </h2>
                     
                     {insights.length === 0 ? (
-                        <p className="text-center text-gray-500 py-10">Insights ainda não disponíveis ou falta de permissão (instagram_business_manage_insights).</p>
+                        <p className="text-center text-gray-500 py-10">{txt.noInsights}</p>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {insights.map((insight: any) => (
