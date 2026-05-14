@@ -201,11 +201,11 @@ export default function DashboardLayout({
         { name: t[lang].menu.pipeline, icon: <BarChart3 size={20} />, path: '/dashboard/crm/kanban', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.settings, icon: <Settings size={20} />, path: '/dashboard/integrations', roles: ['superadmin', 'admin', 'user'] },
         { name: t[lang].menu.payments, icon: <CreditCard size={20} />, path: '/dashboard/admin/payments', roles: ['superadmin'] },
-        { name: t[lang].menu.developer, icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin', 'admin', 'user'] },
-        { name: t[lang].menu.automations, icon: <Cpu size={20} />, path: '/dashboard/automations', roles: ['superadmin', 'admin', 'user'] },
+        { name: t[lang].menu.developer, icon: <Terminal size={20} />, path: '/dashboard/developer', roles: ['superadmin'] },
+        { name: t[lang].menu.automations, icon: <Cpu size={20} />, path: '/dashboard/automations', roles: ['superadmin'] },
         { name: t[lang].menu.aiTraining, icon: <Brain size={20} />, path: '/dashboard/admin/ai-training', roles: ['superadmin'] },
         { name: t[lang].menu.adminTickets, icon: <LifeBuoy size={20} />, path: '/dashboard/admin/support', roles: ['superadmin'] },
-        { name: t[lang].menu.help, icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin', 'admin', 'user', 'agent'] },
+        { name: t[lang].menu.help, icon: <HelpCircle size={20} />, path: '/dashboard/support', roles: ['superadmin'] },
         { name: t[lang].menu.terms, icon: <FileText size={20} />, path: '/dashboard/terms', roles: ['superadmin', 'admin', 'user', 'agent'] },
     ];
 
