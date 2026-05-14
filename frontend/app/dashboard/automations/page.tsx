@@ -19,7 +19,9 @@ import {
     Layers,
     Clock,
     AlertCircle,
-    CheckCircle2
+    CheckCircle2,
+    Zap,
+    Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
