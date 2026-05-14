@@ -877,7 +877,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         return message;
     }
 
-    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string, provider?: string, instance?: string, alternativeId?: string }, options?: { forceStage?: string }) {
+    async ensureContact(tenantId: string, data: { name: string, phoneNumber?: string, externalId?: string, provider?: string, instance?: string, alternativeId?: string, metadata?: any }, options?: { forceStage?: string }) {
         const provider = data.provider || 'whatsapp';
         // Clean phone should keep all digits for international support
         const cleanPhone = data.phoneNumber?.replace(/\D/g, '');
@@ -893,9 +893,22 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
                         this.logger.log(`[Smart Link] Upgrading LID contact ${existing.id} (${existing.name}) with phone/alt data.`);
                         await this.contactRepository.update(existing.id, { 
                             phoneNumber: cleanPhone || existing.phoneNumber,
-                            externalId: nextId 
+                            externalId: nextId,
+                            metadata: data.metadata ? { ...existing.metadata, ...data.metadata } : existing.metadata
                         });
-                        return { ...existing, phoneNumber: cleanPhone || existing.phoneNumber, externalId: nextId };
+                        return { ...existing, phoneNumber: cleanPhone || existing.phoneNumber, externalId: nextId, metadata: data.metadata ? { ...existing.metadata, ...data.metadata } : existing.metadata };
+                    }
+                    if (data.metadata) {
+                        await this.contactRepository.update(existing.id, { metadata: { ...existing.metadata, ...data.metadata } });
+                        existing.metadata = { ...existing.metadata, ...data.metadata };
+                    }
+                    if (data.name && data.name !== existing.name && !data.name.startsWith('Instagram ') && !data.name.startsWith('WhatsApp ')) {
+                        // Upgrade generic name to real name
+                        if (existing.name.startsWith('Instagram ') || existing.name.startsWith('WhatsApp ')) {
+                            this.logger.log(`[Smart Link] Upgrading generic name '${existing.name}' to '${data.name}' for contact ${existing.id}`);
+                            await this.contactRepository.update(existing.id, { name: data.name });
+                            existing.name = data.name;
+                        }
                     }
                     return existing;
                 }
@@ -904,7 +917,13 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             // 2. Direct match by alternativeId
             if (data.alternativeId) {
                 const altMatch = await this.contactRepository.findOne({ where: { tenantId, externalId: data.alternativeId } });
-                if (altMatch) return altMatch;
+                if (altMatch) {
+                    if (data.metadata) {
+                        await this.contactRepository.update(altMatch.id, { metadata: { ...altMatch.metadata, ...data.metadata } });
+                        altMatch.metadata = { ...altMatch.metadata, ...data.metadata };
+                    }
+                    return altMatch;
+                }
             }
 
             // 3. Match by Phone suffix (Aggressive Consolidation - adjusted for global)
@@ -939,8 +958,22 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             if (where.length > 0) {
                 const contacts = await this.contactRepository.find({ where });
                 // If we found local matches, use the best one or merge
-                if (contacts.length > 1) return await this.mergeContacts(tenantId, contacts);
-                if (contacts.length === 1) return contacts[0];
+                if (contacts.length > 1) {
+                    const merged = await this.mergeContacts(tenantId, contacts);
+                    if (data.metadata) {
+                        await this.contactRepository.update(merged.id, { metadata: { ...merged.metadata, ...data.metadata } });
+                        merged.metadata = { ...merged.metadata, ...data.metadata };
+                    }
+                    return merged;
+                }
+                if (contacts.length === 1) {
+                    const matched = contacts[0];
+                    if (data.metadata) {
+                        await this.contactRepository.update(matched.id, { metadata: { ...matched.metadata, ...data.metadata } });
+                        matched.metadata = { ...matched.metadata, ...data.metadata };
+                    }
+                    return matched;
+                }
             }
 
             // 5. Create NEW if nothing found

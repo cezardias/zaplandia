@@ -1044,8 +1044,12 @@ export default function OmniInboxPage() {
                                 }}
                             >
                                 <div className="relative">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary/20 to-accent/20 flex items-center justify-center font-bold text-primary">
-                                        {contact.name?.charAt(0) || 'C'}
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary/20 to-accent/20 flex items-center justify-center font-bold text-primary overflow-hidden">
+                                        {contact.metadata?.profilePic ? (
+                                            <img src={contact.metadata.profilePic} alt={contact.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            contact.name?.charAt(0) || 'C'
+                                        )}
                                     </div>
                                     <div className="absolute -bottom-1 -right-1 bg-surface p-1 rounded-full shadow-lg">
                                         {getProviderIcon(contact.provider)}
@@ -1079,8 +1083,12 @@ export default function OmniInboxPage() {
                                 >
                                     <ArrowLeft size={18} />
                                 </button>
-                                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-gray-400 shrink-0 border border-gray-200">
-                                    {selectedContact.name?.charAt(0) || 'C'}
+                                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-gray-400 shrink-0 border border-gray-200 overflow-hidden">
+                                    {selectedContact.metadata?.profilePic ? (
+                                        <img src={selectedContact.metadata.profilePic} alt={selectedContact.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        selectedContact.name?.charAt(0) || 'C'
+                                    )}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <h3 className="font-bold leading-tight truncate" style={{ color: '#111827' }}>{selectedContact.name || 'Contato'}</h3>

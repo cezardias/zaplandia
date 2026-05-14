@@ -313,9 +313,11 @@ export class WebhooksController {
 
                             // Fetch real name from Instagram Graph API
                             let profileName = `Instagram ${senderId.slice(-4)}`;
+                            let profilePic = undefined;
                             try {
-                                const profile = await this.metaApiService.getInstagramUserProfile(tenantId, senderId);
+                                const profile: any = await this.metaApiService.getInstagramUserProfile(tenantId, senderId);
                                 if (profile?.name) profileName = profile.name;
+                                if (profile?.profile_pic) profilePic = profile.profile_pic;
                             } catch (e) { /* profile fetch is best-effort */ }
 
                             const contact = await this.crmService.ensureContact(tenantId, {
@@ -323,6 +325,7 @@ export class WebhooksController {
                                 externalId: senderId,
                                 provider: 'instagram',
                                 instance: pageId,
+                                metadata: profilePic ? { profilePic } : undefined
                             });
 
                             const message = this.messageRepository.create({

@@ -254,7 +254,7 @@ export class MetaApiService {
 
             const response = await axios.get(
                 `https://graph.facebook.com/v18.0/${psid}`,
-                { params: { access_token: accessToken, fields: 'name,username' } }
+                { params: { access_token: accessToken, fields: 'name,username,profile_pic' } }
             );
 
             return response.data;
