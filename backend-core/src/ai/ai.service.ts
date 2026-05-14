@@ -39,6 +39,7 @@ export class AiService implements OnModuleInit {
         private rifaApiService: RifaApiService,
         private metaApiService: MetaApiService,
         private communicationService: CommsService,
+        private supportService: SupportService,
     ) { }
 
     async onModuleInit() {
