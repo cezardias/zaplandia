@@ -7,7 +7,10 @@ echo "🚀 Iniciando deploy da Lisa Zaplandia..."
 # Copiar o Modelfile para dentro do container
 docker cp ./ollama/Modelfile zaplandia-ollama:/tmp/Modelfile
 
-echo "📦 Construindo modelo zaplandia-lisa (pode demorar 1-2 min)..."
+echo "📦 Garantindo que a base está presente..."
+docker exec zaplandia-ollama ollama pull qwen2.5:3b
+
+echo "📦 Construindo modelo zaplandia-lisa..."
 docker exec zaplandia-ollama ollama create zaplandia-lisa -f /tmp/Modelfile
 
 echo "✅ Modelo zaplandia-lisa criado! Testando..."
@@ -16,5 +19,5 @@ docker exec zaplandia-ollama ollama run zaplandia-lisa "Olá Lisa, você está f
 echo ""
 echo "🎉 Lisa Zaplandia está pronta!"
 echo "   Modelo: zaplandia-lisa"
-echo "   Base:   qwen2.5:7b"
+echo "   Base:   qwen2.5:3b"
 echo "   Ollama: http://localhost:11434"
