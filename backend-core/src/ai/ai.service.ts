@@ -859,7 +859,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         
                         let targetTeamId = args.teamId;
                         const teamName = args.teamId?.toLowerCase();
-                        const teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" = $1`, [tenantId]);
+                        let teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" = $1`, [tenantId]);
+                        if (!teams || teams.length === 0) {
+                            teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" IS NULL`);
+                        }
                         
                         const foundTeam = teams.find(t => 
                             t.id === targetTeamId || 
