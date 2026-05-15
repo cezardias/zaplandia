@@ -848,11 +848,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             return null;
         }
     }
-
     private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string, promptId?: string, authenticatedUser?: any): Promise<string | null> {
-        // 🔧 FIX: Tool calling MUST use v1beta. v1 often doesn't support the 'tools' field.
-        // However, if tools fail or model is not found in v1beta, we can try v1 as fallback for text.
-        const versions = tools ? ['v1beta', 'v1'] : ['v1', 'v1beta'];
+        // 🔧 FIX: gemini-2.0-flash and most new models ONLY exist on v1beta.
+        // Always try v1beta first, then v1 as last-resort fallback for legacy models.
+        const versions = ['v1beta', 'v1'];
         const cleanApiKey = apiKey.trim();
         let lastError: any;
         let rateLimitCount = 0;
