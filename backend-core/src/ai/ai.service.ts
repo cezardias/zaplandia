@@ -192,8 +192,11 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 { timeout: 300000 } // 5 minutes - local inference is slower
             );
 
-            const content = response.data?.message?.content;
+            let content = response.data?.message?.content;
             if (content) {
+                // 🧠 DeepSeek-R1 Support: Strip <think> tags for a cleaner final response
+                content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                
                 this.logger.log(`[OLLAMA] Response received from ${model} (${content.length} chars)`);
                 return content;
             }
@@ -400,9 +403,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             let modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
 
             if (isInternal) {
-                // INTERNAL ONLY uses Lisa (Ollama)
+                // INTERNAL ONLY uses Lisa (Ollama) - Prioritize DeepSeek-R1 for better logic
                 this.logger.log(`[AI_INTERNAL] Forcing Lisa (Ollama) for internal task.`);
-                modelsToTry = ['zaplandia-lisa', 'qwen2.5:3b'];
+                modelsToTry = ['deepseek-r1', 'zaplandia-lisa', 'qwen2.5:3b'];
             }
 
             let aiResponse: string | null = null;
