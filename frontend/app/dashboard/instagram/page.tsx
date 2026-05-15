@@ -252,12 +252,78 @@ export default function InstagramManagementPage() {
     const [mediaList, setMediaList] = useState<Media[]>([]);
     const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
     const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+    const [insights, setInsights] = useState<any>(null);
+    const [caption, setCaption] = useState('');
+    const [imageUrl, setImageUrl] = useState('');
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
     useEffect(() => {
         if (token) {
             fetchMedia();
+            fetchInsights();
         }
     }, [token]);
+
+    const fetchInsights = async () => {
+        try {
+            const res = await fetch('/api/integrations/instagram/insights', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) setInsights(data);
+        } catch (e) {}
+    };
+
+    const generateWithAI = async () => {
+        setIsGeneratingAI(true);
+        try {
+            const res = await fetch('/api/ai/chat/lisa', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: `Gere uma legenda matadora e curta para um post de Instagram sobre: ${caption || 'um novo post'}. Use emojis e hashtags estratégicas.` })
+            });
+            const data = await res.json();
+            if (data.response) setCaption(data.response);
+        } catch (e) {
+            alert('Erro ao gerar com IA');
+        } finally {
+            setIsGeneratingAI(false);
+        }
+    };
+
+    const handlePublish = async () => {
+        if (!imageUrl) return alert('Insira uma URL de imagem');
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/integrations/instagram/publish', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    imageUrl, 
+                    caption,
+                    mediaType: sidebarTab === 'reels' ? 'REELS' : 'FEED'
+                })
+            });
+            if (res.ok) {
+                alert('Publicado com sucesso!');
+                setIsPublishModalOpen(false);
+                fetchMedia();
+            } else {
+                const data = await res.json();
+                alert(`Erro: ${data.message || 'Falha ao publicar'}`);
+            }
+        } catch (e) {
+            alert('Erro na rede');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const fetchMedia = async () => {
         setIsLoading(true);
@@ -379,38 +445,50 @@ export default function InstagramManagementPage() {
 
                 {/* Toolbar */}
                 <div className="bg-surface/30 border-b border-white/5 px-8 py-4 flex items-center justify-between shrink-0">
-                    <div className="flex items-center space-x-4 flex-1">
-                        <div className="relative flex-1 max-w-md">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                    <div className="flex items-center space-x-6 flex-1">
+                        {/* Summary Metrics */}
+                        <div className="flex items-center space-x-8 mr-8 border-r border-white/5 pr-8">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Alcance</span>
+                                <span className="text-lg font-black text-white">{insights?.data?.find((i:any) => i.name === 'reach')?.values?.[0]?.value?.toLocaleString() || '---'}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Impressões</span>
+                                <span className="text-lg font-black text-white">{insights?.data?.find((i:any) => i.name === 'impressions')?.values?.[0]?.value?.toLocaleString() || '---'}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Visitas</span>
+                                <span className="text-lg font-black text-white">{insights?.data?.find((i:any) => i.name === 'profile_views')?.values?.[0]?.value?.toLocaleString() || '---'}</span>
+                            </div>
+                        </div>
+
+                        <div className="relative flex-1 max-w-sm">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
                             <input
                                 type="text"
                                 placeholder={txt.filters.search}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-xs text-white focus:outline-none focus:border-primary/50 transition shadow-inner"
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary/50 transition shadow-inner"
                             />
                         </div>
-                        <button className="flex items-center space-x-2 px-5 py-3 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest text-gray-400 hover:bg-white/5 hover:text-white transition">
-                            <Filter size={14} />
-                            <span>{txt.filters.filter}</span>
-                        </button>
                     </div>
 
                     <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-3 px-5 py-3 bg-black/40 border border-white/10 rounded-2xl text-xs font-black">
-                            <Calendar size={14} className="text-primary" />
+                        <div className="flex items-center space-x-3 px-4 py-2.5 bg-black/40 border border-white/10 rounded-2xl text-xs font-black">
+                            <Calendar size={12} className="text-primary" />
                             <select
                                 value={dateRange}
                                 onChange={(e) => setDateRange(e.target.value)}
-                                className="bg-transparent outline-none text-gray-300 cursor-pointer uppercase tracking-widest"
+                                className="bg-transparent outline-none text-gray-300 cursor-pointer uppercase tracking-widest text-[10px]"
                             >
                                 <option value="90" className="bg-surface">{txt.filters.last90}</option>
                                 <option value="30" className="bg-surface">{txt.filters.last30}</option>
                                 <option value="7" className="bg-surface">{txt.filters.last7}</option>
                             </select>
                         </div>
-                        <button className="p-3 border border-white/10 rounded-2xl text-gray-500 hover:bg-white/5 hover:text-white transition">
-                            <ArrowDownUp size={18} />
+                        <button className="p-2.5 border border-white/10 rounded-2xl text-gray-500 hover:bg-white/5 hover:text-white transition">
+                            <Settings size={16} />
                         </button>
                     </div>
                 </div>
@@ -539,41 +617,42 @@ export default function InstagramManagementPage() {
                             <div className="space-y-8">
                                 {/* Media Selection */}
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mídia (Imagens ou Vídeos)</label>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <button className="aspect-square rounded-[32px] border-2 border-dashed border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all flex flex-col items-center justify-center space-y-2 group">
-                                            <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-primary/20 transition-all">
-                                                <ImageIcon size={24} className="text-gray-500 group-hover:text-primary" />
-                                            </div>
-                                            <span className="text-[10px] font-black uppercase tracking-tighter text-gray-600 group-hover:text-primary">Adicionar</span>
-                                        </button>
-                                        <div className="aspect-square rounded-[32px] bg-black/40 border border-white/5 overflow-hidden relative group">
-                                            <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="" />
-                                            <button className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-all">
-                                                <X size={14} />
-                                            </button>
-                                        </div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">URL da Imagem (Upload em breve)</label>
+                                    <div className="flex space-x-4">
+                                        <input 
+                                            type="text" 
+                                            value={imageUrl}
+                                            onChange={(e) => setImageUrl(e.target.value)}
+                                            placeholder="https://exemplo.com/imagem.jpg"
+                                            className="flex-1 bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-xs text-gray-200 outline-none focus:border-primary/50 transition-all shadow-inner"
+                                        />
                                     </div>
+                                    {imageUrl && (
+                                        <div className="mt-4 aspect-square max-w-[200px] rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
+                                            <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Caption */}
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Legenda</label>
-                                        <button className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase tracking-widest hover:underline">
-                                            <Zap size={12} />
-                                            <span>Gerar com IA</span>
+                                        <button 
+                                            onClick={generateWithAI}
+                                            disabled={isGeneratingAI}
+                                            className="flex items-center space-x-2 text-[10px] font-black text-primary uppercase tracking-widest hover:underline disabled:opacity-50"
+                                        >
+                                            {isGeneratingAI ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                                            <span>{isGeneratingAI ? 'Gerando...' : 'Gerar com IA'}</span>
                                         </button>
                                     </div>
                                     <textarea 
+                                        value={caption}
+                                        onChange={(e) => setCaption(e.target.value)}
                                         className="w-full h-40 bg-black/40 border border-white/5 rounded-[32px] p-6 text-sm text-gray-200 outline-none focus:border-primary/50 transition-all shadow-inner resize-none"
                                         placeholder="Escreva algo incrível..."
                                     />
-                                    <div className="flex items-center justify-end space-x-4">
-                                        <button className="p-2 hover:bg-white/5 rounded-xl transition text-gray-500"><Users size={18} /></button>
-                                        <button className="p-2 hover:bg-white/5 rounded-xl transition text-gray-500"><MapPin size={18} /></button>
-                                        <button className="p-2 hover:bg-white/5 rounded-xl transition text-gray-500"><Music size={18} /></button>
-                                    </div>
                                 </div>
 
                                 {/* Toggle Feed/Reels */}
@@ -590,9 +669,13 @@ export default function InstagramManagementPage() {
                             </div>
 
                             <div className="mt-auto pt-10 flex items-center space-x-4">
-                                <button className="flex-1 py-4 bg-primary hover:bg-primary-dark rounded-[24px] font-black uppercase text-xs tracking-widest text-white shadow-xl shadow-primary/20 transition transform active:scale-95 flex items-center justify-center space-x-3">
-                                    <Send size={18} />
-                                    <span>Publicar Agora</span>
+                                <button 
+                                    onClick={handlePublish}
+                                    disabled={isLoading || !imageUrl}
+                                    className="flex-1 py-4 bg-primary hover:bg-primary-dark disabled:opacity-50 rounded-[24px] font-black uppercase text-xs tracking-widest text-white shadow-xl shadow-primary/20 transition transform active:scale-95 flex items-center justify-center space-x-3"
+                                >
+                                    {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                    <span>{isLoading ? 'Publicando...' : 'Publicar Agora'}</span>
                                 </button>
                                 <button className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[24px] text-gray-400 transition" title="Agendar">
                                     <Calendar size={20} />

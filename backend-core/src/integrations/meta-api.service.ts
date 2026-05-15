@@ -266,22 +266,48 @@ export class MetaApiService {
 
     /**
      * Get recent Instagram Media (Posts, Reels)
+     * Handles both Page IDs and Instagram Business Account IDs automatically.
      */
     async getInstagramMedia(tenantId: string) {
         try {
             const { accessToken: defaultToken, instagramAccessToken, instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
             const accessToken = instagramAccessToken || defaultToken;
             
-            let pageId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
-            if (!pageId) pageId = configIbId;
-            if (!pageId) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
+            let id = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            if (!id) id = configIbId;
+            if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
 
-            const response = await axios.get(
-                `https://graph.facebook.com/v18.0/${pageId}/media`,
-                { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count' } }
-            );
+            this.logger.debug(`[INSTAGRAM_MEDIA] Fetching media for ID ${id}...`);
 
-            return response.data;
+            try {
+                // Attempt 1: Direct fetch (assuming id is Instagram Business Account ID)
+                const response = await axios.get(
+                    `https://graph.facebook.com/v18.0/${id}/media`,
+                    { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count' } }
+                );
+                return response.data;
+            } catch (error: any) {
+                // If it fails with #100, it might be a Page ID instead of an IG ID
+                if (error.response?.data?.error?.code === 100) {
+                    this.logger.log(`[INSTAGRAM_MEDIA] ID ${id} might be a Page ID. Attempting to resolve linked Instagram Business Account...`);
+                    
+                    const pageRes = await axios.get(
+                        `https://graph.facebook.com/v18.0/${id}`,
+                        { params: { access_token: accessToken, fields: 'instagram_business_account' } }
+                    );
+
+                    const igId = pageRes.data?.instagram_business_account?.id;
+                    if (igId) {
+                        this.logger.log(`[INSTAGRAM_MEDIA] Resolved IG ID: ${igId}. Retrying fetch...`);
+                        const response = await axios.get(
+                            `https://graph.facebook.com/v18.0/${igId}/media`,
+                            { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count' } }
+                        );
+                        return response.data;
+                    }
+                }
+                throw error;
+            }
         } catch (error: any) {
             const detailedMsg = error.response?.data?.error?.message || error.message;
             this.logger.error(`[INSTAGRAM_MEDIA] Failed to fetch media: ${detailedMsg}`);
