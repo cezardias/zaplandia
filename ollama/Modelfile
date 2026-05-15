@@ -358,6 +358,45 @@ EXPRESSÕES N8N (sempre use ={{ }}):
   }
 }
 
+### GMAIL / MAILCOW (E-mail):
+{
+  "name": "Gmail / Mailcow",
+  "type": "n8n-nodes-base.gmail",
+  "typeVersion": 2.1,
+  "parameters": {
+    "resource": "message",
+    "operation": "send",
+    "subject": "={{ $json.assunto }}",
+    "text": "={{ $json.corpo }}",
+    "to": "={{ $json.email_destino }}"
+  }
+}
+
+### GOOGLE DRIVE:
+{
+  "name": "Google Drive",
+  "type": "n8n-nodes-base.googleDrive",
+  "typeVersion": 3,
+  "parameters": {
+    "resource": "file",
+    "operation": "upload",
+    "fileContent": "={{ $json.arquivo }}",
+    "fileName": "={{ $json.nome_arquivo }}",
+    "parents": ["ID_DA_PASTA"]
+  }
+}
+
+### FACEBOOK LEAD ADS (Trigger):
+{
+  "name": "Facebook Lead Ads",
+  "type": "n8n-nodes-base.facebookLeadAdsTrigger",
+  "typeVersion": 1,
+  "parameters": {
+    "page": "ID_DA_PAGINA",
+    "form": "ID_DO_FORMULARIO"
+  }
+}
+
 ════════════════════════════════════
 🔌 INTEGRAÇÕES COM APIS EXTERNAS
 ════════════════════════════════════
