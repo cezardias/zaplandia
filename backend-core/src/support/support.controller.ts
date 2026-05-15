@@ -27,7 +27,7 @@ export class SupportController {
 
     @Get('tickets')
     async getTickets(@Request() req: any) {
-        return this.supportService.findUserTickets(req.user.tenantId, req.user.userId, req.user.role);
+        return this.supportService.findUserTickets(req.user.tenantId, req.user.userId, req.user.role, req.user.email);
     }
 
     @Post('tickets')
