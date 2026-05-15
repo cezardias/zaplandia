@@ -1225,10 +1225,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 // 🛑 REJECT GENERIC TICKETS: Force AI to ask questions
                 const desc = (args.description || '').toLowerCase();
                 const subj = (args.subject || '').toLowerCase();
-                if (desc.includes('abertura de chamado') || desc.includes('solicitou abertura') || subj === 'abertura de chamado') {
+                
+                // Only reject if it's EXTREMELY generic (Lisa's default patterns)
+                const isGeneric = desc === 'abertura de chamado' || 
+                                 desc === 'cliente solicitou abertura de chamado.' ||
+                                 (desc.length < 10 && !desc.includes('n8n')); // Allow short specific tags like 'n8n'
+                
+                if (isGeneric) {
                     this.logger.warn(`[AI_TOOL_REJECT] Rejecting generic ticket from AI for contact ${contactId}`);
                     return { 
-                        error: "DESCRIÇÃO INVÁLIDA. Você deve primeiro perguntar ao usuário qual o problema real e usar a resposta dele na descrição. Não abra chamados genéricos." 
+                        error: "DESCRIÇÃO MUITO CURTA OU GENÉRICA. Por favor, descreva o problema real do usuário com mais detalhes (ex: 'Problema com X', 'Dúvida sobre Y')." 
                     };
                 }
 
