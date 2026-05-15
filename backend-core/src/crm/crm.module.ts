@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Contact, Message } from './entities/crm.entity';
@@ -18,6 +18,7 @@ import { Integration } from '../integrations/entities/integration.entity';
     imports: [
         TypeOrmModule.forFeature([Contact, Message, CampaignLead, Campaign, PipelineStage, Integration]),
         IntegrationsModule,
+        forwardRef(() => AiModule),
         BullModule.registerQueue({
             name: 'campaign-queue',
         }),

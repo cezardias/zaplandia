@@ -1098,22 +1098,22 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
 
     async recordLisaInteraction(tenantId: string, contactId: string, userMsg: string, lisaResponse: string) {
-        // Record user message
+        // Record user message (User is the PLATFORM OWNER, so it's OUTBOUND to the Support Contact)
         const m1 = this.messageRepository.create({
             tenantId,
             contactId,
             content: userMsg,
-            direction: 'inbound',
+            direction: 'outbound',
             provider: 'site'
         });
         await this.messageRepository.save(m1);
 
-        // Record Lisa response
+        // Record Lisa response (Lisa is the CONTACT, so it's INBOUND to the Platform)
         const m2 = this.messageRepository.create({
             tenantId,
             contactId,
             content: lisaResponse,
-            direction: 'outbound',
+            direction: 'inbound',
             provider: 'site'
         });
         await this.messageRepository.save(m2);
@@ -1124,10 +1124,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             updatedAt: new Date()
         });
 
-        // Emit new message event so Omni Inbox refreshes
+        // Emit Lisa message event so Omni Inbox refreshes (as an inbound message from contact)
         this.communicationService.emitToTenant(tenantId, 'new_message', {
             ...m2,
-            contact: { id: contactId, name: 'User Lisa Chat', provider: 'site' }
+            contact: { id: contactId, name: 'Zaplandia Suporte', provider: 'site' }
         });
     }
 

@@ -11,6 +11,7 @@ import { CampaignLead } from '../campaigns/entities/campaign-lead.entity';
 import { Campaign } from '../campaigns/entities/campaign.entity';
 import { N8nService } from '../integrations/n8n.service';
 import { IntegrationsService } from '../integrations/integrations.service';
+import { AiService } from '../ai/ai.service';
 
 import { EvolutionApiService } from '../integrations/evolution-api.service';
 import { MetaApiService } from '../integrations/meta-api.service';
@@ -44,6 +45,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         @Inject(forwardRef(() => CommsService))
         private readonly communicationService: CommsService,
         @InjectQueue('campaign-queue') private readonly campaignQueue: Queue,
+        @Inject(forwardRef(() => AiService)) private readonly aiService: AiService,
     ) { }
 
     /**
@@ -554,9 +556,32 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         });
     }
 
-    async sendMessage(tenantId: string, contactId: string, content: string, provider?: string, media?: { url: string, type: string, mimetype?: string, fileName?: string }) {
+    async sendMessage(tenantId: string, contactId: string, content: string, provider?: string, media?: { url: string, type: string, mimetype?: string, fileName?: string }, authenticatedUser?: any) {
         const contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
         const finalProvider = provider || contact?.provider || 'whatsapp';
+
+        // 0. SPECIAL: Trigger Lisa Support if message is sent to the Lisa contact
+        if (contact?.externalId === `lisa_${tenantId}`) {
+            this.logger.log(`[LISA_CRM] User ${authenticatedUser?.email} sent message to Lisa in Omni Inbox. Triggering AI...`);
+            
+            // Record the user message first so it appears on the right
+            const m1 = this.messageRepository.create({
+                tenantId,
+                contactId,
+                content,
+                direction: 'outbound',
+                provider: 'site'
+            });
+            await this.messageRepository.save(m1);
+
+            // Trigger AI (it will record its own response and emit socket event)
+            // We use non-blocking call here
+            this.aiService.generateLisaResponse(tenantId, content, authenticatedUser || { tenantId, email: 'Omni Inbox User' }).catch(err => {
+                this.logger.error(`[LISA_CRM] Failed to trigger Lisa: ${err.message}`);
+            });
+
+            return m1;
+        }
 
         // 1. Save to DB
         const message = this.messageRepository.create({
