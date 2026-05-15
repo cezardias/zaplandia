@@ -64,4 +64,51 @@ export class N8nService {
             return null;
         }
     }
+
+    async createWorkflow(tenantId: string, workflowData: any) {
+        try {
+            const apiUrl = await this.integrationsService.getCredential(tenantId, 'N8N_API_URL', true);
+            const apiKey = await this.integrationsService.getCredential(tenantId, 'N8N_API_KEY', true);
+
+            if (!apiUrl || !apiKey) {
+                this.logger.error(`[CREATE_WORKFLOW] n8n credentials missing for tenant ${tenantId}`);
+                throw new Error('n8n API URL or API Key not configured for this tenant.');
+            }
+
+            // Ensure we have the base URL without trailing slash and including api/v1 if not present
+            let cleanUrl = apiUrl.replace(/\/$/, '');
+            if (!cleanUrl.includes('/api/v1') && !cleanUrl.includes('/api/v2')) {
+                cleanUrl = `${cleanUrl}/api/v1`;
+            }
+
+            const url = `${cleanUrl}/workflows`;
+            this.logger.log(`[CREATE_WORKFLOW] Deploying to ${url} for tenant ${tenantId}`);
+
+            const response = await axios.post(url, {
+                name: workflowData.name || `Zaplandia Flow - ${new Date().toLocaleDateString()}`,
+                nodes: workflowData.nodes || [],
+                connections: workflowData.connections || {},
+                settings: workflowData.settings || {},
+                staticData: workflowData.staticData || null,
+                meta: workflowData.meta || {},
+                tags: workflowData.tags || [],
+                active: false // Start as inactive for safety
+            }, {
+                headers: {
+                    'X-N8N-API-KEY': apiKey,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 15000
+            });
+
+            this.logger.log(`[CREATE_WORKFLOW] SUCCESS: Workflow created with ID ${response.data.id}`);
+            return response.data;
+
+        } catch (error) {
+            const status = error.response?.status;
+            const errorMsg = error.response?.data?.message || error.message;
+            this.logger.error(`[CREATE_WORKFLOW] FAILURE: ${errorMsg} (Status: ${status})`);
+            throw new Error(`n8n Deployment Failed: ${errorMsg}`);
+        }
+    }
 }

@@ -316,6 +316,44 @@ export default function AutomationsPage() {
         }
     };
 
+    const handleDeploy = async () => {
+        const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+        if (!lastAssistantMsg) return;
+
+        // Extract JSON block
+        const jsonMatch = lastAssistantMsg.content.match(/```json\n([\s\S]*?)\n```/);
+        if (!jsonMatch) {
+            alert('Não encontrei o JSON do fluxo na resposta da Lisa. Peça para ela gerar o JSON completo.');
+            return;
+        }
+
+        try {
+            const workflowData = JSON.parse(jsonMatch[1]);
+            setIsLoading(true);
+            const res = await fetch('/api/automations/deploy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ workflowData })
+            });
+
+            const result = await res.json();
+            if (result.success) {
+                alert('🚀 Sucesso! O fluxo foi enviado para o seu n8n.');
+                fetchWorkflows();
+                setActiveTab('workflows');
+            } else {
+                alert(`Erro: ${result.message}`);
+            }
+        } catch (e) {
+            alert('Erro ao processar o JSON: ' + e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleSendMessage = async () => {
         if (!inputValue.trim() || isLoading) return;
 
@@ -504,9 +542,13 @@ export default function AutomationsPage() {
                                                     )}
                                                 </motion.div>
                                             ))}
-                                            <button className="w-full mt-4 py-3 bg-primary/10 text-primary rounded-xl border border-primary/20 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition flex items-center justify-center space-x-2">
-                                                <Plus size={14} />
-                                                <span>Iniciar Fluxo no n8n</span>
+                                            <button 
+                                                onClick={handleDeploy}
+                                                disabled={isLoading}
+                                                className="w-full mt-4 py-3 bg-primary/10 text-primary rounded-xl border border-primary/20 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                                            >
+                                                {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                                                <span>{isLoading ? 'Implantando...' : 'Iniciar Fluxo no n8n'}</span>
                                             </button>
                                         </div>
                                     ) : (

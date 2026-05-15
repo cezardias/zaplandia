@@ -95,4 +95,33 @@ export class AutomationsService {
             content: aiResponse
         };
     }
+
+    async deployWorkflow(tenantId: string, workflowData: any) {
+        this.logger.log(`[DEPLOY] Request for tenant ${tenantId}`);
+        
+        try {
+            const result = await this.n8nService.createWorkflow(tenantId, workflowData);
+            
+            // Save to internal database too
+            await this.create(tenantId, {
+                name: workflowData.name || result.name,
+                description: `Criado via Lisa em ${new Date().toLocaleDateString()}`,
+                status: 'paused', // Start as draft/paused
+                nodesCount: workflowData.nodes?.length || 0,
+                updatedAt: new Date().toISOString()
+            });
+
+            return { 
+                success: true, 
+                message: 'Fluxo implantado com sucesso no n8n!',
+                workflowId: result.id 
+            };
+        } catch (error) {
+            this.logger.error(`[DEPLOY_ERROR] ${error.message}`);
+            return { 
+                success: false, 
+                message: error.message 
+            };
+        }
+    }
 }

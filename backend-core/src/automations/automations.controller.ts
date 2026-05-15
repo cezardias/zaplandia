@@ -49,4 +49,9 @@ export class AutomationsController {
             data.history
         );
     }
+
+    @Post('deploy')
+    async deploy(@Request() req: any, @Body() data: { workflowData: any }) {
+        return this.automationsService.deployWorkflow(req.user.tenantId, data.workflowData);
+    }
 }
