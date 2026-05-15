@@ -351,7 +351,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 .join('\n');
 
             const isFreshStart = history.length === 0;
-            const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]: O atendimento humano acabou de ser finalizado. Inicie o contato do zero de acordo com o prompt acima.' : 'Histórico da Conversa:'}\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
+            const finalReminder = `\n\n[SISTEMA - PRIORIDADE ALTA]:
+1. Se o cliente informou Nome, Email e Telefone, você DEVE usar a ferramenta 'open_ticket' AGORA.
+2. Se o cliente quer falar com humano ou ajuda complexa, você DEVE usar 'transfer_to_team' AGORA.
+3. É PROIBIDO dizer que agiu sem disparar a ferramenta técnica correspondente.`;
+
+            const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]: Inicie o contato.' : 'Histórico:'}\n${conversationContext}\n\nCliente: ${userMessage}${finalReminder}\nVocê:`;
 
             // Use the already defined configuredModel
             const modelsToTry = [
@@ -819,6 +824,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 }
                 this.logger.debug(`[AI_DEBUG] Sending payload with ${payload.tools.length} tools to OpenRouter (${model})`);
             }
+
+            this.logger.debug(`[AI_TRACE] Full payload to OpenRouter: ${JSON.stringify(payload).substring(0, 1000)}...`);
 
             const response = await axios.post(url, payload, {
                 headers: {
