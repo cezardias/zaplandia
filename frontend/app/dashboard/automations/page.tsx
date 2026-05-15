@@ -321,7 +321,7 @@ export default function AutomationsPage() {
         if (!lastAssistantMsg) return;
 
         // Extract JSON block
-        const jsonMatch = lastAssistantMsg.content.match(/```json\n([\s\S]*?)\n```/);
+        const jsonMatch = lastAssistantMsg.content.match(/```json\s*([\s\S]*?)```/);
         if (!jsonMatch) {
             alert('Não encontrei o JSON do fluxo na resposta da Lisa. Peça para ela gerar o JSON completo.');
             return;
