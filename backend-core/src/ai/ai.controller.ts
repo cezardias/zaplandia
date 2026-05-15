@@ -237,7 +237,7 @@ export class AiController {
         // 1. Ensure a contact exists for this Lisa session (based on user info)
         const contact = await this.aiService.getOrCreateContactForLisa(req.user.tenantId, req.user);
         
-        const userInfo = `[CONTEXTO: Usuário LOGADO como ${req.user.name} (${req.user.email})]`;
+        const userInfo = `[CONTEXTO_SISTEMA: Usuário LOGADO. NOME: ${req.user.name}, EMAIL_USUARIO: ${req.user.email}]`;
         const fullPrompt = `${userInfo}\nHistórico:\n${body.history.map(h => `${h.role}: ${h.content}`).join('\n')}\nUser: ${body.message}`;
         const response = await this.aiService.generateLisaResponse(req.user.tenantId, fullPrompt, contact?.id);
         
