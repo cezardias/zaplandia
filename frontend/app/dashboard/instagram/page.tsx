@@ -1751,8 +1751,7 @@ export default function InstagramManagementPage() {
                             </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-1 p-12 flex flex-col h-[600px]">
+                        <div className="flex-1 p-12 flex flex-col h-[600px] bg-surface">
                             <div className="flex items-center justify-between mb-10">
                                 <h2 className="text-2xl font-black text-white uppercase tracking-tight">Nova playlist</h2>
                                 <button onClick={() => setIsPlaylistModalOpen(false)} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
@@ -1766,25 +1765,25 @@ export default function InstagramManagementPage() {
                                     
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Título</label>
-                                            <span className="text-[10px] font-bold text-gray-700">0/50</span>
+                                            <label className="text-[10px] font-black text-white uppercase tracking-widest">Título</label>
+                                            <span className="text-[10px] font-bold text-gray-600">0/50</span>
                                         </div>
                                         <input 
                                             type="text" 
                                             placeholder="Escreva um título"
-                                            className="w-full bg-black/20 border border-white/5 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-primary/50 transition-all"
+                                            className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
                                         />
                                     </div>
 
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Descrição</label>
-                                            <span className="text-[10px] font-bold text-gray-700">0/1000</span>
+                                            <label className="text-[10px] font-black text-white uppercase tracking-widest">Descrição</label>
+                                            <span className="text-[10px] font-bold text-gray-600">0/1000</span>
                                         </div>
                                         <textarea 
                                             placeholder="Descreva o que está na sua playlist"
                                             rows={4}
-                                            className="w-full bg-black/20 border border-white/5 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-primary/50 transition-all resize-none"
+                                            className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-primary/50 transition-all resize-none placeholder:text-gray-700"
                                         />
                                     </div>
                                 </div>
