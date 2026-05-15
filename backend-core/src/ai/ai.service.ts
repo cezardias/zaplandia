@@ -355,9 +355,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     }
 
                     if (isOpenRouter) {
-                        aiResponse = await this.callOpenRouter(currentModel, userMessage, openRouterKey!, 2048, tools, tenantId, contact.id, systemInstruction, promptId, authenticatedUser);
+                        aiResponse = await this.callOpenRouter(currentModel, userMessage, openRouterKey!, 2048, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
                     } else {
-                        aiResponse = await this.callGemini(currentModel, userMessage, geminiKey!, 2048, tools, tenantId, contact.id, systemInstruction, promptId, authenticatedUser);
+                        aiResponse = await this.callGemini(currentModel, userMessage, geminiKey!, 2048, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
                     }
 
                     if (aiResponse) {
