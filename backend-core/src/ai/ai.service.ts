@@ -280,248 +280,142 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
     private async executeAIGeneration(contact: Contact, userMessage: string, tenantId: string, instanceName?: string, authenticatedUser?: any): Promise<string | null> {
         try {
-            let geminiKey: string | null = null;
-            let openRouterKey: string | null = null;
-
+            // 1. Resolve Identity and Context
             const targetInstance = instanceName || contact.instance;
-
-            // 1. Find Lisa prompt first (priority)
-            const promptEntity = await this.aiPromptRepository.findOne({ 
-                where: { name: 'ZAPLANDIA_HELP_CENTER_LISA', tenantId } 
-            }) || await this.aiPromptRepository.findOne({ 
-                where: { name: 'ZAPLANDIA_HELP_CENTER_LISA' } 
-            });
-
-            const integrations = await this.integrationRepository.find({
-                where: {
-                    tenantId,
-                    provider: In(['evolution', 'whatsapp', 'instagram']),
-                },
-                order: { updatedAt: 'DESC' }
-            });
-
-            const integration = integrations.find(i => {
-                const credInst = i.credentials?.instanceName;
-                const settInst = i.settings?.instanceName;
-                if (!targetInstance) return false;
-                const match = (name: string) =>
-                    name === targetInstance ||
-                    targetInstance.endsWith(`_${name}`) ||
-                    name.endsWith(`_${targetInstance}`);
-                return (credInst && match(credInst)) || (settInst && match(settInst));
-            });
-
+            const promptEntity = await this.getLisaPrompt(tenantId);
+            const integration = await this.resolveIntegration(tenantId, targetInstance);
+            
             const activePromptId = promptEntity?.id || integration?.aiPromptId;
             const configuredModel = integration?.aiModel || promptEntity?.model || 'gemini-1.5-flash';
 
-            if (!activePromptId) {
-                this.logger.error(`No AI prompt configured and no Lisa prompt found.`);
-                return null;
-            }
+            if (!activePromptId) return null;
 
             let promptContent = await this.getPromptContent(activePromptId, tenantId);
-            if (!promptContent) {
-                this.logger.error(`Prompt content not found or empty for ID: ${activePromptId}`);
-                return null;
-            }
+            if (!promptContent) return null;
 
+            // 2. Personalize and Contextualize
             const pushName = contact.name || 'Cliente';
-            promptContent = promptContent.replace(/\{\{\s*\$\(?'Webhook'\)?\.item\.json\.body\.data\.pushName\s*\}\}/g, pushName);
-            promptContent = promptContent.replace(/\{\{\s*pushName\s*\}\}/g, pushName);
-            promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName);
+            promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName).replace(/\{\{\s*pushName\s*\}\}/g, pushName);
+            
+            const conversationContext = await this.getConversationContext(contact.id);
+            const isFreshStart = conversationContext.length < 20; // Heuristic
+            const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]' : 'Histórico:'}\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
-            const rawHistory = await this.messageRepository.find({
-                where: { contactId: contact.id },
-                order: { createdAt: 'DESC' },
-                take: 15
-            });
+            // 3. Resolve Tools and API Keys
+            const { geminiKey, openRouterKey, erpKey, rifaKey } = await this.resolveAIKeys(tenantId, promptEntity);
+            const declarations = this.getToolDeclarations(erpKey, rifaKey);
+            const tools = declarations.length > 0 ? [{ function_declarations: declarations }] : undefined;
 
-            const resetMarkerIndex = rawHistory.findIndex(m => m.content.includes('[CONTROLE_SISTEMA]'));
-            let history = rawHistory;
-            if (resetMarkerIndex !== -1) {
-                this.logger.log(`[AI_MEMORY] Reset marker found at index ${resetMarkerIndex}. Clearing previous context.`);
-                history = rawHistory.slice(0, resetMarkerIndex);
-            } else {
-                history = rawHistory.slice(0, 10);
-            }
+            // 4. Unified System Instruction
+            const systemInstruction = `${promptContent}
 
-            const conversationContext = history
-                .reverse()
-                .map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`)
-                .join('\n');
+[DIRETRIZES HELPER MASTER - ZAPLANDIA]:
+- PERSONA: Você é a Autoridade Máxima em suporte na Zaplandia. Resolutiva, técnica e educada.
+- CONHECIMENTO DISPONÍVEL: Você tem acesso a manuais sobre:
+  * WhatsApp (Oficial Meta vs EvolutionAPI/QR Code).
+  * Instagram (Gestão de Feed, Comentários, Insights e Automação n8n).
+  * CRM & Funnel (Qualificação automática por palavras-chave: 'contatado', 'respondeu').
+  * Rifa API (Consulta de rifas, números e reservas automáticas).
+  * Integrações n8n (Webhooks granulares para Inbox e Comentários).
+- FLUXO DE TRABALHO:
+  1. Sempre use 'search_knowledge_base' para dúvidas técnicas antes de agir.
+  2. Forneça respostas detalhadas baseadas nos artigos encontrados.
+  3. Se a dúvida persistir ou for um problema técnico real, use 'open_ticket'.
+  4. Para departamentos específicos (Comercial, Financeiro), use 'transfer_to_team'.
+- IDENTIDADE: Utilize o EMAIL_USUARIO (${authenticatedUser?.email || 'Visitante'}) para garantir a atribuição correta dos chamados.`;
 
-            const isFreshStart = history.length === 0;
-            const finalReminder = `\n\n[SISTEMA - PRIORIDADE ALTA]:
-1. Se o cliente informou Nome, Email e Telefone, você DEVE usar a ferramenta 'open_ticket' AGORA.
-2. Se o cliente quer falar com humano ou ajuda complexa, você DEVE usar 'transfer_to_team' AGORA.
-3. É PROIBIDO dizer que agiu sem disparar a ferramenta técnica correspondente.`;
-
-            const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]: Inicie o contato.' : 'Histórico:'}\n${conversationContext}\n\nCliente: ${userMessage}${finalReminder}\nVocê:`;
-
-            // Use the already defined configuredModel
-            const modelsToTry = [
-                configuredModel,
-                'gemini-2.0-flash',
-                'gemini-2.0-flash-exp',
-                'gemini-1.5-flash',
-                'gemini-1.5-flash-latest',
-                'gemini-1.5-flash-8b',
-                'gemini-1.5-pro',
-                'gemini-2.0-flash-lite-preview-02-05',
-            ];
-
-            const uniqueModels = [...new Set(modelsToTry)];
+            // 5. Execution Loop
+            const modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'])];
             let aiResponse: string | null = null;
             let lastError: any;
 
-            const isLisa = promptEntity?.id === activePromptId || promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
-
-            for (const model of uniqueModels) {
-                this.logger.debug(`[AI_ATTEMPT] Trying Gemini model: ${model}`);
+            for (const model of modelsToTry) {
                 try {
-                    let tools: any[] | undefined;
-                    let erpKey = await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true);
-                    let rifaKey = await this.integrationsService.getCredential(tenantId, 'RIFA_API_KEY', true);
-                    let geminiKey = await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY', true);
-                    let openRouterKey = await this.integrationsService.getCredential(tenantId, 'OPENROUTER_API_KEY', true);
-
-                    // If it's Lisa, override keys if she has specific ones
-                    if (isLisa && promptEntity?.apiKey) {
-                        if (promptEntity.provider === 'gemini' || !promptEntity.provider) {
-                            geminiKey = promptEntity.apiKey;
-                            this.logger.log(`[LISA_ROUTING] Using specialized Gemini key from Prompt config.`);
-                        } else if (promptEntity.provider === 'openrouter') {
-                            openRouterKey = promptEntity.apiKey;
-                            this.logger.log(`[LISA_ROUTING] Using specialized OpenRouter key from Prompt config.`);
-                        }
-                    }
-
-                    if (!geminiKey && !openRouterKey) {
-                        this.logger.warn(`[AI_ROUTING] No API keys found. Final check for global keys...`);
-                        geminiKey = await this.getGeminiApiKey(tenantId);
-                        openRouterKey = await this.getOpenRouterApiKey(tenantId);
-                    }
-
-                    if (!geminiKey && !openRouterKey) {
-                        this.logger.error(`[AI_FATAL] No AI API key configured for tenant ${tenantId}`);
-                        return null;
-                    }
-                    
-                    let finalPrompt = fullPrompt;
-                    const declarations: any[] = [
-                        {
-                            name: "transfer_to_team",
-                            description: "Transfere o atendimento para uma equipe humana. Use IMEDIATAMENTE quando identificar o departamento ou o cliente pedir.",
-                            parameters: {
-                                type: "object",
-                                properties: {
-                                    teamId: { 
-                                        type: "string", 
-                                        description: "O ID da equipe (UUID) ou o NOME da equipe (ex: 'Comercial', 'Suporte', 'Financeiro')" 
-                                    },
-                                    reason: { type: "string", description: "Motivo da transferência" }
-                                },
-                                required: ["teamId"]
-                            }
-                        },
-                        {
-                            name: "open_ticket",
-                            description: "GERAR CHAMADO. Use este comando assim que tiver o ASSUNTO e a DESCRIÇÃO do problema. Se o usuário estiver logado, não peça dados, use o EMAIL_USUARIO do contexto.",
-                            parameters: {
-                                type: "object",
-                                properties: {
-                                    subject: { type: "string", description: "Assunto curto (ex: Ajuda com Automação)" },
-                                    description: { type: "string", description: "Resumo do pedido do cliente" },
-                                    category: { type: "string", description: "technical, billing, sales" },
-                                    priority: { type: "string", description: "medium" },
-                                    requesterEmail: { type: "string", description: "O e-mail do cliente (obrigatório se disponível)" }
-                                },
-                                required: ["subject", "description"]
-                            }
-                        }
-                    ];
-
-                    if (erpKey) {
-                        declarations.push({
-                            name: "get_products",
-                            description: "Busca produtos no ERP.",
-                            parameters: {
-                                type: "object",
-                                properties: { search: { type: "string" } },
-                                required: ["search"]
-                            }
-                        });
-                    }
-
-                    if (rifaKey) {
-                        declarations.push(
-                            { name: "get_raffles", description: "Lista rifas.", parameters: { type: "object", properties: {} } },
-                            {
-                                name: "get_tickets",
-                                description: "Números de rifa.",
-                                parameters: { type: "object", properties: { raffleId: { type: "string" } }, required: ["raffleId"] }
-                            },
-                            {
-                                name: "create_raffle_order",
-                                description: "Reserva números.",
-                                parameters: {
-                                    type: "object",
-                                    properties: {
-                                        raffleId: { type: "string" },
-                                        customerName: { type: "string" },
-                                        customerPhone: { type: "string" },
-                                        numbers: { type: "array", items: { type: "string" } }
-                                    },
-                                    required: ["raffleId", "customerName", "customerPhone", "numbers"]
-                                }
-                            }
-                        );
-                    }
-
-                    tools = [{ function_declarations: declarations }];
-
-                    // 🧠 INTELLIGENT SYSTEM PROMPT: Use promptContent from DB + technical rules as system instruction
-                    const systemInstruction = `${promptContent}\n\n[REGRAS TÉCNICAS ADICIONAIS]:\n1. IDENTIDADE: Use sempre o EMAIL_USUARIO do contexto no campo 'requesterEmail' ao abrir chamados.\n2. FERRAMENTAS: Se precisar abrir chamado ou transferir, use Function Calling imediatamente.\n3. SILÊNCIO: Não diga que abriu o chamado sem disparar a ferramenta real.`;
-
                     if (model.includes('/') && openRouterKey) {
-                        this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
-                        aiResponse = await this.callOpenRouter(model, fullPrompt, openRouterKey, 1024, tools, tenantId, contact?.id, systemInstruction, promptEntity?.id, authenticatedUser);
+                        aiResponse = await this.callOpenRouter(model, fullPrompt, openRouterKey, 1024, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
                     } else if (geminiKey) {
-                        aiResponse = await this.callGemini(model, fullPrompt, geminiKey, 1024, tools, tenantId, contact?.id, systemInstruction, promptEntity?.id, authenticatedUser);
+                        aiResponse = await this.callGemini(model, fullPrompt, geminiKey, 1024, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
                     }
-
-                    if (aiResponse) {
-                        this.logger.log(`[AI_SUCCESS] Generated response using model: ${model}`);
-                        break;
-                    }
+                    if (aiResponse) break;
                 } catch (error) {
                     lastError = error;
-                    const status = error.response?.status;
-                    const errorMsg = JSON.stringify(error.response?.data || error.message);
-                    this.logger.warn(`[AI_FAIL] Model ${model} failed: ${status} - ${errorMsg}`);
-
-                    if (status === 400 && errorMsg.includes('API_KEY_INVALID')) {
-                        this.logger.error(`[AI_FATAL] Invalid API Key detected for Tenant ${tenantId}`);
-                        break;
-                    }
+                    this.logger.warn(`[AI_RETRY] Model ${model} failed: ${error.message}`);
                 }
             }
 
-            if (!aiResponse) {
-                if (lastError) {
-                    this.logger.error(`[AI_FATAL] All models failed. Last error: ${lastError.message}`);
-                    return "Desculpe, tive um problema técnico ao processar sua mensagem. Como posso ajudar de outra forma?";
-                }
-                return "Olá! Sou a Lisa. No momento estou com dificuldade de conexão com meus servidores de IA. Pode tentar novamente em alguns instantes?";
-            }
-
-            this.logger.log(`AI generated response for contact ${contact.id} using prompt ${activePromptId}`);
-            return aiResponse;
-
+            return aiResponse || (lastError ? "Desculpe, tive um problema técnico. Pode repetir?" : "Olá! Como posso ajudar?");
         } catch (error) {
-            this.logger.error(`Failed to generate AI response: ${error.response?.data?.error?.message || error.message}`);
+            this.logger.error(`[AI_CRITICAL] ${error.message}`);
             return null;
         }
+    }
+
+    private async getLisaPrompt(tenantId: string) {
+        return await this.aiPromptRepository.findOne({ where: { name: 'ZAPLANDIA_HELP_CENTER_LISA', tenantId } }) 
+            || await this.aiPromptRepository.findOne({ where: { name: 'ZAPLANDIA_HELP_CENTER_LISA' } });
+    }
+
+    private async resolveIntegration(tenantId: string, targetInstance?: string) {
+        const integrations = await this.integrationRepository.find({
+            where: { tenantId, provider: In(['evolution', 'whatsapp', 'instagram']) },
+            order: { updatedAt: 'DESC' }
+        });
+        if (!targetInstance) return integrations[0];
+        return integrations.find(i => {
+            const match = (name: string) => name === targetInstance || targetInstance.includes(name) || name.includes(targetInstance);
+            return match(i.credentials?.instanceName || '') || match(i.settings?.instanceName || '');
+        }) || integrations[0];
+    }
+
+    private async getConversationContext(contactId: string) {
+        const history = await this.messageRepository.find({ where: { contactId }, order: { createdAt: 'DESC' }, take: 10 });
+        return history.reverse().map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`).join('\n');
+    }
+
+    private async resolveAIKeys(tenantId: string, promptEntity?: any) {
+        let keys = {
+            erpKey: await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true),
+            rifaKey: await this.integrationsService.getCredential(tenantId, 'RIFA_API_KEY', true),
+            geminiKey: await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY', true),
+            openRouterKey: await this.integrationsService.getCredential(tenantId, 'OPENROUTER_API_KEY', true)
+        };
+
+        if (promptEntity?.apiKey) {
+            if (promptEntity.provider === 'openrouter') keys.openRouterKey = promptEntity.apiKey;
+            else keys.geminiKey = promptEntity.apiKey;
+        }
+        return keys;
+    }
+
+    private getToolDeclarations(erpKey?: string, rifaKey?: string) {
+        const tools: any[] = [
+            {
+                name: "search_knowledge_base",
+                description: "Busca na base de conhecimento, FAQs e tutoriais da Zaplandia. Use sempre que o cliente tiver uma dúvida técnica ou de uso.",
+                parameters: { type: "object", properties: { query: { type: "string", description: "Termo de busca ou pergunta do cliente" } }, required: ["query"] }
+            },
+            {
+                name: "transfer_to_team",
+                description: "Transfere para equipe humana.",
+                parameters: { type: "object", properties: { teamId: { type: "string" }, reason: { type: "string" } }, required: ["teamId"] }
+            },
+            {
+                name: "open_ticket",
+                description: "Abre chamado de suporte técnico.",
+                parameters: {
+                    type: "object",
+                    properties: { 
+                        subject: { type: "string" }, 
+                        description: { type: "string" }, 
+                        category: { type: "string" },
+                        requesterEmail: { type: "string" }
+                    },
+                    required: ["subject", "description"]
+                }
+            }
+        ];
+        if (erpKey) tools.push({ name: "get_products", description: "Busca ERP.", parameters: { type: "object", properties: { search: { type: "string" } }, required: ["search"] } });
+        return tools;
     }
 
     async sendAIResponse(contact: Contact, aiResponse: string, tenantId: string, instanceNameOverride?: string, senderOverride?: string): Promise<void> {
@@ -1174,6 +1068,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             contact: { id: contactId, name: 'User Lisa Chat', provider: 'site' }
         });
     }
+
     private async handleToolCall(funcName: string, args: any, tenantId: string, contactId: string, promptId?: string, authenticatedUser?: any): Promise<any> {
         try {
             const userEmail = authenticatedUser?.email || 'unknown';
@@ -1255,6 +1150,21 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 }
 
                 return ticket;
+            } else if (funcName === 'search_knowledge_base') {
+                const articles = await this.supportService.findAll();
+                const query = (args.query || '').toLowerCase();
+                
+                // Simple search logic: match title or content
+                const results = articles.filter(a => 
+                    a.title.toLowerCase().includes(query) || 
+                    a.content.toLowerCase().includes(query) ||
+                    query.includes(a.title.toLowerCase())
+                ).slice(0, 3); // Top 3 relevant
+
+                if (results.length > 0) {
+                    return results.map(r => `ARTIGO: ${r.title}\nCONTEÚDO: ${r.content}`).join('\n\n---\n\n');
+                }
+                return { message: "Nenhum artigo específico encontrado. Tente termos mais genéricos ou abra um chamado." };
 
             } else if (funcName === 'get_products') {
                 return this.erpZaplandiaService.getProducts(tenantId, args.search);
