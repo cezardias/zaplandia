@@ -465,8 +465,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                 }
                             }
 
-                            // Fallback: Se falar de chamado sem disparar JSON
-                            if ((aiResponse.toLowerCase().includes('open_ticket') || aiResponse.toLowerCase().includes('abrir um chamado')) && !aiResponse.includes('{')) {
+                            // Fallback: Se falar de chamado SEM intenção de status, e sim de ABERTURA
+                            const text = aiResponse.toLowerCase();
+                            const isStatusRequest = text.includes('status') || text.includes('quais') || text.includes('ver') || text.includes('lista');
+                            const isCreationRequest = text.includes('abrir') || text.includes('criar') || text.includes('novo') || text.includes('abertura');
+
+                            if ((text.includes('open_ticket') || isCreationRequest) && !isStatusRequest && !aiResponse.includes('{')) {
                                 this.logger.warn(`[AI_HEAL] Forcing ticket creation for chatty model.`);
                                 const toolResult = await this.handleToolCall('open_ticket', { 
                                     subject: "Chamado via Lisa", 
@@ -558,9 +562,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         description: { type: "string" }, 
                         category: { type: "string" },
                         requesterEmail: { type: "string" }
-                    },
                     required: ["subject", "description"]
                 }
+            },
+            {
+                name: "list_tickets",
+                description: "Lista os chamados (tickets) abertos pelo usuário atual para verificar status.",
+                parameters: { type: "object", properties: {} }
             }
         ];
         if (erpKey) tools.push({ name: "get_products", description: "Busca ERP.", parameters: { type: "object", properties: { search: { type: "string" } }, required: ["search"] } });
