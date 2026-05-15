@@ -195,7 +195,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         keep_alive: "1h",
                         options
                     },
-                    { timeout: 30000 } // 30 seconds - balanced for local inference
+                    { timeout: 60000 } // 60 seconds - necessary for CPU-only local servers
                 );
 
             const content = response.data?.message?.content;
