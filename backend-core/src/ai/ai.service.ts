@@ -870,6 +870,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         if (foundTeam) {
                             targetTeamId = foundTeam.id;
                             this.logger.log(`[AI_TOOL] Resolved team name '${args.teamId}' to ID ${targetTeamId} (${foundTeam.name})`);
+                        } else {
+                            // FAILSAFE: If resolution fails, use the first team available for this tenant
+                            if (teams && teams.length > 0) {
+                                targetTeamId = teams[0].id;
+                                this.logger.warn(`[AI_TOOL_FAILSAFE] Team '${args.teamId}' not found for tenant ${tenantId}. Redirecting to first team: ${teams[0].name} (${targetTeamId})`);
+                            } else {
+                                this.logger.error(`[AI_TOOL_FATAL] No teams found for tenant ${tenantId}. Transfer failed.`);
+                            }
                         }
 
                         await this.contactRepository.update(contactId, { assignedTeamId: targetTeamId });
@@ -878,7 +886,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                             contactId: contactId,
                             assignedTeamId: targetTeamId
                         });
-                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam?.name || targetTeamId}.` };
+                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam?.name || (teams[0]?.name || targetTeamId)}.` };
                     } else if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
                     } else if (funcName === 'get_raffles' && tenantId) {
@@ -1043,6 +1051,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         if (foundTeam) {
                             targetTeamId = foundTeam.id;
                             this.logger.log(`[AI_TOOL] Resolved team name '${args.teamId}' to ID ${targetTeamId} (${foundTeam.name})`);
+                        } else {
+                            // FAILSAFE: If resolution fails, use the first team available for this tenant
+                            if (teams && teams.length > 0) {
+                                targetTeamId = teams[0].id;
+                                this.logger.warn(`[AI_TOOL_FAILSAFE] Team '${args.teamId}' not found for tenant ${tenantId}. Redirecting to first team: ${teams[0].name} (${targetTeamId})`);
+                            } else {
+                                this.logger.error(`[AI_TOOL_FATAL] No teams found for tenant ${tenantId}. Transfer failed.`);
+                            }
                         }
 
                         await this.contactRepository.update(contactId, { assignedTeamId: targetTeamId });
@@ -1051,7 +1067,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                             contactId: contactId,
                             assignedTeamId: targetTeamId
                         });
-                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam?.name || targetTeamId}.` };
+                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam?.name || (teams[0]?.name || targetTeamId)}.` };
                     } else if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
                     } else if (funcName === 'get_raffles' && tenantId) {
