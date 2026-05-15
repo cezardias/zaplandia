@@ -562,6 +562,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         description: { type: "string" }, 
                         category: { type: "string" },
                         requesterEmail: { type: "string" }
+                    },
                     required: ["subject", "description"]
                 }
             },
