@@ -34,12 +34,22 @@ export class AiController {
     async testKey(@Body() body: { provider: 'gemini' | 'openrouter' | 'openai'; key: string }) {
         try {
             if (body.provider === 'gemini') {
+                const listRes = await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${body.key.trim()}`);
+                const models = listRes.data?.models || [];
+                const generateModels = models.filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'));
+                
+                const modelToUse = generateModels.length > 0 
+                    ? (generateModels.find((m: any) => m.name.includes('flash'))?.name || generateModels[0].name)
+                    : 'models/gemini-1.5-flash';
+
+                const endpointModel = modelToUse.startsWith('models/') ? modelToUse : `models/${modelToUse}`;
+
                 const response = await axios.post(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${body.key.trim()}`,
+                    `https://generativelanguage.googleapis.com/v1beta/${endpointModel}:generateContent?key=${body.key.trim()}`,
                     { contents: [{ parts: [{ text: 'Ping' }] }] },
                     { headers: { 'Content-Type': 'application/json' } }
                 );
-                return { success: true, data: response.data };
+                return { success: true, data: response.data, modelUsed: endpointModel };
             } else if (body.provider === 'openai') {
                 const response = await axios.get('https://api.openai.com/v1/models', {
                     headers: { 'Authorization': `Bearer ${body.key.trim()}` }
