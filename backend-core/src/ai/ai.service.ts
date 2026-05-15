@@ -278,7 +278,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    private async executeAIGeneration(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
+    private async executeAIGeneration(contact: Contact, userMessage: string, tenantId: string, instanceName?: string, authenticatedUser?: any): Promise<string | null> {
         try {
             let geminiKey: string | null = null;
             let openRouterKey: string | null = null;
@@ -490,9 +490,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     if (model.includes('/') && openRouterKey) {
                         this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
-                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId, contact.id, systemInstruction, promptEntity?.id);
+                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId, contact?.id, systemInstruction, promptEntity?.id, authenticatedUser);
                     } else if (geminiKey) {
-                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId, contact.id, systemInstruction, promptEntity?.id);
+                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId, contact?.id, systemInstruction, promptEntity?.id, authenticatedUser);
                     }
 
                     if (aiResponse) {
@@ -796,7 +796,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
      *        if both versions return 429, wait 5s and throw so outer loop tries next model
      * 503/500 → throw immediately so outer loop tries next model
      */
-    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string, promptId?: string): Promise<string | null> {
+    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string, promptId?: string, authenticatedUser?: any): Promise<string | null> {
         try {
             const url = 'https://openrouter.ai/api/v1/chat/completions';
             const messages: any[] = [];
@@ -858,7 +858,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         args, 
                         tenantId || 'default', 
                         contactId || 'unknown', 
-                        promptId
+                        promptId,
+                        authenticatedUser
                     );
 
                     toolResponses.push({
@@ -925,7 +926,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string, promptId?: string): Promise<string | null> {
+    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string, promptId?: string, authenticatedUser?: any): Promise<string | null> {
         // 🔧 FIX: Tool calling MUST use v1beta. v1 often doesn't support the 'tools' field.
         // However, if tools fail or model is not found in v1beta, we can try v1 as fallback for text.
         const versions = tools ? ['v1beta', 'v1'] : ['v1', 'v1beta'];
@@ -993,7 +994,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                             args, 
                             tenantId || 'default', 
                             contactId || 'unknown', 
-                            promptId
+                            promptId,
+                            authenticatedUser
                         );
 
                     this.logger.log(`[AI_TOOL] Tool ${funcName} result received. Re-sending to Gemini...`);
@@ -1084,7 +1086,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         return null;
     }
 
-    async generateLisaResponse(tenantId: string, fullPrompt: string, contactId?: string): Promise<string | null> {
+    async generateLisaResponse(tenantId: string, fullPrompt: string, contactId?: string, authenticatedUser?: any): Promise<string | null> {
         this.logger.log(`[LISA_CHAT] Instant response requested for contact ${contactId}`);
         
         let contact: Contact | null = null;
@@ -1098,7 +1100,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
 
         // Call unified generation engine WITHOUT debounce for web chat
-        return this.executeAIGeneration(contact!, fullPrompt, tenantId, contact?.instance);
+        return this.executeAIGeneration(contact!, fullPrompt, tenantId, contact?.instance, authenticatedUser);
     }
 
     async getPromptByName(name: string, tenantId?: string) {
@@ -1177,7 +1179,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         });
     }
 
-    private async handleToolCall(funcName: string, args: any, tenantId: string, contactId: string, promptId?: string): Promise<any> {
+    private async handleToolCall(funcName: string, args: any, tenantId: string, contactId: string, promptId?: string, authenticatedUser?: any): Promise<any> {
         try {
             this.logger.log(`[AI_TOOL_EXEC] Executing ${funcName} for contact ${contactId}`);
 
@@ -1219,8 +1221,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             } else if (funcName === 'open_ticket' && tenantId && contactId) {
                 const contact = await this.contactRepository.findOne({ where: { id: contactId } });
                 
-                // 🛠️ FORCE IDENTITY: If AI failed to pass email, use the one from contact or context
-                let requesterEmail = args.requesterEmail || contact?.email || contact?.externalId;
+                // 🛠️ FORCE IDENTITY: Priority order: 1. Authenticated User (Login) | 2. AI provided | 3. Contact Email
+                let requesterEmail = authenticatedUser?.email || args.requesterEmail || contact?.email || contact?.externalId;
+                let requesterName = authenticatedUser?.name || contact?.name || 'Cliente Zaplandia';
                 
                 // 🛑 REJECT GENERIC TICKETS: Force AI to ask questions
                 const desc = (args.description || '').toLowerCase();
@@ -1238,16 +1241,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     };
                 }
 
-                const requesterName = (requesterEmail || contact?.email || contact?.externalId || contact?.name || 'Cliente Zaplandia').toString().replace(/undefined/g, '').trim();
+                const finalRequesterName = (requesterEmail || requesterName).toString().replace(/undefined/g, '').trim();
                 
-                this.logger.log(`[AI_TOOL_SUCCESS] Opening verified ticket for ${requesterName}`);
+                this.logger.log(`[AI_TOOL_SUCCESS] Opening verified ticket for ${finalRequesterName}`);
 
                 const ticket = await this.supportService.createTicket(targetTenantId, contactId, {
                     subject: args.subject,
                     description: args.description,
                     category: args.category || 'technical',
                     priority: args.priority || 'medium',
-                    requesterName: requesterName
+                    requesterName: finalRequesterName
                 });
 
                 // 🔔 EMIT EVENT: Tell the UI to refresh tickets
