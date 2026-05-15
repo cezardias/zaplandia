@@ -860,13 +860,19 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         let targetTeamId = args.teamId;
                         const teamName = args.teamId?.toLowerCase();
                         
-                        // DIAGNOSTIC: Fetch ALL teams from EVERY tenant to find where 'Comercial' lives
-                        const allTeams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams`);
-                        this.logger.debug(`[AI_DIAGNOSTIC] ALL TEAMS IN DB: ${JSON.stringify(allTeams)}`);
-                        this.logger.debug(`[AI_DIAGNOSTIC] CURRENT CONTEXT TENANT: ${tenantId}`);
-
-                        const teams = allTeams.filter(t => t.tenantId === tenantId);
+                        // Resolve teams: Try current tenant, then try Master/HQ tenant if needed
+                        let teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [tenantId]);
                         
+                        if (!teams || teams.length === 0) {
+                            this.logger.log(`[AI_TOOL] No teams in current tenant ${tenantId}. Checking Master/Integration tenant...`);
+                            // Find the master tenant associated with the active integration for Lisa
+                            const integration = await this.integrationRepository.findOne({ 
+                                where: { id: activePromptId } // Usually integration and prompt are linked or we can find via prompt
+                            });
+                            const masterId = integration?.tenantId || '3ac9368c-af7c-4183-9816-b90513368f53'; // Fallback to your HQ ID found in logs
+                            teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [masterId]);
+                        }
+
                         const foundTeam = teams.find(t => 
                             t.id === targetTeamId || 
                             (teamName && (t.name.toLowerCase().includes(teamName) || teamName.includes(t.name.toLowerCase())))
