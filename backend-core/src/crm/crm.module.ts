@@ -13,6 +13,7 @@ import { IntegrationsModule } from '../integrations/integrations.module';
 
 import { Campaign } from '../campaigns/entities/campaign.entity';
 import { Integration } from '../integrations/entities/integration.entity';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
     imports: [
