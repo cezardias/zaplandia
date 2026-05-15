@@ -85,16 +85,19 @@ export class N8nService {
             this.logger.log(`[CREATE_WORKFLOW] Target URL: ${url}`);
             this.logger.debug(`[CREATE_WORKFLOW] Auth Header: X-N8N-API-KEY: ${apiKey.substring(0, 4)}...`);
 
-            const response = await axios.post(url, {
+            const payload: any = {
                 name: workflowData.name || `Zaplandia Flow - ${new Date().toLocaleDateString()}`,
                 nodes: workflowData.nodes || [],
                 connections: workflowData.connections || {},
-                settings: workflowData.settings || {},
-                staticData: workflowData.staticData || null,
-                meta: workflowData.meta || {},
-                tags: workflowData.tags || [],
-                active: false // Start as inactive for safety
-            }, {
+            };
+
+            // Optional fields - only include if present and not null
+            if (workflowData.settings) payload.settings = workflowData.settings;
+            if (workflowData.meta) payload.meta = workflowData.meta;
+            if (workflowData.active !== undefined) payload.active = workflowData.active;
+            else payload.active = false;
+
+            const response = await axios.post(url, payload, {
                 headers: {
                     'X-N8N-API-KEY': apiKey,
                     'Content-Type': 'application/json'

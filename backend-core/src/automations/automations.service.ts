@@ -83,10 +83,10 @@ export class AutomationsService {
         const aiResponse = await this.aiService.generateGenericResponse(tenantId, message, `${systemPrompt}\n\n${historyContext}`);
         
         if (!aiResponse) {
-            this.logger.error(`[ARCHITECT] AI returned null for tenant ${tenantId}. Possible quota exhaustion or missing key.`);
+            this.logger.error(`[ARCHITECT] AI returned null for tenant ${tenantId}. Possible Lisa (Ollama) offline or model missing.`);
             return {
                 role: 'assistant',
-                content: '⚠️ Não consegui processar sua mensagem agora. Isso pode ser um problema de **quota da API do Gemini** (limite de requisições atingido). Verifique em [aistudio.google.com](https://aistudio.google.com) se sua chave ainda tem cota disponível, ou configure uma chave de outro provedor (OpenRouter/OpenAI) em **Configurações > APIs**.'
+                content: '⚠️ Não consegui processar sua solicitação agora. O motor interno da Lisa pode estar offline ou o modelo `zaplandia-lisa` não foi carregado corretamente no servidor. Por favor, contate o administrador do sistema.'
             };
         }
         

@@ -262,7 +262,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
     async generateGenericResponse(tenantId: string, prompt: string, context?: string): Promise<string | null> {
         try {
-            const response = await this.getAiResponse(tenantId, prompt, 'gemini', context);
+            // For internal architecture/generic help, always try Lisa (Ollama) first
+            const isInternal = context?.includes('ZAPLANDIA') || context?.includes('Arquiteto');
+            const provider = isInternal ? 'ollama' : 'gemini';
+            const model = isInternal ? 'zaplandia-lisa' : undefined;
+
+            this.logger.debug(`[GENERIC_AI] Internal: ${isInternal}, Provider: ${provider}`);
+            
+            const response = await this.getAiResponse(tenantId, prompt, provider, context, model);
             if (response && response.startsWith('[ERRO]')) return null;
             return response;
         } catch (error) {
@@ -373,7 +380,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 - IDENTIDADE: Utilize o EMAIL_USUARIO (${authenticatedUser?.email || 'Visitante'}) para contexto.`;
 
             // 5. Execution Loop
-            const modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
+            const isInternal = instanceName === 'LisaWeb' || promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
+            
+            let modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
+
+            if (isInternal) {
+                // INTERNAL ONLY uses Lisa (Ollama)
+                this.logger.log(`[AI_INTERNAL] Forcing Lisa (Ollama) for internal task.`);
+                modelsToTry = ['zaplandia-lisa', 'qwen2.5:3b'];
+            }
+
             let aiResponse: string | null = null;
             let lastError: any;
             let lastErrorDetail: string = 'Nenhum erro registrado.';
@@ -398,6 +414,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     if (isOpenRouter) {
                         aiResponse = await this.callOpenRouter(currentModel, userMessage, openRouterKey!, 2048, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
+                    } else if (currentModel === 'zaplandia-lisa' || currentModel === 'qwen2.5:3b' || currentModel.startsWith('ollama:')) {
+                        const ollamaModel = currentModel.replace('ollama:', '');
+                        aiResponse = await this.callOllama(ollamaModel, userMessage, 4096, systemInstruction);
                     } else {
                         aiResponse = await this.callGemini(currentModel, userMessage, geminiKey!, 2048, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
                     }
@@ -613,7 +632,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 }
             }
 
-            // --- 2. OpenRouter (fallback pago, só se Ollama falhar) ---
+            // --- 2. OpenRouter (fallback pago, só se Ollama falhar e NÃO for interno) ---
+            const isInternal = modelName?.includes('lisa') || context?.includes('ZAPLANDIA');
+            if (isInternal) {
+                this.logger.warn(`[AI_SKIP_EXTERNAL] Skipping external fallback for internal Lisa request.`);
+                return null;
+            }
+
             const openRouterKey = await this.getOpenRouterApiKey(tenantId);
             if (openRouterKey) {
                 const orModel = modelName && modelName.includes('/') ? modelName : 'deepseek/deepseek-r1';
