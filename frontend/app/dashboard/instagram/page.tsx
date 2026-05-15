@@ -345,6 +345,60 @@ export default function InstagramManagementPage() {
         }
     };
 
+    const fetchComments = async (mediaId: string) => {
+        setIsLoadingComments(true);
+        try {
+            const res = await fetch(`/api/integrations/instagram/media/${mediaId}/comments`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok && data.data) {
+                setComments(data.data);
+            }
+        } catch (e) {} finally {
+            setIsLoadingComments(false);
+        }
+    };
+
+    const handleReply = async (commentId: string) => {
+        const text = replyTexts[commentId];
+        if (!text) return;
+        try {
+            const res = await fetch(`/api/integrations/instagram/comments/${commentId}/reply`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: text })
+            });
+            if (res.ok) {
+                alert('Resposta enviada!');
+                setReplyTexts({...replyTexts, [commentId]: ''});
+                fetchComments(selectedMedia!.id);
+            }
+        } catch (e) {
+            alert('Erro ao responder');
+        }
+    };
+
+    const handleDeleteMedia = async (mediaId: string) => {
+        if (!confirm('Tem certeza que deseja excluir este post?')) return;
+        try {
+            const res = await fetch(`/api/integrations/instagram/media/${mediaId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                alert('Post excluído!');
+                setSelectedMedia(null);
+                fetchMedia();
+            }
+        } catch (e) {
+            alert('Erro ao excluir');
+        }
+    };
+
     return (
         <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
             {/* Instagram Management Sidebar */}
@@ -538,7 +592,14 @@ export default function InstagramManagementPage() {
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {mediaList.map(media => (
-                                        <tr key={media.id} className="hover:bg-white/[0.03] transition-colors group cursor-pointer">
+                                        <tr 
+                                            key={media.id} 
+                                            onClick={() => {
+                                                setSelectedMedia(media);
+                                                fetchComments(media.id);
+                                            }}
+                                            className="hover:bg-white/[0.03] transition-colors group cursor-pointer"
+                                        >
                                             <td className="px-8 py-6"><input type="checkbox" className="rounded-md border-white/10 bg-black/60 text-primary focus:ring-primary" /></td>
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center space-x-5">
@@ -731,6 +792,138 @@ export default function InstagramManagementPage() {
                             </div>
 
                             <p className="absolute bottom-10 text-[10px] font-black text-gray-600 uppercase tracking-widest">Prévia do Dispositivo</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Detalhes do Post */}
+            {selectedMedia && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="bg-surface border border-white/10 w-full max-w-6xl rounded-[48px] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col md:flex-row h-full max-h-[850px]">
+                        
+                        {/* Preview Lado Esquerdo */}
+                        <div className="flex-1 bg-black/40 flex items-center justify-center p-4 md:p-12 border-r border-white/5 relative overflow-hidden">
+                             <button 
+                                onClick={() => setSelectedMedia(null)}
+                                className="absolute top-8 left-8 z-20 p-3 bg-black/40 hover:bg-white/10 rounded-2xl border border-white/10 text-white transition"
+                             >
+                                <ChevronLeft size={24} />
+                             </button>
+
+                             <div className="relative w-full max-w-md aspect-square md:aspect-[4/5] rounded-[40px] overflow-hidden shadow-2xl border border-white/10 group">
+                                <img 
+                                    src={selectedMedia.media_url} 
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                                    alt="Post Preview" 
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-8 flex flex-col justify-end">
+                                    <p className="text-white text-sm font-medium line-clamp-3 leading-relaxed">{selectedMedia.caption}</p>
+                                </div>
+                             </div>
+                        </div>
+
+                        {/* Detalhes Lado Direito */}
+                        <div className="w-full md:w-[450px] flex flex-col bg-surface overflow-hidden">
+                            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[2px] shadow-lg shadow-pink-500/10">
+                                        <div className="w-full h-full rounded-full bg-black border border-black overflow-hidden flex items-center justify-center text-xs font-black">Z</div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-sm text-white">Zaplandia</h3>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Suas Interações</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <button 
+                                        onClick={() => window.open(selectedMedia.permalink, '_blank')}
+                                        className="p-2.5 hover:bg-white/5 rounded-xl text-gray-400 transition"
+                                    >
+                                        <Share2 size={20} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteMedia(selectedMedia.id)}
+                                        className="p-2.5 hover:bg-red-500/10 hover:text-red-500 rounded-xl text-gray-500 transition"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Comentários Feed */}
+                            <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar bg-black/10">
+                                {isLoadingComments ? (
+                                    <div className="h-full flex flex-col items-center justify-center space-y-4">
+                                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">Puxando comentários...</p>
+                                    </div>
+                                ) : comments.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                        <MessageCircle size={48} className="text-gray-800 mb-4" />
+                                        <p className="text-gray-500 text-sm font-medium">Nenhum comentário ainda.</p>
+                                    </div>
+                                ) : (
+                                    comments.map(comment => (
+                                        <div key={comment.id} className="space-y-4 group">
+                                            <div className="flex space-x-4">
+                                                <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0">
+                                                    <span className="text-[10px] font-black uppercase text-gray-500">{comment.username.slice(0, 2)}</span>
+                                                </div>
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs font-black text-gray-100">@{comment.username}</span>
+                                                        <span className="text-[9px] font-bold text-gray-600">{new Date(comment.timestamp).toLocaleDateString()}</span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-400 leading-relaxed">{comment.text}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Campo de Resposta */}
+                                            <div className="ml-14 flex items-center space-x-3 group-hover:opacity-100 opacity-0 transition-opacity duration-300">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Responder comentário..."
+                                                    value={replyTexts[comment.id] || ''}
+                                                    onChange={(e) => setReplyTexts({...replyTexts, [comment.id]: e.target.value})}
+                                                    className="flex-1 bg-black/40 border border-white/5 rounded-xl px-4 py-2 text-[11px] text-gray-300 outline-none focus:border-primary/40 transition"
+                                                />
+                                                <button 
+                                                    onClick={() => handleReply(comment.id)}
+                                                    className="p-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition"
+                                                >
+                                                    <Send size={14} />
+                                                </button>
+                                            </div>
+
+                                            {/* Respostas Existentes */}
+                                            {comment.replies?.data.map(reply => (
+                                                <div key={reply.id} className="ml-14 flex space-x-4 pt-2">
+                                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/10">
+                                                        <Reply size={12} className="text-primary" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <span className="text-[10px] font-black text-primary">@{reply.username}</span>
+                                                        <p className="text-xs text-gray-500 leading-relaxed">{reply.text}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Post Meta Data */}
+                            <div className="p-8 bg-surface border-t border-white/5 grid grid-cols-2 gap-4">
+                                <div className="p-4 bg-white/[0.02] border border-white/5 rounded-3xl text-center">
+                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Curtidas</p>
+                                    <p className="text-xl font-black text-white">{selectedMedia.like_count.toLocaleString()}</p>
+                                </div>
+                                <div className="p-4 bg-white/[0.02] border border-white/5 rounded-3xl text-center">
+                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Comentários</p>
+                                    <p className="text-xl font-black text-white">{selectedMedia.comments_count.toLocaleString()}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
