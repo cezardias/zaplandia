@@ -446,7 +446,10 @@ export class MetaApiService {
                 return response.data;
             } catch (error: any) {
                 const errorCode = error.response?.data?.error?.code;
-                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404) {
+                const errorMsg = error.response?.data?.error?.message || '';
+                
+                // If it's a type error (#100), "Unknown path", or 400/404, it might be a Page ID
+                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404 || errorMsg.includes('Unknown path')) {
                     try {
                         const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
                             params: { access_token: accessToken, fields: 'instagram_business_account' }
@@ -478,7 +481,10 @@ export class MetaApiService {
             const { accessToken: defaultToken, facebookAccessToken, facebookPageId } = await this.getCredentials(tenantId);
             const accessToken = facebookAccessToken || defaultToken;
             
-            if (!facebookPageId) throw new Error('FACEBOOK_PAGE_ID not configured');
+            if (!facebookPageId) {
+                this.logger.debug(`[FACEBOOK_MEDIA] FACEBOOK_PAGE_ID not configured for tenant ${tenantId}. Returning empty feed.`);
+                return { data: [] };
+            }
 
             const response = await axios.get(
                 `https://graph.facebook.com/v18.0/${facebookPageId}/feed`,
@@ -514,7 +520,9 @@ export class MetaApiService {
                 return response.data;
             } catch (error: any) {
                 const errorCode = error.response?.data?.error?.code;
-                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404) {
+                const errorMsg = error.response?.data?.error?.message || '';
+
+                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404 || errorMsg.includes('Unknown path')) {
                     try {
                         const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
                             params: { access_token: accessToken, fields: 'instagram_business_account' }
@@ -612,7 +620,12 @@ export class MetaApiService {
 
             const response = await axios.get(
                 `https://graph.facebook.com/v18.0/${pageId}/insights`,
-                { params: { access_token: accessToken, metric: 'reach,profile_views', period: 'day' } }
+                { params: { 
+                    access_token: accessToken, 
+                    metric: 'reach,profile_views', 
+                    period: 'day',
+                    metric_type: 'total_value' 
+                } }
             );
 
             return response.data;
