@@ -273,6 +273,8 @@ export default function InstagramManagementPage() {
     const [tags, setTags] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'feed' | 'grid'>('grid');
     const [reelsSubTab, setReelsSubTab] = useState<'all' | 'stream'>('all');
+    const [playlists, setPlaylists] = useState<any[]>([]);
+    const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
     const [isABModalOpen, setIsABModalOpen] = useState(false);
     const [abStep, setAbStep] = useState(1);
     const [abData, setAbData] = useState({
@@ -934,6 +936,81 @@ export default function InstagramManagementPage() {
                                 </div>
                             )}
                         </div>
+                    ) : sidebarTab === 'playlists' ? (
+                        <div className="space-y-8">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-black text-white uppercase tracking-tight">Playlists</h2>
+                                <div className="flex items-center space-x-4">
+                                    <div className="relative group">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={16} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Pesquisar playlist"
+                                            className="bg-surface border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-xs font-bold text-white focus:outline-none focus:border-primary/50 transition-all w-64"
+                                        />
+                                    </div>
+                                    <button 
+                                        onClick={() => setIsPlaylistModalOpen(true)}
+                                        className="bg-white text-black px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center space-x-2"
+                                    >
+                                        <Plus size={16} />
+                                        <span>Criar playlist</span>
+                                    </button>
+                                    <button className="bg-surface border border-white/5 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-white/20 transition-all">
+                                        Ver todas as playlists
+                                    </button>
+                                </div>
+                            </div>
+
+                            {playlists.length === 0 ? (
+                                <div className="bg-surface/30 border border-white/5 rounded-[48px] p-24 flex flex-col items-center justify-center text-center space-y-8 min-h-[500px]">
+                                    <div className="relative">
+                                        <div className="w-32 h-32 bg-primary/10 rounded-[48px] flex items-center justify-center border border-primary/20 animate-pulse">
+                                            <PlaySquare size={56} className="text-primary" />
+                                        </div>
+                                        <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-surface border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl">
+                                            <ListMusic size={20} className="text-gray-400" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h3 className="text-white font-black text-lg uppercase tracking-tight">Nenhuma lista de reprodução</h3>
+                                        <p className="text-gray-500 text-xs font-medium max-w-[400px] mx-auto leading-relaxed">
+                                            Você ainda não criou nenhuma lista de reprodução. Organize seus Reels e vídeos em coleções temáticas para aumentar o tempo de exibição.
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setIsPlaylistModalOpen(true)}
+                                        className="bg-surface border border-white/10 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center space-x-3"
+                                    >
+                                        <Plus size={18} />
+                                        <span>Criar playlist</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {playlists.map(p => (
+                                        <div key={p.id} className="bg-surface/30 border border-white/5 rounded-[40px] overflow-hidden group hover:border-primary/30 transition-all p-2">
+                                            <div className="aspect-video relative rounded-[32px] overflow-hidden bg-black">
+                                                <img src={p.coverUrl || 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-60" alt="" />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 group-hover:bg-primary group-hover:border-primary transition-all">
+                                                        <PlaySquare size={24} className="text-white" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-6 space-y-2">
+                                                <h4 className="text-white font-black text-sm uppercase tracking-tight">{p.title}</h4>
+                                                <p className="text-[11px] text-gray-500 font-medium line-clamp-2">{p.description}</p>
+                                                <div className="pt-4 flex items-center justify-between border-t border-white/5 mt-4">
+                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{p.videoCount || 0} Vídeos</span>
+                                                    <button className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">Editar Playlist</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     ) : sidebarTab === 'ab_tests' ? (
                         <div className="space-y-8">
                             <div className="flex items-center justify-between">
@@ -1565,6 +1642,97 @@ export default function InstagramManagementPage() {
                                     <span>Iniciar Teste</span>
                                 </button>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Playlist Modal */}
+            {isPlaylistModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsPlaylistModalOpen(false)} />
+                    <div className="relative bg-[#1A1C1E] border border-white/10 rounded-[48px] w-full max-w-4xl overflow-hidden flex shadow-2xl animate-in zoom-in-95 duration-200">
+                        {/* Sidebar */}
+                        <div className="w-72 bg-black/20 border-r border-white/5 p-8 space-y-6">
+                            <div className="flex items-center space-x-3 mb-10">
+                                <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
+                                    <ListMusic size={20} className="text-white" />
+                                </div>
+                                <h3 className="text-white font-black text-sm uppercase tracking-tight">Criar</h3>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <div className="flex items-center space-x-4 px-4 py-3 bg-white/5 rounded-2xl border border-primary/30">
+                                    <div className="w-2 h-2 rounded-full bg-primary" />
+                                    <span className="text-[11px] font-black text-white uppercase tracking-widest">Detalhes</span>
+                                </div>
+                                <div className="flex items-center space-x-4 px-4 py-3 text-gray-500 opacity-50 cursor-not-allowed">
+                                    <div className="w-2 h-2 rounded-full bg-gray-700" />
+                                    <span className="text-[11px] font-black uppercase tracking-widest">Adicionar reels</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 p-12 flex flex-col h-[600px]">
+                            <div className="flex items-center justify-between mb-10">
+                                <h2 className="text-2xl font-black text-white uppercase tracking-tight">Nova playlist</h2>
+                                <button onClick={() => setIsPlaylistModalOpen(false)} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+                                    <X size={20} className="text-gray-400" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 space-y-8 overflow-y-auto pr-4 custom-scrollbar">
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Detalhes</h3>
+                                    
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Título</label>
+                                            <span className="text-[10px] font-bold text-gray-700">0/50</span>
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Escreva um título"
+                                            className="w-full bg-black/20 border border-white/5 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-primary/50 transition-all"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Descrição</label>
+                                            <span className="text-[10px] font-bold text-gray-700">0/1000</span>
+                                        </div>
+                                        <textarea 
+                                            placeholder="Descreva o que está na sua playlist"
+                                            rows={4}
+                                            className="w-full bg-black/20 border border-white/5 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-primary/50 transition-all resize-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="flex flex-col space-y-2">
+                                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Imagem da capa</h3>
+                                        <p className="text-[10px] text-gray-600 font-medium">Você pode pular isso, e uma capa será escolhida para você.</p>
+                                    </div>
+                                    
+                                    <div className="border-2 border-dashed border-white/5 rounded-[32px] p-12 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/30 transition-all group cursor-pointer bg-black/10">
+                                        <div className="w-16 h-16 bg-white/5 rounded-[24px] flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <ImageIcon size={32} className="text-gray-600" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-black text-white uppercase tracking-widest">Arraste e solte seu arquivo</p>
+                                            <p className="text-[10px] text-primary font-bold">Ou escolha um arquivo no seu dispositivo</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-8 border-t border-white/5 flex justify-end">
+                                <button className="bg-primary text-white px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-primary/80 transition-all shadow-lg shadow-primary/20">
+                                    Avançar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
