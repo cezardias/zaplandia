@@ -195,7 +195,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         keep_alive: "1h",
                         options
                     },
-                    { timeout: 60000 } // 60 seconds - necessary for CPU-only local servers
+                    { timeout: 120000 } // 120 seconds - final fallback for very slow CPUs
                 );
 
             const content = response.data?.message?.content;
@@ -1120,8 +1120,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         let data = this.debounceMap.get(key);
         if (!data) {
             const systemPrompt = `Você é a Lisa, assistente virtual da Zaplandia. 
-            IMPORTANTE: Você possui ferramentas reais. Se o usuário pedir para abrir um chamado, transferir ou buscar na base, USE A FERRAMENTA IMEDIATAMENTE. 
-            NUNCA diga ao usuário para 'abrir o chamado agora' ou 'clicar no botão'; VOCÊ deve abrir o chamado para ele usando 'open_ticket'.`;
+            IMPORTANTE: Se o usuário pedir para abrir um chamado, você DEVE responder EXATAMENTE no formato JSON de ferramenta. 
+            NUNCA diga 'vou abrir' ou 'use a ferramenta'. Simplesmente execute o comando 'open_ticket'.`;
             
             const newData = { messages: [userMessage], tenantId, instanceName: 'LisaWeb', timeout: null, systemPrompt };
             this.debounceMap.set(key, newData);
