@@ -18,6 +18,8 @@ export class MetaApiService {
         let instagramAccessToken = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_ACCESS_TOKEN', true);
         let instagramAppId = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_APP_ID', true);
         let instagramAppSecret = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_APP_SECRET', true);
+        let facebookPageId = await this.integrationsService.getCredential(tenantId, 'FACEBOOK_PAGE_ID', true);
+        let facebookAccessToken = await this.integrationsService.getCredential(tenantId, 'FACEBOOK_ACCESS_TOKEN', true);
 
         // Try load from JSON config (Priority 2)
         const metaAppConfig = await this.integrationsService.getCredential(tenantId, 'META_APP_CONFIG', true);
@@ -34,6 +36,10 @@ export class MetaApiService {
                 if (!instagramAccessToken) instagramAccessToken = parsed.instagramAccessToken || parsed.pageAccessToken || parsed.accessToken;
                 if (!instagramAppId) instagramAppId = parsed.instagramAppId;
                 if (!instagramAppSecret) instagramAppSecret = parsed.instagramAppSecret;
+
+                // Facebook fallbacks
+                if (!facebookPageId) facebookPageId = parsed.facebookPageId || parsed.pageId;
+                if (!facebookAccessToken) facebookAccessToken = parsed.facebookAccessToken || parsed.pageAccessToken || parsed.accessToken;
             } catch (e) {
                 this.logger.warn(`Failed to parse META_APP_CONFIG for tenant ${tenantId}`);
             }
@@ -49,7 +55,17 @@ export class MetaApiService {
             this.logger.debug(`[META_AUTH] Using Instagram specific token starting with: ${instagramAccessToken.substring(0, 5)}...`);
         }
 
-        return { accessToken, wabaId, phoneNumberId, instagramBusinessId, instagramAccessToken, instagramAppId, instagramAppSecret };
+        return { 
+            accessToken, 
+            wabaId, 
+            phoneNumberId, 
+            instagramBusinessId, 
+            instagramAccessToken, 
+            instagramAppId, 
+            instagramAppSecret,
+            facebookPageId,
+            facebookAccessToken
+        };
     }
 
     async testConnection(tenantId: string) {
@@ -406,30 +422,6 @@ export class MetaApiService {
         }
     }
     /**
-     * Get Facebook Page Media (Posts)
-     */
-    async getFacebookMedia(tenantId: string) {
-        try {
-            const { accessToken: defaultToken, facebookAccessToken, facebookPageId } = await this.getCredentials(tenantId);
-            const accessToken = facebookAccessToken || defaultToken;
-            
-            let id = facebookPageId;
-            if (!id) throw new Error('FACEBOOK_PAGE_ID not configured');
-
-            const response = await axios.get(
-                `https://graph.facebook.com/v18.0/${id}/feed`,
-                { params: { access_token: accessToken, fields: 'id,message,full_picture,permalink_url,created_time' } }
-            );
-
-            return response.data;
-        } catch (error: any) {
-            const detailedMsg = error.response?.data?.error?.message || error.message;
-            this.logger.error(`[FACEBOOK_MEDIA] Failed to fetch feed: ${detailedMsg}`);
-            throw new Error(`Meta API Error: ${detailedMsg}`);
-        }
-    }
-
-    /**
      * Get Instagram Highlights
      */
     async getInstagramHighlights(tenantId: string) {
@@ -479,11 +471,10 @@ export class MetaApiService {
             const { accessToken: defaultToken, facebookAccessToken, facebookPageId } = await this.getCredentials(tenantId);
             const accessToken = facebookAccessToken || defaultToken;
             
-            let id = facebookPageId;
-            if (!id) throw new Error('FACEBOOK_PAGE_ID not configured');
+            if (!facebookPageId) throw new Error('FACEBOOK_PAGE_ID not configured');
 
             const response = await axios.get(
-                `https://graph.facebook.com/v18.0/${id}/feed`,
+                `https://graph.facebook.com/v18.0/${facebookPageId}/feed`,
                 { params: { access_token: accessToken, fields: 'id,message,full_picture,permalink_url,created_time' } }
             );
 
@@ -491,6 +482,48 @@ export class MetaApiService {
         } catch (error: any) {
             const detailedMsg = error.response?.data?.error?.message || error.message;
             this.logger.error(`[FACEBOOK_MEDIA] Failed to fetch feed: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
+
+    /**
+     * Get Instagram Mentions and Tags
+     */
+    async getInstagramTags(tenantId: string) {
+        try {
+            const { accessToken: defaultToken, instagramAccessToken, instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+            
+            let id = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            if (!id) id = configIbId;
+            if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
+
+            // Resolve ID if Page ID
+            try {
+                const response = await axios.get(
+                    `https://graph.facebook.com/v18.0/${id}/tags`,
+                    { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,username' } }
+                );
+                return response.data;
+            } catch (error: any) {
+                if (error.response?.status === 400 || error.response?.status === 404) {
+                    const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                        params: { access_token: accessToken, fields: 'instagram_business_account' }
+                    });
+                    const igId = pageRes.data?.instagram_business_account?.id;
+                    if (igId) {
+                        const response = await axios.get(
+                            `https://graph.facebook.com/v18.0/${igId}/tags`,
+                            { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,username' } }
+                        );
+                        return response.data;
+                    }
+                }
+                throw error;
+            }
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[INSTAGRAM_TAGS] Failed to fetch tags: ${detailedMsg}`);
             throw new Error(`Meta API Error: ${detailedMsg}`);
         }
     }

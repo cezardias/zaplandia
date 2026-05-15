@@ -464,6 +464,12 @@ export class IntegrationsController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Get('instagram/tags')
+    async getInstagramTags(@Request() req) {
+        return this.metaApiService.getInstagramTags(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Get('instagram/media/:mediaId/comments')
     async getInstagramComments(@Request() req, @Param('mediaId') mediaId: string) {
         return this.metaApiService.getInstagramComments(req.user.tenantId, mediaId);

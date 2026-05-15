@@ -264,6 +264,7 @@ export default function InstagramManagementPage() {
     const [highlights, setHighlights] = useState<any[]>([]);
     const [abTests, setAbTests] = useState<any[]>([]);
     const [facebookMedia, setFacebookMedia] = useState<any[]>([]);
+    const [tags, setTags] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'feed' | 'grid'>('grid');
     const [isABModalOpen, setIsABModalOpen] = useState(false);
     const [abStep, setAbStep] = useState(1);
@@ -282,6 +283,7 @@ export default function InstagramManagementPage() {
             fetchHighlights();
             fetchABTests();
             fetchFacebookMedia();
+            fetchTags();
         }
     }, [token, sidebarTab]);
 
@@ -353,6 +355,16 @@ export default function InstagramManagementPage() {
             });
             const data = await res.json();
             if (res.ok && data.data) setFacebookMedia(data.data);
+        } catch (e) {}
+    };
+
+    const fetchTags = async () => {
+        try {
+            const res = await fetch('/api/integrations/instagram/tags', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok && data.data) setTags(data.data);
         } catch (e) {}
     };
 
@@ -783,6 +795,58 @@ export default function InstagramManagementPage() {
                                     )}
                                 </div>
                             </div>
+                        </div>
+                    ) : sidebarTab === 'mentions_and_tags' ? (
+                        <div className="space-y-8">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-xl font-black text-white uppercase tracking-tight">Menções e Marcações</h2>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Posts onde você foi marcado</p>
+                                </div>
+                            </div>
+                            
+                            {tags.length === 0 ? (
+                                <div className="bg-surface/30 border border-white/5 rounded-[48px] p-20 flex flex-col items-center justify-center text-center space-y-6">
+                                    <div className="w-24 h-24 bg-white/5 rounded-[40px] flex items-center justify-center border border-white/5">
+                                        <Tag size={40} className="text-gray-600" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-gray-400 font-black text-sm uppercase tracking-widest">Nenhuma marcação encontrada</p>
+                                        <p className="text-gray-600 text-[11px] font-medium max-w-[300px]">Quando alguém marcar @zap.landia em um post, ele aparecerá aqui automaticamente.</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {tags.map(tag => (
+                                        <div key={tag.id} className="bg-surface/30 border border-white/5 rounded-[32px] overflow-hidden group hover:border-primary/30 transition-all flex flex-col">
+                                            <div className="aspect-square relative overflow-hidden bg-black">
+                                                <img src={tag.media_url || tag.thumbnail_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
+                                                <div className="absolute top-4 left-4">
+                                                    <div className="px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-[9px] font-black text-white uppercase tracking-widest flex items-center space-x-2">
+                                                        <User size={10} />
+                                                        <span>@{tag.username}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-6 space-y-4 flex-1 flex flex-col">
+                                                <p className="text-[11px] text-gray-400 font-medium leading-relaxed line-clamp-3 flex-1">{tag.caption}</p>
+                                                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{new Date(tag.timestamp).toLocaleDateString()}</span>
+                                                    <a 
+                                                        href={tag.permalink} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline flex items-center space-x-1"
+                                                    >
+                                                        <span>Ver Post</span>
+                                                        <ExternalLink size={10} />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ) : sidebarTab === 'ab_tests' ? (
                         <div className="space-y-8">
