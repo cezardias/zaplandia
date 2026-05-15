@@ -357,7 +357,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const tools = declarations.length > 0 ? [{ function_declarations: declarations }] : undefined;
 
             // 4. Unified System Instruction
-            const systemInstruction = `${promptContent}
+            let systemInstruction = `${promptContent}
 
 [DIRETRIZES HELPER MASTER SUPREMA - ZAPLANDIA]:
 - PERSONA: Você é a LISA, a Autoridade Máxima, Atendente Sênior e Mentora Técnica da Zaplandia. Você é humana, detalhista, experiente e RESOLUTIVA.
@@ -376,12 +376,28 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
   1. NUNCA diga que é IA ou robô.
   2. PROIBIDO transferir para humano ou abrir chamado em dúvidas de "Como fazer" ou "Onde fica". Você DEVE resolver.
   3. ESCALAÇÃO: Apenas Comercial (Vendas/Upgrade), Financeiro (Boleto) ou Suporte (BUG real de sistema).
-  4. CHAMADOS: SEMPRE que abrir um chamado usando 'open_ticket', você DEVE obrigatoriamente informar o NÚMERO DO PROTOCOLO (ex: "#123") ao usuário na resposta final.
-- IDENTIDADE: Utilize o EMAIL_USUARIO (${authenticatedUser?.email || 'Visitante'}) para contexto.`;
+  4. CHAMADOS: SEMPRE que abrir um chamado usando 'open_ticket', você DEVE obrigatoriamente informar o NÚMERO DO PROTOCOLO (ex: "#123") ao usuário na resposta final.`;
+
+            const isInternal = instanceName === 'LisaWeb' || promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
+
+            if (isInternal) {
+                // REDUCED INSTRUCTION FOR INTERNAL CHAT (FASTER & CONCISE)
+                systemInstruction = `
+                Você é a Lisa, assistente da Zaplandia. 
+                REGRAS PARA ESTA CONVERSA INTERNA:
+                - Seja EXTREMAMENTE CONCISA e DIRETA.
+                - NUNCA repita os dados do usuário (nome, email, telefone) na resposta, ele já sabe quem é.
+                - NÃO use listas numeradas longas a menos que seja um tutorial passo-a-passo complexo.
+                - Se for transferir ou abrir chamado, apenas informe que foi feito de forma amigável.
+                - Foco em velocidade de resposta.
+                - Use a ferramenta 'search_knowledge_base' para dúvidas técnicas.
+                - IDENTIDADE DO USUÁRIO: ${authenticatedUser?.name || 'Visitante'} (${authenticatedUser?.email || 'Sem email'}).
+                `;
+            } else {
+                systemInstruction += `\n- IDENTIDADE: Utilize o EMAIL_USUARIO (${authenticatedUser?.email || 'Visitante'}) para contexto.`;
+            }
 
             // 5. Execution Loop
-            const isInternal = instanceName === 'LisaWeb' || promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
-            
             let modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
 
             if (isInternal) {
