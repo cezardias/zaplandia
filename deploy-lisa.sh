@@ -1,0 +1,20 @@
+#!/bin/bash
+# Script para criar o modelo zaplandia-lisa no Ollama
+# Execute no servidor: bash deploy-lisa.sh
+
+echo "🚀 Iniciando deploy da Lisa Zaplandia..."
+
+# Copiar o Modelfile para dentro do container
+docker cp ./ollama/Modelfile zaplandia-ollama:/tmp/Modelfile
+
+echo "📦 Construindo modelo zaplandia-lisa (pode demorar 1-2 min)..."
+docker exec zaplandia-ollama ollama create zaplandia-lisa -f /tmp/Modelfile
+
+echo "✅ Modelo zaplandia-lisa criado! Testando..."
+docker exec zaplandia-ollama ollama run zaplandia-lisa "Olá Lisa, você está funcionando? Responda em 1 linha."
+
+echo ""
+echo "🎉 Lisa Zaplandia está pronta!"
+echo "   Modelo: zaplandia-lisa"
+echo "   Base:   qwen2.5:7b"
+echo "   Ollama: http://localhost:11434"

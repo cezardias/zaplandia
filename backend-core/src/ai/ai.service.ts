@@ -578,64 +578,46 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
     async getAiResponse(tenantId: string, prompt: string, provider: string, context?: string, modelName?: string) {
         try {
-            const systemInstruction = context || 'Você é o assistente da Zaplandia.';
+            const systemInstruction = context || 'Você é a Lisa, assistente da Zaplandia.';
             const finalPrompt = prompt;
 
-            // --- 1. Try Ollama FIRST (self-hosted, free!) ---
+            // --- 1. LISA ZAPLANDIA (Ollama self-hosted - GRÁTIS, sem token!) ---
             const ollamaUrl = this.getOllamaBaseUrl();
             if (ollamaUrl) {
-                const ollamaModel = (modelName && !modelName.includes('/')) ? modelName : 'qwen2.5:7b';
-                this.logger.debug(`[AI_OLLAMA_ATTEMPT] Trying Ollama model: ${ollamaModel}`);
+                // Usa zaplandia-lisa como padrão. Se o modelo configurado for Ollama-local, usa ele.
+                const ollamaModel = (modelName && !modelName.includes('/') && !modelName.startsWith('gemini'))
+                    ? modelName
+                    : 'zaplandia-lisa';
+
+                this.logger.debug(`[LISA] Calling Ollama model: ${ollamaModel}`);
                 try {
-                    const aiResponse = await this.callOllama(ollamaModel, finalPrompt, 2048, systemInstruction);
+                    const aiResponse = await this.callOllama(ollamaModel, finalPrompt, 4096, systemInstruction);
                     if (aiResponse) {
-                        this.logger.log(`[AI_OLLAMA_SUCCESS] Ollama model ${ollamaModel} responded.`);
+                        this.logger.log(`[LISA_SUCCESS] Ollama model ${ollamaModel} responded.`);
                         return aiResponse;
                     }
                 } catch (error) {
-                    this.logger.warn(`[AI_OLLAMA_FAIL] Ollama failed: ${error.message}. Falling back to cloud providers...`);
-                }
-            }
-
-            // --- 2. Try Gemini ---
-            const geminiKey = await this.getGeminiApiKey(tenantId);
-            if (geminiKey) {
-                const startModel = modelName && !modelName.includes('/') ? modelName : 'gemini-2.0-flash';
-                const geminiModels = [...new Set([startModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
-                let lastGeminiError: any;
-
-                for (const model of geminiModels) {
-                    this.logger.debug(`[AI_WAND_ATTEMPT] Trying Gemini model: ${model}`);
-                    try {
-                        const aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 2048, undefined, tenantId, undefined, systemInstruction);
-                        if (aiResponse) {
-                            this.logger.debug(`[AI_WAND_SUCCESS] Gemini model ${model} worked.`);
-                            return aiResponse;
-                        }
-                    } catch (error) {
-                        lastGeminiError = error;
-                        const status = error.response?.status;
-                        this.logger.warn(`[AI_WAND_FAIL] Model ${model} failed: ${error.message}`);
-                        if (status === 429) {
-                            this.logger.warn(`[AI_WAND] Gemini quota exhausted (429). Falling back to OpenRouter...`);
-                            break;
+                    this.logger.warn(`[LISA_FAIL] Ollama failed (${error.message}). Falling back to OpenRouter...`);
+                    // If zaplandia-lisa not found yet, try qwen2.5:7b directly
+                    if (error.message?.includes('model') || error.message?.includes('404')) {
+                        try {
+                            this.logger.log(`[LISA] Trying fallback model qwen2.5:7b...`);
+                            const fallback = await this.callOllama('qwen2.5:7b', finalPrompt, 4096, systemInstruction);
+                            if (fallback) return fallback;
+                        } catch (e) {
+                            this.logger.warn(`[LISA] qwen2.5:7b also failed: ${e.message}`);
                         }
                     }
                 }
-                if (lastGeminiError) {
-                    this.logger.warn(`[AI_REQUEST] Gemini failed, trying OpenRouter fallback...`);
-                }
-            } else {
-                this.logger.warn(`[AI_REQUEST] No Gemini key for tenant ${tenantId}. Trying OpenRouter...`);
             }
 
-            // --- 3. Last resort: OpenRouter ---
+            // --- 2. OpenRouter (fallback pago, só se Ollama falhar) ---
             const openRouterKey = await this.getOpenRouterApiKey(tenantId);
             if (openRouterKey) {
                 const orModel = modelName && modelName.includes('/') ? modelName : 'deepseek/deepseek-r1';
                 this.logger.log(`[AI_OPENROUTER_FALLBACK] Trying OpenRouter model: ${orModel}`);
                 try {
-                    const aiResponse = await this.callOpenRouter(orModel, finalPrompt, openRouterKey, 2048, undefined, tenantId, undefined, systemInstruction);
+                    const aiResponse = await this.callOpenRouter(orModel, finalPrompt, openRouterKey, 4096, undefined, tenantId, undefined, systemInstruction);
                     if (aiResponse) {
                         this.logger.log(`[AI_OPENROUTER_SUCCESS] OpenRouter model ${orModel} worked.`);
                         return aiResponse;
