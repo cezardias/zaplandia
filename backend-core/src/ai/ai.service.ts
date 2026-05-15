@@ -473,7 +473,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                     description: aiResponse, 
                                     category: "technical" 
                                 }, tenantId, contact.id || 'unknown', undefined, authenticatedUser);
-                                aiResponse = `[CHAMADO ABERTO]: Protocolo gerado com sucesso para sua solicitação.`;
+                                aiResponse = `Com certeza! Já abri o seu chamado aqui para o nosso time técnico. O protocolo foi gerado com sucesso e nossa equipe entrará em contato com você o mais rápido possível. Posso te ajudar com mais alguma coisa?`;
                             }
                         }
                         
