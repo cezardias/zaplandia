@@ -983,45 +983,45 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
 
     async generateLisaResponse(tenantId: string, userMessage: string, contactId?: string, authenticatedUser?: any): Promise<string | null> {
-        this.logger.log(`[LISA_CHAT_WAIT] Message from contact ${contactId}. Waiting 10s for more...`);
+        const contactKey = contactId || 'anon';
+        const key = `lisa_${contactKey}`;
         
-        const key = `lisa_${contactId || 'anon'}`;
-        const existing = this.debounceMap.get(key);
-        if (existing) {
-            clearTimeout(existing.timeout);
-            existing.messages.push(userMessage);
-            existing.timeout = setTimeout(() => this.processDebouncedLisaResponse(contactId || 'anon', tenantId, authenticatedUser), 10000);
-            return null;
+        this.logger.log(`[LISA_CHAT_WAIT] Message from ${contactKey}. Buffering for 10s...`);
+
+        // 1. Manage the Buffer
+        let data = this.debounceMap.get(key);
+        if (!data) {
+            data = { messages: [userMessage], tenantId, instanceName: 'LisaWeb', timeout: null };
+            this.debounceMap.set(key, data);
+        } else {
+            data.messages.push(userMessage);
+            // We don't reset the timeout here for Web Chat to keep the first request alive
+            return "[WAITING_FOR_DEBOUNCE]"; 
         }
 
-        const timeout = setTimeout(() => this.processDebouncedLisaResponse(contactId || 'anon', tenantId, authenticatedUser), 10000);
-        this.debounceMap.set(key, {
-            timeout,
-            messages: [userMessage],
-            instanceName: 'LisaWeb',
-            tenantId
-        });
+        // 2. Wait for the burst to finish (10s)
+        await new Promise(resolve => setTimeout(resolve, 10000));
 
-        return null;
-    }
+        // 3. Process the accumulated burst
+        const finalData = this.debounceMap.get(key);
+        if (!finalData) return null;
+        this.debounceMap.delete(key);
 
-    private async processDebouncedLisaResponse(contactId: string, tenantId: string, authenticatedUser?: any) {
-        const data = this.debounceMap.get(`lisa_${contactId}`);
-        if (!data) return;
-        this.debounceMap.delete(`lisa_${contactId}`);
+        const combinedMessage = finalData.messages.join(' ');
+        this.logger.log(`[LISA_DEBOUNCE] Processing aggregated burst: "${combinedMessage}"`);
 
         let contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
         if (!contact) {
             contact = { id: contactId, name: authenticatedUser?.name || 'Usuário Web', tenantId, provider: 'site' } as any;
         }
 
-        const combinedMessage = data.messages.join(' ');
-        this.logger.log(`[LISA_DEBOUNCE] Processing: "${combinedMessage}"`);
-
         const response = await this.executeAIGeneration(contact!, combinedMessage, tenantId, 'LisaWeb', authenticatedUser);
-        if (response) {
+        
+        if (response && contactId) {
             await this.recordLisaInteraction(tenantId, contactId, combinedMessage, response);
         }
+
+        return response;
     }
 
     async getPromptByName(name: string, tenantId?: string) {

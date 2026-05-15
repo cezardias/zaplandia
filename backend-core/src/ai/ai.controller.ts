@@ -234,10 +234,8 @@ export class AiController {
 
     @Post('lisa/chat')
     async lisaChat(@Request() req: any, @Body() body: { message: string, history: any[] }) {
-        // 1. Ensure a contact exists
         const contact = await this.aiService.getOrCreateContactForLisa(req.user.tenantId, req.user);
         
-        // 2. Call Service (Service now handles Debounce 10s and Recording)
         const response = await this.aiService.generateLisaResponse(
             req.user.tenantId, 
             body.message, 
@@ -245,7 +243,10 @@ export class AiController {
             req.user
         );
         
-        return { content: response || null }; // null means "waiting for more messages"
+        // If it's a sub-message of a burst, return null so frontend ignores it
+        if (response === "[WAITING_FOR_DEBOUNCE]") return { content: null };
+        
+        return { content: response || null };
     }
 
     @Get('lisa/prompt')
