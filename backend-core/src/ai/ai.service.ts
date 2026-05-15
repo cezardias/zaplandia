@@ -1260,8 +1260,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 const desc = (args.description || '').toLowerCase();
                 const subj = (args.subject || '').toLowerCase();
                 
-                // Only reject if it's EXTREMELY generic (Lisa's default patterns)
-                if (desc.includes('abertura de chamado') || desc.includes('suporte') || desc === subj) {
+                // Relax rejection for internal LisaWeb (Help Center)
+                const isInternalHelp = instanceName === 'LisaWeb' || promptId?.includes('HELP_CENTER');
+
+                if (!isInternalHelp && (desc.includes('abertura de chamado') || desc.includes('suporte') || desc === subj)) {
                     const isTechnical = desc.includes('n8n') || desc.includes('fluxo') || desc.includes('bot') || desc.includes('automação') || desc.includes('api');
                     if (!isTechnical && desc.length < 30) {
                         this.logger.warn(`[AI_TOOL_REJECT] Rejecting generic ticket from AI for contact ${contactId}`);
