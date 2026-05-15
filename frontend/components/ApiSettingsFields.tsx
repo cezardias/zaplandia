@@ -327,7 +327,7 @@ export default function ApiSettingsFields({ token, tenantId = null, isAdminMode 
     return (
         <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
             {status && (
-                <div className={`p-4 rounded-2xl flex items-center space-x-3 sticky top-0 z-20 backdrop-blur-md shadow-xl animate-in slide-in-from-top duration-300 ${status.type === 'success' ? 'bg-green-500/20 border border-green-500/50 text-green-200' : 'bg-red-500/20 border border-red-500/50 text-red-200'}`}>
+                <div className={`p-4 rounded-2xl flex items-center space-x-3 sticky top-0 z-20 backdrop-blur-md shadow-xl animate-in slide-in-from-top duration-300 ${status.type === 'success' ? 'bg-green-100 border border-green-400 text-green-800' : 'bg-red-100 border border-red-400 text-red-800'}`}>
                     {status.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
                     <span className="text-sm font-bold">{status.msg}</span>
                 </div>

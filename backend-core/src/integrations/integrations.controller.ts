@@ -349,13 +349,14 @@ export class IntegrationsController {
             throw new Error('Cannot save credentials: user has no associated tenant.');
         }
 
-        // 🔧 CRITICAL FIX: Evolution API should be GLOBAL for SuperAdmin
+        // 🔧 CRITICAL FIX: Evolution API and AI Keys should be GLOBAL for SuperAdmin
         const isSuperAdmin = req.user.role === 'superadmin';
-        const isEvolutionConfig = body.name === 'EVOLUTION_API_URL' || body.name === 'EVOLUTION_API_KEY';
+        const globalKeys = ['EVOLUTION_API_URL', 'EVOLUTION_API_KEY', 'GEMINI_API_KEY', 'OPENAI_API_KEY', 'OPENROUTER_API_KEY'];
+        const isGlobalConfig = globalKeys.includes(body.name);
 
         let finalTenantId: string | null = tenantId;
 
-        if (isSuperAdmin && isEvolutionConfig) {
+        if (isSuperAdmin && isGlobalConfig) {
             finalTenantId = null; // Save as GLOBAL
             console.log(`[SAVE_CRED] ✅ SuperAdmin saving ${body.name} as GLOBAL (tenantId=null)`);
 
