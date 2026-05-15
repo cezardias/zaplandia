@@ -1804,9 +1804,9 @@ export default function InstagramManagementPage() {
                             </div>
                             
                             <div className="space-y-3 flex-1">
-                                <div className="flex items-center space-x-4 px-5 py-4 !bg-white rounded-[24px] border border-gray-200 shadow-sm group transition-all">
+                                <div className="flex items-center space-x-4 px-5 py-4 rounded-[24px] border border-gray-200 shadow-sm group transition-all" style={{ backgroundColor: '#FFFFFF' }}>
                                     <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(239,68,68,0.3)]" />
-                                    <span className="text-[11px] font-black !text-slate-900 uppercase tracking-widest">Detalhes</span>
+                                    <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#0f172a' }}>Detalhes</span>
                                 </div>
                                 <div className="flex items-center space-x-4 px-5 py-4 text-gray-300 opacity-60 cursor-not-allowed">
                                     <div className="w-2 h-2 rounded-full bg-gray-200" />
@@ -1814,7 +1814,7 @@ export default function InstagramManagementPage() {
                                 </div>
                             </div>
 
-                            <div className="p-4 !bg-white rounded-3xl border border-gray-100">
+                            <div className="p-4 rounded-3xl border border-gray-100" style={{ backgroundColor: '#FFFFFF' }}>
                                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center leading-relaxed">Sua playlist será visível no seu perfil do Instagram.</p>
                             </div>
                         </div>
