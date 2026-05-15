@@ -950,6 +950,71 @@ export default function InstagramManagementPage() {
                                 </div>
                             )}
                         </div>
+                    ) : sidebarTab === 'series' ? (
+                        <div className="space-y-8">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-xl font-black text-white uppercase tracking-tight">{txt.sections.series}</h2>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Trilhas de conteúdo estruturadas</p>
+                                </div>
+                                <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all flex items-center space-x-2">
+                                    <Plus size={16} />
+                                    <span>Nova Série</span>
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {/* Empty State Series */}
+                                <div className="col-span-full py-24 bg-surface/30 border border-white/5 rounded-[48px] flex flex-col items-center justify-center text-center space-y-6">
+                                    <div className="w-24 h-24 bg-white/5 rounded-[40px] flex items-center justify-center border border-white/5">
+                                        <Video size={40} className="text-gray-600" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-gray-400 font-black text-sm uppercase tracking-widest">Nenhuma série criada</p>
+                                        <p className="text-gray-600 text-[11px] font-medium max-w-[350px]">Crie séries para organizar seus vídeos em episódios e temporadas, facilitando o consumo do seu público.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : sidebarTab === 'ads' ? (
+                        <div className="space-y-8">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-xl font-black text-white uppercase tracking-tight">{txt.sections.cross_post}</h2>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Vídeos otimizados para FB e IG</p>
+                                </div>
+                                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all flex items-center space-x-2">
+                                    <Layers size={16} />
+                                    <span>Sincronizar Ativos</span>
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="bg-surface/30 border border-white/5 rounded-[48px] p-12 flex flex-col items-center justify-center text-center space-y-6">
+                                    <div className="relative">
+                                        <Facebook className="w-16 h-16 text-blue-600/20" />
+                                        <Instagram className="w-16 h-16 text-pink-600/20 absolute -top-4 -right-4" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-gray-400 font-black text-sm uppercase tracking-widest">Cross-post em um clique</p>
+                                        <p className="text-gray-600 text-[11px] font-medium max-w-[300px]">Publique vídeos simultaneamente nas duas redes com otimização automática de formato.</p>
+                                    </div>
+                                    <button className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 transition-all">
+                                        Configurar Agora
+                                    </button>
+                                </div>
+
+                                <div className="bg-surface/30 border border-white/5 rounded-[48px] p-12 flex flex-col items-center justify-center text-center space-y-6">
+                                    <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center">
+                                        <Clapperboard size={32} className="text-gray-600" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-gray-400 font-black text-sm uppercase tracking-widest">Biblioteca de Criativos</p>
+                                        <p className="text-gray-600 text-[11px] font-medium max-w-[300px]">Seus vídeos salvos para postagem cruzada aparecerão aqui.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     ) : sidebarTab === 'playlists' ? (
                         <div className="space-y-8">
                             <div className="flex items-center justify-between">
