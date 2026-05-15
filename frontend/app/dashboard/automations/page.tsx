@@ -21,9 +21,15 @@ import {
     AlertCircle,
     CheckCircle2,
     Zap,
-    Loader2
+    Loader2,
+    Copy,
+    ListChecks,
+    ArrowRightCircle,
+    Workflow as WorkflowIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import { useRouter } from 'next/navigation';
 
 interface Workflow {
     id: string;
@@ -43,15 +49,23 @@ interface Message {
 }
 
 export default function AutomationsPage() {
+    const router = useRouter();
     const { user, token } = useAuth();
     const { lang } = useLanguage();
     const [activeTab, setActiveTab] = useState<'architect' | 'workflows'>('architect');
     const [workflows, setWorkflows] = useState<Workflow[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isConfigured, setIsConfigured] = useState(true); // Default to true to avoid flicker
+    const [isConfigured, setIsConfigured] = useState(true); 
     const [showSetupModal, setShowSetupModal] = useState(false);
     const [n8nConfig, setN8nConfig] = useState({ apiUrl: '', apiKey: '' });
     const [isSavingConfig, setIsSavingConfig] = useState(false);
+    const [extractedSteps, setExtractedSteps] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (user && user.role !== 'superadmin') {
+            router.push('/dashboard');
+        }
+    }, [user, router]);
     
     // Architect State
     const [messages, setMessages] = useState<Message[]>([
@@ -63,6 +77,59 @@ export default function AutomationsPage() {
     ]);
     const [inputValue, setInputValue] = useState('');
     const chatEndRef = useRef<HTMLDivElement>(null);
+
+    // Extract steps from messages
+    useEffect(() => {
+        const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+        if (lastAssistantMsg) {
+            // Match numbered lists like "1. Webhook", "2. Node Name"
+            const stepRegex = /^\d+\.\s+\*\*([^*]+)\*\*|^\d+\.\s+([^\n:]+)/gm;
+            const matches = [...lastAssistantMsg.content.matchAll(stepRegex)];
+            const steps = matches.map(m => (m[1] || m[2]).trim()).filter(s => s.length > 0 && s.length < 50);
+            if (steps.length > 0) {
+                setExtractedSteps(steps);
+            }
+        }
+    }, [messages]);
+
+    if (!user || user.role !== 'superadmin') {
+        return null;
+    }
+
+    const MessageRenderer = ({ content, role }: { content: string, role: string }) => {
+        return (
+            <div className={`prose prose-sm prose-invert max-w-none ${role === 'user' ? 'text-white' : ''}`}>
+                <ReactMarkdown
+                    components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc ml-4 mb-2 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal ml-4 mb-2 space-y-1">{children}</ol>,
+                        code: ({ inline, children, ...props }: any) => {
+                            if (inline) return <code className="bg-black/30 px-1 rounded text-primary font-bold">{children}</code>;
+                            return (
+                                <div className="relative group my-4">
+                                    <pre className="bg-black/50 p-4 rounded-xl overflow-x-auto text-[10px] border border-white/5 scrollbar-thin scrollbar-thumb-white/10 font-mono">
+                                        <code className="text-gray-300">{children}</code>
+                                    </pre>
+                                    <button 
+                                        onClick={() => navigator.clipboard.writeText(String(children))}
+                                        className="absolute top-2 right-2 p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 opacity-0 group-hover:opacity-100 transition"
+                                        title="Copiar código"
+                                    >
+                                        <Copy size={14} />
+                                    </button>
+                                </div>
+                            );
+                        },
+                        strong: ({ children }) => <strong className="text-primary font-black">{children}</strong>,
+                        hr: () => <hr className="border-white/5 my-4" />
+                    }}
+                >
+                    {content}
+                </ReactMarkdown>
+            </div>
+        );
+    };
 
     const t: any = {
         pt_BR: {
@@ -87,7 +154,9 @@ export default function AutomationsPage() {
             connect: 'Conectar Agora',
             setupSuccess: 'n8n conectado com sucesso!',
             setupError: 'Erro ao conectar ao n8n. Verifique os dados.',
-            notConfigured: 'n8n não configurado. Clique para configurar.'
+            notConfigured: 'n8n não configurado. Clique para configurar.',
+            cancel: 'Cancelar',
+            save: 'Salvar Configurações'
         },
         en_US: {
             title: 'Automation Management',
@@ -111,7 +180,9 @@ export default function AutomationsPage() {
             connect: 'Connect Now',
             setupSuccess: 'n8n connected successfully!',
             setupError: 'Error connecting to n8n. Check your data.',
-            notConfigured: 'n8n not configured. Click to configure.'
+            notConfigured: 'n8n not configured. Click to configure.',
+            cancel: 'Cancel',
+            save: 'Save Settings'
         },
         // ... (other languages will use PT/EN fallback for new keys if not added, but I'll add them)
         pt_PT: {
@@ -136,7 +207,9 @@ export default function AutomationsPage() {
             connect: 'Ligar Agora',
             setupSuccess: 'n8n ligado com sucesso!',
             setupError: 'Erro ao ligar ao n8n. Verifique os dados.',
-            notConfigured: 'n8n não configurado. Clique para configurar.'
+            notConfigured: 'n8n não configurado. Clique para configurar.',
+            cancel: 'Cancelar',
+            save: 'Guardar Definições'
         },
         it_IT: {
             title: 'Gestione Automazioni',
@@ -160,7 +233,9 @@ export default function AutomationsPage() {
             connect: 'Connetti Ora',
             setupSuccess: 'n8n connesso con successo!',
             setupError: 'Errore durante la connessione a n8n. Controlla i dati.',
-            notConfigured: 'n8n non configurato. Clicca per configurare.'
+            notConfigured: 'n8n non configurato. Clicca per configurare.',
+            cancel: 'Annulla',
+            save: 'Salva Impostazioni'
         }
     };
 
@@ -300,13 +375,18 @@ export default function AutomationsPage() {
                             <p className="text-gray-400 text-sm">{t[lang].subtitle}</p>
                         </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                        {(!isConfigured && user?.role === 'superadmin') && (
+                    <div className="flex items-center space-x-3">
+                        {user?.role === 'superadmin' && (
                             <button 
                                 onClick={() => setShowSetupModal(true)}
-                                className="px-3 py-1 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-lg text-[10px] font-black uppercase tracking-tighter hover:bg-orange-500/20 transition animate-pulse"
+                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition flex items-center space-x-2 border ${
+                                    isConfigured 
+                                        ? 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10' 
+                                        : 'bg-orange-500/10 text-orange-500 border-orange-500/20 animate-pulse'
+                                }`}
                             >
-                                {t[lang].notConfigured}
+                                <Settings size={14} />
+                                <span>{isConfigured ? 'Configurar n8n' : t[lang].notConfigured}</span>
                             </button>
                         )}
                         <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
@@ -348,8 +428,8 @@ export default function AutomationsPage() {
                                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary/20 text-primary' : 'bg-white/10 text-gray-400'}`}>
                                                     {msg.role === 'user' ? <Terminal size={16} /> : <Bot size={18} />}
                                                 </div>
-                                                <div className={`p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-surface border border-white/5 text-white'}`}>
-                                                    {msg.content}
+                                                <div className={`p-4 rounded-2xl text-sm shadow-inner ${msg.role === 'user' ? 'bg-primary text-white shadow-primary/20' : 'bg-surface border border-white/5 text-white'}`}>
+                                                    <MessageRenderer content={msg.content} role={msg.role} />
                                                 </div>
                                             </div>
                                         </div>
@@ -402,11 +482,41 @@ export default function AutomationsPage() {
                                     {t[lang].preview}
                                 </h3>
                                 
-                                <div className="bg-black/60 rounded-2xl border border-white/5 p-6 min-h-[300px] flex flex-col items-center justify-center text-center">
-                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                                        <Layers className="text-gray-600" size={32} />
-                                    </div>
-                                    <p className="text-gray-500 text-sm">O rascunho do fluxo aparecerá aqui conforme conversamos.</p>
+                                <div className="bg-black/60 rounded-2xl border border-white/5 p-6 min-h-[300px] flex flex-col overflow-hidden">
+                                    {extractedSteps.length > 0 ? (
+                                        <div className="space-y-4 w-full">
+                                            {extractedSteps.map((step, idx) => (
+                                                <motion.div 
+                                                    key={idx}
+                                                    initial={{ opacity: 0, x: 10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: idx * 0.1 }}
+                                                    className="flex items-center space-x-3 group"
+                                                >
+                                                    <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold shrink-0 border border-primary/20 group-hover:bg-primary group-hover:text-white transition">
+                                                        {idx + 1}
+                                                    </div>
+                                                    <div className="flex-1 p-3 bg-white/5 rounded-xl border border-white/5 text-[11px] font-bold text-gray-300 group-hover:border-primary/30 group-hover:text-white transition">
+                                                        {step}
+                                                    </div>
+                                                    {idx < extractedSteps.length - 1 && (
+                                                        <div className="absolute left-[39px] h-4 w-px bg-white/10 mt-10" />
+                                                    )}
+                                                </motion.div>
+                                            ))}
+                                            <button className="w-full mt-4 py-3 bg-primary/10 text-primary rounded-xl border border-primary/20 text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition flex items-center justify-center space-x-2">
+                                                <Plus size={14} />
+                                                <span>Iniciar Fluxo no n8n</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center text-center h-full py-10">
+                                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                                                <WorkflowIcon className="text-gray-600" size={32} />
+                                            </div>
+                                            <p className="text-gray-500 text-xs px-4">Os passos do fluxo aparecerão aqui conforme a Lisa os descreve.</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="mt-8 space-y-4">
@@ -567,7 +677,7 @@ export default function AutomationsPage() {
                                         disabled={isSavingConfig || !n8nConfig.apiUrl || !n8nConfig.apiKey}
                                         className="flex-[2] py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-black shadow-lg shadow-primary/20 transition disabled:opacity-50"
                                     >
-                                        {isSavingConfig ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t[lang].connect}
+                                        {isSavingConfig ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t[lang].save || t[lang].connect}
                                     </button>
                                 </div>
                             </div>
