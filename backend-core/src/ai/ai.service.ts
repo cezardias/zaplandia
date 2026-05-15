@@ -445,6 +445,38 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     if (aiResponse) {
                         this.logger.log(`[AI_SUCCESS] Response received from ${currentModel}`);
+
+                        // 🛡️ FAIL-SAFE & TOOL PARSER: Se for Ollama, processamos ferramentas manualmente
+                        if (currentModel === 'zaplandia-lisa' || currentModel === 'qwen2.5:3b' || currentModel.startsWith('ollama:')) {
+                            const jsonMatch = aiResponse.match(/\{.*"name".*"arguments".*\}/s);
+                            if (jsonMatch) {
+                                try {
+                                    const toolCall = JSON.parse(jsonMatch[0]);
+                                    const funcName = toolCall.name || toolCall.functionCall?.name || toolCall.function_call?.name;
+                                    const args = typeof toolCall.arguments === 'string' ? JSON.parse(toolCall.arguments) : (toolCall.arguments || toolCall.functionCall?.arguments || toolCall.function_call?.arguments);
+                                    
+                                    if (funcName) {
+                                        this.logger.log(`[AI_TOOL_LOCAL] Detected tool call: ${funcName}`);
+                                        const toolResult = await this.handleToolCall(funcName, args, tenantId, contact.id || 'unknown', undefined, authenticatedUser);
+                                        aiResponse = `[AÇÃO EXECUTADA]: ${JSON.stringify(toolResult)}`;
+                                    }
+                                } catch (e) {
+                                    this.logger.warn(`[AI_TOOL_PARSE_FAIL] Failed to parse local tool call: ${e.message}`);
+                                }
+                            }
+
+                            // Fallback: Se falar de chamado sem disparar JSON
+                            if ((aiResponse.toLowerCase().includes('open_ticket') || aiResponse.toLowerCase().includes('abrir um chamado')) && !aiResponse.includes('{')) {
+                                this.logger.warn(`[AI_HEAL] Forcing ticket creation for chatty model.`);
+                                const toolResult = await this.handleToolCall('open_ticket', { 
+                                    subject: "Chamado via Lisa", 
+                                    description: aiResponse, 
+                                    category: "technical" 
+                                }, tenantId, contact.id || 'unknown', undefined, authenticatedUser);
+                                aiResponse = `[CHAMADO ABERTO]: Protocolo gerado com sucesso para sua solicitação.`;
+                            }
+                        }
+                        
                         break;
                     }
                 } catch (error) {
