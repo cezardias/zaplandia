@@ -334,22 +334,49 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'])];
             let aiResponse: string | null = null;
             let lastError: any;
+            let lastErrorDetail: string = 'Nenhum erro registrado.';
 
             for (const model of modelsToTry) {
+                let currentModel = model;
+                // 🛠️ AUTO-CORRECT: Common user typos
+                if (currentModel === 'openai/gpt-4.1-mini') currentModel = 'openai/gpt-4o-mini';
+                
+                this.logger.debug(`[AI_ATTEMPT] Trying model: ${currentModel}`);
                 try {
-                    if (model.includes('/') && openRouterKey) {
-                        aiResponse = await this.callOpenRouter(model, fullPrompt, openRouterKey, 1024, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
-                    } else if (geminiKey) {
-                        aiResponse = await this.callGemini(model, fullPrompt, geminiKey, 1024, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
+                    const isOpenRouter = currentModel.includes('/') || (openRouterKey && !geminiKey);
+                    
+                    if (isOpenRouter && !openRouterKey) {
+                        this.logger.warn(`[AI_SKIP] Skipping ${currentModel} - OpenRouter key missing.`);
+                        continue;
                     }
-                    if (aiResponse) break;
+                    if (!isOpenRouter && !geminiKey) {
+                        this.logger.warn(`[AI_SKIP] Skipping ${currentModel} - Gemini key missing.`);
+                        continue;
+                    }
+
+                    if (isOpenRouter) {
+                        aiResponse = await this.callOpenRouter(currentModel, userMessage, openRouterKey!, 2048, tools, tenantId, contact.id, systemInstruction, promptId, authenticatedUser);
+                    } else {
+                        aiResponse = await this.callGemini(currentModel, userMessage, geminiKey!, 2048, tools, tenantId, contact.id, systemInstruction, promptId, authenticatedUser);
+                    }
+
+                    if (aiResponse) {
+                        this.logger.log(`[AI_SUCCESS] Response received from ${currentModel}`);
+                        break;
+                    }
                 } catch (error) {
                     lastError = error;
-                    this.logger.warn(`[AI_RETRY] Model ${model} failed: ${error.message}`);
+                    lastErrorDetail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+                    this.logger.warn(`[AI_FAIL] Model ${currentModel} failed: ${lastErrorDetail}`);
                 }
             }
 
-            return aiResponse || (lastError ? "Desculpe, tive um problema técnico. Pode repetir?" : "Olá! Como posso ajudar?");
+            if (!aiResponse) {
+                this.logger.error(`[AI_FATAL] All models failed for tenant ${tenantId}. Last error: ${lastErrorDetail}`);
+                return `[SISTEMA]: Desculpe, não consegui processar sua mensagem devido a um erro técnico: ${lastErrorDetail.substring(0, 100)}. Por favor, verifique suas chaves de API.`;
+            }
+
+            return aiResponse;
         } catch (error) {
             this.logger.error(`[AI_CRITICAL] ${error.message}`);
             return null;
