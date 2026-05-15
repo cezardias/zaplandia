@@ -860,14 +860,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         let targetTeamId = args.teamId;
                         const teamName = args.teamId?.toLowerCase();
                         
-                        // STRICT TENANT ISOLATION: No global fallback.
-                        const teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" = $1`, [tenantId]);
-                        this.logger.debug(`[AI_TOOL_DEBUG] Available teams for tenant ${tenantId}: ${JSON.stringify(teams)}`);
+                        // DIAGNOSTIC: Fetch ALL teams from EVERY tenant to find where 'Comercial' lives
+                        const allTeams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams`);
+                        this.logger.debug(`[AI_DIAGNOSTIC] ALL TEAMS IN DB: ${JSON.stringify(allTeams)}`);
+                        this.logger.debug(`[AI_DIAGNOSTIC] CURRENT CONTEXT TENANT: ${tenantId}`);
+
+                        const teams = allTeams.filter(t => t.tenantId === tenantId);
                         
                         const foundTeam = teams.find(t => 
                             t.id === targetTeamId || 
-                            t.name.toLowerCase().includes(teamName) ||
-                            teamName.includes(t.name.toLowerCase())
+                            (teamName && (t.name.toLowerCase().includes(teamName) || teamName.includes(t.name.toLowerCase())))
                         );
 
                         if (foundTeam) {
