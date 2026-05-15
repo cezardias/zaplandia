@@ -367,6 +367,56 @@ export class MetaApiService {
         return res.data;
     }
 
+    /**
+     * Get active Instagram Stories
+     */
+    async getInstagramStories(tenantId: string) {
+        try {
+            const { accessToken: defaultToken, instagramAccessToken, instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+            
+            let id = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            if (!id) id = configIbId;
+            if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
+
+            const response = await axios.get(
+                `https://graph.facebook.com/v18.0/${id}/stories`,
+                { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[INSTAGRAM_STORIES] Failed to fetch stories: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
+
+    /**
+     * Get Instagram Highlights
+     */
+    async getInstagramHighlights(tenantId: string) {
+        try {
+            const { accessToken: defaultToken, instagramAccessToken, instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+            
+            let id = await this.integrationsService.getCredential(tenantId, 'INSTAGRAM_PAGE_ID', true);
+            if (!id) id = configIbId;
+            if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
+
+            const response = await axios.get(
+                `https://graph.facebook.com/v18.0/${id}/highlights`,
+                { params: { access_token: accessToken, fields: 'id,name,cover_media' } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[INSTAGRAM_HIGHLIGHTS] Failed to fetch highlights: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
+
     async deleteInstagramComment(tenantId: string, commentId: string) {
         const token = await this.getInstagramToken(tenantId);
         const url = `https://graph.facebook.com/v21.0/${commentId}`;

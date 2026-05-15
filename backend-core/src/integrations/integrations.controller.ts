@@ -446,6 +446,18 @@ export class IntegrationsController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Get('instagram/stories')
+    async getInstagramStories(@Request() req) {
+        return this.metaApiService.getInstagramStories(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('instagram/highlights')
+    async getInstagramHighlights(@Request() req) {
+        return this.metaApiService.getInstagramHighlights(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Get('instagram/media/:mediaId/comments')
     async getInstagramComments(@Request() req, @Param('mediaId') mediaId: string) {
         return this.metaApiService.getInstagramComments(req.user.tenantId, mediaId);

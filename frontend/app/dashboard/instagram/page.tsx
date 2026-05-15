@@ -261,13 +261,15 @@ export default function InstagramManagementPage() {
     const [replyTexts, setReplyTexts] = useState<{[key: string]: string}>({});
     const [likes, setLikes] = useState<any[]>([]);
     const [isLoadingLikes, setIsLoadingLikes] = useState(false);
+    const [highlights, setHighlights] = useState<any[]>([]);
 
     useEffect(() => {
         if (token) {
             fetchMedia();
             fetchInsights();
+            fetchHighlights();
         }
-    }, [token]);
+    }, [token, sidebarTab]);
 
     const fetchInsights = async () => {
         try {
@@ -334,11 +336,15 @@ export default function InstagramManagementPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetch('/api/integrations/instagram/media', {
+            const endpoint = sidebarTab === 'stories' ? '/api/integrations/instagram/stories' : '/api/integrations/instagram/media';
+            const res = await fetch(endpoint, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
             if (res.ok && data.data) {
+                // If fetching Reels, we might want to filter by media_type: VIDEO and check for short duration, 
+                // but usually the main /media endpoint includes reels. 
+                // For 'stories' we use the dedicated endpoint.
                 setMediaList(data.data);
             } else {
                 if (data.message) setError(data.message);
@@ -348,6 +354,16 @@ export default function InstagramManagementPage() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const fetchHighlights = async () => {
+        try {
+            const res = await fetch('/api/integrations/instagram/highlights', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok && data.data) setHighlights(data.data);
+        } catch (e) {}
     };
 
     const fetchComments = async (mediaId: string) => {
@@ -490,6 +506,26 @@ export default function InstagramManagementPage() {
             <div className="flex-1 flex flex-col overflow-hidden bg-background">
                 {/* Header / Tabs */}
                 <header className="bg-surface border-b border-white/5 px-8 flex flex-col shrink-0">
+                    {/* Highlights Section */}
+                    {highlights.length > 0 && (
+                        <div className="py-6 border-b border-white/5 flex items-center space-x-6 overflow-x-auto custom-scrollbar no-scrollbar">
+                            <button className="flex flex-col items-center space-y-2 shrink-0 group">
+                                <div className="w-14 h-14 rounded-full border-2 border-dashed border-gray-700 flex items-center justify-center group-hover:border-primary transition-colors">
+                                    <Plus size={20} className="text-gray-600 group-hover:text-primary" />
+                                </div>
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Novo</span>
+                            </button>
+                            {highlights.map(hl => (
+                                <button key={hl.id} className="flex flex-col items-center space-y-2 shrink-0 group">
+                                    <div className="w-14 h-14 rounded-full p-[2px] border-2 border-white/5 group-hover:border-primary transition-all overflow-hidden bg-black shadow-lg">
+                                        <img src={hl.cover_media?.thumbnail_url || hl.cover_media?.media_url || 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=100'} alt="" className="w-full h-full rounded-full object-cover opacity-80 group-hover:opacity-100" />
+                                    </div>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate max-w-[60px]">{hl.name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="flex items-center justify-between py-1">
                         <div className="flex items-center space-x-10">
                             {Object.keys(txt.status).map((key: any) => (
