@@ -817,6 +817,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         }
                     }
                 }
+                this.logger.debug(`[AI_DEBUG] Sending payload with ${payload.tools.length} tools to OpenRouter (${model})`);
             }
 
             const response = await axios.post(url, payload, {
