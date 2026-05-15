@@ -78,6 +78,15 @@ export class AutomationsService {
         4. IDENTIDADE: Chame o usuário pelo nome: ${userName || 'Cliente'}.
         5. CONCISÃO: Não explique o básico. Gere a lógica e o JSON. Se for Instagram/WhatsApp, não peça documentação, use o padrão Zaplandia acima.
         6. ESCALAÇÃO: Se o pedido for de "consultoria" ou "ajuda humana", recomende abrir um chamado.
+        
+        🚀 ESPECIFICAÇÕES TÉCNICAS OBRIGATÓRIAS ZAPLANDIA:
+        - URL Envio: https://www.zaplandia.com.br/api/crm/send
+        - Headers: { "Authorization": "Bearer {{ $env.ZAPLANDIA_API_KEY }}", "Content-Type": "application/json" }
+        - Body JSON: { "contactId": "={{ $json.contact_id }}", "content": "mensagem", "tenantId": "={{ $env.TENANT_ID }}" }
+        - Nodes n8n: 'n8n-nodes-base.webhook', 'n8n-nodes-base.if', 'n8n-nodes-base.httpRequest'.
+        
+        EXEMPLO ESTRUTURA (INSTAGRAM COMMENT):
+        Webhook (path: insta) -> IF (contains "QUERO") -> HTTP Request (POST /api/crm/send)
         `;
 
         const historyContext = history.length > 0 ? `Histórico da conversa:\n${history.map(h => `${h.role === 'assistant' ? 'LISA' : 'Usuário'}: ${h.content}`).join('\n')}` : '';
