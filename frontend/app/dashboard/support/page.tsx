@@ -34,6 +34,9 @@ export default function SupportPage() {
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
     const [tickets, setTickets] = useState<any[]>([]);
     const [showTicketList, setShowTicketList] = useState(false);
+    const [showNewTicketModal, setShowNewTicketModal] = useState(false);
+    const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+    const [newTicket, setNewTicket] = useState({ subject: '', category: 'technical', description: '', priority: 'medium' });
 
 
     const t: any = {
@@ -732,6 +735,30 @@ Zaplandia ha bisogno di un token che non scada:
         }
     };
 
+    const handleCreateTicket = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmittingTicket(true);
+        try {
+            const res = await fetch('/api/support/tickets', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newTicket)
+            });
+            if (res.ok) {
+                setNewTicket({ subject: '', category: 'technical', description: '', priority: 'medium' });
+                setShowNewTicketModal(false);
+                fetchTickets();
+            }
+        } catch (err) {
+            console.error('Error creating ticket:', err);
+        } finally {
+            setIsSubmittingTicket(false);
+        }
+    };
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         fetchArticles(search);
@@ -830,64 +857,146 @@ Zaplandia ha bisogno di un token che non scada:
                         <div className="text-center py-20 bg-surface border border-dashed border-white/10 rounded-3xl">
                             <LifeBuoy size={48} className="mx-auto text-gray-700 mb-4" />
                             <p className="text-gray-500 font-bold">Você não tem nenhum chamado aberto.</p>
-                            <button className="mt-4 text-primary font-bold hover:underline">Abrir novo chamado agora</button>
+                            <button 
+                                onClick={() => setShowNewTicketModal(true)}
+                                className="mt-4 text-primary font-bold hover:underline"
+                            >
+                                Abrir novo chamado agora
+                            </button>
                         </div>
                     ) : (
-                        tickets.map(ticket => (
-                            <div key={ticket.id} className="p-6 bg-surface border border-white/5 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition">
-                                <div className="flex items-center space-x-4">
-                                    <div className={`p-3 rounded-xl ${
-                                        ticket.status === 'open' ? 'bg-red-500/10 text-red-500' :
-                                        ticket.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-500' :
-                                        'bg-green-500/10 text-green-500'
-                                    }`}>
-                                        <LifeBuoy size={20} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-white group-hover:text-primary transition">{ticket.subject}</h3>
-                                        <p className="text-xs text-gray-500">Aberto em {new Date(ticket.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${
-                                        ticket.status === 'open' ? 'bg-red-500/10 text-red-500' :
-                                        ticket.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-500' :
-                                        'bg-green-500/10 text-green-500'
-                                    }`}>
-                                        {ticket.status}
-                                    </span>
-                                    <ChevronRight size={16} className="text-gray-700" />
-                                </div>
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold">Histórico de Chamados</h2>
+                                <button 
+                                    onClick={() => setShowNewTicketModal(true)}
+                                    className="bg-primary px-4 py-2 rounded-xl text-sm font-bold flex items-center"
+                                >
+                                    <Plus size={16} className="mr-2" />
+                                    Novo Chamado
+                                </button>
                             </div>
-                        ))
+                            {tickets.map(ticket => (
+                                <div key={ticket.id} className="p-6 bg-surface border border-white/5 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition shadow-lg">
+                                    <div className="flex items-center space-x-4">
+                                        <div className={`p-3 rounded-xl ${
+                                            ticket.status === 'open' ? 'bg-red-500/10 text-red-500' :
+                                            ticket.status === 'in_progress' ? 'bg-yellow-500/10 text-yellow-500' :
+                                            'bg-green-500/10 text-green-500'
+                                        }`}>
+                                            <LifeBuoy size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center space-x-2 mb-1">
+                                                <span className="text-xs font-bold text-gray-500">#{ticket.ticketNumber}</span>
+                                                <h3 className="font-bold text-white group-hover:text-primary transition">{ticket.subject}</h3>
+                                            </div>
+                                            <div className="flex items-center space-x-3 text-[10px] text-gray-500">
+                                                <span>Aberto em {new Date(ticket.createdAt).toLocaleDateString()}</span>
+                                                <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                                <span className="flex items-center">
+                                                    <Loader2 size={10} className="mr-1" />
+                                                    {ticket.requesterName || 'Usuário'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-4">
+                                        <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
+                                            ticket.status === 'open' ? 'bg-red-500/20 text-red-400' :
+                                            ticket.status === 'in_progress' ? 'bg-yellow-500/20 text-yellow-400' :
+                                            'bg-green-500/20 text-green-400'
+                                        }`}>
+                                            {ticket.status === 'open' ? 'Aberto' : ticket.status === 'in_progress' ? 'Em Andamento' : 'Resolvido'}
+                                        </span>
+                                        <ChevronRight size={16} className="text-gray-700 group-hover:text-primary transition" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
             )}
 
-            {/* Article Modal */}
-            {selectedArticle && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-surface border border-white/10 w-full max-w-4xl h-full max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
-                        <div className="p-8 border-b border-white/5 bg-background/50 flex justify-between items-center shrink-0">
-                            <div>
-                                <p className="text-xs font-black text-primary uppercase tracking-widest mb-1">{selectedArticle.category}</p>
-                                <h2 className="text-3xl font-black leading-tight">{selectedArticle.title}</h2>
-                            </div>
-                            <button
-                                onClick={() => setSelectedArticle(null)}
-                                className="p-4 hover:bg-white/5 rounded-2xl transition"
-                            >
-                                <X className="w-8 h-8 text-gray-500" />
+            {/* New Ticket Modal */}
+            {showNewTicketModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-surface border border-white/10 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center">
+                            <h2 className="text-xl font-bold flex items-center">
+                                <Plus className="w-5 h-5 mr-2 text-primary" />
+                                Novo Chamado de Suporte
+                            </h2>
+                            <button onClick={() => setShowNewTicketModal(false)} className="p-2 hover:bg-white/5 rounded-xl transition">
+                                <X className="w-6 h-6 text-gray-500" />
                             </button>
                         </div>
-                        <div className="p-8 md:p-12 overflow-y-auto flex-1 prose prose-invert max-w-none">
-                            <div className="text-gray-400 leading-relaxed text-lg whitespace-pre-wrap">
-                                {selectedArticle.content}
+                        <form onSubmit={handleCreateTicket} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Assunto</label>
+                                <input 
+                                    required
+                                    type="text" 
+                                    value={newTicket.subject}
+                                    onChange={e => setNewTicket({...newTicket, subject: e.target.value})}
+                                    placeholder="Ex: Erro na conexão do WhatsApp"
+                                    className="w-full bg-background border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-primary transition"
+                                />
                             </div>
-                        </div>
-                        <div className="p-8 border-t border-white/5 bg-background/50 flex justify-center">
-                            <p className="text-gray-500 text-sm italic">{t[lang].footerNote}</p>
-                        </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Categoria</label>
+                                    <select 
+                                        value={newTicket.category}
+                                        onChange={e => setNewTicket({...newTicket, category: e.target.value})}
+                                        className="w-full bg-background border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-primary transition"
+                                    >
+                                        <option value="technical">Suporte Técnico</option>
+                                        <option value="billing">Financeiro</option>
+                                        <option value="feature_request">Sugestão</option>
+                                        <option value="other">Outro</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Prioridade</label>
+                                    <select 
+                                        value={newTicket.priority}
+                                        onChange={e => setNewTicket({...newTicket, priority: e.target.value})}
+                                        className="w-full bg-background border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-primary transition"
+                                    >
+                                        <option value="low">Baixa</option>
+                                        <option value="medium">Média</option>
+                                        <option value="high">Alta</option>
+                                        <option value="urgent">Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Descrição do Problema</label>
+                                <textarea 
+                                    required
+                                    rows={4}
+                                    value={newTicket.description}
+                                    onChange={e => setNewTicket({...newTicket, description: e.target.value})}
+                                    placeholder="Descreva detalhadamente o que está acontecendo..."
+                                    className="w-full bg-background border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-primary transition resize-none"
+                                />
+                            </div>
+                            <button 
+                                type="submit"
+                                disabled={isSubmittingTicket}
+                                className="w-full bg-primary py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 hover:brightness-110 active:scale-95 transition disabled:opacity-50"
+                            >
+                                {isSubmittingTicket ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        <Plus className="w-5 h-5" />
+                                        <span>Criar Chamado</span>
+                                    </>
+                                )}
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}
