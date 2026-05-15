@@ -1820,13 +1820,13 @@ export default function InstagramManagementPage() {
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 p-12 flex flex-col !bg-white">
+                        <div className="flex-1 p-12 flex flex-col" style={{ backgroundColor: '#FFFFFF', color: '#000000' }}>
                             <div className="flex items-center justify-between mb-10">
                                 <div>
-                                    <h2 className="text-2xl font-black !text-slate-900 uppercase tracking-tight">Nova playlist</h2>
+                                    <h2 className="text-2xl font-black uppercase tracking-tight" style={{ color: '#0f172a' }}>Nova playlist</h2>
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Configure as informações básicas</p>
                                 </div>
-                                <button onClick={() => setIsPlaylistModalOpen(false)} className="w-12 h-12 !bg-gray-50 rounded-2xl flex items-center justify-center hover:!bg-gray-100 transition-all border border-gray-100 text-gray-400 hover:text-slate-900">
+                                <button onClick={() => setIsPlaylistModalOpen(false)} className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all border border-gray-100 text-gray-400" style={{ backgroundColor: '#f8fafc' }}>
                                     <X size={24} />
                                 </button>
                             </div>
