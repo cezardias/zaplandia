@@ -432,7 +432,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                 properties: {
                                     subject: { type: "string", description: "Assunto curto (ex: Ajuda com Automação)" },
                                     description: { type: "string", description: "Resumo do pedido do cliente" },
-                                    category: { type: "string", description: "technical" },
+                                    category: { type: "string", description: "technical, billing, sales" },
                                     priority: { type: "string", description: "medium" }
                                 },
                                 required: ["subject", "description"]
@@ -851,85 +851,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     const funcName = toolCall.function.name;
                     const args = JSON.parse(toolCall.function.arguments);
 
-                    this.logger.log(`[AI_TOOL] Calling ${funcName} with args: ${JSON.stringify(args)}`);
-
-                    // RESOLVE TARGET TENANT (Hierarchy/HQ support)
-                    // RESOLVE TARGET TENANT (Hierarchy/HQ support)
-                    let targetTenantId: string = tenantId || 'default';
-                    let teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [tenantId]);
-                    if (!teams || teams.length === 0) {
-                        const integration = await this.integrationRepository.findOne({ where: { id: promptId } });
-                        targetTenantId = integration?.tenantId || '3ac9368c-af7c-4183-9816-b90513368f53';
-                        teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [targetTenantId]);
-                    }
-
-                    let toolResult: any;
-                    if (funcName === 'transfer_to_team' && tenantId && contactId) {
-                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team/name: ${args.teamId} for tenant ${targetTenantId}`);
-                        
-                        let targetTeamId = args.teamId;
-                        const teamName = args.teamId?.toLowerCase();
-                        
-                        const foundTeam = teams.find(t => 
-                            t.id === targetTeamId || 
-                            (teamName && (t.name.toLowerCase().includes(teamName) || teamName.includes(t.name.toLowerCase())))
-                        );
-
-                        if (foundTeam) {
-                            targetTeamId = foundTeam.id;
-                            this.logger.log(`[AI_TOOL] Resolved team name '${args.teamId}' to ID ${targetTeamId} (${foundTeam.name})`);
-                            
-                            // UPDATE CONTACT: Move to HQ tenant AND assign team
-                            // UPDATE CONTACT: Move to HQ tenant, assign team, AND PAUSE AI
-                            await this.contactRepository.update(contactId, { 
-                                assignedTeamId: targetTeamId,
-                                tenantId: targetTenantId, // Move to HQ
-                                automationPaused: true    // MUTE LISA
-                            });
-                            
-                            this.logger.log(`[AI_TOOL] Automation PAUSED for contact ${contactId} during transfer to HQ.`);
-
-                            // Emit update to BOTH rooms to ensure UI and Widget synchronization
-                            const updatePayload = {
-                                contactId: contactId,
-                                assignedTeamId: targetTeamId,
-                                tenantId: targetTenantId,
-                                automationPaused: true
-                            };
-
-                            this.communicationService.emitToTenant(tenantId, 'contact_updated', updatePayload);
-                            this.communicationService.emitToTenant(targetTenantId, 'contact_updated', updatePayload);
-
-                            toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam.name} e a automação foi pausada para seu atendimento humano.` };
-                        } else {
-                            this.logger.warn(`[AI_TOOL_FAILSAFE] Team '${args.teamId}' not found. Keeping current assignment.`);
-                            toolResult = { success: false, message: `Equipe '${args.teamId}' não encontrada. O atendimento permanece com o responsável atual.` };
-                        }
-                    } else if (funcName === 'get_products' && tenantId) {
-                        toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
-                    } else if (funcName === 'get_raffles' && tenantId) {
-                        toolResult = await this.rifaApiService.getRaffles(tenantId);
-                    } else if (funcName === 'get_tickets' && tenantId) {
-                        toolResult = await this.rifaApiService.getTickets(tenantId, args.raffleId);
-                    } else if (funcName === 'create_raffle_order' && tenantId) {
-                        toolResult = await this.rifaApiService.createOrder(tenantId, args);
-                    } else if (funcName === 'open_ticket' && tenantId && contactId) {
-                        const contact = await this.contactRepository.findOne({ where: { id: contactId } });
-                        this.logger.log(`[AI_TOOL] Opening ticket for contact ${contact?.name || contactId} in tenant ${targetTenantId}`);
-                        
-                        // Use email for requesterName if available to help with hybrid lookup
-                        const requesterIdentity = contact?.email || contact?.name || 'Cliente Externo';
-                        
-                        toolResult = await this.supportService.createTicket(targetTenantId, contactId, {
-                            subject: args.subject,
-                            description: args.description,
-                            category: args.category || 'technical',
-                            priority: args.priority || 'medium',
-                            requesterName: requesterIdentity
-                        });
-                    } else {
-                        toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
-                    }
+                    const toolResult = await this.handleToolCall(
+                        funcName, 
+                        args, 
+                        tenantId, 
+                        contactId, 
+                        promptId
+                    );
 
                     toolResponses.push({
                         role: 'tool',
@@ -1058,59 +986,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     this.logger.log(`[AI_TOOL] Gemini requested tool: ${funcName} with args: ${JSON.stringify(args)}`);
 
-                    let toolResult: any;
-                    if (funcName === 'transfer_to_team' && tenantId && contactId) {
-                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team/name: ${args.teamId}`);
-                        
-                        let targetTeamId = args.teamId;
-                        const teamName = args.teamId?.toLowerCase();
-                        const teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" = $1`, [tenantId]);
-                        
-                        const foundTeam = teams.find(t => 
-                            t.id === targetTeamId || 
-                            t.name.toLowerCase().includes(teamName) ||
-                            teamName.includes(t.name.toLowerCase())
+                        const toolResult = await this.handleToolCall(
+                            funcName, 
+                            args, 
+                            tenantId, 
+                            contactId, 
+                            promptEntity?.id
                         );
-
-                        if (foundTeam) {
-                            targetTeamId = foundTeam.id;
-                            this.logger.log(`[AI_TOOL] Resolved team name '${args.teamId}' to ID ${targetTeamId} (${foundTeam.name})`);
-                        } else {
-                            // FAILSAFE: If resolution fails, use the first team available for this tenant
-                            if (teams && teams.length > 0) {
-                                targetTeamId = teams[0].id;
-                                this.logger.warn(`[AI_TOOL_FAILSAFE] Team '${args.teamId}' not found for tenant ${tenantId}. Redirecting to first team: ${teams[0].name} (${targetTeamId})`);
-                            } else {
-                                this.logger.error(`[AI_TOOL_FATAL] No teams found for tenant ${tenantId}. Transfer failed.`);
-                            }
-                        }
-
-                        await this.contactRepository.update(contactId, { assignedTeamId: targetTeamId });
-                        // Emit update via socket
-                        this.communicationService.emitToTenant(tenantId, 'contact_updated', {
-                            contactId: contactId,
-                            assignedTeamId: targetTeamId
-                        });
-                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam?.name || (teams[0]?.name || targetTeamId)}.` };
-                    } else if (funcName === 'get_products' && tenantId) {
-                        toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
-                    } else if (funcName === 'get_raffles' && tenantId) {
-                        toolResult = await this.rifaApiService.getRaffles(tenantId);
-                    } else if (funcName === 'get_tickets' && tenantId) {
-                        toolResult = await this.rifaApiService.getTickets(tenantId, args.raffleId);
-                    } else if (funcName === 'create_raffle_order' && tenantId) {
-                        toolResult = await this.rifaApiService.createOrder(tenantId, args);
-                    } else if (funcName === 'open_ticket' && tenantId && contactId) {
-                        this.logger.log(`[AI_TOOL] Opening ticket for contact ${contactId}`);
-                        toolResult = await this.supportService.createTicket(tenantId, contactId, {
-                            subject: args.subject,
-                            description: args.description,
-                            category: args.category || 'technical',
-                            priority: args.priority || 'medium'
-                        });
-                    } else {
-                        toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
-                    }
 
                     this.logger.log(`[AI_TOOL] Tool ${funcName} result received. Re-sending to Gemini...`);
 
@@ -1287,5 +1169,73 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             ...m2,
             contact: { id: contactId, name: 'User Lisa Chat', provider: 'site' }
         });
+    }
+
+    private async handleToolCall(funcName: string, args: any, tenantId: string, contactId: string, promptId?: string): Promise<any> {
+        try {
+            this.logger.log(`[AI_TOOL_EXEC] Executing ${funcName} for contact ${contactId}`);
+
+            // RESOLVE TARGET TENANT (Hierarchy/HQ support)
+            let targetTenantId: string = tenantId || 'default';
+            let teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [tenantId]);
+            
+            if (!teams || teams.length === 0) {
+                const integration = promptId ? await this.integrationRepository.findOne({ where: { id: promptId } }) : null;
+                targetTenantId = integration?.tenantId || '3ac9368c-af7c-4183-9816-b90513368f53'; // Master HQ fallback
+                teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [targetTenantId]);
+            }
+
+            if (funcName === 'transfer_to_team' && tenantId && contactId) {
+                let targetTeamId = args.teamId;
+                const teamName = args.teamId?.toLowerCase();
+                
+                const foundTeam = teams.find(t => 
+                    t.id === targetTeamId || 
+                    (teamName && (t.name.toLowerCase().includes(teamName) || teamName.includes(t.name.toLowerCase())))
+                );
+
+                if (foundTeam) {
+                    targetTeamId = foundTeam.id;
+                    await this.contactRepository.update(contactId, { 
+                        assignedTeamId: targetTeamId,
+                        tenantId: targetTenantId, 
+                        automationPaused: true
+                    });
+
+                    const updatePayload = { contactId, assignedTeamId: targetTeamId, tenantId: targetTenantId, automationPaused: true };
+                    this.communicationService.emitToTenant(tenantId, 'contact_updated', updatePayload);
+                    this.communicationService.emitToTenant(targetTenantId, 'contact_updated', updatePayload);
+                    
+                    return { success: true, message: `Transferido para equipe ${foundTeam.name}. Automação pausada.` };
+                }
+                return { error: `Equipe '${args.teamId}' não encontrada.` };
+
+            } else if (funcName === 'open_ticket' && tenantId && contactId) {
+                const contact = await this.contactRepository.findOne({ where: { id: contactId } });
+                const requesterIdentity = contact?.email || contact?.name || 'Cliente Externo';
+                
+                return this.supportService.createTicket(targetTenantId, contactId, {
+                    subject: args.subject,
+                    description: args.description,
+                    category: args.category || 'technical',
+                    priority: args.priority || 'medium',
+                    requesterName: requesterIdentity
+                });
+
+            } else if (funcName === 'get_products') {
+                return this.erpZaplandiaService.getProducts(tenantId, args.search);
+            } else if (funcName === 'get_raffles') {
+                return this.rifaApiService.getRaffles(tenantId);
+            } else if (funcName === 'get_tickets') {
+                return this.rifaApiService.getTickets(tenantId, args.raffleId);
+            } else if (funcName === 'create_raffle_order') {
+                return this.rifaApiService.createOrder(tenantId, args);
+            }
+
+            return { error: `Tool ${funcName} not implemented` };
+        } catch (error) {
+            this.logger.error(`[AI_TOOL_ERROR] Failed to execute ${funcName}: ${error.message}`);
+            return { error: `Internal error during tool execution: ${error.message}` };
+        }
     }
 }
