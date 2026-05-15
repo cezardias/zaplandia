@@ -953,8 +953,7 @@ Zaplandia ha bisogno di un token che non scada:
                                     >
                                         <option value="technical">Suporte Técnico</option>
                                         <option value="billing">Financeiro</option>
-                                        <option value="feature_request">Sugestão</option>
-                                        <option value="other">Outro</option>
+                                        <option value="sales">Comercial</option>
                                     </select>
                                 </div>
                                 <div>
