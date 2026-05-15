@@ -443,10 +443,13 @@ O Zaplandia precisa de um token que não expire:
         });
     }
 
-    async findUserTickets(tenantId: string, requesterId: string) {
+    async findUserTickets(tenantId: string, requesterId: string, role?: string) {
+        if (role === 'admin' || role === 'superadmin') {
+            return this.findAllTickets(tenantId, role);
+        }
         return this.ticketRepository.find({
             where: { tenantId, requesterId },
-            relations: ['assignee'],
+            relations: ['assignee', 'requester'],
             order: { createdAt: 'DESC' }
         });
     }

@@ -27,10 +27,7 @@ export class SupportController {
 
     @Get('tickets')
     async getTickets(@Request() req: any) {
-        if (req.user.role === 'superadmin' || req.user.role === 'admin') {
-            return this.supportService.findAllTickets(req.user.tenantId, req.user.role);
-        }
-        return this.supportService.findUserTickets(req.user.tenantId, req.user.userId);
+        return this.supportService.findUserTickets(req.user.tenantId, req.user.userId, req.user.role);
     }
 
     @Post('tickets')
