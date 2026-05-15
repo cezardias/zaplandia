@@ -406,10 +406,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             let modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
 
             if (isInternal) {
-                // 🚀 SPEED OPTIMIZATION: Use a single model for all agents (CRM, HELP, ARCHITECT)
-                // This keeps the model "hot" in RAM and avoids slow swaps.
-                this.logger.log(`[AI_INTERNAL] Using unified model qwen2.5:3b for internal agent.`);
-                modelsToTry = ['qwen2.5:3b', 'zaplandia-lisa'];
+                // 💎 A ÚNICA LISA: Focar toda a inteligência no modelo unificado 'zaplandia-lisa'
+                this.logger.log(`[AI_INTERNAL] Using primary model 'zaplandia-lisa' for all internal agents.`);
+                modelsToTry = ['zaplandia-lisa', 'qwen2.5:3b'];
             }
 
             let aiResponse: string | null = null;
@@ -628,16 +627,18 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             // --- 1. LISA ZAPLANDIA (Ollama self-hosted - GRÁTIS, sem token!) ---
             const ollamaUrl = this.getOllamaBaseUrl();
             if (ollamaUrl) {
-                // Usa qwen2.5:3b como padrão para velocidade.
+                // A Lisa é a nossa prioridade absoluta.
                 const ollamaModel = (modelName && !modelName.includes('/') && !modelName.startsWith('gemini'))
                     ? modelName
-                    : 'qwen2.5:3b';
+                    : 'zaplandia-lisa';
+                
+                const finalOllamaModel = ollamaModel === 'qwen2.5:3b' ? 'zaplandia-lisa' : ollamaModel;
 
-                this.logger.debug(`[LISA] Calling Ollama model: ${ollamaModel}`);
+                this.logger.debug(`[LISA] Calling Ollama model: ${finalOllamaModel}`);
                 try {
-                    const aiResponse = await this.callOllama(ollamaModel, finalPrompt, 4096, systemInstruction);
+                    const aiResponse = await this.callOllama(finalOllamaModel, finalPrompt, 4096, systemInstruction);
                     if (aiResponse) {
-                        this.logger.log(`[LISA_SUCCESS] Ollama model ${ollamaModel} responded.`);
+                        this.logger.log(`[LISA_SUCCESS] Ollama model ${finalOllamaModel} responded.`);
                         return aiResponse;
                     }
                 } catch (error) {
