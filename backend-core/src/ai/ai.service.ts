@@ -165,6 +165,45 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
+    private getOllamaBaseUrl(): string | null {
+        return process.env.OLLAMA_BASE_URL || null;
+    }
+
+    private async callOllama(model: string, prompt: string, maxTokens: number, systemInstruction?: string): Promise<string | null> {
+        const baseUrl = this.getOllamaBaseUrl();
+        if (!baseUrl) return null;
+
+        try {
+            const messages: any[] = [];
+            if (systemInstruction) {
+                messages.push({ role: 'system', content: systemInstruction });
+            }
+            messages.push({ role: 'user', content: prompt });
+
+            const response = await axios.post(
+                `${baseUrl}/api/chat`,
+                {
+                    model,
+                    messages,
+                    stream: false,
+                    options: { num_predict: maxTokens, temperature: 0.7 }
+                },
+                { timeout: 120000 } // 2 minutes - local inference is slower
+            );
+
+            const content = response.data?.message?.content;
+            if (content) {
+                this.logger.log(`[OLLAMA] Response received from ${model} (${content.length} chars)`);
+                return content;
+            }
+            return null;
+        } catch (error) {
+            const detail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+            this.logger.warn(`[OLLAMA] Failed calling ${model}: ${detail}`);
+            throw error;
+        }
+    }
+
     async shouldRespond(contact: Contact, instanceName: string, tenantId: string): Promise<boolean> {
         const integrations = await this.integrationRepository.find({
             where: {
@@ -542,7 +581,23 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const systemInstruction = context || 'Você é o assistente da Zaplandia.';
             const finalPrompt = prompt;
 
-            // --- 1. Try Gemini first ---
+            // --- 1. Try Ollama FIRST (self-hosted, free!) ---
+            const ollamaUrl = this.getOllamaBaseUrl();
+            if (ollamaUrl) {
+                const ollamaModel = (modelName && !modelName.includes('/')) ? modelName : 'qwen2.5:7b';
+                this.logger.debug(`[AI_OLLAMA_ATTEMPT] Trying Ollama model: ${ollamaModel}`);
+                try {
+                    const aiResponse = await this.callOllama(ollamaModel, finalPrompt, 2048, systemInstruction);
+                    if (aiResponse) {
+                        this.logger.log(`[AI_OLLAMA_SUCCESS] Ollama model ${ollamaModel} responded.`);
+                        return aiResponse;
+                    }
+                } catch (error) {
+                    this.logger.warn(`[AI_OLLAMA_FAIL] Ollama failed: ${error.message}. Falling back to cloud providers...`);
+                }
+            }
+
+            // --- 2. Try Gemini ---
             const geminiKey = await this.getGeminiApiKey(tenantId);
             if (geminiKey) {
                 const startModel = modelName && !modelName.includes('/') ? modelName : 'gemini-2.0-flash';
@@ -561,7 +616,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         lastGeminiError = error;
                         const status = error.response?.status;
                         this.logger.warn(`[AI_WAND_FAIL] Model ${model} failed: ${error.message}`);
-                        // On rate limit, stop trying more gemini models (quota exhausted)
                         if (status === 429) {
                             this.logger.warn(`[AI_WAND] Gemini quota exhausted (429). Falling back to OpenRouter...`);
                             break;
@@ -575,7 +629,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 this.logger.warn(`[AI_REQUEST] No Gemini key for tenant ${tenantId}. Trying OpenRouter...`);
             }
 
-            // --- 2. Fallback to OpenRouter ---
+            // --- 3. Last resort: OpenRouter ---
             const openRouterKey = await this.getOpenRouterApiKey(tenantId);
             if (openRouterKey) {
                 const orModel = modelName && modelName.includes('/') ? modelName : 'deepseek/deepseek-r1';

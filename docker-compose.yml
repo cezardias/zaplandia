@@ -23,9 +23,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
-    # volumes:
-    #   - ./backend-core:/app
-    #   - /app/node_modules
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -36,11 +33,13 @@ services:
       - REDIS_PORT=6379
       - JWT_SECRET=zaplandia_super_secret_key_2026
       - AI_SERVICE_URL=http://backend-ai:8000
+      - OLLAMA_BASE_URL=http://ollama:11434
       - INTERNAL_WEBHOOK_URL=https://www.zaplandia.com.br/api/webhooks/evolution
       - TZ=UTC
     depends_on:
       - postgres
       - redis
+      - ollama
     networks:
       - zaplandia-network
 
@@ -52,14 +51,32 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    # volumes:
-    #   - ./backend-ai:/app
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - TZ=America/Sao_Paulo
     depends_on:
       - redis
+    networks:
+      - zaplandia-network
+
+  # 🤖 Ollama - LLM Própria da Zaplandia (GRÁTIS, sem custo de token!)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: zaplandia-ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+    deploy:
+      resources:
+        limits:
+          memory: 6G
     networks:
       - zaplandia-network
 
@@ -99,3 +116,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  ollama_data:
