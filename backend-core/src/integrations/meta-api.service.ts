@@ -405,6 +405,29 @@ export class MetaApiService {
             throw new Error(`Meta API Error: ${detailedMsg}`);
         }
     }
+    /**
+     * Get Facebook Page Media (Posts)
+     */
+    async getFacebookMedia(tenantId: string) {
+        try {
+            const { accessToken: defaultToken, facebookAccessToken, facebookPageId } = await this.getCredentials(tenantId);
+            const accessToken = facebookAccessToken || defaultToken;
+            
+            let id = facebookPageId;
+            if (!id) throw new Error('FACEBOOK_PAGE_ID not configured');
+
+            const response = await axios.get(
+                `https://graph.facebook.com/v18.0/${id}/feed`,
+                { params: { access_token: accessToken, fields: 'id,message,full_picture,permalink_url,created_time' } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[FACEBOOK_MEDIA] Failed to fetch feed: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
 
     /**
      * Get Instagram Highlights
@@ -444,6 +467,30 @@ export class MetaApiService {
         } catch (error: any) {
             const detailedMsg = error.response?.data?.error?.message || error.message;
             this.logger.error(`[INSTAGRAM_HIGHLIGHTS] Failed to fetch highlights: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
+
+    /**
+     * Get Facebook Page Media (Posts)
+     */
+    async getFacebookMedia(tenantId: string) {
+        try {
+            const { accessToken: defaultToken, facebookAccessToken, facebookPageId } = await this.getCredentials(tenantId);
+            const accessToken = facebookAccessToken || defaultToken;
+            
+            let id = facebookPageId;
+            if (!id) throw new Error('FACEBOOK_PAGE_ID not configured');
+
+            const response = await axios.get(
+                `https://graph.facebook.com/v18.0/${id}/feed`,
+                { params: { access_token: accessToken, fields: 'id,message,full_picture,permalink_url,created_time' } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[FACEBOOK_MEDIA] Failed to fetch feed: ${detailedMsg}`);
             throw new Error(`Meta API Error: ${detailedMsg}`);
         }
     }

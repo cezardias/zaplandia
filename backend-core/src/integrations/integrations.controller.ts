@@ -458,6 +458,12 @@ export class IntegrationsController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Get('facebook/media')
+    async getFacebookMedia(@Request() req) {
+        return this.metaApiService.getFacebookMedia(req.user.tenantId);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Get('instagram/media/:mediaId/comments')
     async getInstagramComments(@Request() req, @Param('mediaId') mediaId: string) {
         return this.metaApiService.getInstagramComments(req.user.tenantId, mediaId);

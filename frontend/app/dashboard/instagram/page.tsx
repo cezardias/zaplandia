@@ -263,6 +263,8 @@ export default function InstagramManagementPage() {
     const [isLoadingLikes, setIsLoadingLikes] = useState(false);
     const [highlights, setHighlights] = useState<any[]>([]);
     const [abTests, setAbTests] = useState<any[]>([]);
+    const [facebookMedia, setFacebookMedia] = useState<any[]>([]);
+    const [viewMode, setViewMode] = useState<'feed' | 'grid'>('grid');
     const [isABModalOpen, setIsABModalOpen] = useState(false);
     const [abStep, setAbStep] = useState(1);
     const [abData, setAbData] = useState({
@@ -279,6 +281,7 @@ export default function InstagramManagementPage() {
             fetchInsights();
             fetchHighlights();
             fetchABTests();
+            fetchFacebookMedia();
         }
     }, [token, sidebarTab]);
 
@@ -341,6 +344,16 @@ export default function InstagramManagementPage() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const fetchFacebookMedia = async () => {
+        try {
+            const res = await fetch('/api/integrations/facebook/media', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok && data.data) setFacebookMedia(data.data);
+        } catch (e) {}
     };
 
     const fetchABTests = async () => {
@@ -649,7 +662,129 @@ export default function InstagramManagementPage() {
 
                 {/* Content Table Container */}
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                    {sidebarTab === 'ab_tests' ? (
+                    {sidebarTab === 'feed_and_grid' ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+                            {/* Facebook Column */}
+                            <div className="space-y-6">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                                        <Facebook size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-tight">Facebook Page</h3>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Feed de Notícias</p>
+                                    </div>
+                                </div>
+                                <div className="bg-surface/30 border border-white/5 rounded-[48px] p-8 space-y-6 min-h-[600px]">
+                                    {facebookMedia.length === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center space-y-6 py-20">
+                                            <div className="w-20 h-20 bg-white/5 rounded-[32px] flex items-center justify-center border border-white/5 opacity-50">
+                                                <Facebook size={32} className="text-gray-600" />
+                                            </div>
+                                            <p className="text-gray-600 font-black text-xs uppercase tracking-widest">Nenhum post no Facebook</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-8">
+                                            {facebookMedia.map(post => (
+                                                <div key={post.id} className="bg-black/20 border border-white/5 rounded-3xl overflow-hidden group hover:border-blue-500/30 transition-all">
+                                                    {post.full_picture && (
+                                                        <div className="aspect-video overflow-hidden">
+                                                            <img src={post.full_picture} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
+                                                        </div>
+                                                    )}
+                                                    <div className="p-6 space-y-3">
+                                                        <p className="text-sm text-gray-300 line-clamp-3 font-medium leading-relaxed">{post.message}</p>
+                                                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{new Date(post.created_time).toLocaleDateString()}</span>
+                                                            <button className="text-[9px] font-black text-blue-500 uppercase tracking-widest hover:underline">Ver no Facebook</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Instagram Column */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-pink-500/20">
+                                            <Instagram size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black text-white uppercase tracking-tight">Instagram Business</h3>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Visualização de Perfil</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex bg-black/40 p-1 rounded-2xl border border-white/5">
+                                        <button 
+                                            onClick={() => setViewMode('feed')}
+                                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${viewMode === 'feed' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:text-gray-300'}`}
+                                        >
+                                            Feed
+                                        </button>
+                                        <button 
+                                            onClick={() => setViewMode('grid')}
+                                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition ${viewMode === 'grid' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-500 hover:text-gray-300'}`}
+                                        >
+                                            Grade
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-surface/30 border border-white/5 rounded-[48px] p-8 space-y-6 min-h-[600px]">
+                                    {viewMode === 'grid' ? (
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {mediaList.map(media => (
+                                                <div 
+                                                    key={media.id} 
+                                                    onClick={() => setSelectedMedia(media)}
+                                                    className="aspect-square rounded-2xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all cursor-pointer group relative"
+                                                >
+                                                    <img src={media.thumbnail_url || media.media_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                                                    <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <Eye size={20} className="text-white" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="max-w-[400px] mx-auto space-y-12">
+                                            {mediaList.map(media => (
+                                                <div key={media.id} className="bg-black/20 border border-white/5 rounded-[32px] overflow-hidden space-y-4 pb-6 group hover:border-primary/30 transition-all">
+                                                    <div className="p-4 flex items-center space-x-3">
+                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[1.5px]">
+                                                            <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[10px] font-black">Z</div>
+                                                        </div>
+                                                        <span className="text-[11px] font-black text-white">zap.landia</span>
+                                                    </div>
+                                                    <div className="aspect-square overflow-hidden bg-black">
+                                                        <img src={media.media_url} className="w-full h-full object-cover" alt="" />
+                                                    </div>
+                                                    <div className="px-6 py-2 space-y-4">
+                                                        <div className="flex items-center space-x-4">
+                                                            <Heart size={20} className="text-gray-400 hover:text-red-500 cursor-pointer transition-colors" />
+                                                            <MessageCircle size={20} className="text-gray-400 hover:text-primary cursor-pointer transition-colors" />
+                                                            <Share2 size={20} className="text-gray-400 hover:text-primary cursor-pointer transition-colors" />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <p className="text-[11px] font-black text-white">{media.like_count.toLocaleString()} curtidas</p>
+                                                            <p className="text-[11px] text-gray-400 font-medium leading-relaxed line-clamp-2">
+                                                                <span className="font-black text-white mr-2">zap.landia</span>
+                                                                {media.caption}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ) : sidebarTab === 'ab_tests' ? (
                         <div className="space-y-8">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-xl font-black text-white uppercase tracking-tight">Seus Testes A/B</h2>
