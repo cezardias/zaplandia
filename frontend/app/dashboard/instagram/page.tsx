@@ -262,12 +262,23 @@ export default function InstagramManagementPage() {
     const [likes, setLikes] = useState<any[]>([]);
     const [isLoadingLikes, setIsLoadingLikes] = useState(false);
     const [highlights, setHighlights] = useState<any[]>([]);
+    const [abTests, setAbTests] = useState<any[]>([]);
+    const [isABModalOpen, setIsABModalOpen] = useState(false);
+    const [abStep, setAbStep] = useState(1);
+    const [abData, setAbData] = useState({
+        title: '',
+        goal: 'engagement',
+        duration: '24',
+        versionA: { caption: '', imageUrl: '' },
+        versionB: { caption: '', imageUrl: '' }
+    });
 
     useEffect(() => {
         if (token) {
             fetchMedia();
             fetchInsights();
             fetchHighlights();
+            fetchABTests();
         }
     }, [token, sidebarTab]);
 
@@ -327,6 +338,39 @@ export default function InstagramManagementPage() {
             }
         } catch (e) {
             alert('Erro na rede');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchABTests = async () => {
+        try {
+            const res = await fetch('/api/integrations/instagram/ab-tests', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) setAbTests(data);
+        } catch (e) {}
+    };
+
+    const handleCreateABTest = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/integrations/instagram/ab-tests', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(abData)
+            });
+            if (res.ok) {
+                alert('Teste A/B Criado com Sucesso!');
+                setIsABModalOpen(false);
+                fetchABTests();
+            }
+        } catch (e) {
+            alert('Erro ao criar teste');
         } finally {
             setIsLoading(false);
         }
@@ -605,7 +649,85 @@ export default function InstagramManagementPage() {
 
                 {/* Content Table Container */}
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                    {isLoading ? (
+                    {sidebarTab === 'ab_tests' ? (
+                        <div className="space-y-8">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-black text-white uppercase tracking-tight">Seus Testes A/B</h2>
+                                <button 
+                                    onClick={() => {
+                                        setAbStep(1);
+                                        setIsABModalOpen(true);
+                                    }}
+                                    className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl font-black text-xs shadow-lg shadow-primary/20 transition flex items-center space-x-2"
+                                >
+                                    <Plus size={16} />
+                                    <span>Novo Teste</span>
+                                </button>
+                            </div>
+
+                            {abTests.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center space-y-8 py-20 bg-surface/30 rounded-[48px] border border-white/5">
+                                    <div className="w-32 h-32 bg-white/5 rounded-[40px] flex items-center justify-center border border-white/5">
+                                        <Zap size={64} className="text-gray-800" />
+                                    </div>
+                                    <div className="text-center">
+                                        <h3 className="text-2xl font-black text-gray-400 uppercase tracking-tight">Nenhum teste A/B ativo</h3>
+                                        <p className="text-gray-600 mt-3 font-medium">Compare versões de posts e descubra o que engaja mais.</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {abTests.map(test => (
+                                        <div key={test.id} className="bg-surface border border-white/5 rounded-[40px] p-8 space-y-6 hover:border-primary/30 transition-all group">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="p-2 bg-primary/10 rounded-lg"><Zap size={16} className="text-primary" /></div>
+                                                    <span className="text-sm font-black text-white">{test.title}</span>
+                                                </div>
+                                                <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${
+                                                    test.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-gray-500/10 text-gray-500'
+                                                }`}>
+                                                    {test.status === 'active' ? 'Em Andamento' : 'Finalizado'}
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4 relative">
+                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-black border border-white/10 w-10 h-10 rounded-full flex items-center justify-center font-black text-xs text-primary shadow-2xl">VS</div>
+                                                
+                                                <div className="space-y-3">
+                                                    <div className="aspect-square rounded-2xl bg-black overflow-hidden border border-white/5">
+                                                        <img src={test.versionA.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                    </div>
+                                                    <div className="flex items-center justify-between px-2">
+                                                        <span className="text-[10px] font-black text-gray-500 uppercase">Versão A</span>
+                                                        <span className="text-xs font-black text-primary">{test.versionA.performance}%</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <div className="aspect-square rounded-2xl bg-black overflow-hidden border border-white/5">
+                                                        <img src={test.versionB.imageUrl} className="w-full h-full object-cover" alt="" />
+                                                    </div>
+                                                    <div className="flex items-center justify-between px-2">
+                                                        <span className="text-[10px] font-black text-gray-500 uppercase">Versão B</span>
+                                                        <span className="text-xs font-black text-white">{test.versionB.performance}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Objetivo</span>
+                                                    <span className="text-xs font-bold text-gray-400 capitalize">{test.goal}</span>
+                                                </div>
+                                                <button className="text-xs font-black text-primary uppercase tracking-widest hover:underline">Ver Relatório</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : isLoading ? (
                         <div className="h-full flex flex-col items-center justify-center space-y-4">
                             <Loader2 className="w-12 h-12 text-primary animate-spin" />
                             <p className="text-gray-500 font-black uppercase tracking-widest animate-pulse">Sincronizando conteúdos...</p>
@@ -1005,6 +1127,159 @@ export default function InstagramManagementPage() {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal de Teste A/B - WIZARD */}
+            {isABModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="bg-surface border border-white/10 w-full max-w-4xl rounded-[48px] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col h-full max-h-[750px]">
+                        <div className="p-10 border-b border-white/5 flex items-center justify-between bg-black/20">
+                            <div className="flex items-center space-x-4">
+                                <div className="p-3 bg-primary rounded-2xl shadow-lg shadow-primary/20">
+                                    <Zap size={24} className="text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black tracking-tight">Criar Teste A/B</h2>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Passo {abStep} de 3</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsABModalOpen(false)} className="p-3 hover:bg-white/5 rounded-2xl transition text-gray-500">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+                            {abStep === 1 && (
+                                <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nome do Teste</label>
+                                        <input 
+                                            type="text" 
+                                            value={abData.title}
+                                            onChange={(e) => setAbData({...abData, title: e.target.value})}
+                                            placeholder="Ex: Teste de Conversão - Coleção Verão"
+                                            className="w-full bg-black/40 border border-white/5 rounded-[24px] px-6 py-4 text-sm text-gray-200 outline-none focus:border-primary/50 transition-all"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Objetivo</label>
+                                            <select 
+                                                value={abData.goal}
+                                                onChange={(e) => setAbData({...abData, goal: e.target.value})}
+                                                className="w-full bg-black/40 border border-white/5 rounded-[24px] px-6 py-4 text-sm text-gray-200 outline-none focus:border-primary/50"
+                                            >
+                                                <option value="engagement">Maximizar Engajamento</option>
+                                                <option value="reach">Maximizar Alcance</option>
+                                                <option value="saves">Maximizar Salvamentos</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Duração (Horas)</label>
+                                            <select 
+                                                value={abData.duration}
+                                                onChange={(e) => setAbData({...abData, duration: e.target.value})}
+                                                className="w-full bg-black/40 border border-white/5 rounded-[24px] px-6 py-4 text-sm text-gray-200 outline-none focus:border-primary/50"
+                                            >
+                                                <option value="12">12 Horas</option>
+                                                <option value="24">24 Horas</option>
+                                                <option value="48">48 Horas</option>
+                                                <option value="72">72 Horas</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {abStep === 2 && (
+                                <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                                    <div className="p-6 bg-primary/5 border border-primary/10 rounded-[32px]">
+                                        <div className="flex items-center space-x-3 mb-6">
+                                            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-black text-white">A</div>
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-primary">Versão A (Controle)</h3>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-4">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">URL da Imagem</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={abData.versionA.imageUrl}
+                                                    onChange={(e) => setAbData({...abData, versionA: {...abData.versionA, imageUrl: e.target.value}})}
+                                                    placeholder="https://..."
+                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-3 text-xs text-gray-200"
+                                                />
+                                            </div>
+                                            <div className="space-y-4">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Legenda</label>
+                                                <textarea 
+                                                    value={abData.versionA.caption}
+                                                    onChange={(e) => setAbData({...abData, versionA: {...abData.versionA, caption: e.target.value}})}
+                                                    className="w-full h-24 bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-gray-200 resize-none"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {abStep === 3 && (
+                                <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                                    <div className="p-6 bg-purple-500/5 border border-purple-500/10 rounded-[32px]">
+                                        <div className="flex items-center space-x-3 mb-6">
+                                            <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-xs font-black text-white">B</div>
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-purple-500">Versão B (Variação)</h3>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-4">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">URL da Imagem</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={abData.versionB.imageUrl}
+                                                    onChange={(e) => setAbData({...abData, versionB: {...abData.versionB, imageUrl: e.target.value}})}
+                                                    placeholder="https://..."
+                                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-3 text-xs text-gray-200"
+                                                />
+                                            </div>
+                                            <div className="space-y-4">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Legenda</label>
+                                                <textarea 
+                                                    value={abData.versionB.caption}
+                                                    onChange={(e) => setAbData({...abData, versionB: {...abData.versionB, caption: e.target.value}})}
+                                                    className="w-full h-24 bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-gray-200 resize-none"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-10 border-t border-white/5 flex items-center justify-between bg-black/20">
+                            <button 
+                                onClick={() => setAbStep(Math.max(1, abStep - 1))}
+                                disabled={abStep === 1}
+                                className="px-8 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-400 disabled:opacity-0 transition"
+                            >
+                                Voltar
+                            </button>
+                            {abStep < 3 ? (
+                                <button 
+                                    onClick={() => setAbStep(abStep + 1)}
+                                    className="px-8 py-3 bg-primary hover:bg-primary-dark rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/20 transition"
+                                >
+                                    Próximo
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={handleCreateABTest}
+                                    className="px-8 py-3 bg-primary hover:bg-primary-dark rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/20 transition flex items-center space-x-2"
+                                >
+                                    <Zap size={14} />
+                                    <span>Iniciar Teste</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
