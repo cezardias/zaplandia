@@ -348,7 +348,7 @@ export default function AutomationsPage() {
                                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary/20 text-primary' : 'bg-white/10 text-gray-400'}`}>
                                                     {msg.role === 'user' ? <Terminal size={16} /> : <Bot size={18} />}
                                                 </div>
-                                                <div className={`p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-surface border border-white/5 text-gray-200'}`}>
+                                                <div className={`p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-surface border border-white/5 text-white'}`}>
                                                     {msg.content}
                                                 </div>
                                             </div>
