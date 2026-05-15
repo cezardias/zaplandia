@@ -57,6 +57,8 @@ interface Media {
     timestamp: string;
     comments_count: number;
     like_count: number;
+    media_product_type?: string;
+    video_title?: string;
 }
 
 interface Comment {
@@ -270,6 +272,7 @@ export default function InstagramManagementPage() {
     const [facebookMedia, setFacebookMedia] = useState<any[]>([]);
     const [tags, setTags] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'feed' | 'grid'>('grid');
+    const [reelsSubTab, setReelsSubTab] = useState<'all' | 'stream'>('all');
     const [isABModalOpen, setIsABModalOpen] = useState(false);
     const [abStep, setAbStep] = useState(1);
     const [abData, setAbData] = useState({
@@ -846,6 +849,85 @@ export default function InstagramManagementPage() {
                                                         <ExternalLink size={10} />
                                                     </a>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : sidebarTab === 'clips' ? (
+                        <div className="space-y-8">
+                            <div className="flex flex-col space-y-6">
+                                <div className="flex items-center space-x-6 border-b border-white/5 pb-4">
+                                    <button 
+                                        onClick={() => setReelsSubTab('all')}
+                                        className={`pb-4 px-2 text-xs font-black uppercase tracking-widest transition-all relative ${reelsSubTab === 'all' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                                    >
+                                        Todos os clipes
+                                        {reelsSubTab === 'all' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+                                    </button>
+                                    <button 
+                                        onClick={() => setReelsSubTab('stream')}
+                                        className={`pb-4 px-2 text-xs font-black uppercase tracking-widest transition-all relative ${reelsSubTab === 'stream' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                                    >
+                                        Clipes por stream
+                                        {reelsSubTab === 'stream' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div className="relative group max-w-md w-full">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={16} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Pesquisar por ID ou legenda"
+                                            className="w-full bg-surface border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-xs font-bold text-white focus:outline-none focus:border-primary/50 transition-all"
+                                        />
+                                    </div>
+                                    <div className="flex items-center space-x-4">
+                                        <button className="flex items-center space-x-2 bg-surface border border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:border-white/20 transition-all">
+                                            <Calendar size={14} />
+                                            <span>Últimos 90 dias</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {mediaList.filter(m => m.media_product_type === 'REELS' || m.media_type === 'VIDEO').length === 0 ? (
+                                <div className="bg-surface/30 border border-white/5 rounded-[48px] p-20 flex flex-col items-center justify-center text-center space-y-6">
+                                    <div className="w-24 h-24 bg-white/5 rounded-[40px] flex items-center justify-center border border-white/5">
+                                        <Clapperboard size={40} className="text-gray-600" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-gray-400 font-black text-sm uppercase tracking-widest">Nenhum clipe encontrado</p>
+                                        <p className="text-gray-600 text-[11px] font-medium max-w-[300px]">Seus Reels e vídeos curtos aparecerão aqui para análise de performance.</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                    {mediaList.filter(m => m.media_product_type === 'REELS' || m.media_type === 'VIDEO').map(reel => (
+                                        <div key={reel.id} onClick={() => setSelectedMedia(reel)} className="bg-surface/30 border border-white/5 rounded-3xl overflow-hidden group hover:border-primary/50 transition-all cursor-pointer">
+                                            <div className="aspect-[9/16] relative overflow-hidden bg-black">
+                                                <img src={reel.thumbnail_url || reel.media_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                                                    <div className="flex items-center justify-between text-white text-[10px] font-black uppercase">
+                                                        <div className="flex items-center space-x-2">
+                                                            <Heart size={12} className="text-red-500" />
+                                                            <span>{reel.like_count}</span>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <MessageCircle size={12} className="text-primary" />
+                                                            <span>{reel.comments_count}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-xl border border-white/10">
+                                                    <Clapperboard size={14} className="text-white" />
+                                                </div>
+                                            </div>
+                                            <div className="p-4">
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{reel.video_title || 'Sem título'}</p>
+                                                <p className="text-[11px] text-gray-500 font-medium line-clamp-1 mt-1">{reel.caption}</p>
                                             </div>
                                         </div>
                                     ))}

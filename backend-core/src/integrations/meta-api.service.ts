@@ -299,7 +299,7 @@ export class MetaApiService {
                 // Attempt 1: Direct fetch (assuming id is Instagram Business Account ID)
                 const response = await axios.get(
                     `https://graph.facebook.com/v18.0/${id}/media`,
-                    { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count,owner{id,username,profile_picture_url}' } }
+                    { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count,owner{id,username,profile_picture_url},media_product_type,video_title' } }
                 );
                 return response.data;
             } catch (error: any) {
