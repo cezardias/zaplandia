@@ -598,14 +598,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     }
                 } catch (error) {
                     this.logger.warn(`[LISA_FAIL] Ollama failed (${error.message}). Falling back to OpenRouter...`);
-                    // If zaplandia-lisa not found yet, try qwen2.5:7b directly
+                    // If zaplandia-lisa not found yet, try qwen2.5:3b directly
                     if (error.message?.includes('model') || error.message?.includes('404')) {
                         try {
-                            this.logger.log(`[LISA] Trying fallback model qwen2.5:7b...`);
-                            const fallback = await this.callOllama('qwen2.5:7b', finalPrompt, 4096, systemInstruction);
+                            this.logger.log(`[LISA] Trying fallback model qwen2.5:3b...`);
+                            const fallback = await this.callOllama('qwen2.5:3b', finalPrompt, 4096, systemInstruction);
                             if (fallback) return fallback;
                         } catch (e) {
-                            this.logger.warn(`[LISA] qwen2.5:7b also failed: ${e.message}`);
+                            this.logger.warn(`[LISA] qwen2.5:3b also failed: ${e.message}`);
                         }
                     }
                 }
