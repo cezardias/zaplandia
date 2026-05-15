@@ -1016,7 +1016,7 @@ export default function InstagramManagementPage() {
                                     <h2 className="text-xl font-black text-white uppercase tracking-tight">{txt.sections.cross_post}</h2>
                                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Vídeos otimizados para FB e IG</p>
                                 </div>
-                                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all flex items-center space-x-2">
+                                <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all flex items-center space-x-2">
                                     <Layers size={16} />
                                     <span>Sincronizar Ativos</span>
                                 </button>
@@ -1066,7 +1066,7 @@ export default function InstagramManagementPage() {
                                     </div>
                                     <button 
                                         onClick={() => setIsPlaylistModalOpen(true)}
-                                        className="bg-white text-black px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center space-x-2"
+                                        className="bg-primary text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/80 transition-all flex items-center space-x-2 shadow-lg shadow-primary/20"
                                     >
                                         <Plus size={16} />
                                         <span>Criar playlist</span>
@@ -1095,10 +1095,10 @@ export default function InstagramManagementPage() {
                                     </div>
                                     <button 
                                         onClick={() => setIsPlaylistModalOpen(true)}
-                                        className="bg-surface border border-white/10 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-white/5 transition-all flex items-center space-x-3"
+                                        className="bg-primary text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-primary/80 transition-all flex items-center space-x-3 shadow-xl shadow-primary/20"
                                     >
                                         <Plus size={18} />
-                                        <span>Criar playlist</span>
+                                        <span>Criar sua primeira playlist</span>
                                     </button>
                                 </div>
                             ) : (
