@@ -1215,20 +1215,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 }
                 return { error: `Equipe '${args.teamId}' não encontrada.` };
 
-            } else if (funcName === 'open_ticket' && tenantId && contactId) {
-                let requesterIdentity = args.requesterEmail;
-                
-                if (!requesterIdentity) {
-                    const contact = await this.contactRepository.findOne({ where: { id: contactId } });
-                    requesterIdentity = contact?.email || contact?.externalId || contact?.name || 'Cliente Externo';
-                }
+                // Clean up any 'undefined' strings that might have leaked from concatenations
+                const requesterIdentity = (args.requesterEmail || contact?.email || contact?.externalId || contact?.name || 'Cliente Externo')
+                    .toString().replace(/undefined/g, '').trim();
                 
                 return this.supportService.createTicket(targetTenantId, contactId, {
                     subject: args.subject,
                     description: args.description,
                     category: args.category || 'technical',
                     priority: args.priority || 'medium',
-                    requesterName: requesterIdentity
+                    requesterName: requesterIdentity || 'Cliente Zaplandia'
                 });
 
             } else if (funcName === 'get_products') {

@@ -425,11 +425,14 @@ O Zaplandia precisa de um token que não expire:
     // --- Ticketing System ---
 
     async createTicket(tenantId: string, requesterId: string, data: any) {
+        // Sanitize requesterName to prevent "undefined" leaks
+        const requesterName = data.requesterName ? data.requesterName.toString().replace(/undefined/g, '').trim() : undefined;
+        
         const ticket = this.ticketRepository.create({
             ...data,
             tenantId,
             requesterId,
-            requesterName: data.requesterName || undefined,
+            requesterName: requesterName || 'Cliente Zaplandia',
             status: 'open'
         });
         return this.ticketRepository.save(ticket);
