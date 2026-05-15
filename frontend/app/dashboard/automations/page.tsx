@@ -348,7 +348,7 @@ export default function AutomationsPage() {
                 alert(`Erro: ${result.message}`);
             }
         } catch (e) {
-            alert('Erro ao processar o JSON: ' + e.message);
+            alert('Erro ao processar o JSON: ' + (e as Error).message);
         } finally {
             setIsLoading(false);
         }
