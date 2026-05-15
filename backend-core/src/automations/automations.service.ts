@@ -71,7 +71,7 @@ export class AutomationsService {
         2. Quando descrever a sequência de um fluxo, use sempre uma LISTA NUMERADA (Ex: 1. **Gatilho Webhook**, 2. **Filtro de Mensagem**...). Isso é ESSENCIAL para a visualização no painel.
         3. Seja interativo. Se o usuário for vago, faça perguntas para entender: Gatilho -> Lógica -> Ação.
         4. Foco total em utilidade. Proponha soluções que economizem tempo.
-        5. Quando o fluxo estiver pronto, retorne o JSON do n8n dentro de um bloco de código markdown: ```json { ... } ```.
+        5. Quando o fluxo estiver pronto, retorne o JSON do n8n dentro de um bloco de código markdown: \`\`\`json { ... } \`\`\`.
         6. Sempre responda no idioma do usuário (padrão: Português Brasileiro).
         
         IMPORTANTE: Você deve manter um tom profissional, consultivo e focado em resultados.
