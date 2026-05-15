@@ -294,7 +294,7 @@ export default function InstagramManagementPage() {
             fetchFacebookMedia();
             fetchTags();
         }
-    }, [token, sidebarTab]);
+    }, [token, sidebarTab, statusTab]);
 
     const fetchInsights = async () => {
         try {
@@ -420,10 +420,24 @@ export default function InstagramManagementPage() {
             });
             const data = await res.json();
             if (res.ok && data.data) {
-                // If fetching Reels, we might want to filter by media_type: VIDEO and check for short duration, 
-                // but usually the main /media endpoint includes reels. 
-                // For 'stories' we use the dedicated endpoint.
-                setMediaList(data.data);
+                let filtered = data.data;
+                
+                // Local filtering based on statusTab
+                const now = new Date();
+                if (statusTab === 'published') {
+                    filtered = data.data.filter((m: any) => new Date(m.timestamp) <= now);
+                } else if (statusTab === 'expired' && sidebarTab === 'stories') {
+                    // This is tricky as /stories only returns active ones, 
+                    // but if we had a persistent DB we'd show them here.
+                    // For now, let's keep it empty or show a help message.
+                    filtered = [];
+                } else if (statusTab === 'scheduled') {
+                    filtered = data.data.filter((m: any) => new Date(m.timestamp) > now);
+                } else if (statusTab === 'drafts') {
+                    filtered = []; // Drafts are local to Zaplandia/Meta and not usually in the feed
+                }
+
+                setMediaList(filtered);
             } else {
                 if (data.message) setError(data.message);
             }
