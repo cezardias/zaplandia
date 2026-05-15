@@ -266,16 +266,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         return true;
     }
 
-    async generateGenericResponse(tenantId: string, prompt: string, context?: string): Promise<string | null> {
+    async generateGenericResponse(tenantId: string, prompt: string, context?: string, contactId?: string, authenticatedUser?: any): Promise<string | null> {
         try {
             // For internal architecture/generic help, always try Lisa (Ollama) first
-            const isInternal = context?.includes('ZAPLANDIA') || context?.includes('Arquiteto');
+            const isInternal = context?.includes('ZAPLANDIA') || context?.includes('Arquiteto') || context?.includes('Lisa');
             const provider = isInternal ? 'ollama' : 'gemini';
             const model = isInternal ? 'zaplandia-lisa' : undefined;
 
             this.logger.debug(`[GENERIC_AI] Internal: ${isInternal}, Provider: ${provider}`);
             
-            const response = await this.getAiResponse(tenantId, prompt, provider, context, model);
+            const response = await this.getAiResponse(tenantId, prompt, provider, context, model, contactId, authenticatedUser);
             if (response && response.startsWith('[ERRO]')) return null;
             return response;
         } catch (error) {
@@ -620,7 +620,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    async getAiResponse(tenantId: string, prompt: string, provider: string, context?: string, modelName?: string) {
+    async getAiResponse(tenantId: string, prompt: string, provider: string, context?: string, modelName?: string, contactId?: string, authenticatedUser?: any) {
         try {
             const systemInstruction = context || 'Você é a Lisa, assistente da Zaplandia.';
             const finalPrompt = prompt;
