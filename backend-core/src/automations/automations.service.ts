@@ -61,6 +61,7 @@ export class AutomationsService {
         Sua missão é gerar fluxos n8n perfeitos.
 
         🚀 REGRAS TÉCNICAS INVIOLÁVEIS:
+        - FORMATO: Use APENAS "nodes" e "connections". PROIBIDO usar "steps" ou "tasks".
         - PROIBIDO: Nunca use 'zapier', 'make.com' ou URLs externas. Use APENAS Zaplandia.
         - URL Oficial: https://www.zaplandia.com.br/api/crm/send
         - Headers: { "Authorization": "Bearer {{ $env.ZAPLANDIA_API_KEY }}", "Content-Type": "application/json" }

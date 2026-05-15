@@ -46,7 +46,7 @@ export class AiService implements OnModuleInit {
         private crmService: CrmService,
     ) { }
 
-    private debounceMap = new Map<string, { timeout: any, messages: string[], instanceName: string, tenantId: string, systemPrompt?: string }>();
+    private debounceMap = new Map<string, { timeout: any, messages: string[], instanceName: string, tenantId: string, systemPrompt?: string, authenticatedUser?: any }>();
 
     async onModuleInit() {
         this.logger.log('Initializing AiService and seeding special prompts...');
@@ -300,7 +300,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             timeout,
             messages: [userMessage],
             instanceName: instanceName || contact.instance || 'default',
-            tenantId
+            tenantId,
+            authenticatedUser
         });
 
         return null;
@@ -318,7 +319,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         this.logger.log(`[AI_DEBOUNCE] Processing combined message for ${contact.name}: "${combinedMessage}"`);
 
         try {
-            const response = await this.executeAIGeneration(contact, combinedMessage, data.tenantId, data.instanceName, null, data.systemPrompt);
+            const response = await this.executeAIGeneration(contact, combinedMessage, data.tenantId, data.instanceName, data.authenticatedUser, data.systemPrompt);
             if (response) {
                 this.logger.log(`[AI_DEBOUNCE] Generation successful. Sending via CrmService...`);
                 await this.crmService.sendMessage(data.tenantId, contact.id, response);
