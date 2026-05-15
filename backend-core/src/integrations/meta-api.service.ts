@@ -400,16 +400,17 @@ export class MetaApiService {
                 return response.data;
             } catch (error: any) {
                 const errorCode = error.response?.data?.error?.code;
+                const errorMsg = error.response?.data?.error?.message || '';
                 // If it's a type error (#100) or 400/404, it might be a Page ID
-                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404) {
+                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404 || errorMsg.includes('Unknown path')) {
                     try {
-                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                        const pageRes = await axios.get(`https://graph.facebook.com/v21.0/${id}`, {
                             params: { access_token: accessToken, fields: 'instagram_business_account' }
                         });
                         const igId = pageRes.data?.instagram_business_account?.id;
                         if (igId && igId !== id) {
                             const response = await axios.get(
-                                `https://graph.facebook.com/v18.0/${igId}/stories`,
+                                `https://graph.facebook.com/v21.0/${igId}/stories`,
                                 { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
                             );
                             return response.data;
@@ -418,7 +419,7 @@ export class MetaApiService {
                         // If resolution fails, the first error was likely real
                     }
                 }
-                throw error;
+                return { data: [] };
             }
         } catch (error: any) {
             const detailedMsg = error.response?.data?.error?.message || error.message;
@@ -451,20 +452,26 @@ export class MetaApiService {
                 // If it's a type error (#100), "Unknown path", or 400/404, it might be a Page ID
                 if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404 || errorMsg.includes('Unknown path')) {
                     try {
-                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                        this.logger.debug(`[INSTAGRAM_HIGHLIGHTS] ID ${id} failed. Attempting deep resolution for tenant ${tenantId}...`);
+                        const pageRes = await axios.get(`https://graph.facebook.com/v21.0/${id}`, {
                             params: { access_token: accessToken, fields: 'instagram_business_account' }
                         });
                         const igId = pageRes.data?.instagram_business_account?.id;
                         if (igId && igId !== id) {
                             const response = await axios.get(
-                                `https://graph.facebook.com/v18.0/${igId}/highlights`,
+                                `https://graph.facebook.com/v21.0/${igId}/highlights`,
                                 { params: { access_token: accessToken, fields: 'id,name,cover_media{id,media_url,thumbnail_url}' } }
                             );
                             return response.data;
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        this.logger.warn(`[INSTAGRAM_HIGHLIGHTS] Deep resolution failed for ${id}: ${e.message}`);
+                    }
                 }
-                throw error;
+                
+                // Fail-safe: return empty if we really can't get it
+                this.logger.warn(`[INSTAGRAM_HIGHLIGHTS] Could not fetch highlights for ${id}. Returning empty.`);
+                return { data: [] };
             }
         } catch (error: any) {
             const detailedMsg = error.response?.data?.error?.message || error.message;
