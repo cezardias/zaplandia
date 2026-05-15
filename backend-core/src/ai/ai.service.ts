@@ -637,8 +637,40 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                 this.logger.debug(`[LISA] Calling Ollama model: ${finalOllamaModel}`);
                 try {
-                    const aiResponse = await this.callOllama(finalOllamaModel, finalPrompt, 4096, systemInstruction);
+                    let aiResponse = await this.callOllama(finalOllamaModel, finalPrompt, 4096, systemInstruction);
+                    
+                    // 🛡️ FAIL-SAFE & TOOL PARSER: Se ela responder JSON ou falar de chamado, processamos
                     if (aiResponse) {
+                        // Detect JSON-like tool call in plain text
+                        const jsonMatch = aiResponse.match(/\{.*"name".*"arguments".*\}/s);
+                        if (jsonMatch) {
+                            try {
+                                const toolCall = JSON.parse(jsonMatch[0]);
+                                const funcName = toolCall.name || toolCall.functionCall?.name || toolCall.function_call?.name;
+                                const args = typeof toolCall.arguments === 'string' ? JSON.parse(toolCall.arguments) : (toolCall.arguments || toolCall.functionCall?.arguments || toolCall.function_call?.arguments);
+                                
+                                if (funcName) {
+                                    this.logger.log(`[AI_TOOL_OLLAMA] Detected tool call: ${funcName}`);
+                                    const toolResult = await this.handleToolCall(funcName, args, tenantId, contactId || 'unknown', undefined, authenticatedUser);
+                                    // Return a conversational summary of the result
+                                    return `[AÇÃO EXECUTADA]: ${JSON.stringify(toolResult)}`;
+                                }
+                            } catch (e) {
+                                this.logger.warn(`[AI_TOOL_PARSE_FAIL] Failed to parse Ollama tool call: ${e.message}`);
+                            }
+                        }
+
+                        // Fallback: Se falar de chamado sem JSON
+                        if ((aiResponse.toLowerCase().includes('open_ticket') || aiResponse.toLowerCase().includes('abrir um chamado')) && !aiResponse.includes('{')) {
+                            this.logger.warn(`[AI_HEAL] Lisa was chatty about tickets. Forcing tool call simulation.`);
+                            const toolResult = await this.handleToolCall('open_ticket', { 
+                                subject: "Abertura de chamado (Lisa)", 
+                                description: aiResponse, 
+                                category: "technical" 
+                            }, tenantId, contactId || 'unknown', undefined, authenticatedUser);
+                            return `[CHAMADO ABERTO]: Protocolo gerado com sucesso.`;
+                        }
+
                         this.logger.log(`[LISA_SUCCESS] Ollama model ${finalOllamaModel} responded.`);
                         return aiResponse;
                     }
