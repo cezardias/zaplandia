@@ -481,12 +481,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     tools = [{ function_declarations: declarations }];
 
                     const systemInstruction = `Você é Lisa, a Especialista de Vendas e Suporte da Zaplandia. Sua missão principal é converter visitantes em clientes e ajudar usuários logados.
-                    REGRAS DE OURO:
-                    1. CHAMADOS: Só abra chamados de suporte ('open_ticket') para usuários logados. 
-                    2. INVESTIGAÇÃO: Mesmo que você saiba quem é o usuário, você DEVE perguntar o ASSUNTO e a DESCRIÇÃO do problema antes de abrir o chamado. Não abra chamados genéricos.
-                    3. IDENTIDADE: Use o EMAIL_USUARIO do contexto para preencher o campo 'requesterEmail' da ferramenta 'open_ticket'.
-                    4. VISITANTES: Para visitantes (sem email no contexto), use 'transfer_to_team' para o time de VENDAS/SDR.
-                    5. EXECUÇÃO SILENCIOSA: Execute comandos via Function Calling, nunca escreva comandos como texto.`;
+                    REGRAS DE OURO (NÃO NEGOCIÁVEIS):
+                    1. INVESTIGAÇÃO OBRIGATÓRIA: É PROIBIDO abrir chamados sem antes perguntar e receber o MOTIVO e a DESCRIÇÃO detalhada do usuário. Não invente descrições.
+                    2. CHAMADOS: Só abra chamados ('open_ticket') para usuários logados.
+                    3. IDENTIDADE: Use sempre o EMAIL_USUARIO do contexto no campo 'requesterEmail'.
+                    4. VISITANTES: Transfira visitantes para o time de VENDAS/SDR via 'transfer_to_team'.
+                    5. EXECUÇÃO SILENCIOSA: Use apenas Function Calling.`;
 
                     if (model.includes('/') && openRouterKey) {
                         this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
@@ -1219,16 +1219,29 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             } else if (funcName === 'open_ticket' && tenantId && contactId) {
                 const contact = await this.contactRepository.findOne({ where: { id: contactId } });
                 
-                // Clean up any 'undefined' strings that might have leaked from concatenations
-                const requesterIdentity = (args.requesterEmail || contact?.email || contact?.externalId || contact?.name || 'Cliente Externo')
-                    .toString().replace(/undefined/g, '').trim();
+                // 🛠️ FORCE IDENTITY: If AI failed to pass email, use the one from contact or context
+                let requesterEmail = args.requesterEmail || contact?.email || contact?.externalId;
                 
+                // 🛑 REJECT GENERIC TICKETS: Force AI to ask questions
+                const desc = (args.description || '').toLowerCase();
+                const subj = (args.subject || '').toLowerCase();
+                if (desc.includes('abertura de chamado') || desc.includes('solicitou abertura') || subj === 'abertura de chamado') {
+                    this.logger.warn(`[AI_TOOL_REJECT] Rejecting generic ticket from AI for contact ${contactId}`);
+                    return { 
+                        error: "DESCRIÇÃO INVÁLIDA. Você deve primeiro perguntar ao usuário qual o problema real e usar a resposta dele na descrição. Não abra chamados genéricos." 
+                    };
+                }
+
+                const requesterName = (requesterEmail || contact?.name || 'Cliente Zaplandia').toString().replace(/undefined/g, '').trim();
+                
+                this.logger.log(`[AI_TOOL_SUCCESS] Opening verified ticket for ${requesterName}`);
+
                 return this.supportService.createTicket(targetTenantId, contactId, {
                     subject: args.subject,
                     description: args.description,
                     category: args.category || 'technical',
                     priority: args.priority || 'medium',
-                    requesterName: requesterIdentity || 'Cliente Zaplandia'
+                    requesterName: requesterName
                 });
 
             } else if (funcName === 'get_products') {
