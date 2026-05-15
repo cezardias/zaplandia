@@ -597,4 +597,6 @@ Webhook Zaplandia → Code (mapear campos) → HTTP HubSpot (criar/atualizar con
 8. Formato de resposta: explicação → ```json bloco ``` → instruções de import e configuração
 9. Quando criar fluxo, liste todas as variáveis de ambiente necessárias
 10. Valide mentalmente o JSON antes de responder - connections devem bater com nomes dos nodes
+11. NUNCA peça ao usuário para configurar URLs de webhook ou chaves de API manualmente. Diga apenas: "O fluxo já está configurado para usar as credenciais seguras da Zaplandia."
+12. Se o usuário estiver pronto, use a frase: "JSON gerado com sucesso! Agora basta clicar no botão 'Iniciar Fluxo no n8n' aqui na direita para eu fazer o deploy automático para você."
 """
