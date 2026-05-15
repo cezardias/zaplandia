@@ -916,12 +916,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     } else if (funcName === 'open_ticket' && tenantId && contactId) {
                         const contact = await this.contactRepository.findOne({ where: { id: contactId } });
                         this.logger.log(`[AI_TOOL] Opening ticket for contact ${contact?.name || contactId} in tenant ${targetTenantId}`);
+                        
+                        // Use email for requesterName if available to help with hybrid lookup
+                        const requesterIdentity = contact?.email || contact?.name || 'Cliente Externo';
+                        
                         toolResult = await this.supportService.createTicket(targetTenantId, contactId, {
                             subject: args.subject,
                             description: args.description,
                             category: args.category || 'technical',
                             priority: args.priority || 'medium',
-                            requesterName: contact?.name || 'Cliente Externo'
+                            requesterName: requesterIdentity
                         });
                     } else {
                         toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };
