@@ -415,7 +415,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                             parameters: {
                                 type: "object",
                                 properties: {
-                                    teamId: { type: "string", description: "O ID da equipe para transbordo (UUID)" },
+                                    teamId: { 
+                                        type: "string", 
+                                        description: "O ID da equipe (UUID) ou o NOME da equipe (ex: 'Comercial', 'Suporte', 'Financeiro')" 
+                                    },
                                     reason: { type: "string", description: "Motivo da transferência" }
                                 },
                                 required: ["teamId"]
@@ -852,14 +855,30 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     let toolResult: any;
                     if (funcName === 'transfer_to_team' && tenantId && contactId) {
-                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team ${args.teamId}`);
-                        await this.contactRepository.update(contactId, { assignedTeamId: args.teamId });
+                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team/name: ${args.teamId}`);
+                        
+                        let targetTeamId = args.teamId;
+                        const teamName = args.teamId?.toLowerCase();
+                        const teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" = $1`, [tenantId]);
+                        
+                        const foundTeam = teams.find(t => 
+                            t.id === targetTeamId || 
+                            t.name.toLowerCase().includes(teamName) ||
+                            teamName.includes(t.name.toLowerCase())
+                        );
+
+                        if (foundTeam) {
+                            targetTeamId = foundTeam.id;
+                            this.logger.log(`[AI_TOOL] Resolved team name '${args.teamId}' to ID ${targetTeamId} (${foundTeam.name})`);
+                        }
+
+                        await this.contactRepository.update(contactId, { assignedTeamId: targetTeamId });
                         // Emit update via socket
                         this.communicationService.emitToTenant(tenantId, 'contact_updated', {
                             contactId: contactId,
-                            assignedTeamId: args.teamId
+                            assignedTeamId: targetTeamId
                         });
-                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${args.teamId}.` };
+                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam?.name || targetTeamId}.` };
                     } else if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
                     } else if (funcName === 'get_raffles' && tenantId) {
@@ -1009,14 +1028,30 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     let toolResult: any;
                     if (funcName === 'transfer_to_team' && tenantId && contactId) {
-                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team ${args.teamId}`);
-                        await this.contactRepository.update(contactId, { assignedTeamId: args.teamId });
+                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team/name: ${args.teamId}`);
+                        
+                        let targetTeamId = args.teamId;
+                        const teamName = args.teamId?.toLowerCase();
+                        const teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" = $1`, [tenantId]);
+                        
+                        const foundTeam = teams.find(t => 
+                            t.id === targetTeamId || 
+                            t.name.toLowerCase().includes(teamName) ||
+                            teamName.includes(t.name.toLowerCase())
+                        );
+
+                        if (foundTeam) {
+                            targetTeamId = foundTeam.id;
+                            this.logger.log(`[AI_TOOL] Resolved team name '${args.teamId}' to ID ${targetTeamId} (${foundTeam.name})`);
+                        }
+
+                        await this.contactRepository.update(contactId, { assignedTeamId: targetTeamId });
                         // Emit update via socket
                         this.communicationService.emitToTenant(tenantId, 'contact_updated', {
                             contactId: contactId,
-                            assignedTeamId: args.teamId
+                            assignedTeamId: targetTeamId
                         });
-                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${args.teamId}.` };
+                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam?.name || targetTeamId}.` };
                     } else if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
                     } else if (funcName === 'get_raffles' && tenantId) {
