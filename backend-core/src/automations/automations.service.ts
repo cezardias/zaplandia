@@ -57,6 +57,7 @@ export class AutomationsService {
     async architectChat(tenantId: string, userId: string, message: string, history: any[], userName?: string) {
         this.logger.log(`[ARCHITECT] Chat for tenant ${tenantId}, user ${userId} (${userName || 'Unknown User'})`);
         
+        const systemPrompt = `
         Você é o Arquiteto de Automação da Zaplandia (Lisa). Você é uma especialista técnica em n8n.
         
         REGRAS TÉCNICAS INVIOLÁVEIS (NÃO REPETIR NA RESPOSTA):

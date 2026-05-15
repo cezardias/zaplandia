@@ -347,6 +347,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const pushName = contact.name || 'Cliente';
             promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName).replace(/\{\{\s*pushName\s*\}\}/g, pushName);
             
+            const isInternal = instanceName === 'LisaWeb' || promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
+
             const conversationContext = await this.getConversationContext(contact.id, isInternal);
             const isFreshStart = conversationContext.length < 20;
             
@@ -354,7 +356,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             if (!promptContent || promptContent.length < 10) {
                 promptContent = "Você é a Lisa, assistente virtual da Zaplandia. Seja prestativa, use a base de conhecimento para tirar dúvidas e abra chamados se necessário.";
             }
-
+ 
             const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]' : 'Histórico:'}\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
             // 3. Resolve Tools and API Keys
@@ -383,8 +385,6 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
   2. PROIBIDO transferir para humano ou abrir chamado em dúvidas de "Como fazer" ou "Onde fica". Você DEVE resolver.
   3. ESCALAÇÃO: Apenas Comercial (Vendas/Upgrade), Financeiro (Boleto) ou Suporte (BUG real de sistema).
   4. CHAMADOS: SEMPRE que abrir um chamado usando 'open_ticket', você DEVE obrigatoriamente informar o NÚMERO DO PROTOCOLO (ex: "#123") ao usuário na resposta final.`;
-
-            const isInternal = instanceName === 'LisaWeb' || promptEntity?.name === 'ZAPLANDIA_HELP_CENTER_LISA';
 
             if (isInternal) {
                 // REDUCED INSTRUCTION FOR INTERNAL CHAT (FASTER & CONCISE)
@@ -1115,14 +1115,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             return "[WAITING_FOR_DEBOUNCE]"; 
         }
 
-        // 2. Wait for the burst to finish (3s for Web, 10s is too long)
-        const waitTime = instanceName === 'LisaWeb' ? 3000 : 10000;
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-
-        // 3. Process the accumulated burst
+        // 2. Process the accumulated burst
         const finalData = this.debounceMap.get(key);
         if (!finalData) return null;
         this.debounceMap.delete(key);
+
+        // 3. Wait for the burst to finish (3s for Web, 10s is too long)
+        const waitTime = finalData.instanceName === 'LisaWeb' ? 3000 : 10000;
+        await new Promise(resolve => setTimeout(resolve, waitTime));
 
         const combinedMessage = finalData.messages.join(' ');
         this.logger.log(`[LISA_DEBOUNCE] Processing aggregated burst: "${combinedMessage}"`);
@@ -1268,8 +1268,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 const desc = (args.description || '').toLowerCase();
                 const subj = (args.subject || '').toLowerCase();
                 
-                // Relax rejection for internal LisaWeb (Help Center)
-                const isInternalHelp = instanceName === 'LisaWeb' || promptId?.includes('HELP_CENTER');
+                // Relax rejection for internal Help Center (detected via promptId or authenticated user context)
+                const isInternalHelp = promptId?.includes('HELP_CENTER') || authenticatedUser?.tenantId === tenantId;
 
                 if (!isInternalHelp && (desc.includes('abertura de chamado') || desc.includes('suporte') || desc === subj)) {
                     const isTechnical = desc.includes('n8n') || desc.includes('fluxo') || desc.includes('bot') || desc.includes('automação') || desc.includes('api');
