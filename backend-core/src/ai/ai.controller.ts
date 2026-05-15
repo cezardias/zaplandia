@@ -237,7 +237,8 @@ export class AiController {
         // 1. Ensure a contact exists for this Lisa session (based on user info)
         const contact = await this.aiService.getOrCreateContactForLisa(req.user.tenantId, req.user);
         
-        const fullPrompt = `Histórico:\n${body.history.map(h => `${h.role}: ${h.content}`).join('\n')}\nUser: ${body.message}`;
+        const userInfo = `[CONTEXTO: Usuário LOGADO como ${req.user.name} (${req.user.email})]`;
+        const fullPrompt = `${userInfo}\nHistórico:\n${body.history.map(h => `${h.role}: ${h.content}`).join('\n')}\nUser: ${body.message}`;
         const response = await this.aiService.generateLisaResponse(req.user.tenantId, fullPrompt, contact?.id);
         
         // 2. Record the message in the CRM so it shows up in Omni Inbox if transferred
