@@ -182,9 +182,9 @@ export default function AdminSupportPage() {
                                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
                                         <div className="flex items-center space-x-3">
                                             <div className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-400">
-                                                {ticket.requester?.name?.charAt(0) || 'U'}
+                                                {(ticket.requesterName || ticket.requester?.name || 'U').charAt(0).toUpperCase()}
                                             </div>
-                                            <span className="text-xs text-gray-400">{ticket.requester?.name || 'Usuário'}</span>
+                                            <span className="text-xs text-gray-400">{ticket.requesterName || ticket.requester?.name || 'Usuário'}</span>
                                         </div>
                                         <ChevronRight size={16} className={`text-gray-700 transition ${selectedTicket?.id === ticket.id ? 'translate-x-1 text-primary' : ''}`} />
                                     </div>
@@ -234,7 +234,7 @@ export default function AdminSupportPage() {
                                             <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">{tl.requester}</h4>
                                             <div className="flex items-center space-x-2">
                                                 <User size={14} className="text-primary" />
-                                                <span className="text-xs text-white font-bold">{selectedTicket.requester?.name}</span>
+                                                <span className="text-xs text-white font-bold">{selectedTicket.requesterName || selectedTicket.requester?.name}</span>
                                             </div>
                                         </div>
                                         <div className="bg-white/5 p-4 rounded-2xl">
