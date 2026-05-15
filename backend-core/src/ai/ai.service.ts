@@ -318,7 +318,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         this.logger.log(`[AI_DEBOUNCE] Processing combined message for ${contact.name}: "${combinedMessage}"`);
 
         try {
-            const response = await this.executeAIGeneration(contact, combinedMessage, data.tenantId, data.instanceName);
+            const response = await this.executeAIGeneration(contact, combinedMessage, data.tenantId, data.instanceName, null, data.systemPrompt);
             if (response) {
                 this.logger.log(`[AI_DEBOUNCE] Generation successful. Sending via CrmService...`);
                 await this.crmService.sendMessage(data.tenantId, contact.id, response);
@@ -328,7 +328,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    private async executeAIGeneration(contact: Contact, userMessage: string, tenantId: string, instanceName?: string, authenticatedUser?: any): Promise<string | null> {
+    private async executeAIGeneration(contact: Contact, userMessage: string, tenantId: string, instanceName?: string, authenticatedUser?: any, systemPromptOverride?: string): Promise<string | null> {
         try {
             // 1. Resolve Identity and Context
             const targetInstance = instanceName || contact.instance;
@@ -340,10 +340,11 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
             if (!activePromptId) return null;
 
-            let promptContent = await this.getPromptContent(activePromptId, tenantId);
+            // 2. Personalize and Contextualize
+            let promptContent = systemPromptOverride || (await this.getPromptContent(activePromptId, tenantId));
+            
             if (!promptContent) return null;
 
-            // 2. Personalize and Contextualize
             const pushName = contact.name || 'Cliente';
             promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName).replace(/\{\{\s*pushName\s*\}\}/g, pushName);
             
@@ -1118,7 +1119,11 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         // 1. Manage the Buffer
         let data = this.debounceMap.get(key);
         if (!data) {
-            data = { messages: [userMessage], tenantId, instanceName: 'LisaWeb', timeout: null };
+            const systemPrompt = `Você é a Lisa, assistente virtual da Zaplandia. 
+            IMPORTANTE: Você possui ferramentas reais. Se o usuário pedir para abrir um chamado, transferir ou buscar na base, USE A FERRAMENTA IMEDIATAMENTE. 
+            NUNCA diga ao usuário para 'abrir o chamado agora' ou 'clicar no botão'; VOCÊ deve abrir o chamado para ele usando 'open_ticket'.`;
+            
+            data = { messages: [userMessage], tenantId, instanceName: 'LisaWeb', timeout: null, systemPrompt };
             this.debounceMap.set(key, data);
         } else {
             data.messages.push(userMessage);
