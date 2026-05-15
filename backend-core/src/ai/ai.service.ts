@@ -188,7 +188,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     stream: false,
                     options: { num_predict: maxTokens, temperature: 0.7 }
                 },
-                { timeout: 120000 } // 2 minutes - local inference is slower
+                { timeout: 300000 } // 5 minutes - local inference is slower
             );
 
             const content = response.data?.message?.content;
