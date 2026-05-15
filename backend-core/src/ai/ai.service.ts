@@ -915,12 +915,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     } else if (funcName === 'create_raffle_order' && tenantId) {
                         toolResult = await this.rifaApiService.createOrder(tenantId, args);
                     } else if (funcName === 'open_ticket' && tenantId && contactId) {
-                        this.logger.log(`[AI_TOOL] Opening ticket for contact ${contactId} in tenant ${targetTenantId}`);
+                        const contact = await this.contactRepository.findOne({ where: { id: contactId } });
+                        this.logger.log(`[AI_TOOL] Opening ticket for contact ${contact?.name || contactId} in tenant ${targetTenantId}`);
                         toolResult = await this.supportService.createTicket(targetTenantId, contactId, {
                             subject: args.subject,
                             description: args.description,
                             category: args.category || 'technical',
-                            priority: args.priority || 'medium'
+                            priority: args.priority || 'medium',
+                            requesterName: contact?.name || 'Cliente Externo'
                         });
                     } else {
                         toolResult = { error: `Tool ${funcName} not implemented or missing tenant context` };

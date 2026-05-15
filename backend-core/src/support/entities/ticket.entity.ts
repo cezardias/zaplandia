@@ -6,8 +6,14 @@ export class Ticket {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    @Column({ generated: "increment", type: "int" })
+    ticketNumber: number;
+
     @Column()
     subject: string;
+
+    @Column({ nullable: true })
+    requesterName: string;
 
     @Column({ type: 'text' })
     description: string;

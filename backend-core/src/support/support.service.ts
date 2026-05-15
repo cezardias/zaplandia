@@ -61,11 +61,16 @@ export class SupportService implements OnModuleInit {
                         "requesterId" uuid NOT NULL,
                         "assigneeId" uuid,
                         "teamId" character varying,
+                        "ticketNumber" SERIAL,
+                        "requesterName" character varying,
                         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
                         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
                         CONSTRAINT "PK_tickets_id" PRIMARY KEY ("id")
                     )
                 `);
+            } else {
+                await queryRunner.query(`ALTER TABLE "tickets" ADD COLUMN IF NOT EXISTS "ticketNumber" SERIAL`);
+                await queryRunner.query(`ALTER TABLE "tickets" ADD COLUMN IF NOT EXISTS "requesterName" character varying`);
             }
         } catch (error) {
             this.logger.error('Failed to fix support tables:', error.message);
@@ -424,6 +429,7 @@ O Zaplandia precisa de um token que não expire:
             ...data,
             tenantId,
             requesterId,
+            requesterName: data.requesterName || undefined,
             status: 'open'
         });
         return this.ticketRepository.save(ticket);
