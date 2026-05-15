@@ -259,9 +259,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         return true;
     }
 
-    async generateGenericResponse(tenantId: string, prompt: string): Promise<string | null> {
+    async generateGenericResponse(tenantId: string, prompt: string, context?: string): Promise<string | null> {
         try {
-            const response = await this.getAiResponse(tenantId, prompt, 'gemini');
+            const response = await this.getAiResponse(tenantId, prompt, 'gemini', context);
             if (response && response.startsWith('[ERRO]')) return null;
             return response;
         } catch (error) {

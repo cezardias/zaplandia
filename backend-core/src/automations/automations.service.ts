@@ -67,20 +67,20 @@ export class AutomationsService {
         - API Zaplandia: Os fluxos n8n usam o nó 'HTTP Request' para enviar mensagens de volta via Zaplandia API.
         
         DIRETRIZES:
-        1. Seja interativo. Se o usuário for vago, faça perguntas para entender: Gatilho -> Lógica -> Ação.
-        2. Foco total em utilidade. Proponha soluções que economizem tempo.
-        3. Quando o usuário estiver satisfeito, você deve dizer claramente que o fluxo está pronto e descrevê-lo.
-        4. Sempre responda no idioma do usuário (padrão: Português Brasileiro).
+        1. Use MARKDOWN para formatar suas respostas (negrito para ênfase, listas para passos, blocos de código para JSON).
+        2. Quando descrever a sequência de um fluxo, use sempre uma LISTA NUMERADA (Ex: 1. **Gatilho Webhook**, 2. **Filtro de Mensagem**...). Isso é ESSENCIAL para a visualização no painel.
+        3. Seja interativo. Se o usuário for vago, faça perguntas para entender: Gatilho -> Lógica -> Ação.
+        4. Foco total em utilidade. Proponha soluções que economizem tempo.
+        5. Quando o fluxo estiver pronto, retorne o JSON do n8n dentro de um bloco de código markdown: ```json { ... } ```.
+        6. Sempre responda no idioma do usuário (padrão: Português Brasileiro).
         
         IMPORTANTE: Você deve manter um tom profissional, consultivo e focado em resultados.
         `;
 
-        // We use a simplified AI call for the architect
-        // In a real scenario, we would use a more advanced chat history management
-        const fullPrompt = `${systemPrompt}\n\nHistórico:\n${history.map(h => `${h.role}: ${h.content}`).join('\n')}\nUser: ${message}`;
+        const historyContext = history.length > 0 ? `Histórico da conversa:\n${history.map(h => `${h.role === 'assistant' ? 'LISA' : 'Usuário'}: ${h.content}`).join('\n')}` : '';
         
         // Using the same backend engine as the AI assistant
-        const aiResponse = await this.aiService.generateGenericResponse(tenantId, fullPrompt);
+        const aiResponse = await this.aiService.generateGenericResponse(tenantId, message, `${systemPrompt}\n\n${historyContext}`);
         
         if (!aiResponse) {
             this.logger.error(`[ARCHITECT] AI returned null for tenant ${tenantId}. Possible quota exhaustion or missing key.`);
