@@ -42,7 +42,7 @@ export default function LisaWidget() {
 
     const handleSend = async (customMessage?: string) => {
         const msgText = customMessage || input;
-        if (!msgText.trim() || isLoading) return;
+        if (!msgText.trim()) return;
 
         const userMsg = { role: 'user', content: msgText };
         setMessages(prev => [...prev, userMsg]);
@@ -61,13 +61,16 @@ export default function LisaWidget() {
 
             if (res.ok) {
                 const data = await res.json();
-                setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
+                if (data.content) {
+                    setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
+                    setIsLoading(false);
+                }
             } else {
                 setMessages(prev => [...prev, { role: 'assistant', content: 'Desculpe, tive um problema ao processar sua pergunta. Pode tentar novamente?' }]);
+                setIsLoading(false);
             }
         } catch (err) {
             setMessages(prev => [...prev, { role: 'assistant', content: 'Erro de conexão. Tente novamente em instantes.' }]);
-        } finally {
             setIsLoading(false);
         }
     };
@@ -182,7 +185,7 @@ export default function LisaWidget() {
                                 />
                                 <button
                                     onClick={() => handleSend()}
-                                    disabled={!input.trim() || isLoading}
+                                    disabled={!input.trim()}
                                     className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-primary hover:scale-110 transition disabled:opacity-50"
                                 >
                                     <Send size={18} />
