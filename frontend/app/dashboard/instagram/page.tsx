@@ -69,7 +69,7 @@ export default function InstagramManagementPage() {
     const { token } = useAuth();
     const { lang } = useLanguage();
     
-    const [sidebarTab, setSidebarTab] = useState<'posts' | 'stories' | 'reels' | 'ab_tests' | 'feed_grid' | 'mentions' | 'clips' | 'playlists' | 'series' | 'ads'>('posts');
+    const [sidebarTab, setSidebarTab] = useState<'posts' | 'stories' | 'reels' | 'ab_tests' | 'feed_and_grid' | 'mentions_and_tags' | 'clips' | 'playlists' | 'series' | 'ads'>('posts');
     const [statusTab, setStatusTab] = useState<'published' | 'scheduled' | 'drafts' | 'expiring' | 'expired'>('published');
     const [searchQuery, setSearchQuery] = useState('');
     const [dateRange, setDateRange] = useState('90');
@@ -525,8 +525,8 @@ export default function InstagramManagementPage() {
                         { id: 'posts', label: txt.sections.posts, icon: <Film size={18} /> },
                         { id: 'stories', label: txt.sections.stories, icon: <Zap size={18} /> },
                         { id: 'ab_tests', label: txt.sections.ab_tests, icon: <Layers size={18} /> },
-                        { id: 'feed_grid', label: txt.sections.feed_grid, icon: <LayoutGrid size={18} /> },
-                        { id: 'mentions', label: txt.sections.mentions, icon: <Tag size={18} /> },
+                        { id: 'feed_and_grid', label: txt.sections.feed_grid, icon: <LayoutGrid size={18} /> },
+                        { id: 'mentions_and_tags', label: txt.sections.mentions, icon: <Tag size={18} /> },
                         { id: 'clips', label: txt.sections.clips, icon: <Scissors size={18} /> },
                     ].map(item => (
                         <button
