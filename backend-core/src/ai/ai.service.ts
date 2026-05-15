@@ -854,7 +854,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     this.logger.log(`[AI_TOOL] Calling ${funcName} with args: ${JSON.stringify(args)}`);
 
                     // RESOLVE TARGET TENANT (Hierarchy/HQ support)
-                    let targetTenantId = tenantId;
+                    let targetTenantId: string = tenantId;
                     let teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [tenantId]);
                     if (!teams || teams.length === 0) {
                         const integration = await this.integrationRepository.findOne({ where: { id: promptId } });
