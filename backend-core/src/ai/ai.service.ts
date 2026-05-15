@@ -1189,7 +1189,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             
             if (!teams || teams.length === 0) {
                 const integration = promptId ? await this.integrationRepository.findOne({ where: { id: promptId } }) : null;
-                targetTenantId = integration?.tenantId || '3ac9368c-af7c-4183-9816-b90513368f53'; // Master HQ fallback
+                targetTenantId = authenticatedUser?.tenantId || integration?.tenantId || tenantId || 'default';
                 teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [targetTenantId]);
             }
 

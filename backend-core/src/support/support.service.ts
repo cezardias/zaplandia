@@ -466,13 +466,17 @@ O Zaplandia precisa de um token que não expire:
         ];
 
         if (cleanEmail) {
+            // Priority 1: Match by current tenant AND email
             where.push({ 
                 tenantId, 
-                requesterName: cleanEmail // Exact match (standardized)
+                requesterName: cleanEmail 
             });
             
-            // Also try matching requesterName as email in the database (hybrid)
-            // This is useful for tickets created via Lisa
+            // Priority 2: Fail-safe match by email only (in case of tenantId mismatch during AI creation)
+            // This ensures the user SEES their tickets if the email is correct.
+            where.push({ 
+                requesterName: cleanEmail 
+            });
         }
 
         return this.ticketRepository.find({
