@@ -82,7 +82,7 @@ export class AutomationsService {
         ESTRUTURA DE RESPOSTA:
         1. Use MARKDOWN (negrito, listas, blocos de código).
         2. Use LISTA NUMERADA para descrever a sequência do fluxo.
-        3. Se o fluxo estiver pronto tecnicamente, retorne o JSON do n8n em: ```json { ... } ```.
+        3. Se o fluxo estiver pronto tecnicamente, retorne o JSON do n8n em: \`\`\`json { ... } \`\`\`.
         4. Mantenha tom profissional, consultivo e focado em integração total.
         `;
 
