@@ -46,7 +46,8 @@ export class AutomationsController {
             req.user.tenantId,
             req.user.userId,
             data.message,
-            data.history
+            data.history,
+            req.user.name
         );
     }
 

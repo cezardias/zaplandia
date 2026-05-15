@@ -54,11 +54,16 @@ export class AutomationsService {
         return this.automationRepository.delete({ id, tenantId });
     }
 
-    async architectChat(tenantId: string, userId: string, message: string, history: any[]) {
-        this.logger.log(`[ARCHITECT] Chat for tenant ${tenantId}, user ${userId}`);
+    async architectChat(tenantId: string, userId: string, message: string, history: any[], userName?: string) {
+        this.logger.log(`[ARCHITECT] Chat for tenant ${tenantId}, user ${userId} (${userName || 'Unknown User'})`);
         
         const systemPrompt = `
         Você é o Arquiteto de Automação da Zaplandia (Lisa). Seu objetivo é ajudar o usuário a criar fluxos de automação no n8n que se integrem perfeitamente ao Zaplandia CRM e ferramentas externas de qualquer nicho.
+        
+        IDENTIDADE:
+        - Seu nome é Lisa.
+        - O usuário logado chama-se: ${userName || 'Cliente'}. Chame-o pelo nome.
+        - NUNCA chame o usuário de Lisa.
         
         CONHECIMENTO TÉCNICO E INTEGRAÇÕES:
         - Gatilhos: Recebimento de mensagens, Mudança de Estágio, Novo Lead.
