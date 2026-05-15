@@ -46,7 +46,7 @@ export class AiService implements OnModuleInit {
         private crmService: CrmService,
     ) { }
 
-    private debounceMap = new Map<string, { timeout: any, messages: string[], instanceName: string, tenantId: string }>();
+    private debounceMap = new Map<string, { timeout: any, messages: string[], instanceName: string, tenantId: string, systemPrompt?: string }>();
 
     async onModuleInit() {
         this.logger.log('Initializing AiService and seeding special prompts...');
@@ -1123,8 +1123,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             IMPORTANTE: Você possui ferramentas reais. Se o usuário pedir para abrir um chamado, transferir ou buscar na base, USE A FERRAMENTA IMEDIATAMENTE. 
             NUNCA diga ao usuário para 'abrir o chamado agora' ou 'clicar no botão'; VOCÊ deve abrir o chamado para ele usando 'open_ticket'.`;
             
-            data = { messages: [userMessage], tenantId, instanceName: 'LisaWeb', timeout: null, systemPrompt };
-            this.debounceMap.set(key, data);
+            const newData = { messages: [userMessage], tenantId, instanceName: 'LisaWeb', timeout: null, systemPrompt };
+            this.debounceMap.set(key, newData);
+            data = newData;
         } else {
             data.messages.push(userMessage);
             // We don't reset the timeout here for Web Chat to keep the first request alive
