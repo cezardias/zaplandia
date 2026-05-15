@@ -399,18 +399,23 @@ export class MetaApiService {
                 );
                 return response.data;
             } catch (error: any) {
-                // If ID is a Page ID, try to resolve linked IG Business ID
-                if (error.response?.status === 400 || error.response?.status === 404) {
-                    const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
-                        params: { access_token: accessToken, fields: 'instagram_business_account' }
-                    });
-                    const igId = pageRes.data?.instagram_business_account?.id;
-                    if (igId) {
-                        const response = await axios.get(
-                            `https://graph.facebook.com/v18.0/${igId}/stories`,
-                            { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
-                        );
-                        return response.data;
+                const errorCode = error.response?.data?.error?.code;
+                // If it's a type error (#100) or 400/404, it might be a Page ID
+                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404) {
+                    try {
+                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                            params: { access_token: accessToken, fields: 'instagram_business_account' }
+                        });
+                        const igId = pageRes.data?.instagram_business_account?.id;
+                        if (igId && igId !== id) {
+                            const response = await axios.get(
+                                `https://graph.facebook.com/v18.0/${igId}/stories`,
+                                { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
+                            );
+                            return response.data;
+                        }
+                    } catch (innerError) {
+                        // If resolution fails, the first error was likely real
                     }
                 }
                 throw error;
@@ -440,19 +445,21 @@ export class MetaApiService {
                 );
                 return response.data;
             } catch (error: any) {
-                // Resolve Page ID mismatch
-                if (error.response?.status === 400 || error.response?.status === 404) {
-                    const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
-                        params: { access_token: accessToken, fields: 'instagram_business_account' }
-                    });
-                    const igId = pageRes.data?.instagram_business_account?.id;
-                    if (igId) {
-                        const response = await axios.get(
-                            `https://graph.facebook.com/v18.0/${igId}/highlights`,
-                            { params: { access_token: accessToken, fields: 'id,name,cover_media{id,media_url,thumbnail_url}' } }
-                        );
-                        return response.data;
-                    }
+                const errorCode = error.response?.data?.error?.code;
+                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404) {
+                    try {
+                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                            params: { access_token: accessToken, fields: 'instagram_business_account' }
+                        });
+                        const igId = pageRes.data?.instagram_business_account?.id;
+                        if (igId && igId !== id) {
+                            const response = await axios.get(
+                                `https://graph.facebook.com/v18.0/${igId}/highlights`,
+                                { params: { access_token: accessToken, fields: 'id,name,cover_media{id,media_url,thumbnail_url}' } }
+                            );
+                            return response.data;
+                        }
+                    } catch (e) {}
                 }
                 throw error;
             }
@@ -506,18 +513,21 @@ export class MetaApiService {
                 );
                 return response.data;
             } catch (error: any) {
-                if (error.response?.status === 400 || error.response?.status === 404) {
-                    const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
-                        params: { access_token: accessToken, fields: 'instagram_business_account' }
-                    });
-                    const igId = pageRes.data?.instagram_business_account?.id;
-                    if (igId) {
-                        const response = await axios.get(
-                            `https://graph.facebook.com/v18.0/${igId}/tags`,
-                            { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,username' } }
-                        );
-                        return response.data;
-                    }
+                const errorCode = error.response?.data?.error?.code;
+                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404) {
+                    try {
+                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                            params: { access_token: accessToken, fields: 'instagram_business_account' }
+                        });
+                        const igId = pageRes.data?.instagram_business_account?.id;
+                        if (igId && igId !== id) {
+                            const response = await axios.get(
+                                `https://graph.facebook.com/v18.0/${igId}/tags`,
+                                { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,username' } }
+                            );
+                            return response.data;
+                        }
+                    } catch (e) {}
                 }
                 throw error;
             }
@@ -602,7 +612,7 @@ export class MetaApiService {
 
             const response = await axios.get(
                 `https://graph.facebook.com/v18.0/${pageId}/insights`,
-                { params: { access_token: accessToken, metric: 'impressions,reach,profile_views', period: 'day' } }
+                { params: { access_token: accessToken, metric: 'reach,profile_views', period: 'day' } }
             );
 
             return response.data;
