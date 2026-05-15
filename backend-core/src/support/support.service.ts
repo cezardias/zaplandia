@@ -454,10 +454,13 @@ O Zaplandia precisa de um token que não expire:
             return this.findAllTickets(tenantId, role);
         }
         
-        // Hybrid lookup: match by ID OR Name to ensure visibility
-        const where: any[] = [{ tenantId, requesterId }];
-        if (requesterId) {
-            where.push({ tenantId, requesterName: requesterId }); // Fallback for name-based lookup
+        // Hybrid lookup: match by ID OR Email (saved as requesterName)
+        const where: any[] = [
+            { tenantId, requesterId }
+        ];
+
+        if (email) {
+            where.push({ tenantId, requesterName: email }); // In case name was saved as email
         }
 
         return this.ticketRepository.find({

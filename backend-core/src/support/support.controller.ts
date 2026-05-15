@@ -32,7 +32,10 @@ export class SupportController {
 
     @Post('tickets')
     async createTicket(@Request() req: any, @Body() body: any) {
-        return this.supportService.createTicket(req.user.tenantId, req.user.userId, body);
+        return this.supportService.createTicket(req.user.tenantId, req.user.userId, {
+            ...body,
+            requesterName: req.user.name || req.user.email
+        });
     }
 
     @Patch('tickets/:id')
