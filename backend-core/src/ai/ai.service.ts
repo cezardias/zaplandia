@@ -186,6 +186,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     model,
                     messages,
                     stream: false,
+                    keep_alive: "1h",
                     options: { num_predict: maxTokens, temperature: 0.7 }
                 },
                 { timeout: 300000 } // 5 minutes - local inference is slower

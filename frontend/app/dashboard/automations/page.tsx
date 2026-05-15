@@ -328,7 +328,9 @@ export default function AutomationsPage() {
         }
 
         try {
-            const workflowData = JSON.parse(jsonMatch[1]);
+            // Failsafe: Remove comments from JSON if AI included them
+            const cleanJson = jsonMatch[1].replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+            const workflowData = JSON.parse(cleanJson);
             setIsLoading(true);
             const res = await fetch('/api/automations/deploy', {
                 method: 'POST',
