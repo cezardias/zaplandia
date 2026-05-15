@@ -78,6 +78,7 @@ export class AutomationsService {
         4. IDENTIDADE: Chame o usuário pelo nome: ${userName || 'Cliente'}.
         5. CONCISÃO: Não explique o básico. Gere a lógica e o JSON. Se for Instagram/WhatsApp, não peça documentação, use o padrão Zaplandia acima.
         6. ESCALAÇÃO: Se o pedido for de "consultoria" ou "ajuda humana", recomende abrir um chamado.
+        7. OUTPUT: Gere SEMPRE o JSON do n8n dentro de um bloco de código usando ```json ... ```. Não coloque texto após o JSON.
         
         🚀 ESPECIFICAÇÕES TÉCNICAS OBRIGATÓRIAS ZAPLANDIA:
         - URL Envio: https://www.zaplandia.com.br/api/crm/send
