@@ -426,7 +426,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         },
                         {
                             name: "open_ticket",
-                            description: "GERAR CHAMADO TÉCNICO. Use este comando IMEDIATAMENTE após coletar Nome, Email e Telefone. É proibido dizer que o chamado foi aberto sem usar esta ferramenta.",
+                            description: "GERAR CHAMADO. Use este comando assim que tiver o ASSUNTO e a DESCRIÇÃO do problema. Se o usuário estiver logado, não peça dados, use o EMAIL_USUARIO do contexto.",
                             parameters: {
                                 type: "object",
                                 properties: {
@@ -623,8 +623,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             }
 
             const systemInstruction = context || "Você é o assistente da Zaplandia.";
-            const fullPrompt = `${systemInstruction}\n\n${prompt}`;
-
+            // 🔧 FIX: Do not prepend promptEntity.instruction to the user prompt if we are also passing it as systemInstruction.
+            // This prevents conflicting instructions and model confusion.
+            const finalPrompt = prompt;
             const startModel = modelName || 'gemini-1.5-flash';
             const modelsToTry = [
                 startModel,
