@@ -1128,11 +1128,15 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             contact = this.contactRepository.create({
                 tenantId,
                 name: user.name || 'User Lisa Chat',
+                email: user.email, // Explicitly save email
                 externalId: user.email,
                 provider: 'site',
                 stage: 'NOVO'
             });
             await this.contactRepository.save(contact);
+        } else if (!contact.email && user.email) {
+            // Update existing contact if email is missing
+            await this.contactRepository.update(contact.id, { email: user.email });
         }
         return contact;
     }
@@ -1212,7 +1216,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
             } else if (funcName === 'open_ticket' && tenantId && contactId) {
                 const contact = await this.contactRepository.findOne({ where: { id: contactId } });
-                const requesterIdentity = contact?.email || contact?.name || 'Cliente Externo';
+                
+                // Use email or externalId (which stores email for Lisa contacts)
+                const requesterIdentity = contact?.email || contact?.externalId || contact?.name || 'Cliente Externo';
                 
                 return this.supportService.createTicket(targetTenantId, contactId, {
                     subject: args.subject,
