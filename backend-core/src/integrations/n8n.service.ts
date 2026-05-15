@@ -82,7 +82,8 @@ export class N8nService {
             }
 
             const url = `${cleanUrl}/workflows`;
-            this.logger.log(`[CREATE_WORKFLOW] Deploying to ${url} for tenant ${tenantId}`);
+            this.logger.log(`[CREATE_WORKFLOW] Target URL: ${url}`);
+            this.logger.debug(`[CREATE_WORKFLOW] Auth Header: X-N8N-API-KEY: ${apiKey.substring(0, 4)}...`);
 
             const response = await axios.post(url, {
                 name: workflowData.name || `Zaplandia Flow - ${new Date().toLocaleDateString()}`,
