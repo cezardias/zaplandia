@@ -418,14 +418,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         },
                         {
                             name: "open_ticket",
-                            description: "Abre um chamado oficial. Use quando coletar Nome, Email e Telefone.",
+                            description: "GERAR CHAMADO TÉCNICO. Use este comando IMEDIATAMENTE após coletar Nome, Email e Telefone. É proibido dizer que o chamado foi aberto sem usar esta ferramenta.",
                             parameters: {
                                 type: "object",
                                 properties: {
-                                    subject: { type: "string" },
-                                    description: { type: "string" },
-                                    category: { type: "string" },
-                                    priority: { type: "string" }
+                                    subject: { type: "string", description: "Assunto curto (ex: Ajuda com Automação)" },
+                                    description: { type: "string", description: "Resumo do pedido do cliente" },
+                                    category: { type: "string", description: "technical" },
+                                    priority: { type: "string", description: "medium" }
                                 },
                                 required: ["subject", "description"]
                             }
@@ -801,7 +801,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 model: model,
                 messages,
                 max_tokens: maxTokens,
-                temperature: 0.1,
+                temperature: 0, // Force strict tool calling and logic
             };
 
             if (tools) {
