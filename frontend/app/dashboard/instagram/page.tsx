@@ -1792,41 +1792,41 @@ export default function InstagramManagementPage() {
             {/* Playlist Modal */}
             {isPlaylistModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setIsPlaylistModalOpen(false)} />
-                    <div className="relative bg-[#1A1C1E] border border-white/10 rounded-[48px] w-full max-w-4xl overflow-hidden flex shadow-[0_0_100px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300 h-[650px]">
+                    <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsPlaylistModalOpen(false)} />
+                    <div className="relative bg-white border border-gray-100 rounded-[48px] w-full max-w-4xl overflow-hidden flex shadow-[0_20px_100px_rgba(0,0,0,0.1)] animate-in zoom-in-95 duration-300 h-[650px]">
                         {/* Sidebar */}
-                        <div className="w-72 bg-black/40 border-r border-white/5 p-8 flex flex-col">
+                        <div className="w-72 bg-[#F8F9FA] border-r border-gray-100 p-8 flex flex-col">
                             <div className="flex items-center space-x-3 mb-10">
                                 <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
                                     <ListMusic size={20} className="text-white" />
                                 </div>
-                                <h3 className="text-white font-black text-xs uppercase tracking-widest">Criar</h3>
+                                <h3 className="text-gray-900 font-black text-xs uppercase tracking-widest">Criar</h3>
                             </div>
                             
                             <div className="space-y-3 flex-1">
-                                <div className="flex items-center space-x-4 px-5 py-4 bg-primary/10 rounded-[24px] border border-primary/20 group transition-all">
-                                    <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
-                                    <span className="text-[11px] font-black text-white uppercase tracking-widest">Detalhes</span>
+                                <div className="flex items-center space-x-4 px-5 py-4 bg-white rounded-[24px] border border-gray-100 shadow-sm group transition-all">
+                                    <div className="w-2 h-2 rounded-full bg-primary" />
+                                    <span className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Detalhes</span>
                                 </div>
-                                <div className="flex items-center space-x-4 px-5 py-4 text-gray-600 opacity-40 cursor-not-allowed">
-                                    <div className="w-2 h-2 rounded-full bg-gray-800" />
+                                <div className="flex items-center space-x-4 px-5 py-4 text-gray-300 opacity-60 cursor-not-allowed">
+                                    <div className="w-2 h-2 rounded-full bg-gray-200" />
                                     <span className="text-[11px] font-black uppercase tracking-widest">Adicionar Reels</span>
                                 </div>
                             </div>
 
-                            <div className="p-4 bg-white/5 rounded-3xl border border-white/5">
-                                <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2 text-center leading-relaxed">Sua playlist será visível no seu perfil do Instagram.</p>
+                            <div className="p-4 bg-white rounded-3xl border border-gray-100">
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center leading-relaxed">Sua playlist será visível no seu perfil do Instagram.</p>
                             </div>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 p-12 flex flex-col bg-surface/30">
+                        <div className="flex-1 p-12 flex flex-col bg-white">
                             <div className="flex items-center justify-between mb-10">
                                 <div>
-                                    <h2 className="text-2xl font-black text-white uppercase tracking-tight">Nova playlist</h2>
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Configure as informações básicas</p>
+                                    <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Nova playlist</h2>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Configure as informações básicas</p>
                                 </div>
-                                <button onClick={() => setIsPlaylistModalOpen(false)} className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all border border-white/5 text-gray-400 hover:text-white">
+                                <button onClick={() => setIsPlaylistModalOpen(false)} className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center hover:bg-gray-100 transition-all border border-gray-100 text-gray-400 hover:text-gray-900">
                                     <X size={24} />
                                 </button>
                             </div>
@@ -1837,25 +1837,25 @@ export default function InstagramManagementPage() {
                                     
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center ml-1">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Título da Playlist</label>
-                                            <span className="text-[9px] font-bold text-gray-700">0 / 50</span>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Título da Playlist</label>
+                                            <span className="text-[9px] font-bold text-gray-300">0 / 50</span>
                                         </div>
                                         <input 
                                             type="text" 
                                             placeholder="Ex: Melhores Dicas de Marketing"
-                                            className="w-full bg-black/40 border border-white/5 rounded-[24px] px-6 py-4 text-sm font-bold text-white focus:outline-none focus:border-primary/50 transition-all placeholder:text-gray-800"
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-[24px] px-6 py-4 text-sm font-bold text-gray-900 focus:outline-none focus:border-primary/50 transition-all placeholder:text-gray-300"
                                         />
                                     </div>
 
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center ml-1">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Descrição</label>
-                                            <span className="text-[9px] font-bold text-gray-700">0 / 1000</span>
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Descrição</label>
+                                            <span className="text-[9px] font-bold text-gray-300">0 / 1000</span>
                                         </div>
                                         <textarea 
                                             placeholder="Conte um pouco sobre o que as pessoas vão encontrar aqui..."
                                             rows={4}
-                                            className="w-full bg-black/40 border border-white/5 rounded-[24px] p-6 text-sm font-bold text-white focus:outline-none focus:border-primary/50 transition-all resize-none placeholder:text-gray-800"
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-[24px] p-6 text-sm font-bold text-gray-900 focus:outline-none focus:border-primary/50 transition-all resize-none placeholder:text-gray-300"
                                         />
                                     </div>
                                 </div>
@@ -1863,22 +1863,22 @@ export default function InstagramManagementPage() {
                                 <div className="space-y-6">
                                     <div className="flex flex-col space-y-2">
                                         <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Capa da Playlist</h3>
-                                        <p className="text-[10px] text-gray-600 font-medium">Opcional: Se não escolher, usaremos a capa do primeiro Reels.</p>
+                                        <p className="text-[10px] text-gray-400 font-medium">Opcional: Se não escolher, usaremos a capa do primeiro Reels.</p>
                                     </div>
                                     
-                                    <div className="border-2 border-dashed border-white/5 rounded-[40px] p-12 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/30 transition-all group cursor-pointer bg-black/20 hover:bg-black/40">
-                                        <div className="w-20 h-20 bg-white/5 rounded-[32px] flex items-center justify-center group-hover:scale-110 transition-transform border border-white/5 group-hover:border-primary/20 shadow-2xl">
-                                            <ImageIcon size={32} className="text-gray-600 group-hover:text-primary transition-colors" />
+                                    <div className="border-2 border-dashed border-gray-100 rounded-[40px] p-12 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/20 transition-all group cursor-pointer bg-gray-50/50 hover:bg-gray-50">
+                                        <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center group-hover:scale-110 transition-transform border border-gray-100 shadow-xl">
+                                            <ImageIcon size={32} className="text-gray-200 group-hover:text-primary transition-colors" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-xs font-black text-white uppercase tracking-widest">Upload da Capa</p>
+                                            <p className="text-xs font-black text-gray-900 uppercase tracking-widest">Upload da Capa</p>
                                             <p className="text-[10px] text-primary font-bold opacity-60">Arraste um arquivo ou clique aqui</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="pt-8 border-t border-white/5 flex justify-end">
+                            <div className="pt-8 border-t border-gray-100 flex justify-end">
                                 <button className="bg-primary text-white px-12 py-5 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-primary/80 transition-all shadow-2xl shadow-primary/20 transform active:scale-95">
                                     Próximo Passo
                                 </button>
