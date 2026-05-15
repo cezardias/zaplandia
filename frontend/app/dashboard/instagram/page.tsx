@@ -256,6 +256,9 @@ export default function InstagramManagementPage() {
     const [caption, setCaption] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [isLoadingComments, setIsLoadingComments] = useState(false);
+    const [replyTexts, setReplyTexts] = useState<{[key: string]: string}>({});
 
     useEffect(() => {
         if (token) {
