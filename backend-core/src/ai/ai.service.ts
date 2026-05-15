@@ -539,56 +539,60 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
     async getAiResponse(tenantId: string, prompt: string, provider: string, context?: string, modelName?: string) {
         try {
-            const apiKey = await this.getGeminiApiKey(tenantId);
+            const systemInstruction = context || 'Você é o assistente da Zaplandia.';
+            const finalPrompt = prompt;
 
-            if (!apiKey) {
-                this.logger.error(`[AI_REQUEST] No API Key found for Tenant ${tenantId}.`);
-                return `[ERRO] Chave de API do Gemini não configurada.`;
+            // --- 1. Try Gemini first ---
+            const geminiKey = await this.getGeminiApiKey(tenantId);
+            if (geminiKey) {
+                const startModel = modelName && !modelName.includes('/') ? modelName : 'gemini-2.0-flash';
+                const geminiModels = [...new Set([startModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
+                let lastGeminiError: any;
+
+                for (const model of geminiModels) {
+                    this.logger.debug(`[AI_WAND_ATTEMPT] Trying Gemini model: ${model}`);
+                    try {
+                        const aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 2048, undefined, tenantId, undefined, systemInstruction);
+                        if (aiResponse) {
+                            this.logger.debug(`[AI_WAND_SUCCESS] Gemini model ${model} worked.`);
+                            return aiResponse;
+                        }
+                    } catch (error) {
+                        lastGeminiError = error;
+                        const status = error.response?.status;
+                        this.logger.warn(`[AI_WAND_FAIL] Model ${model} failed: ${error.message}`);
+                        // On rate limit, stop trying more gemini models (quota exhausted)
+                        if (status === 429) {
+                            this.logger.warn(`[AI_WAND] Gemini quota exhausted (429). Falling back to OpenRouter...`);
+                            break;
+                        }
+                    }
+                }
+                if (lastGeminiError) {
+                    this.logger.warn(`[AI_REQUEST] Gemini failed, trying OpenRouter fallback...`);
+                }
+            } else {
+                this.logger.warn(`[AI_REQUEST] No Gemini key for tenant ${tenantId}. Trying OpenRouter...`);
             }
 
-            const systemInstruction = context || "Você é o assistente da Zaplandia.";
-            // 🔧 FIX: Do not prepend promptEntity.instruction to the user prompt if we are also passing it as systemInstruction.
-            // This prevents conflicting instructions and model confusion.
-            const finalPrompt = prompt;
-            const startModel = modelName || 'gemini-2.0-flash';
-            const modelsToTry = [
-                startModel,
-                'gemini-2.0-flash',
-                'gemini-2.0-flash-lite',
-                'gemini-2.0-flash-exp',
-                'gemini-1.5-flash-latest',
-                'gemini-1.5-flash-8b',
-                'gemini-1.5-pro',
-            ];
-            const uniqueModels = [...new Set(modelsToTry)];
-
-            let aiResponse: string | null = null;
-            let lastError: any;
-
-            for (const model of uniqueModels) {
-                this.logger.debug(`[AI_WAND_ATTEMPT] Trying Gemini model: ${model}`);
+            // --- 2. Fallback to OpenRouter ---
+            const openRouterKey = await this.getOpenRouterApiKey(tenantId);
+            if (openRouterKey) {
+                const orModel = modelName && modelName.includes('/') ? modelName : 'deepseek/deepseek-r1';
+                this.logger.log(`[AI_OPENROUTER_FALLBACK] Trying OpenRouter model: ${orModel}`);
                 try {
-                    aiResponse = await this.callGemini(model, finalPrompt, apiKey, 2048);
+                    const aiResponse = await this.callOpenRouter(orModel, finalPrompt, openRouterKey, 2048, undefined, tenantId, undefined, systemInstruction);
                     if (aiResponse) {
-                        this.logger.debug(`[AI_WAND_SUCCESS] Model ${model} worked.`);
-                        break;
+                        this.logger.log(`[AI_OPENROUTER_SUCCESS] OpenRouter model ${orModel} worked.`);
+                        return aiResponse;
                     }
                 } catch (error) {
-                    lastError = error;
-                    this.logger.warn(`[AI_WAND_FAIL] Model ${model} failed: ${error.message}`);
+                    this.logger.error(`[AI_OPENROUTER_FAIL] ${error.message}`);
                 }
             }
 
-            if (!aiResponse) {
-                if (lastError) {
-                    const errorDetail = lastError.response?.data ? JSON.stringify(lastError.response.data) : lastError.message;
-                    this.logger.error(`[AI_REQUEST_FAILED] All models on Interactions API failed. Last error: ${errorDetail}`);
-                }
-                return null;
-            }
-
-            this.logger.log(`[AI_RESPONSE] Received ${aiResponse.length} chars from AI Service`);
-            return aiResponse;
+            this.logger.error(`[AI_REQUEST_FAILED] All providers failed for tenant ${tenantId}.`);
+            return null;
 
         } catch (error) {
             const errorDetail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
@@ -596,6 +600,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             return null;
         }
     }
+
 
     async generateVariations(tenantId: string, baseMessage: string, prompt?: string, count: number = 3): Promise<string[]> {
         const systemInstruction = "Você é um especialista em Copywriting para WhatsApp. Sua tarefa é gerar variações de mensagens mantendo o sentido original, mas mudando o tom ou a estrutura para evitar bloqueios de SPAM. Retorne APENAS um array JSON de strings, sem markdown.";
