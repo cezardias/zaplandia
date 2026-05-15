@@ -39,7 +39,10 @@ import {
     LayoutGrid,
     Tag,
     Scissors,
-    Zap
+    Zap,
+    Facebook,
+    ExternalLink,
+    Eye
 } from 'lucide-react';
 import Image from 'next/image';
 
