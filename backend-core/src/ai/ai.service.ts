@@ -1214,6 +1214,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 }
                 return { error: `Equipe '${args.teamId}' não encontrada.` };
 
+            } else if (funcName === 'open_ticket' && tenantId && contactId) {
+                const contact = await this.contactRepository.findOne({ where: { id: contactId } });
+                
                 // Clean up any 'undefined' strings that might have leaked from concatenations
                 const requesterIdentity = (args.requesterEmail || contact?.email || contact?.externalId || contact?.name || 'Cliente Externo')
                     .toString().replace(/undefined/g, '').trim();
