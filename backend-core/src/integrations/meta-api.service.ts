@@ -392,10 +392,10 @@ export class MetaApiService {
             if (!id) id = configIbId;
             if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
 
-            this.logger.debug(`[INSTAGRAM_STORIES] Fetching stories for ID: ${id} (v21.0)`);
+            this.logger.debug(`[INSTAGRAM_STORIES] Fetching stories for ID: ${id} (v18.0)`);
             try {
                 const response = await axios.get(
-                    `https://graph.facebook.com/v21.0/${id}/stories`,
+                    `https://graph.facebook.com/v18.0/${id}/stories`,
                     { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
                 );
                 this.logger.log(`[INSTAGRAM_STORIES] Success for ID ${id}: ${response.data?.data?.length || 0} stories found`);
@@ -404,25 +404,23 @@ export class MetaApiService {
                 const errorCode = error.response?.data?.error?.code;
                 const errorMsg = error.response?.data?.error?.message || '';
                 
-                this.logger.warn(`[INSTAGRAM_STORIES] Primary fetch failed for ${id}: ${errorMsg} (Code ${errorCode})`);
+                this.logger.warn(`[INSTAGRAM_STORIES] Primary fetch failed for ${id}: ${errorMsg}`);
 
                 // If it's a type error (#100) or 400/404, it might be a Page ID
                 if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404 || errorMsg.includes('Unknown path')) {
                     try {
-                        this.logger.debug(`[INSTAGRAM_STORIES] Attempting to resolve IG Business ID from Page ID ${id}...`);
-                        const pageRes = await axios.get(`https://graph.facebook.com/v21.0/${id}`, {
+                        this.logger.debug(`[INSTAGRAM_STORIES] Attempting to resolve IG Business ID for ${id}...`);
+                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
                             params: { access_token: accessToken, fields: 'instagram_business_account' }
                         });
                         const igId = pageRes.data?.instagram_business_account?.id;
                         if (igId && igId !== id) {
-                            this.logger.log(`[INSTAGRAM_STORIES] Resolved IG ID: ${igId}. Retrying fetch...`);
+                            this.logger.log(`[INSTAGRAM_STORIES] Resolved IG ID: ${igId}. Retrying with v18.0...`);
                             const response = await axios.get(
-                                `https://graph.facebook.com/v21.0/${igId}/stories`,
+                                `https://graph.facebook.com/v18.0/${igId}/stories`,
                                 { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
                             );
                             return response.data;
-                        } else {
-                            this.logger.warn(`[INSTAGRAM_STORIES] No linked Instagram Business Account found for ID ${id}`);
                         }
                     } catch (innerError) {
                         this.logger.error(`[INSTAGRAM_STORIES] Deep resolution failed: ${innerError.message}`);
@@ -461,25 +459,22 @@ export class MetaApiService {
                 // If it's a type error (#100), "Unknown path", or 400/404, it might be a Page ID
                 if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404 || errorMsg.includes('Unknown path')) {
                     try {
-                        this.logger.debug(`[INSTAGRAM_HIGHLIGHTS] ID ${id} failed. Attempting deep resolution for tenant ${tenantId}...`);
-                        const pageRes = await axios.get(`https://graph.facebook.com/v21.0/${id}`, {
+                        this.logger.debug(`[INSTAGRAM_HIGHLIGHTS] ID ${id} failed. Resolving to IG ID (v18.0)...`);
+                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
                             params: { access_token: accessToken, fields: 'instagram_business_account' }
                         });
                         const igId = pageRes.data?.instagram_business_account?.id;
                         if (igId && igId !== id) {
                             const response = await axios.get(
-                                `https://graph.facebook.com/v21.0/${igId}/highlights`,
+                                `https://graph.facebook.com/v18.0/${igId}/highlights`,
                                 { params: { access_token: accessToken, fields: 'id,name,cover_media{id,media_url,thumbnail_url}' } }
                             );
                             return response.data;
                         }
                     } catch (e) {
-                        this.logger.warn(`[INSTAGRAM_HIGHLIGHTS] Deep resolution failed for ${id}: ${e.message}`);
+                        this.logger.warn(`[INSTAGRAM_HIGHLIGHTS] Resolution failed: ${e.message}`);
                     }
                 }
-                
-                // Fail-safe: return empty if we really can't get it
-                this.logger.warn(`[INSTAGRAM_HIGHLIGHTS] Could not fetch highlights for ${id}. Returning empty.`);
                 return { data: [] };
             }
         } catch (error: any) {
