@@ -489,9 +489,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     if (model.includes('/') && openRouterKey) {
                         this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
-                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId, contact.id, systemInstruction);
+                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId, contact.id, systemInstruction, promptEntity?.id);
                     } else if (geminiKey) {
-                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId, contact.id, systemInstruction);
+                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId, contact.id, systemInstruction, promptEntity?.id);
                     }
 
                     if (aiResponse) {
@@ -794,7 +794,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
      *        if both versions return 429, wait 5s and throw so outer loop tries next model
      * 503/500 → throw immediately so outer loop tries next model
      */
-    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string): Promise<string | null> {
+    private async callOpenRouter(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string, promptId?: string): Promise<string | null> {
         try {
             const url = 'https://openrouter.ai/api/v1/chat/completions';
             const messages: any[] = [];
@@ -867,7 +867,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                             this.logger.log(`[AI_TOOL] No teams in current tenant ${tenantId}. Checking Master/Integration tenant...`);
                             // Find the master tenant associated with the active integration for Lisa
                             const integration = await this.integrationRepository.findOne({ 
-                                where: { id: activePromptId } // Usually integration and prompt are linked or we can find via prompt
+                                where: { id: promptId } 
                             });
                             const masterId = integration?.tenantId || '3ac9368c-af7c-4183-9816-b90513368f53'; // Fallback to your HQ ID found in logs
                             teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [masterId]);
@@ -982,7 +982,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string): Promise<string | null> {
+    private async callGemini(model: string, prompt: string, apiKey: string, maxTokens: number, tools?: any[], tenantId?: string, contactId?: string, systemInstruction?: string, promptId?: string): Promise<string | null> {
         // 🔧 FIX: Tool calling MUST use v1beta. v1 often doesn't support the 'tools' field.
         // However, if tools fail or model is not found in v1beta, we can try v1 as fallback for text.
         const versions = tools ? ['v1beta', 'v1'] : ['v1', 'v1beta'];
