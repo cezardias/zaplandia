@@ -43,7 +43,9 @@ import {
     Zap,
     Facebook,
     ExternalLink,
-    Eye
+    Eye,
+    RefreshCw,
+    UploadCloud
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -285,6 +287,8 @@ export default function InstagramManagementPage() {
         versionB: { caption: '', imageUrl: '' }
     });
     const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         if (token) {
@@ -324,6 +328,30 @@ export default function InstagramManagementPage() {
             alert('Erro ao gerar com IA');
         } finally {
             setIsGeneratingAI(false);
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/integrations/upload`, formData, {
+                headers: { 
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem('token')}` 
+                }
+            });
+            setImageUrl(response.data.url);
+        } catch (err) {
+            console.error('Upload failed:', err);
+            alert('Falha ao subir imagem. Tente novamente.');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -1305,19 +1333,47 @@ export default function InstagramManagementPage() {
                             <div className="space-y-8">
                                 {/* Media Selection */}
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">URL da Imagem (Upload em breve)</label>
-                                    <div className="flex space-x-4">
-                                        <input 
-                                            type="text" 
-                                            value={imageUrl}
-                                            onChange={(e) => setImageUrl(e.target.value)}
-                                            placeholder="https://exemplo.com/imagem.jpg"
-                                            className="flex-1 bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-xs text-gray-200 outline-none focus:border-primary/50 transition-all shadow-inner"
-                                        />
-                                    </div>
-                                    {imageUrl && (
-                                        <div className="mt-4 aspect-square max-w-[200px] rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Mídia do Post</label>
+                                    <input 
+                                        type="file" 
+                                        ref={fileInputRef}
+                                        onChange={handleFileUpload}
+                                        accept="image/*"
+                                        className="hidden"
+                                    />
+                                    
+                                    {!imageUrl ? (
+                                        <div 
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="border-2 border-dashed border-white/5 rounded-[32px] p-12 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/30 transition-all group cursor-pointer bg-black/20"
+                                        >
+                                            <div className="w-16 h-16 bg-white/5 rounded-[24px] flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                {isUploading ? <Loader2 className="w-8 h-8 text-primary animate-spin" /> : <UploadCloud size={32} className="text-gray-600" />}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-xs font-black text-white uppercase tracking-widest">
+                                                    {isUploading ? 'Subindo arquivo...' : 'Escolha uma imagem'}
+                                                </p>
+                                                <p className="text-[10px] text-gray-500 font-medium">PNG, JPG ou JPEG até 10MB</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="relative group aspect-square max-w-[300px] rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
                                             <img src={imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-3">
+                                                <button 
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white transition"
+                                                >
+                                                    <RefreshCw size={20} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => setImageUrl('')}
+                                                    className="p-3 bg-red-500/20 hover:bg-red-500/40 rounded-xl text-red-500 transition"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

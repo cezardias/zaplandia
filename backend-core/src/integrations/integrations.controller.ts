@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Patch, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 import { IntegrationsService } from './integrations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EvolutionApiService } from './evolution-api.service';
@@ -533,5 +535,32 @@ export class IntegrationsController {
     @Delete('meta/templates/:name')
     async deleteMetaTemplate(@Request() req, @Param('name') name: string) {
         return this.metaApiService.deleteTemplate(req.user.tenantId, name);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('upload')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: './public/uploads',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                cb(null, `${uniqueSuffix}-${file.originalname}`);
+            },
+        }),
+    }))
+    async uploadFile(@UploadedFile() file: Express.Multer.File, @Request() req) {
+        // Construct the public URL
+        const protocol = req.protocol || 'https';
+        const host = req.get('host');
+        // Check if there is an override for public URL (useful for production/proxy)
+        const baseUrl = process.env.PUBLIC_API_URL || `${protocol}://${host}`;
+        const url = `${baseUrl}/public/uploads/${file.filename}`;
+        
+        return {
+            url,
+            filename: file.filename,
+            mimetype: file.mimetype,
+            size: file.size
+        };
     }
 }

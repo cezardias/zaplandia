@@ -20,9 +20,15 @@ import { CommsModule } from './comms/comms.module';
 import { BillingModule } from './billing/billing.module';
 import { MailModule } from './mail/mail.module';
 import { AutomationsModule } from './automations/automations.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+      serveRoot: '/public',
+    }),
     AuthModule,
     UsersModule,
     IntegrationsModule,
