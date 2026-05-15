@@ -111,6 +111,8 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
             await queryRunner.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS "assignedTeamId" UUID`);
             // Add assignedUserId
             await queryRunner.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS "assignedUserId" UUID`);
+            // Add automationPaused
+            await queryRunner.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS "automationPaused" BOOLEAN DEFAULT FALSE`);
 
             // Sync pipeline_stages table
             await queryRunner.query(`ALTER TABLE pipeline_stages ADD COLUMN IF NOT EXISTS "qualificationCriteria" TEXT`);

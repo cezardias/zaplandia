@@ -54,6 +54,9 @@ export class Contact {
     @Column({ type: 'varchar', nullable: true })
     assignedUserId: string | null;
 
+    @Column({ nullable: true, default: false })
+    automationPaused: boolean;
+
     @ManyToOne(() => Tenant)
     tenant: Tenant;
 
