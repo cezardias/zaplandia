@@ -879,13 +879,27 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                             targetTeamId = foundTeam.id;
                             this.logger.log(`[AI_TOOL] Resolved team name '${args.teamId}' to ID ${targetTeamId} (${foundTeam.name})`);
                             
-                            await this.contactRepository.update(contactId, { assignedTeamId: targetTeamId });
+                            // UPDATE CONTACT: Move to HQ tenant AND assign team
+                            await this.contactRepository.update(contactId, { 
+                                assignedTeamId: targetTeamId,
+                                tenantId: targetTenantId // Move the contact to HQ
+                            });
+                            
                             // Emit update via socket
                             this.communicationService.emitToTenant(tenantId, 'contact_updated', {
                                 contactId: contactId,
-                                assignedTeamId: targetTeamId
+                                assignedTeamId: targetTeamId,
+                                tenantId: targetTenantId
                             });
-                            toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam.name}.` };
+                            
+                            // ALSO emit to the target tenant so they see it immediately
+                            this.communicationService.emitToTenant(targetTenantId, 'contact_updated', {
+                                contactId: contactId,
+                                assignedTeamId: targetTeamId,
+                                tenantId: targetTenantId
+                            });
+
+                            toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam.name} na HQ.` };
                         } else {
                             this.logger.warn(`[AI_TOOL_FAILSAFE] Team '${args.teamId}' not found. Keeping current assignment.`);
                             toolResult = { success: false, message: `Equipe '${args.teamId}' não encontrada. O atendimento permanece com o responsável atual.` };
