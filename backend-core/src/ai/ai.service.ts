@@ -470,19 +470,26 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                 }
                             }
 
-                            // Fallback: Se falar de chamado SEM intenção de status, e sim de ABERTURA
+                            // Fallback 1: Se falar de chamado SEM intenção de status, e sim de ABERTURA
                             const text = aiResponse.toLowerCase();
-                            const isStatusRequest = text.includes('status') || text.includes('quais') || text.includes('ver') || text.includes('lista');
-                            const isCreationRequest = text.includes('abrir') || text.includes('criar') || text.includes('novo') || text.includes('abertura');
+                            const isStatusRequest = text.includes('status') || text.includes('quais') || text.includes('ver') || text.includes('lista') || text.includes('list_tickets');
+                            const isCreationRequest = text.includes('abrir') || text.includes('criar') || text.includes('novo') || text.includes('abertura') || text.includes('open_ticket');
 
-                            if ((text.includes('open_ticket') || isCreationRequest) && !isStatusRequest && !aiResponse.includes('{')) {
-                                this.logger.warn(`[AI_HEAL] Forcing ticket creation for chatty model.`);
+                            // Se ela MENCIONOU list_tickets no texto mas não disparou o JSON
+                            if (isStatusRequest && !aiResponse.includes('{')) {
+                                this.logger.warn(`[AI_HEAL] AI mentioned list_tickets. Forcing execution.`);
+                                const toolResult = await this.handleToolCall('list_tickets', {}, tenantId, contact.id || 'unknown', undefined, authenticatedUser);
+                                aiResponse = `Aqui estão seus chamados:\n${JSON.stringify(toolResult.tickets || 'Nenhum chamado encontrado.')}`;
+                            } 
+                            // Se ela MENCIONOU abertura mas não disparou o JSON
+                            else if (isCreationRequest && !isStatusRequest && !aiResponse.includes('{')) {
+                                this.logger.warn(`[AI_HEAL] AI mentioned opening a ticket. Forcing execution.`);
                                 const toolResult = await this.handleToolCall('open_ticket', { 
                                     subject: "Chamado via Lisa", 
                                     description: aiResponse, 
                                     category: "technical" 
                                 }, tenantId, contact.id || 'unknown', undefined, authenticatedUser);
-                                aiResponse = `Com certeza! Já abri o seu chamado aqui para o nosso time técnico. O protocolo foi gerado com sucesso e nossa equipe entrará em contato com você o mais rápido possível. Posso te ajudar com mais alguma coisa?`;
+                                aiResponse = `Com certeza! Já abri o seu chamado aqui para o nosso time técnico. Posso te ajudar com mais alguma coisa?`;
                             }
                         }
                         

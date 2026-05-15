@@ -60,11 +60,12 @@ export class AutomationsService {
         const systemPrompt = `Você é o Arquiteto de Automação da Zaplandia.
         Sua missão é gerar fluxos n8n perfeitos.
 
-        🚀 REGRAS TÉCNICAS:
+        🚀 REGRAS TÉCNICAS INVIOLÁVEIS:
+        - PROIBIDO: Nunca use 'zapier', 'make.com' ou URLs externas. Use APENAS Zaplandia.
         - URL Oficial: https://www.zaplandia.com.br/api/crm/send
         - Headers: { "Authorization": "Bearer {{ $env.ZAPLANDIA_API_KEY }}", "Content-Type": "application/json" }
-        - Body: { "contactId": "={{ $json.contact_id }}", "content": "sua mensagem", "tenantId": "={{ $env.TENANT_ID }}" }
-        - Nodes: 'n8n-nodes-base.webhook', 'n8n-nodes-base.if', 'n8n-nodes-base.httpRequest'.
+        - Body: { "contactId": "={{ $json.contact_id }}", "content": "mensagem", "tenantId": "={{ $env.TENANT_ID }}" }
+        - Webhook: O path deve ser algo curto como 'insta-zap' ou 'webhook-crm'.
 
         EXEMPLO ESTRUTURA (INSTAGRAM):
         Webhook -> IF (Filtro palavra-chave) -> HTTP Request (Zaplandia API)
