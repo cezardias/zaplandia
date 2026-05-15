@@ -195,7 +195,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         keep_alive: "1h",
                         options
                     },
-                    { timeout: 300000 } // 5 minutes - local inference is slower
+                    { timeout: 15000 } // 15 seconds - fail fast if local is too slow
                 );
 
             const content = response.data?.message?.content;
@@ -406,9 +406,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             let modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
 
             if (isInternal) {
-                // INTERNAL ONLY uses Lisa (Ollama)
-                this.logger.log(`[AI_INTERNAL] Forcing Lisa (Ollama) for internal task.`);
-                modelsToTry = ['zaplandia-lisa', 'qwen2.5:3b'];
+                // 🚀 SPEED OPTIMIZATION: Use a single model for all agents (CRM, HELP, ARCHITECT)
+                // This keeps the model "hot" in RAM and avoids slow swaps.
+                this.logger.log(`[AI_INTERNAL] Using unified model qwen2.5:3b for internal agent.`);
+                modelsToTry = ['qwen2.5:3b', 'zaplandia-lisa'];
             }
 
             let aiResponse: string | null = null;
@@ -627,10 +628,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             // --- 1. LISA ZAPLANDIA (Ollama self-hosted - GRÁTIS, sem token!) ---
             const ollamaUrl = this.getOllamaBaseUrl();
             if (ollamaUrl) {
-                // Usa zaplandia-lisa como padrão. Se o modelo configurado for Ollama-local, usa ele.
+                // Usa qwen2.5:3b como padrão para velocidade.
                 const ollamaModel = (modelName && !modelName.includes('/') && !modelName.startsWith('gemini'))
                     ? modelName
-                    : 'zaplandia-lisa';
+                    : 'qwen2.5:3b';
 
                 this.logger.debug(`[LISA] Calling Ollama model: ${ollamaModel}`);
                 try {
