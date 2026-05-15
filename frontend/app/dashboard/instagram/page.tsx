@@ -21,6 +21,7 @@ import {
     Music,
     MapPin,
     Users,
+    User,
     ChevronRight,
     ChevronLeft,
     Calendar,
