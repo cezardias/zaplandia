@@ -82,9 +82,17 @@ export class AutomationsService {
         // Using the same backend engine as the AI assistant
         const aiResponse = await this.aiService.generateGenericResponse(tenantId, fullPrompt);
         
+        if (!aiResponse) {
+            this.logger.error(`[ARCHITECT] AI returned null for tenant ${tenantId}. Possible quota exhaustion or missing key.`);
+            return {
+                role: 'assistant',
+                content: '⚠️ Não consegui processar sua mensagem agora. Isso pode ser um problema de **quota da API do Gemini** (limite de requisições atingido). Verifique em [aistudio.google.com](https://aistudio.google.com) se sua chave ainda tem cota disponível, ou configure uma chave de outro provedor (OpenRouter/OpenAI) em **Configurações > APIs**.'
+            };
+        }
+        
         return {
             role: 'assistant',
-            content: aiResponse || 'Desculpe, tive um problema ao processar sua ideia. Pode repetir?'
+            content: aiResponse
         };
     }
 }
