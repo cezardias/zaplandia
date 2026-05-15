@@ -392,40 +392,29 @@ export class MetaApiService {
             if (!id) id = configIbId;
             if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
 
-            this.logger.debug(`[INSTAGRAM_STORIES] Fetching stories for ID: ${id} (v18.0)`);
+            this.logger.debug(`[INSTAGRAM_STORIES] Proactively resolving ID for tenant ${tenantId}...`);
+            let igId = id;
+            try {
+                const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                    params: { access_token: accessToken, fields: 'instagram_business_account' }
+                });
+                if (pageRes.data?.instagram_business_account?.id) {
+                    igId = pageRes.data.instagram_business_account.id;
+                    this.logger.log(`[INSTAGRAM_STORIES] Using resolved IG ID: ${igId}`);
+                }
+            } catch (e) {
+                this.logger.debug(`[INSTAGRAM_STORIES] ID ${id} is likely already an IG ID or resolution failed.`);
+            }
+
             try {
                 const response = await axios.get(
-                    `https://graph.facebook.com/v18.0/${id}/stories`,
+                    `https://graph.facebook.com/v18.0/${igId}/stories`,
                     { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
                 );
-                this.logger.log(`[INSTAGRAM_STORIES] Success for ID ${id}: ${response.data?.data?.length || 0} stories found`);
+                this.logger.log(`[INSTAGRAM_STORIES] Success for ID ${igId}: ${response.data?.data?.length || 0} stories found`);
                 return response.data;
             } catch (error: any) {
-                const errorCode = error.response?.data?.error?.code;
-                const errorMsg = error.response?.data?.error?.message || '';
-                
-                this.logger.warn(`[INSTAGRAM_STORIES] Primary fetch failed for ${id}: ${errorMsg}`);
-
-                // If it's a type error (#100) or 400/404, it might be a Page ID
-                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404 || errorMsg.includes('Unknown path')) {
-                    try {
-                        this.logger.debug(`[INSTAGRAM_STORIES] Attempting to resolve IG Business ID for ${id}...`);
-                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
-                            params: { access_token: accessToken, fields: 'instagram_business_account' }
-                        });
-                        const igId = pageRes.data?.instagram_business_account?.id;
-                        if (igId && igId !== id) {
-                            this.logger.log(`[INSTAGRAM_STORIES] Resolved IG ID: ${igId}. Retrying with v18.0...`);
-                            const response = await axios.get(
-                                `https://graph.facebook.com/v18.0/${igId}/stories`,
-                                { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
-                            );
-                            return response.data;
-                        }
-                    } catch (innerError) {
-                        this.logger.error(`[INSTAGRAM_STORIES] Deep resolution failed: ${innerError.message}`);
-                    }
-                }
+                this.logger.error(`[INSTAGRAM_STORIES] Failed to fetch stories for ${igId}: ${error.message}`);
                 return { data: [] };
             }
         } catch (error: any) {
@@ -446,35 +435,25 @@ export class MetaApiService {
             if (!id) id = configIbId;
             if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
 
+            this.logger.debug(`[INSTAGRAM_HIGHLIGHTS] Proactively resolving ID for highlights...`);
+            let igId = id;
+            try {
+                const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                    params: { access_token: accessToken, fields: 'instagram_business_account' }
+                });
+                if (pageRes.data?.instagram_business_account?.id) {
+                    igId = pageRes.data.instagram_business_account.id;
+                }
+            } catch (e) {}
+
             try {
                 const response = await axios.get(
-                    `https://graph.facebook.com/v18.0/${id}/highlights`,
+                    `https://graph.facebook.com/v18.0/${igId}/highlights`,
                     { params: { access_token: accessToken, fields: 'id,name,cover_media{id,media_url,thumbnail_url}' } }
                 );
                 return response.data;
             } catch (error: any) {
-                const errorCode = error.response?.data?.error?.code;
-                const errorMsg = error.response?.data?.error?.message || '';
-                
-                // If it's a type error (#100), "Unknown path", or 400/404, it might be a Page ID
-                if (errorCode === 100 || error.response?.status === 400 || error.response?.status === 404 || errorMsg.includes('Unknown path')) {
-                    try {
-                        this.logger.debug(`[INSTAGRAM_HIGHLIGHTS] ID ${id} failed. Resolving to IG ID (v18.0)...`);
-                        const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
-                            params: { access_token: accessToken, fields: 'instagram_business_account' }
-                        });
-                        const igId = pageRes.data?.instagram_business_account?.id;
-                        if (igId && igId !== id) {
-                            const response = await axios.get(
-                                `https://graph.facebook.com/v18.0/${igId}/highlights`,
-                                { params: { access_token: accessToken, fields: 'id,name,cover_media{id,media_url,thumbnail_url}' } }
-                            );
-                            return response.data;
-                        }
-                    } catch (e) {
-                        this.logger.warn(`[INSTAGRAM_HIGHLIGHTS] Resolution failed: ${e.message}`);
-                    }
-                }
+                this.logger.warn(`[INSTAGRAM_HIGHLIGHTS] Failed for ${igId}: ${error.message}`);
                 return { data: [] };
             }
         } catch (error: any) {
