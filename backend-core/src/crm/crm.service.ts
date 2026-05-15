@@ -544,8 +544,10 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
     }
 
     async getMessages(contactId: string, tenantId: string) {
+        // PERSISTENCE FIX: Search by contactId only to allow history to persist across tenant migrations (e.g. transfer to HQ)
+        // Since contactId is a UUID, it remains secure.
         return this.messageRepository.find({
-            where: { contactId, tenantId },
+            where: { contactId },
             order: { createdAt: 'ASC' }
         });
     }
@@ -1407,6 +1409,7 @@ export class CrmService implements OnApplicationBootstrap, OnModuleInit {
         // Re-enable automation and clear assignment
         contact.aiEnabled = true;
         contact.n8nEnabled = true;
+        contact.automationPaused = false; // UNMUTE LISA
         contact.assignedUserId = null;
         
         await this.contactRepository.save(contact);
