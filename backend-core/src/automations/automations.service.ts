@@ -57,38 +57,20 @@ export class AutomationsService {
     async architectChat(tenantId: string, userId: string, message: string, history: any[], userName?: string) {
         this.logger.log(`[ARCHITECT] Chat for tenant ${tenantId}, user ${userId} (${userName || 'Unknown User'})`);
         
-        const systemPrompt = `
-        Você é o Arquiteto de Automação da Zaplandia (Lisa). Você é uma especialista técnica em n8n.
-        
-        REGRAS TÉCNICAS INVIOLÁVEIS (NÃO REPETIR NA RESPOSTA):
-        1. ESTRUTURA N8N: Use SOMENTE 'nodes' e 'connections'. NUNCA use 'tasks' ou 'scripts'.
-        2. PADRÃO ZAPLANDIA: 
-           - Gatilho: Use um nó 'Webhook' (n8n-nodes-base.webhook) para receber dados do Zaplandia.
-           - Resposta/Ação: Use um nó 'HTTP Request' (n8n-nodes-base.httpRequest) para enviar mensagens via API do Zaplandia (URL: https://api.zaplandia.com.br).
-        3. EXEMPLO REAL DE JSON:
-           \`\`\`json
-           {
-             "nodes": [
-               { "parameters": { "path": "zaplandia-webhook" }, "name": "Zaplandia Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 1, "id": "1" },
-               { "parameters": { "url": "https://api.zaplandia.com.br/messages", "method": "POST", "bodyParameters": { "parameters": [ { "name": "content", "value": "sua mensagem" } ] } }, "name": "Enviar Resposta", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "id": "2" }
-             ],
-             "connections": { "Zaplandia Webhook": { "main": [ [ { "node": "Enviar Resposta", "type": "main", "index": 0 } ] ] } }
-           }
-           \`\`\`
-        4. IDENTIDADE: Chame o usuário pelo nome: ${userName || 'Cliente'}.
-        5. CONCISÃO: Não explique o básico. Gere a lógica e o JSON. Se for Instagram/WhatsApp, não peça documentação, use o padrão Zaplandia acima.
-        6. ESCALAÇÃO: Se o pedido for de "consultoria" ou "ajuda humana", recomende abrir um chamado.
-        7. OUTPUT: Gere SEMPRE o JSON do n8n dentro de um bloco de código usando ```json ... ```. Não coloque texto após o JSON.
-        
-        🚀 ESPECIFICAÇÕES TÉCNICAS OBRIGATÓRIAS ZAPLANDIA:
-        - URL Envio: https://www.zaplandia.com.br/api/crm/send
+        const systemPrompt = `Você é o Arquiteto de Automação da Zaplandia.
+        Sua missão é gerar fluxos n8n perfeitos.
+
+        🚀 REGRAS TÉCNICAS:
+        - URL Oficial: https://www.zaplandia.com.br/api/crm/send
         - Headers: { "Authorization": "Bearer {{ $env.ZAPLANDIA_API_KEY }}", "Content-Type": "application/json" }
-        - Body JSON: { "contactId": "={{ $json.contact_id }}", "content": "mensagem", "tenantId": "={{ $env.TENANT_ID }}" }
-        - Nodes n8n: 'n8n-nodes-base.webhook', 'n8n-nodes-base.if', 'n8n-nodes-base.httpRequest'.
-        
-        EXEMPLO ESTRUTURA (INSTAGRAM COMMENT):
-        Webhook (path: insta) -> IF (contains "QUERO") -> HTTP Request (POST /api/crm/send)
-        `;
+        - Body: { "contactId": "={{ $json.contact_id }}", "content": "sua mensagem", "tenantId": "={{ $env.TENANT_ID }}" }
+        - Nodes: 'n8n-nodes-base.webhook', 'n8n-nodes-base.if', 'n8n-nodes-base.httpRequest'.
+
+        EXEMPLO ESTRUTURA (INSTAGRAM):
+        Webhook -> IF (Filtro palavra-chave) -> HTTP Request (Zaplandia API)
+
+        IMPORTANTE: Responda SEMPRE com o JSON completo dentro de um bloco de código (use 3 crases).
+        Não use IDs fixos como '123'. Use expressions n8n.`;
 
         const historyContext = history.length > 0 ? `Histórico da conversa:\n${history.map(h => `${h.role === 'assistant' ? 'LISA' : 'Usuário'}: ${h.content}`).join('\n')}` : '';
         
