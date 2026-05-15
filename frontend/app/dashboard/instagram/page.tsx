@@ -259,6 +259,8 @@ export default function InstagramManagementPage() {
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoadingComments, setIsLoadingComments] = useState(false);
     const [replyTexts, setReplyTexts] = useState<{[key: string]: string}>({});
+    const [likes, setLikes] = useState<any[]>([]);
+    const [isLoadingLikes, setIsLoadingLikes] = useState(false);
 
     useEffect(() => {
         if (token) {
@@ -360,6 +362,21 @@ export default function InstagramManagementPage() {
             }
         } catch (e) {} finally {
             setIsLoadingComments(false);
+        }
+    };
+
+    const fetchLikes = async (mediaId: string) => {
+        setIsLoadingLikes(true);
+        try {
+            const res = await fetch(`/api/integrations/instagram/media/${mediaId}/likes`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok && data.data) {
+                setLikes(data.data);
+            }
+        } catch (e) {} finally {
+            setIsLoadingLikes(false);
         }
     };
 
@@ -600,6 +617,7 @@ export default function InstagramManagementPage() {
                                             onClick={() => {
                                                 setSelectedMedia(media);
                                                 fetchComments(media.id);
+                                                fetchLikes(media.id);
                                             }}
                                             className="hover:bg-white/[0.03] transition-colors group cursor-pointer"
                                         >
@@ -831,10 +849,14 @@ export default function InstagramManagementPage() {
                             <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                                 <div className="flex items-center space-x-4">
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[2px] shadow-lg shadow-pink-500/10">
-                                        <div className="w-full h-full rounded-full bg-black border border-black overflow-hidden flex items-center justify-center text-xs font-black">Z</div>
+                                        {(selectedMedia as any).owner?.profile_picture_url ? (
+                                            <img src={(selectedMedia as any).owner.profile_picture_url} className="w-full h-full rounded-full object-cover" alt="" />
+                                        ) : (
+                                            <div className="w-full h-full rounded-full bg-black border border-black overflow-hidden flex items-center justify-center text-xs font-black">Z</div>
+                                        )}
                                     </div>
                                     <div>
-                                        <h3 className="font-black text-sm text-white">Zaplandia</h3>
+                                        <h3 className="font-black text-sm text-gray-900">{(selectedMedia as any).owner?.username || 'Zaplandia'}</h3>
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Suas Interações</p>
                                     </div>
                                 </div>
@@ -870,15 +892,15 @@ export default function InstagramManagementPage() {
                                     comments.map(comment => (
                                         <div key={comment.id} className="space-y-4 group">
                                             <div className="flex space-x-4">
-                                                <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0">
-                                                    <span className="text-[10px] font-black uppercase text-gray-500">{comment.username.slice(0, 2)}</span>
+                                                <div className="w-10 h-10 rounded-2xl bg-black/5 border border-black/5 flex items-center justify-center shrink-0">
+                                                    <span className="text-[10px] font-black uppercase text-gray-600">{comment.username.slice(0, 2)}</span>
                                                 </div>
                                                 <div className="flex-1 space-y-1">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-xs font-black text-gray-100">@{comment.username}</span>
-                                                        <span className="text-[9px] font-bold text-gray-600">{new Date(comment.timestamp).toLocaleDateString()}</span>
+                                                        <span className="text-xs font-black text-gray-900">@{comment.username}</span>
+                                                        <span className="text-[9px] font-bold text-gray-500">{new Date(comment.timestamp).toLocaleDateString()}</span>
                                                     </div>
-                                                    <p className="text-sm text-gray-400 leading-relaxed">{comment.text}</p>
+                                                    <p className="text-sm text-gray-600 leading-relaxed font-medium">{comment.text}</p>
                                                 </div>
                                             </div>
 
@@ -907,7 +929,7 @@ export default function InstagramManagementPage() {
                                                     </div>
                                                     <div className="space-y-1">
                                                         <span className="text-[10px] font-black text-primary">@{reply.username}</span>
-                                                        <p className="text-xs text-gray-500 leading-relaxed">{reply.text}</p>
+                                                        <p className="text-xs text-gray-700 leading-relaxed font-medium">{reply.text}</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -916,16 +938,36 @@ export default function InstagramManagementPage() {
                                 )}
                             </div>
 
-                            {/* Post Meta Data */}
-                            <div className="p-8 bg-surface border-t border-white/5 grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-white/[0.02] border border-white/5 rounded-3xl text-center">
-                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Curtidas</p>
-                                    <p className="text-xl font-black text-white">{selectedMedia.like_count.toLocaleString()}</p>
+                            {/* Post Meta Data & Likes List */}
+                            <div className="p-8 bg-surface border-t border-white/5 space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-black/[0.02] border border-black/5 rounded-3xl text-center">
+                                        <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Curtidas</p>
+                                        <p className="text-xl font-black text-gray-900">{selectedMedia.like_count.toLocaleString()}</p>
+                                    </div>
+                                    <div className="p-4 bg-black/[0.02] border border-black/5 rounded-3xl text-center">
+                                        <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Comentários</p>
+                                        <p className="text-xl font-black text-gray-900">{selectedMedia.comments_count.toLocaleString()}</p>
+                                    </div>
                                 </div>
-                                <div className="p-4 bg-white/[0.02] border border-white/5 rounded-3xl text-center">
-                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Comentários</p>
-                                    <p className="text-xl font-black text-white">{selectedMedia.comments_count.toLocaleString()}</p>
-                                </div>
+
+                                {likes.length > 0 && (
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Curtido por</p>
+                                        <div className="flex -space-x-3 overflow-hidden">
+                                            {likes.slice(0, 10).map((like, idx) => (
+                                                <div key={idx} className="inline-block h-8 w-8 rounded-full ring-4 ring-surface bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary" title={like.username}>
+                                                    {like.username.slice(0, 1).toUpperCase()}
+                                                </div>
+                                            ))}
+                                            {likes.length > 10 && (
+                                                <div className="flex items-center justify-center h-8 w-8 rounded-full ring-4 ring-surface bg-gray-100 text-[10px] font-black text-gray-600">
+                                                    +{likes.length - 10}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

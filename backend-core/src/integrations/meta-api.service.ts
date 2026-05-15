@@ -283,7 +283,7 @@ export class MetaApiService {
                 // Attempt 1: Direct fetch (assuming id is Instagram Business Account ID)
                 const response = await axios.get(
                     `https://graph.facebook.com/v18.0/${id}/media`,
-                    { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count' } }
+                    { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count,owner{id,username,profile_picture_url}' } }
                 );
                 return response.data;
             } catch (error: any) {
@@ -301,7 +301,7 @@ export class MetaApiService {
                         this.logger.log(`[INSTAGRAM_MEDIA] Resolved IG ID: ${igId}. Retrying fetch...`);
                         const response = await axios.get(
                             `https://graph.facebook.com/v18.0/${igId}/media`,
-                            { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count' } }
+                            { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,comments_count,like_count,owner{id,username,profile_picture_url}' } }
                         );
                         return response.data;
                     }
@@ -318,6 +318,27 @@ export class MetaApiService {
     /**
      * Get comments for a specific Instagram Media
      */
+    /**
+     * Get likes for a specific Instagram Media
+     */
+    async getInstagramLikes(tenantId: string, mediaId: string) {
+        try {
+            const { accessToken: defaultToken, instagramAccessToken } = await this.getCredentials(tenantId);
+            const accessToken = instagramAccessToken || defaultToken;
+
+            const response = await axios.get(
+                `https://graph.facebook.com/v18.0/${mediaId}/likes`,
+                { params: { access_token: accessToken } }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            const detailedMsg = error.response?.data?.error?.message || error.message;
+            this.logger.error(`[INSTAGRAM_LIKES] Failed to fetch likes: ${detailedMsg}`);
+            throw new Error(`Meta API Error: ${detailedMsg}`);
+        }
+    }
+
     async getInstagramComments(tenantId: string, mediaId: string) {
         try {
             const { accessToken: defaultToken, instagramAccessToken } = await this.getCredentials(tenantId);

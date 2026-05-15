@@ -452,6 +452,12 @@ export class IntegrationsController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Get('instagram/media/:mediaId/likes')
+    async getInstagramLikes(@Request() req, @Param('mediaId') mediaId: string) {
+        return this.metaApiService.getInstagramLikes(req.user.tenantId, mediaId);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Post('instagram/comments/:commentId/reply')
     async replyToInstagramComment(@Request() req, @Param('commentId') commentId: string, @Body() body: { message: string }) {
         return this.metaApiService.replyToInstagramComment(req.user.tenantId, commentId, body.message);
