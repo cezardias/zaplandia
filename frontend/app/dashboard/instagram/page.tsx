@@ -284,6 +284,7 @@ export default function InstagramManagementPage() {
         versionA: { caption: '', imageUrl: '' },
         versionB: { caption: '', imageUrl: '' }
     });
+    const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false);
 
     useEffect(() => {
         if (token) {
@@ -651,16 +652,16 @@ export default function InstagramManagementPage() {
                         {/* Summary Metrics */}
                         <div className="flex items-center space-x-8 mr-8 border-r border-white/5 pr-8">
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Alcance</span>
-                                <span className="text-lg font-black text-white">{insights?.data?.find((i:any) => i.name === 'reach')?.values?.[0]?.value?.toLocaleString() || '---'}</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Alcance</span>
+                                <span className="text-sm font-black text-white">{insights?.reach?.value !== undefined ? Number(insights.reach.value).toLocaleString() : '0'}</span>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Impressões</span>
-                                <span className="text-lg font-black text-white">{insights?.data?.find((i:any) => i.name === 'impressions')?.values?.[0]?.value?.toLocaleString() || '---'}</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Impressões</span>
+                                <span className="text-sm font-black text-white">{insights?.impressions?.value !== undefined ? Number(insights.impressions.value).toLocaleString() : '0'}</span>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Visitas</span>
-                                <span className="text-lg font-black text-white">{insights?.data?.find((i:any) => i.name === 'profile_views')?.values?.[0]?.value?.toLocaleString() || '---'}</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Visitas</span>
+                                <span className="text-sm font-black text-white">{insights?.profile_views?.value !== undefined ? Number(insights.profile_views.value).toLocaleString() : '0'}</span>
                             </div>
                         </div>
 
@@ -957,7 +958,10 @@ export default function InstagramManagementPage() {
                                     <h2 className="text-xl font-black text-white uppercase tracking-tight">{txt.sections.series}</h2>
                                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Trilhas de conteúdo estruturadas</p>
                                 </div>
-                                <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all flex items-center space-x-2">
+                                <button 
+                                    onClick={() => setIsPlaylistModalOpen(true)}
+                                    className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all flex items-center space-x-2"
+                                >
                                     <Plus size={16} />
                                     <span>Nova Série</span>
                                 </button>
@@ -999,7 +1003,10 @@ export default function InstagramManagementPage() {
                                         <p className="text-gray-400 font-black text-sm uppercase tracking-widest">Cross-post em um clique</p>
                                         <p className="text-gray-600 text-[11px] font-medium max-w-[300px]">Publique vídeos simultaneamente nas duas redes com otimização automática de formato.</p>
                                     </div>
-                                    <button className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 transition-all">
+                                    <button 
+                                        onClick={() => setIsPublishModalOpen(true)}
+                                        className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 transition-all"
+                                    >
                                         Configurar Agora
                                     </button>
                                 </div>
