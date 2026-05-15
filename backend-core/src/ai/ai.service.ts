@@ -1178,10 +1178,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             contact: { id: contactId, name: 'User Lisa Chat', provider: 'site' }
         });
     }
-
     private async handleToolCall(funcName: string, args: any, tenantId: string, contactId: string, promptId?: string, authenticatedUser?: any): Promise<any> {
         try {
-            this.logger.log(`[AI_TOOL_EXEC] Executing ${funcName} for contact ${contactId}`);
+            this.logger.log(`[AI_TOOL_EXEC] Executing ${funcName} for contact ${contactId}. AuthUser: ${authenticatedUser?.email || 'none'}`);
 
             // RESOLVE TARGET TENANT (Hierarchy/HQ support)
             let targetTenantId: string = tenantId || 'default';
@@ -1230,15 +1229,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 const subj = (args.subject || '').toLowerCase();
                 
                 // Only reject if it's EXTREMELY generic (Lisa's default patterns)
-                const isGeneric = desc === 'abertura de chamado' || 
-                                 desc === 'cliente solicitou abertura de chamado.' ||
-                                 (desc.length < 10 && !desc.includes('n8n')); // Allow short specific tags like 'n8n'
-                
-                if (isGeneric) {
-                    this.logger.warn(`[AI_TOOL_REJECT] Rejecting generic ticket from AI for contact ${contactId}`);
-                    return { 
-                        error: "DESCRIÇÃO MUITO CURTA OU GENÉRICA. Por favor, descreva o problema real do usuário com mais detalhes (ex: 'Problema com X', 'Dúvida sobre Y')." 
-                    };
+                if (desc.includes('abertura de chamado') || desc.includes('suporte') || desc === subj) {
+                    const isTechnical = desc.includes('n8n') || desc.includes('fluxo') || desc.includes('bot') || desc.includes('automação') || desc.includes('api');
+                    if (!isTechnical && desc.length < 30) {
+                        this.logger.warn(`[AI_TOOL_REJECT] Rejecting generic ticket from AI for contact ${contactId}`);
+                        return { 
+                            error: "DESCRIÇÃO MUITO CURTA OU GENÉRICA. Por favor, descreva o problema real do usuário com mais detalhes (ex: 'Problema com X', 'Dúvida sobre Y')." 
+                        };
+                    }
                 }
 
                 const finalRequesterName = (requesterEmail || requesterName).toString().replace(/undefined/g, '').trim().toLowerCase();
