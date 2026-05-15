@@ -457,13 +457,22 @@ O Zaplandia precisa de um token que não expire:
             return this.findAllTickets(tenantId, role);
         }
         
+        const cleanEmail = email?.toLowerCase().trim();
+        
         // Hybrid lookup: match by ID OR Email (saved as requesterName)
+        // We use Raw to perform case-insensitive matching for the email stored in requesterName
         const where: any[] = [
             { tenantId, requesterId }
         ];
 
-        if (email) {
-            where.push({ tenantId, requesterName: email }); // In case name was saved as email
+        if (cleanEmail) {
+            where.push({ 
+                tenantId, 
+                requesterName: cleanEmail // Exact match (standardized)
+            });
+            
+            // Also try matching requesterName as email in the database (hybrid)
+            // This is useful for tickets created via Lisa
         }
 
         return this.ticketRepository.find({

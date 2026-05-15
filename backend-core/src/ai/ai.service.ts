@@ -1241,7 +1241,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     };
                 }
 
-                const finalRequesterName = (requesterEmail || requesterName).toString().replace(/undefined/g, '').trim();
+                const finalRequesterName = (requesterEmail || requesterName).toString().replace(/undefined/g, '').trim().toLowerCase();
                 
                 this.logger.log(`[AI_TOOL_SUCCESS] Opening verified ticket for ${finalRequesterName}`);
 
