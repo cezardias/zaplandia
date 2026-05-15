@@ -433,7 +433,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                                     subject: { type: "string", description: "Assunto curto (ex: Ajuda com Automação)" },
                                     description: { type: "string", description: "Resumo do pedido do cliente" },
                                     category: { type: "string", description: "technical, billing, sales" },
-                                    priority: { type: "string", description: "medium" }
+                                    priority: { type: "string", description: "medium" },
+                                    requesterEmail: { type: "string", description: "O e-mail do cliente (obrigatório se disponível)" }
                                 },
                                 required: ["subject", "description"]
                             }
@@ -1215,10 +1216,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 return { error: `Equipe '${args.teamId}' não encontrada.` };
 
             } else if (funcName === 'open_ticket' && tenantId && contactId) {
-                const contact = await this.contactRepository.findOne({ where: { id: contactId } });
+                let requesterIdentity = args.requesterEmail;
                 
-                // Use email or externalId (which stores email for Lisa contacts)
-                const requesterIdentity = contact?.email || contact?.externalId || contact?.name || 'Cliente Externo';
+                if (!requesterIdentity) {
+                    const contact = await this.contactRepository.findOne({ where: { id: contactId } });
+                    requesterIdentity = contact?.email || contact?.externalId || contact?.name || 'Cliente Externo';
+                }
                 
                 return this.supportService.createTicket(targetTenantId, contactId, {
                     subject: args.subject,
