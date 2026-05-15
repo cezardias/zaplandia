@@ -66,7 +66,7 @@ export class AutomationsService {
         - WEBHOOK: path deve ser "zaplandia-webhook".
 
         EXEMPLO REAL (COPIE ESTA ESTRUTURA):
-        ```json
+        \`\`\`json
         {
           "nodes": [
             { "parameters": { "path": "zaplandia-webhook" }, "name": "Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 1, "id": "1" },
@@ -74,7 +74,7 @@ export class AutomationsService {
           ],
           "connections": { "Webhook": { "main": [ [ { "node": "HTTP Request", "type": "main", "index": 0 } ] ] } }
         }
-        ```
+        \`\`\`
         IMPORTANTE: Responda apenas com o JSON dentro do bloco de código. Não use Zapier.`;
 
         const historyContext = history.length > 0 ? `Histórico da conversa:\n${history.map(h => `${h.role === 'assistant' ? 'LISA' : 'Usuário'}: ${h.content}`).join('\n')}` : '';
