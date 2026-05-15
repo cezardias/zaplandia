@@ -298,7 +298,13 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName).replace(/\{\{\s*pushName\s*\}\}/g, pushName);
             
             const conversationContext = await this.getConversationContext(contact.id);
-            const isFreshStart = conversationContext.length < 20; // Heuristic
+            const isFreshStart = conversationContext.length < 20;
+            
+            // 2.5 Fallback Prompt if DB is empty
+            if (!promptContent || promptContent.length < 10) {
+                promptContent = "Você é a Lisa, assistente virtual da Zaplandia. Seja prestativa, use a base de conhecimento para tirar dúvidas e abra chamados se necessário.";
+            }
+
             const fullPrompt = `${promptContent}\n\n${isFreshStart ? '[NOVA CONVERSA]' : 'Histórico:'}\n${conversationContext}\n\nCliente: ${userMessage}\nVocê:`;
 
             // 3. Resolve Tools and API Keys
@@ -976,21 +982,46 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         return null;
     }
 
-    async generateLisaResponse(tenantId: string, fullPrompt: string, contactId?: string, authenticatedUser?: any): Promise<string | null> {
-        this.logger.log(`[LISA_CHAT] Instant response requested for contact ${contactId}`);
+    async generateLisaResponse(tenantId: string, userMessage: string, contactId?: string, authenticatedUser?: any): Promise<string | null> {
+        this.logger.log(`[LISA_CHAT_WAIT] Message from contact ${contactId}. Waiting 10s for more...`);
         
-        let contact: Contact | null = null;
-        if (contactId) {
-            contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
+        const key = `lisa_${contactId || 'anon'}`;
+        const existing = this.debounceMap.get(key);
+        if (existing) {
+            clearTimeout(existing.timeout);
+            existing.messages.push(userMessage);
+            existing.timeout = setTimeout(() => this.processDebouncedLisaResponse(contactId || 'anon', tenantId, authenticatedUser), 10000);
+            return null;
         }
 
+        const timeout = setTimeout(() => this.processDebouncedLisaResponse(contactId || 'anon', tenantId, authenticatedUser), 10000);
+        this.debounceMap.set(key, {
+            timeout,
+            messages: [userMessage],
+            instanceName: 'LisaWeb',
+            tenantId
+        });
+
+        return null;
+    }
+
+    private async processDebouncedLisaResponse(contactId: string, tenantId: string, authenticatedUser?: any) {
+        const data = this.debounceMap.get(`lisa_${contactId}`);
+        if (!data) return;
+        this.debounceMap.delete(`lisa_${contactId}`);
+
+        let contact = await this.contactRepository.findOne({ where: { id: contactId, tenantId } });
         if (!contact) {
-            // Minimal contact object for logic if none exists
-            contact = { id: contactId || 'temp', name: 'Usuário Web', tenantId, provider: 'site' } as any;
+            contact = { id: contactId, name: authenticatedUser?.name || 'Usuário Web', tenantId, provider: 'site' } as any;
         }
 
-        // Call unified generation engine WITHOUT debounce for web chat
-        return this.executeAIGeneration(contact!, fullPrompt, tenantId, contact?.instance, authenticatedUser);
+        const combinedMessage = data.messages.join(' ');
+        this.logger.log(`[LISA_DEBOUNCE] Processing: "${combinedMessage}"`);
+
+        const response = await this.executeAIGeneration(contact!, combinedMessage, tenantId, 'LisaWeb', authenticatedUser);
+        if (response) {
+            await this.recordLisaInteraction(tenantId, contactId, combinedMessage, response);
+        }
     }
 
     async getPromptByName(name: string, tenantId?: string) {
