@@ -854,8 +854,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     const toolResult = await this.handleToolCall(
                         funcName, 
                         args, 
-                        tenantId, 
-                        contactId, 
+                        tenantId || 'default', 
+                        contactId || 'unknown', 
                         promptId
                     );
 
@@ -989,9 +989,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         const toolResult = await this.handleToolCall(
                             funcName, 
                             args, 
-                            tenantId, 
-                            contactId, 
-                            promptEntity?.id
+                            tenantId || 'default', 
+                            contactId || 'unknown', 
+                            promptId
                         );
 
                     this.logger.log(`[AI_TOOL] Tool ${funcName} result received. Re-sending to Gemini...`);
