@@ -645,7 +645,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             for (const model of uniqueModels) {
                 this.logger.debug(`[AI_WAND_ATTEMPT] Trying Gemini model: ${model}`);
                 try {
-                    aiResponse = await this.callGemini(model, fullPrompt, apiKey, 2048);
+                    aiResponse = await this.callGemini(model, finalPrompt, apiKey, 2048);
                     if (aiResponse) {
                         this.logger.debug(`[AI_WAND_SUCCESS] Model ${model} worked.`);
                         break;
