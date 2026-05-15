@@ -438,7 +438,12 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         aiResponse = await this.callOpenRouter(currentModel, userMessage, openRouterKey!, 2048, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
                     } else if (currentModel === 'zaplandia-lisa' || currentModel === 'qwen2.5:3b' || currentModel.startsWith('ollama:')) {
                         const ollamaModel = currentModel.replace('ollama:', '');
-                        aiResponse = await this.callOllama(ollamaModel, userMessage, 4096, systemInstruction);
+                        
+                        // 🛠️ INJEÇÃO DE FERRAMENTAS: Forçamos a Lisa a ver as ferramentas disponíveis em cada chamada
+                        const toolContext = `\n\nFERRAMENTAS DISPONÍVEIS (Se precisar de uma, responda APENAS com o JSON da ferramenta):\n${JSON.stringify(this.getToolDeclarations(), null, 2)}`;
+                        const enhancedInstruction = systemInstruction + toolContext;
+
+                        aiResponse = await this.callOllama(ollamaModel, userMessage, 4096, enhancedInstruction);
                     } else {
                         aiResponse = await this.callGemini(currentModel, userMessage, geminiKey!, 2048, tools, tenantId, contact.id, systemInstruction, activePromptId, authenticatedUser);
                     }
@@ -673,6 +678,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 const ollamaModel = (modelName && !modelName.includes('/') && !modelName.startsWith('gemini'))
                     ? modelName
                     : 'zaplandia-lisa';
+                
+                // 🛠️ INJEÇÃO DE FERRAMENTAS: Forçamos a Lisa a ver as ferramentas disponíveis em cada chamada
+                const toolContext = `\n\nFERRAMENTAS DISPONÍVEIS (Se precisar de uma, responda APENAS com o JSON da ferramenta):\n${JSON.stringify(this.getToolDeclarations(), null, 2)}`;
+                const enhancedInstruction = systemInstruction + toolContext;
                 
                 const finalOllamaModel = ollamaModel === 'qwen2.5:3b' ? 'zaplandia-lisa' : ollamaModel;
 
