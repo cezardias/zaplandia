@@ -943,7 +943,7 @@ Zaplandia ha bisogno di un token che non scada:
                                     className="w-full bg-background border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-primary transition"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Categoria</label>
                                     <select 
@@ -954,19 +954,6 @@ Zaplandia ha bisogno di un token che non scada:
                                         <option value="technical">Suporte Técnico</option>
                                         <option value="billing">Financeiro</option>
                                         <option value="sales">Comercial</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Prioridade</label>
-                                    <select 
-                                        value={newTicket.priority}
-                                        onChange={e => setNewTicket({...newTicket, priority: e.target.value})}
-                                        className="w-full bg-background border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-primary transition"
-                                    >
-                                        <option value="low">Baixa</option>
-                                        <option value="medium">Média</option>
-                                        <option value="high">Alta</option>
-                                        <option value="urgent">Urgente</option>
                                     </select>
                                 </div>
                             </div>
