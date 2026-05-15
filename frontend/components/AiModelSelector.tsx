@@ -12,9 +12,10 @@ interface AiModelSelectorProps {
 
 const NATIVE_MODELS = [
     { id: 'gemini-2.0-flash', name: '⚡ 2.0 Flash (Recomendado)', provider: 'Google' },
-    { id: 'gemini-1.5-flash', name: '⚡ 1.5 Flash', provider: 'Google' },
+    { id: 'gemini-2.0-flash-lite', name: '⚡ 2.0 Flash Lite (Econômico)', provider: 'Google' },
+    { id: 'gemini-2.0-flash-exp', name: '🔬 2.0 Flash (Experimental)', provider: 'Google' },
+    { id: 'gemini-1.5-flash-latest', name: '🔁 1.5 Flash Latest', provider: 'Google' },
     { id: 'gemini-1.5-pro', name: '🚀 1.5 Pro', provider: 'Google' },
-    { id: 'gemini-2.0-flash-exp', name: '🔬 2.0 Flash (Exp)', provider: 'Google' },
 ];
 
 export default function AiModelSelector({ value, onChange, token, className = "" }: AiModelSelectorProps) {

@@ -267,7 +267,7 @@ export class AiController {
         return { 
             content: prompt?.content || '',
             provider: prompt?.provider || 'gemini',
-            model: prompt?.model || 'gemini-1.5-flash',
+            model: prompt?.model || 'gemini-2.0-flash',
             apiKey: prompt?.apiKey || ''
         };
     }

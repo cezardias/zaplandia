@@ -222,12 +222,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
     async generateGenericResponse(tenantId: string, prompt: string): Promise<string | null> {
         try {
-            const geminiKey = await this.getGeminiApiKey(tenantId);
-            if (!geminiKey) {
-                this.logger.error(`No Gemini API key for tenant ${tenantId}`);
-                return null;
-            }
-            return this.callGemini('gemini-1.5-flash', prompt, geminiKey, 2048, undefined, tenantId);
+            const response = await this.getAiResponse(tenantId, prompt, 'gemini');
+            if (response && response.startsWith('[ERRO]')) return null;
+            return response;
         } catch (error) {
             this.logger.error(`Error in generateGenericResponse: ${error.message}`);
             return null;
@@ -286,7 +283,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const integration = await this.resolveIntegration(tenantId, targetInstance);
             
             const activePromptId = promptEntity?.id || integration?.aiPromptId;
-            const configuredModel = integration?.aiModel || promptEntity?.model || 'gemini-1.5-flash';
+            const configuredModel = integration?.aiModel || promptEntity?.model || 'gemini-2.0-flash';
 
             if (!activePromptId) return null;
 
@@ -335,7 +332,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 - IDENTIDADE: Utilize o EMAIL_USUARIO (${authenticatedUser?.email || 'Visitante'}) para contexto.`;
 
             // 5. Execution Loop
-            const modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'])];
+            const modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-pro'])];
             let aiResponse: string | null = null;
             let lastError: any;
             let lastErrorDetail: string = 'Nenhum erro registrado.';
@@ -553,16 +550,15 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             // 🔧 FIX: Do not prepend promptEntity.instruction to the user prompt if we are also passing it as systemInstruction.
             // This prevents conflicting instructions and model confusion.
             const finalPrompt = prompt;
-            const startModel = modelName || 'gemini-1.5-flash';
+            const startModel = modelName || 'gemini-2.0-flash';
             const modelsToTry = [
                 startModel,
                 'gemini-2.0-flash',
+                'gemini-2.0-flash-lite',
                 'gemini-2.0-flash-exp',
-                'gemini-1.5-flash',
                 'gemini-1.5-flash-latest',
                 'gemini-1.5-flash-8b',
                 'gemini-1.5-pro',
-                'gemini-2.0-flash-lite-preview-02-05',
             ];
             const uniqueModels = [...new Set(modelsToTry)];
 
