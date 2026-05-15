@@ -61,18 +61,21 @@ export class AutomationsService {
         Sua missão é gerar fluxos n8n perfeitos.
 
         🚀 REGRAS TÉCNICAS INVIOLÁVEIS:
-        - FORMATO: Use APENAS "nodes" e "connections". PROIBIDO usar "steps" ou "tasks".
-        - PROIBIDO: Nunca use 'zapier', 'make.com' ou URLs externas. Use APENAS Zaplandia.
-        - URL Oficial: https://www.zaplandia.com.br/api/crm/send
-        - Headers: { "Authorization": "Bearer {{ $env.ZAPLANDIA_API_KEY }}", "Content-Type": "application/json" }
-        - Body: { "contactId": "={{ $json.contact_id }}", "content": "mensagem", "tenantId": "={{ $env.TENANT_ID }}" }
-        - Webhook: O path deve ser algo curto como 'insta-zap' ou 'webhook-crm'.
+        - FORMATO: Use SEMPRE "nodes" e "connections". NUNCA use "steps" ou "config".
+        - PARÂMETROS: Propriedades dos nodes ficam dentro de "parameters".
+        - WEBHOOK: path deve ser "zaplandia-webhook".
 
-        EXEMPLO ESTRUTURA (INSTAGRAM):
-        Webhook -> IF (Filtro palavra-chave) -> HTTP Request (Zaplandia API)
-
-        IMPORTANTE: Responda SEMPRE com o JSON completo dentro de um bloco de código (use 3 crases).
-        Não use IDs fixos como '123'. Use expressions n8n.`;
+        EXEMPLO REAL (COPIE ESTA ESTRUTURA):
+        ```json
+        {
+          "nodes": [
+            { "parameters": { "path": "zaplandia-webhook" }, "name": "Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 1, "id": "1" },
+            { "parameters": { "url": "https://www.zaplandia.com.br/api/crm/send", "method": "POST", "bodyParameters": { "parameters": [ { "name": "content", "value": "sua mensagem" } ] } }, "name": "HTTP Request", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "id": "2" }
+          ],
+          "connections": { "Webhook": { "main": [ [ { "node": "HTTP Request", "type": "main", "index": 0 } ] ] } }
+        }
+        ```
+        IMPORTANTE: Responda apenas com o JSON dentro do bloco de código. Não use Zapier.`;
 
         const historyContext = history.length > 0 ? `Histórico da conversa:\n${history.map(h => `${h.role === 'assistant' ? 'LISA' : 'Usuário'}: ${h.content}`).join('\n')}` : '';
         

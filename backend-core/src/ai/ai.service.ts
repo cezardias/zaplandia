@@ -1408,15 +1408,21 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                 return ticket;
             } else if (funcName === 'list_tickets') {
-                this.logger.log(`[TOOL_EXEC] list_tickets for user ${authenticatedUser?.id || 'unknown'}`);
-                if (!authenticatedUser?.id) return { success: false, message: "Usuário não autenticado." };
-                // Using the correct method from SupportService
+                const userRole = authenticatedUser?.role || 'user';
+                this.logger.log(`[TOOL_EXEC] list_tickets for user ${authenticatedUser?.id || 'unknown'} (Role: ${userRole})`);
+                
+                if (!authenticatedUser?.id) return { success: false, message: "Usuário não autenticado no chat." };
+
+                // Force Superadmin to see everything to match UI counter
                 const userTickets = await this.supportService.findUserTickets(
                     tenantId, 
                     authenticatedUser.id, 
-                    authenticatedUser.role || 'user', 
+                    userRole, 
                     authenticatedUser.email
                 );
+
+                this.logger.log(`[TOOL_EXEC] Found ${userTickets.length} tickets for user.`);
+
                 return { 
                     success: true, 
                     count: userTickets.length,
