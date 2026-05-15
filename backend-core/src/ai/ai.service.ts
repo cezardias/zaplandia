@@ -195,7 +195,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         keep_alive: "1h",
                         options
                     },
-                    { timeout: 15000 } // 15 seconds - fail fast if local is too slow
+                    { timeout: 30000 } // 30 seconds - balanced for local inference
                 );
 
             const content = response.data?.message?.content;
@@ -656,12 +656,21 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 }
             }
 
-            // --- 2. OpenRouter (fallback pago, só se Ollama falhar e NÃO for interno) ---
-            const isInternal = modelName?.includes('lisa') || context?.includes('ZAPLANDIA');
+            // --- 2. Fallback Interno para Lisa (Se o primeiro falhar) ---
+            const isInternal = modelName?.includes('lisa') || context?.includes('ZAPLANDIA') || context?.includes('Lisa');
+            
             if (isInternal) {
-                this.logger.warn(`[AI_SKIP_EXTERNAL] Skipping external fallback for internal Lisa request.`);
-                return null;
+                this.logger.log(`[AI_INTERNAL_FALLBACK] First attempt failed. Trying stable fallback 'qwen2.5:3b'...`);
+                try {
+                    const fallback = await this.callOllama('qwen2.5:3b', finalPrompt, 4096, systemInstruction);
+                    if (fallback) return fallback;
+                } catch (e) {
+                    this.logger.error(`[AI_INTERNAL_FATAL] All internal models failed: ${e.message}`);
+                }
+                return null; // Don't go to external for internal tasks
             }
+
+            // --- 3. OpenRouter (fallback pago, só para clientes externos) ---
 
             const openRouterKey = await this.getOpenRouterApiKey(tenantId);
             if (openRouterKey) {
