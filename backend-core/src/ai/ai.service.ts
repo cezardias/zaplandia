@@ -180,17 +180,23 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             }
             messages.push({ role: 'user', content: prompt });
 
-            const response = await axios.post(
-                `${baseUrl}/api/chat`,
-                {
-                    model,
-                    messages,
-                    stream: false,
-                    keep_alive: "1h",
-                    options: { num_predict: maxTokens, temperature: 0.7 }
-                },
-                { timeout: 300000 } // 5 minutes - local inference is slower
-            );
+                const options: any = { num_predict: maxTokens, temperature: 0.7 };
+                if (model.includes('lisa') || model.includes('qwen')) {
+                    options.temperature = 0.1; // More focused/faster
+                    if (maxTokens > 512) options.num_predict = 512; // Cap internal responses
+                }
+
+                const response = await axios.post(
+                    `${baseUrl}/api/chat`,
+                    {
+                        model,
+                        messages,
+                        stream: false,
+                        keep_alive: "1h",
+                        options
+                    },
+                    { timeout: 300000 } // 5 minutes - local inference is slower
+                );
 
             const content = response.data?.message?.content;
             if (content) {
@@ -341,7 +347,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const pushName = contact.name || 'Cliente';
             promptContent = promptContent.replace(/\{\{\s*nome\s*\}\}/g, pushName).replace(/\{\{\s*pushName\s*\}\}/g, pushName);
             
-            const conversationContext = await this.getConversationContext(contact.id);
+            const conversationContext = await this.getConversationContext(contact.id, isInternal);
             const isFreshStart = conversationContext.length < 20;
             
             // 2.5 Fallback Prompt if DB is empty
@@ -476,8 +482,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }) || integrations[0];
     }
 
-    private async getConversationContext(contactId: string) {
-        const history = await this.messageRepository.find({ where: { contactId }, order: { createdAt: 'DESC' }, take: 10 });
+    private async getConversationContext(contactId: string, isInternal: boolean = false) {
+        const limit = isInternal ? 5 : 10;
+        const history = await this.messageRepository.find({ where: { contactId }, order: { createdAt: 'DESC' }, take: limit });
         return history.reverse().map(m => `${m.direction === 'inbound' ? 'Cliente' : 'Você'}: ${m.content}`).join('\n');
     }
 
@@ -1108,8 +1115,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             return "[WAITING_FOR_DEBOUNCE]"; 
         }
 
-        // 2. Wait for the burst to finish (10s)
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        // 2. Wait for the burst to finish (3s for Web, 10s is too long)
+        const waitTime = instanceName === 'LisaWeb' ? 3000 : 10000;
+        await new Promise(resolve => setTimeout(resolve, waitTime));
 
         // 3. Process the accumulated burst
         const finalData = this.debounceMap.get(key);
