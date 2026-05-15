@@ -367,9 +367,6 @@ export class MetaApiService {
         return res.data;
     }
 
-    /**
-     * Get active Instagram Stories
-     */
     async getInstagramStories(tenantId: string) {
         try {
             const { accessToken: defaultToken, instagramAccessToken, instagramBusinessId: configIbId } = await this.getCredentials(tenantId);
@@ -379,12 +376,29 @@ export class MetaApiService {
             if (!id) id = configIbId;
             if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
 
-            const response = await axios.get(
-                `https://graph.facebook.com/v18.0/${id}/stories`,
-                { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
-            );
-
-            return response.data;
+            try {
+                const response = await axios.get(
+                    `https://graph.facebook.com/v18.0/${id}/stories`,
+                    { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
+                );
+                return response.data;
+            } catch (error: any) {
+                // If ID is a Page ID, try to resolve linked IG Business ID
+                if (error.response?.status === 400 || error.response?.status === 404) {
+                    const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                        params: { access_token: accessToken, fields: 'instagram_business_account' }
+                    });
+                    const igId = pageRes.data?.instagram_business_account?.id;
+                    if (igId) {
+                        const response = await axios.get(
+                            `https://graph.facebook.com/v18.0/${igId}/stories`,
+                            { params: { access_token: accessToken, fields: 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp' } }
+                        );
+                        return response.data;
+                    }
+                }
+                throw error;
+            }
         } catch (error: any) {
             const detailedMsg = error.response?.data?.error?.message || error.message;
             this.logger.error(`[INSTAGRAM_STORIES] Failed to fetch stories: ${detailedMsg}`);
@@ -404,12 +418,29 @@ export class MetaApiService {
             if (!id) id = configIbId;
             if (!id) throw new Error('INSTAGRAM_PAGE_ID not configured for tenant');
 
-            const response = await axios.get(
-                `https://graph.facebook.com/v18.0/${id}/highlights`,
-                { params: { access_token: accessToken, fields: 'id,name,cover_media' } }
-            );
-
-            return response.data;
+            try {
+                const response = await axios.get(
+                    `https://graph.facebook.com/v18.0/${id}/highlights`,
+                    { params: { access_token: accessToken, fields: 'id,name,cover_media{id,media_url,thumbnail_url}' } }
+                );
+                return response.data;
+            } catch (error: any) {
+                // Resolve Page ID mismatch
+                if (error.response?.status === 400 || error.response?.status === 404) {
+                    const pageRes = await axios.get(`https://graph.facebook.com/v18.0/${id}`, {
+                        params: { access_token: accessToken, fields: 'instagram_business_account' }
+                    });
+                    const igId = pageRes.data?.instagram_business_account?.id;
+                    if (igId) {
+                        const response = await axios.get(
+                            `https://graph.facebook.com/v18.0/${igId}/highlights`,
+                            { params: { access_token: accessToken, fields: 'id,name,cover_media{id,media_url,thumbnail_url}' } }
+                        );
+                        return response.data;
+                    }
+                }
+                throw error;
+            }
         } catch (error: any) {
             const detailedMsg = error.response?.data?.error?.message || error.message;
             this.logger.error(`[INSTAGRAM_HIGHLIGHTS] Failed to fetch highlights: ${detailedMsg}`);
