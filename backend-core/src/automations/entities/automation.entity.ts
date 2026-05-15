@@ -25,6 +25,9 @@ export class Automation {
 
     @Column({ nullable: true })
     createdBy: string;
+    
+    @Column({ default: 0 })
+    nodesCount: number;
 
     @CreateDateColumn()
     createdAt: Date;

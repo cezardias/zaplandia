@@ -108,6 +108,8 @@ export class AutomationsService {
                 description: `Criado via Lisa em ${new Date().toLocaleDateString()}`,
                 status: 'paused', // Start as draft/paused
                 nodesCount: workflowData.nodes?.length || 0,
+                n8nWorkflowId: result.id,
+                workflowData: workflowData,
                 updatedAt: new Date()
             });
 
