@@ -303,7 +303,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
             // 3. Resolve Tools and API Keys
             const { geminiKey, openRouterKey, erpKey, rifaKey } = await this.resolveAIKeys(tenantId, promptEntity);
-            const declarations = this.getToolDeclarations(erpKey, rifaKey);
+            const declarations = this.getToolDeclarations(erpKey || undefined, rifaKey || undefined);
             const tools = declarations.length > 0 ? [{ function_declarations: declarations }] : undefined;
 
             // 4. Unified System Instruction
@@ -374,10 +374,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
     private async resolveAIKeys(tenantId: string, promptEntity?: any) {
         let keys = {
-            erpKey: await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true),
-            rifaKey: await this.integrationsService.getCredential(tenantId, 'RIFA_API_KEY', true),
-            geminiKey: await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY', true),
-            openRouterKey: await this.integrationsService.getCredential(tenantId, 'OPENROUTER_API_KEY', true)
+            erpKey: await this.integrationsService.getCredential(tenantId, 'ERP_ZAPLANDIA_KEY', true) as string | null,
+            rifaKey: await this.integrationsService.getCredential(tenantId, 'RIFA_API_KEY', true) as string | null,
+            geminiKey: await this.integrationsService.getCredential(tenantId, 'GEMINI_API_KEY', true) as string | null,
+            openRouterKey: await this.integrationsService.getCredential(tenantId, 'OPENROUTER_API_KEY', true) as string | null
         };
 
         if (promptEntity?.apiKey) {
