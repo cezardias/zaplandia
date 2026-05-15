@@ -480,19 +480,14 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     tools = [{ function_declarations: declarations }];
 
-                    const systemInstruction = `Você é Lisa, a Especialista de Vendas e Suporte da Zaplandia. Sua missão principal é converter visitantes em clientes e ajudar usuários logados.
-                    REGRAS DE OURO (NÃO NEGOCIÁVEIS):
-                    1. INVESTIGAÇÃO OBRIGATÓRIA: É PROIBIDO abrir chamados sem antes perguntar e receber o MOTIVO e a DESCRIÇÃO detalhada do usuário. Não invente descrições.
-                    2. CHAMADOS: Só abra chamados ('open_ticket') para usuários logados.
-                    3. IDENTIDADE: Use sempre o EMAIL_USUARIO do contexto no campo 'requesterEmail'.
-                    4. VISITANTES: Transfira visitantes para o time de VENDAS/SDR via 'transfer_to_team'.
-                    5. EXECUÇÃO SILENCIOSA: Use apenas Function Calling.`;
+                    // 🧠 INTELLIGENT SYSTEM PROMPT: Use promptContent from DB + technical rules as system instruction
+                    const systemInstruction = `${promptContent}\n\n[REGRAS TÉCNICAS ADICIONAIS]:\n1. IDENTIDADE: Use sempre o EMAIL_USUARIO do contexto no campo 'requesterEmail' ao abrir chamados.\n2. FERRAMENTAS: Se precisar abrir chamado ou transferir, use Function Calling imediatamente.\n3. SILÊNCIO: Não diga que abriu o chamado sem disparar a ferramenta real.`;
 
                     if (model.includes('/') && openRouterKey) {
                         this.logger.debug(`[AI_ROUTING] Routing ${model} to OpenRouter`);
-                        aiResponse = await this.callOpenRouter(model, finalPrompt, openRouterKey, 1024, tools, tenantId, contact?.id, systemInstruction, promptEntity?.id, authenticatedUser);
+                        aiResponse = await this.callOpenRouter(model, fullPrompt, openRouterKey, 1024, tools, tenantId, contact?.id, systemInstruction, promptEntity?.id, authenticatedUser);
                     } else if (geminiKey) {
-                        aiResponse = await this.callGemini(model, finalPrompt, geminiKey, 1024, tools, tenantId, contact?.id, systemInstruction, promptEntity?.id, authenticatedUser);
+                        aiResponse = await this.callGemini(model, fullPrompt, geminiKey, 1024, tools, tenantId, contact?.id, systemInstruction, promptEntity?.id, authenticatedUser);
                     }
 
                     if (aiResponse) {
@@ -515,8 +510,9 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             if (!aiResponse) {
                 if (lastError) {
                     this.logger.error(`[AI_FATAL] All models failed. Last error: ${lastError.message}`);
+                    return "Desculpe, tive um problema técnico ao processar sua mensagem. Como posso ajudar de outra forma?";
                 }
-                return null;
+                return "Olá! Sou a Lisa. No momento estou com dificuldade de conexão com meus servidores de IA. Pode tentar novamente em alguns instantes?";
             }
 
             this.logger.log(`AI generated response for contact ${contact.id} using prompt ${activePromptId}`);
@@ -1180,7 +1176,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
     }
     private async handleToolCall(funcName: string, args: any, tenantId: string, contactId: string, promptId?: string, authenticatedUser?: any): Promise<any> {
         try {
-            this.logger.log(`[AI_TOOL_EXEC] Executing ${funcName} for contact ${contactId}. AuthUser: ${authenticatedUser?.email || 'none'}`);
+            const userEmail = authenticatedUser?.email || 'unknown';
+            this.logger.log(`[AI_TOOL_EXEC] Executing ${funcName} for contact ${contactId}. Email: ${userEmail}`);
 
             // RESOLVE TARGET TENANT (Hierarchy/HQ support)
             let targetTenantId: string = tenantId || 'default';
