@@ -144,6 +144,34 @@ Você pode simplesmente conversar com a Lisa aqui na Central de Ajuda ou no What
 
 **Dica**: Sempre anexe prints ou logs se estiver abrindo manualmente para que nossa equipe resolva mais rápido!
             `
+        },
+        {
+            title: 'Gestão de Funil (Pipeline) no CRM Zaplandia',
+            category: 'crm',
+            tags: ['funil', 'pipeline', 'etapas', 'vendas'],
+            content: `
+# Como Configurar e Gerenciar seu Funil (Pipeline) no Zaplandia
+
+O Funil do Zaplandia permite que você visualize e organize seus leads em colunas de progresso.
+
+### 1. Acessando o Funil:
+No menu lateral esquerdo, clique em **"Funil (Pipeline)"**. Lá você verá seus contatos organizados em colunas.
+
+### 2. Configurando as Etapas:
+1. No canto superior da tela do Funil, clique no botão **"Configurar Funil"** (ou no ícone de engrenagem).
+2. Você pode **Adicionar Nova Etapa** (Coluna), mudar o nome das existentes ou excluir etapas.
+3. Arraste as colunas para mudar a ordem do seu processo de vendas.
+
+### 3. Movimentando Leads:
+- Para mover um lead de etapa, basta **clicar e arrastar o card** do contato para a coluna desejada.
+- O Zaplandia registrará automaticamente a mudança de status no histórico do contato.
+
+### 4. Ações Rápidas no Card:
+- No próprio card, você pode ver as tags do contato e o tempo que ele está naquela etapa.
+- Clique no card para abrir o chat direto ou ver o perfil completo do CRM.
+
+**Dica da Lisa**: Mantenha seu funil limpo! Se uma negociação esfriar, mova o contato para uma coluna de "Follow-up" ou marque como "Perdido" para não poluir sua visão de vendas ativa.
+            `
         }
     ];
 
