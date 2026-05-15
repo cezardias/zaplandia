@@ -1406,6 +1406,21 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                 }
 
                 return ticket;
+            } else if (funcName === 'list_tickets') {
+                this.logger.log(`[TOOL_EXEC] list_tickets for user ${authenticatedUser?.id || 'unknown'}`);
+                if (!authenticatedUser?.id) return { success: false, message: "Usuário não autenticado." };
+                // Using the correct method from SupportService
+                const userTickets = await this.supportService.findUserTickets(
+                    tenantId, 
+                    authenticatedUser.id, 
+                    authenticatedUser.role || 'user', 
+                    authenticatedUser.email
+                );
+                return { 
+                    success: true, 
+                    count: userTickets.length,
+                    tickets: userTickets.map(t => ({ id: t.id, subject: t.subject, status: t.status, date: t.createdAt }))
+                };
             } else if (funcName === 'search_knowledge_base') {
                 const articles = await this.supportService.findAll();
                 const query = (args.query || '').toLowerCase();
