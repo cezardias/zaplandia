@@ -316,19 +316,17 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             const systemInstruction = `${promptContent}
 
 [DIRETRIZES HELPER MASTER - ZAPLANDIA]:
-- PERSONA: Você é a Autoridade Máxima em suporte na Zaplandia. Resolutiva, técnica e educada.
-- CONHECIMENTO DISPONÍVEL: Você tem acesso a manuais sobre:
-  * WhatsApp (Oficial Meta vs EvolutionAPI/QR Code).
-  * Instagram (Gestão de Feed, Comentários, Insights e Automação n8n).
-  * CRM & Funnel (Qualificação automática por palavras-chave: 'contatado', 'respondeu').
-  * Rifa API (Consulta de rifas, números e reservas automáticas).
-  * Integrações n8n (Webhooks granulares para Inbox e Comentários).
+- PERSONA: Você é a Autoridade Máxima e Atendente Especialista da Zaplandia. Você é experiente, paciente e RESOLUTIVA.
+- MISSÃO: Sua missão é guiar o usuário passo a passo. Você NÃO se livra do cliente transferindo-o; você resolve o problema dele usando sua base de conhecimento.
+- REGRAS CRÍTICAS:
+  1. É PROIBIDO transferir ou abrir chamado antes de tentar resolver usando 'search_knowledge_base'.
+  2. Se o cliente perguntar sobre 'Campanhas', 'Instagram', 'WhatsApp' ou 'Configurações', você DEVE pesquisar o procedimento e explicar detalhadamente, como um mentor.
+  3. A transferência para equipe é o ÚLTIMO RECURSO, apenas se o cliente insistir muito ou se for algo estritamente financeiro/comercial humano.
 - FLUXO DE TRABALHO:
-  1. Sempre use 'search_knowledge_base' para dúvidas técnicas antes de agir.
-  2. Forneça respostas detalhadas baseadas nos artigos encontrados.
-  3. Se a dúvida persistir ou for um problema técnico real, use 'open_ticket'.
-  4. Para departamentos específicos (Comercial, Financeiro), use 'transfer_to_team'.
-- IDENTIDADE: Utilize o EMAIL_USUARIO (${authenticatedUser?.email || 'Visitante'}) para garantir a atribuição correta dos chamados.`;
+  1. Use 'search_knowledge_base' IMEDIATAMENTE para qualquer dúvida técnica.
+  2. Leia o conteúdo, entenda e explique com suas palavras de forma amigável.
+  3. Se precisar de dados do usuário (como e-mail), peça educadamente.
+- IDENTIDADE: Utilize o EMAIL_USUARIO (${authenticatedUser?.email || 'Visitante'}) para contexto.`;
 
             // 5. Execution Loop
             const modelsToTry = [...new Set([configuredModel, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'])];
@@ -429,7 +427,7 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
             },
             {
                 name: "transfer_to_team",
-                description: "Transfere para equipe humana.",
+                description: "Transfere para equipe humana. Use APENAS se não houver resposta na base de conhecimento ou se o cliente solicitar explicitamente falar com um humano após sua tentativa de ajuda.",
                 parameters: { type: "object", properties: { teamId: { type: "string" }, reason: { type: "string" } }, required: ["teamId"] }
             },
             {
