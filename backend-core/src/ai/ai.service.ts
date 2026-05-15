@@ -859,10 +859,10 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         
                         let targetTeamId = args.teamId;
                         const teamName = args.teamId?.toLowerCase();
-                        let teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" = $1`, [tenantId]);
-                        if (!teams || teams.length === 0) {
-                            teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" IS NULL`);
-                        }
+                        
+                        // STRICT TENANT ISOLATION: No global fallback.
+                        const teams = await this.contactRepository.manager.query(`SELECT id, name FROM teams WHERE "tenantId" = $1`, [tenantId]);
+                        this.logger.debug(`[AI_TOOL_DEBUG] Available teams for tenant ${tenantId}: ${JSON.stringify(teams)}`);
                         
                         const foundTeam = teams.find(t => 
                             t.id === targetTeamId || 
