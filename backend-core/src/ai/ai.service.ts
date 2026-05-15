@@ -853,26 +853,22 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
 
                     this.logger.log(`[AI_TOOL] Calling ${funcName} with args: ${JSON.stringify(args)}`);
 
+                    // RESOLVE TARGET TENANT (Hierarchy/HQ support)
+                    let targetTenantId = tenantId;
+                    let teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [tenantId]);
+                    if (!teams || teams.length === 0) {
+                        const integration = await this.integrationRepository.findOne({ where: { id: promptId } });
+                        targetTenantId = integration?.tenantId || '3ac9368c-af7c-4183-9816-b90513368f53';
+                        teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [targetTenantId]);
+                    }
+
                     let toolResult: any;
                     if (funcName === 'transfer_to_team' && tenantId && contactId) {
-                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team/name: ${args.teamId}`);
+                        this.logger.log(`[AI_TOOL] Transferring contact ${contactId} to team/name: ${args.teamId} for tenant ${targetTenantId}`);
                         
                         let targetTeamId = args.teamId;
                         const teamName = args.teamId?.toLowerCase();
                         
-                        // Resolve teams: Try current tenant, then try Master/HQ tenant if needed
-                        let teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [tenantId]);
-                        
-                        if (!teams || teams.length === 0) {
-                            this.logger.log(`[AI_TOOL] No teams in current tenant ${tenantId}. Checking Master/Integration tenant...`);
-                            // Find the master tenant associated with the active integration for Lisa
-                            const integration = await this.integrationRepository.findOne({ 
-                                where: { id: promptId } 
-                            });
-                            const masterId = integration?.tenantId || '3ac9368c-af7c-4183-9816-b90513368f53'; // Fallback to your HQ ID found in logs
-                            teams = await this.contactRepository.manager.query(`SELECT id, name, "tenantId" FROM teams WHERE "tenantId" = $1`, [masterId]);
-                        }
-
                         const foundTeam = teams.find(t => 
                             t.id === targetTeamId || 
                             (teamName && (t.name.toLowerCase().includes(teamName) || teamName.includes(t.name.toLowerCase())))
@@ -881,23 +877,18 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                         if (foundTeam) {
                             targetTeamId = foundTeam.id;
                             this.logger.log(`[AI_TOOL] Resolved team name '${args.teamId}' to ID ${targetTeamId} (${foundTeam.name})`);
+                            
+                            await this.contactRepository.update(contactId, { assignedTeamId: targetTeamId });
+                            // Emit update via socket
+                            this.communicationService.emitToTenant(tenantId, 'contact_updated', {
+                                contactId: contactId,
+                                assignedTeamId: targetTeamId
+                            });
+                            toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam.name}.` };
                         } else {
-                            // FAILSAFE: If resolution fails, use the first team available for this tenant
-                            if (teams && teams.length > 0) {
-                                targetTeamId = teams[0].id;
-                                this.logger.warn(`[AI_TOOL_FAILSAFE] Team '${args.teamId}' not found for tenant ${tenantId}. Redirecting to first team: ${teams[0].name} (${targetTeamId})`);
-                            } else {
-                                this.logger.error(`[AI_TOOL_FATAL] No teams found for tenant ${tenantId}. Transfer failed.`);
-                            }
+                            this.logger.warn(`[AI_TOOL_FAILSAFE] Team '${args.teamId}' not found. Keeping current assignment.`);
+                            toolResult = { success: false, message: `Equipe '${args.teamId}' não encontrada. O atendimento permanece com o responsável atual.` };
                         }
-
-                        await this.contactRepository.update(contactId, { assignedTeamId: targetTeamId });
-                        // Emit update via socket
-                        this.communicationService.emitToTenant(tenantId, 'contact_updated', {
-                            contactId: contactId,
-                            assignedTeamId: targetTeamId
-                        });
-                        toolResult = { success: true, message: `O atendimento foi transferido para a equipe ${foundTeam?.name || (teams[0]?.name || targetTeamId)}.` };
                     } else if (funcName === 'get_products' && tenantId) {
                         toolResult = await this.erpZaplandiaService.getProducts(tenantId, args.search);
                     } else if (funcName === 'get_raffles' && tenantId) {
@@ -907,8 +898,8 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     } else if (funcName === 'create_raffle_order' && tenantId) {
                         toolResult = await this.rifaApiService.createOrder(tenantId, args);
                     } else if (funcName === 'open_ticket' && tenantId && contactId) {
-                        this.logger.log(`[AI_TOOL] Opening ticket for contact ${contactId}`);
-                        toolResult = await this.supportService.createTicket(tenantId, contactId, {
+                        this.logger.log(`[AI_TOOL] Opening ticket for contact ${contactId} in tenant ${targetTenantId}`);
+                        toolResult = await this.supportService.createTicket(targetTenantId, contactId, {
                             subject: args.subject,
                             description: args.description,
                             category: args.category || 'technical',
