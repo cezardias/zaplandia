@@ -17,6 +17,7 @@ import {
     Plus,
     Loader2
 } from 'lucide-react';
+import { useSocket } from '@/context/SocketContext';
 
 interface Article {
     id: string;
@@ -27,6 +28,7 @@ interface Article {
 
 export default function SupportPage() {
     const { token } = useAuth();
+    const { socket } = useSocket();
     const { lang } = useLanguage();
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
@@ -721,6 +723,20 @@ Zaplandia ha bisogno di un token che non scada:
             fetchTickets();
         }
     }, [token]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewTicket = () => {
+            console.log('🔔 Novo chamado detectado via Socket! Atualizando lista...');
+            fetchTickets();
+        };
+
+        socket.on('ticket_created', handleNewTicket);
+        return () => {
+            socket.off('ticket_created', handleNewTicket);
+        };
+    }, [socket]);
 
     const fetchTickets = async () => {
         try {

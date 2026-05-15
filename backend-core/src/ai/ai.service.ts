@@ -1232,17 +1232,25 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
                     };
                 }
 
-                const requesterName = (requesterEmail || contact?.name || 'Cliente Zaplandia').toString().replace(/undefined/g, '').trim();
+                const requesterName = (requesterEmail || contact?.email || contact?.externalId || contact?.name || 'Cliente Zaplandia').toString().replace(/undefined/g, '').trim();
                 
                 this.logger.log(`[AI_TOOL_SUCCESS] Opening verified ticket for ${requesterName}`);
 
-                return this.supportService.createTicket(targetTenantId, contactId, {
+                const ticket = await this.supportService.createTicket(targetTenantId, contactId, {
                     subject: args.subject,
                     description: args.description,
                     category: args.category || 'technical',
                     priority: args.priority || 'medium',
                     requesterName: requesterName
                 });
+
+                // 🔔 EMIT EVENT: Tell the UI to refresh tickets
+                this.communicationService.emitToTenant(tenantId, 'ticket_created', ticket);
+                if (targetTenantId !== tenantId) {
+                    this.communicationService.emitToTenant(targetTenantId, 'ticket_created', ticket);
+                }
+
+                return ticket;
 
             } else if (funcName === 'get_products') {
                 return this.erpZaplandiaService.getProducts(tenantId, args.search);
