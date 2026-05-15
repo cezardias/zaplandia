@@ -284,7 +284,16 @@ INICIAR CONVERSA COM: "E ai, rodando liso ai?"`;
         }
     }
 
-    async generateResponse(contact: Contact, userMessage: string, tenantId: string, instanceName?: string): Promise<string | null> {
+    async generateLisaResponse(contactIdOrContact: string | Contact, userMessage: string, tenantId: string, authenticatedUser?: any, instanceName?: string): Promise<string | null> {
+        let contact: Contact;
+        if (typeof contactIdOrContact === 'string') {
+            const found = await this.contactRepository.findOne({ where: { id: contactIdOrContact, tenantId } });
+            if (!found) return null;
+            contact = found;
+        } else {
+            contact = contactIdOrContact;
+        }
+
         this.logger.log(`[AI_WAIT] Message from ${contact.name} (${contact.id}). Waiting 10s for more...`);
         
         const existing = this.debounceMap.get(contact.id);
